@@ -390,10 +390,16 @@ function splitTimeRange(value){
  return one?{start:one[1].padStart(2,'0')+':'+one[2],end:''}:{start:'',end:''};
 }
 function slotDateRaw(slot){
+ // lesson_slots usa starts_at come timestamp completo: quando presente e valido è la fonte più affidabile per la data.
+ const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
+ if(direct!==null&&direct!==undefined&&String(direct).trim()!==''){
+   const ds=String(direct).trim();
+   const test=new Date(ds);
+   if(Number.isFinite(test.getTime())) return ds;
+ }
  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
  for(const k of keys){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
- const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
- return direct??'—';
+ return '—';
 }
 function slotStart(slot){
  const d=slotDateRaw(slot);

@@ -390,15 +390,15 @@ function splitTimeRange(value){
  return one?{start:one[1].padStart(2,'0')+':'+one[2],end:''}:{start:'',end:''};
 }
 function slotDateRaw(slot){
- // lesson_slots usa starts_at come timestamp completo: quando presente e valido è la fonte più affidabile per la data.
- const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
- if(direct!==null&&direct!==undefined&&String(direct).trim()!==''){
-   const ds=String(direct).trim();
-   const test=new Date(ds);
-   if(Number.isFinite(test.getTime())) return ds;
- }
+ // lesson_slots: la colonna DATE contiene la data reale dello slot (es. 14 Set, 18 Set, 08/06/2026).
+ // NON usare starts_at come prima scelta: in questa tabella puo' rappresentare un timestamp tecnico/storico e non la data mostrata nell'app Android.
  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
- for(const k of keys){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
+ for(const k of keys){
+   const v=slot?.[k];
+   if(v!==null&&v!==undefined&&String(v).trim()!=='') return String(v).trim();
+ }
+ const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
+ if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  return '—';
 }
 function slotStart(slot){
@@ -486,7 +486,11 @@ function renderClientBookings(slots,rows){
    return !!d && w===week && (!catFilter || category(sl).toLowerCase().includes(catFilter));
  }).sort((a,b)=>{
    const da=dateOf(a),db=dateOf(b);
-   if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
+   if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;
+   const ta=slotTimeText(a),tb=slotTimeText(b);
+   const ma=/^(\d{2}):(\d{2})$/.exec(ta),mb=/^(\d{2}):(\d{2})$/.exec(tb);
+   const va=ma?(+ma[1])*60+(+ma[2]):9999, vb=mb?(+mb[1])*60+(+mb[2]):9999;
+   return (da-db)|| (va-vb);
  });
 
  list.innerHTML=`

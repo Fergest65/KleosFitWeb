@@ -1,1 +1,16 @@
-{"name":"KleosFit Coach Pro","short_name":"KleosFit","start_url":"./","scope":"./","display":"standalone","display_override":["standalone"],"background_color":"#101317","theme_color":"#101317","orientation":"portrait","icons":[{"src":"./icon.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"./icon.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
+{
+  "id":"/",
+  "name":"KleosFit Coach Pro",
+  "short_name":"KleosFit",
+  "start_url":"/",
+  "scope":"/",
+  "display":"standalone",
+  "display_override":["window-controls-overlay","standalone"],
+  "background_color":"#101317",
+  "theme_color":"#101317",
+  "orientation":"portrait-primary",
+  "icons":[
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

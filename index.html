@@ -50,6 +50,21 @@
 .clientBookAction{margin-top:18px}
 .clientBookBtn{width:100%;font-size:19px;font-weight:900;padding:14px!important}
 @media(max-width:700px){.clientFilterBtn{min-width:100px;padding:10px 12px!important}.clientSlotTitle{font-size:24px}.clientSlotCoach,.clientSlotMax{font-size:16px}}
+</style><style>
+.clientBookingFilters{background:var(--panel,#17191e);border:1px solid var(--line,#303640);border-radius:16px;padding:18px;margin:18px 0}
+.clientFilterRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.clientFilterBtn{appearance:none!important;background:#111419!important;color:#aeb6c4!important;border:1px solid #303640!important;border-radius:11px!important;min-height:48px!important;padding:11px 14px!important;font-weight:900!important;font-size:16px!important;cursor:pointer!important;touch-action:manipulation!important}
+.clientFilterBtn.active{background:#263615!important;color:var(--accent,#c6ff35)!important;border-color:var(--accent,#c6ff35)!important;box-shadow:0 0 0 1px var(--accent,#c6ff35) inset!important}
+.clientSlotCard{background:#050607;border:1px solid #292d34;border-radius:15px;padding:20px;margin:15px 0}
+.clientSlotDate{font-size:22px;font-weight:900;color:var(--accent,#c6ff35)}
+.clientSlotTitle{font-size:28px;font-weight:900;margin-top:10px}
+.clientSlotCoach{font-size:18px;color:#aeb6c4;font-weight:700;margin-top:10px}
+.clientSlotMax{font-size:18px;color:var(--accent,#c6ff35);font-weight:900;margin-top:8px}
+.clientChoiceRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.clientChoice{appearance:none!important;background:#111419!important;color:#aeb6c4!important;border:1px solid #303640!important;border-radius:11px!important;min-height:48px!important;padding:10px 18px!important;font-weight:900!important;font-size:17px!important}
+.clientChoice.active{background:#263615!important;color:var(--accent,#c6ff35)!important;border-color:var(--accent,#c6ff35)!important}
+.clientBookBtn{width:100%;font-size:19px!important;font-weight:900!important;padding:14px!important}
+@media(max-width:700px){.clientFilterRow{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.clientFilterBtn{font-size:14px!important;padding:9px 5px!important}.clientSlotTitle{font-size:24px}.clientSlotCoach,.clientSlotMax{font-size:16px}}
 </style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
@@ -344,22 +359,53 @@ async function loadBookings(){
  else renderBookings(bookingsData,slots);
 }
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
-function slotDateValue(slot){return pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','lesson_date','scheduled_date','day']);}
+function slotDateValue(slot){
+ const vals=['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
+ for(const k of vals){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
+ return '—';
+}
 function slotStart(slot){
- const d=pick(slot,['slot_date','date','lesson_date','scheduled_date','day']);
- const t=pick(slot,['start_time','time','starts_time']);
- if(d!=='—'&&t!=='—') return String(d).slice(0,10)+'T'+String(t).slice(0,8);
- const direct=pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
- if(direct!=='—') return direct;
+ const dateKeys=['date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
+ const timeKeys=['start_time','starts_time','time'];
+ let d='—',t='—';
+ for(const k of dateKeys){if(slot?.[k]!==null&&slot?.[k]!==undefined&&String(slot[k]).trim()!==''){d=slot[k];break}}
+ for(const k of timeKeys){if(slot?.[k]!==null&&slot?.[k]!==undefined&&String(slot[k]).trim()!==''){t=slot[k];break}}
+ if(d!=='—'&&t!=='—')return String(d).slice(0,10)+'T'+String(t).slice(0,8);
+ const directKeys=['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at'];
+ for(const k of directKeys){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
  return t;
 }
 function slotEnd(slot){
- const d=pick(slot,['slot_date','date','lesson_date','scheduled_date','day']);
- const tm=pick(slot,['end_time','ends_time']);
- if(d!=='—'&&tm!=='—') return String(d).slice(0,10)+'T'+String(tm).slice(0,8);
- const direct=pick(slot,['ends_at','end_at','slot_end','end_datetime']);
- if(direct!=='—'&&direct!==null&&direct!==undefined&&String(direct).trim())return direct;
- return tm;
+ const dateKeys=['date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
+ const timeKeys=['end_time','ends_time','to'];
+ let d='—',t='—';
+ for(const k of dateKeys){if(slot?.[k]!==null&&slot?.[k]!==undefined&&String(slot[k]).trim()!==''){d=slot[k];break}}
+ for(const k of timeKeys){if(slot?.[k]!==null&&slot?.[k]!==undefined&&String(slot[k]).trim()!==''){t=slot[k];break}}
+ if(d!=='—'&&t!=='—')return String(d).slice(0,10)+'T'+String(t).slice(0,8);
+ for(const k of ['ends_at','end_at','slot_end','end_datetime']){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
+ return t;
+}
+function parseSlotDate(slot){
+ const raw=slotStart(slot);if(!raw||raw==='—')return null;
+ const s=String(raw).trim();
+ let m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2}))?/);
+ if(m)return new Date(+m[1],+m[2]-1,+m[3],+(m[4]||12),+(m[5]||0),0);
+ m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})(?:[T\s](\d{1,2}):(\d{2}))?/);
+ if(m)return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||12),+(m[5]||0),0);
+ const d=new Date(s);
+ return Number.isFinite(d.getTime())&&!/^\d{1,2}:\d{2}$/.test(s)?d:null;
+}
+function slotTimeText(slot){
+ const raw=slotStart(slot),s=raw&&raw!=='—'?String(raw).trim():'';
+ const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+ if(m)return m[1].padStart(2,'0')+':'+m[2];
+ const t=pick(slot,['start_time','starts_time','time']);return t==='—'?'':String(t).slice(0,5);
+}
+function slotEndTimeText(slot){
+ const raw=slotEnd(slot),s=raw&&raw!=='—'?String(raw).trim():'';
+ const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+ if(m)return m[1].padStart(2,'0')+':'+m[2];
+ const t=pick(slot,['end_time','ends_time','to']);return t==='—'?'':String(t).slice(0,5);
 }
 function slotTitle(slot){return pick(slot,['lesson_type','lesson_name','title','category','description'])||'Lezione';}
 function slotCapacity(slot){const v=pick(slot,['max_participants','capacity','max_capacity','max_people','participants_limit']);return v==='—'?null:Number(v);}
@@ -379,7 +425,7 @@ function renderClientBookings(slots,rows){
  const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
  const weeks=[['Questa',0],['Prossima',1],['+2 sett.',2]];
 
- function dateOf(sl){const raw=slotStart(sl);if(!raw||raw==='—')return null;const d=new Date(raw);return Number.isFinite(d.getTime())?d:null}
+ function dateOf(sl){return parseSlotDate(sl)}
  function weekOf(d){
    if(!d)return null;
    const n=new Date();n.setHours(0,0,0,0);
@@ -388,7 +434,7 @@ function renderClientBookings(slots,rows){
    return Math.floor((target-monday)/86400000/7);
  }
  function dayLabel(d){
-   if(!d)return 'DATA';
+   if(!d||!Number.isFinite(d.getTime()))return 'DATA DA DEFINIRE';
    const wd=['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
    const mo=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
    return wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+mo[d.getMonth()];

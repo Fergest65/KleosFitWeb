@@ -29,8 +29,6 @@
 .loginScreen .loginbox{position:relative;z-index:1;background:rgba(15,17,21,.88);backdrop-filter:blur(10px);box-shadow:0 25px 80px rgba(0,0,0,.5)}
 .loginBack{margin-bottom:12px}
 @media(max-width:800px){.welcome{justify-content:center;padding:18px;background-position:center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}.welcomeContent{padding:26px}.welcomeTitle{font-size:32px}.welcomeBrand{font-size:32px}}
-</style><style>
-.bookingClientHero{margin-bottom:22px}.bookingClientHero h2,.bookingClientList h2{font-size:28px;margin:0 0 8px;font-weight:900}.bookingClientHero .big{font-size:18px;line-height:1.45}.bookingClientFilters{background:#17191e;border:1px solid #2c313b;border-radius:16px;padding:20px;margin-bottom:24px}.bookingFilterTitle,.clientDurationTitle{font-weight:900;letter-spacing:.04em;margin:12px 0 10px;font-size:16px}.bookingFilterRow{display:flex;gap:10px;flex-wrap:wrap}.clientFilterBtn,.clientChoice{background:#111318;border:1px solid #303640;color:#aab1c0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer}.clientFilterBtn.active,.clientChoice.active{background:#263615;border-color:#c6ff35;color:#c6ff35;box-shadow:0 0 0 1px #c6ff35 inset}.clientFilterBtn{min-width:150px}.bookingClientList{margin-top:12px}.clientSlotCard{background:#050607;border:1px solid #292d34;border-radius:15px;padding:22px;margin:16px 0}.clientSlotDate{font-size:22px;font-weight:900;color:#c6ff35;text-transform:uppercase}.clientSlotTitle{font-size:27px;font-weight:900;margin-top:12px}.clientSlotCoach{font-size:18px;color:#aab1c0;font-weight:700;margin-top:12px}.clientSlotMax{font-size:18px;color:#c6ff35;font-weight:900;margin-top:10px}.clientTimeRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.clientChoice{font-size:17px;min-width:90px}.clientBookAction{margin-top:18px}.clientBookAction .btn{width:100%;font-size:20px;font-weight:900;padding:14px}@media(max-width:700px){.clientFilterBtn{flex:1;min-width:110px}.clientSlotTitle{font-size:24px}.clientSlotCoach,.clientSlotMax{font-size:16px}.clientChoice{padding:10px 14px}}
 </style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
@@ -354,74 +352,71 @@ function slotEndTimeText(slot){const raw=slotEnd(slot);if(raw&&raw!=='—'){try{
 function bookingForSlot(slot,rows){return rows.find(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(slot.id)&&String(pick(b,['user_id','profile_id','client_id']))===String(currentUser?.id)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled');}
 function renderClientBookings(slots,rows){
  const list=document.getElementById('bookingList');if(!list)return;
- const categories=[['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
- const weeks=[['Questa',0],['Prossima',1],['+2 sett.',2]];
  window.clientBookingFilter=window.clientBookingFilter||{cat:'',week:0,selected:{}};
+ const categories=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
+ const weeks=[['Questa',0],['Prossima',1],['+2 sett.',2]];
 
- function rawDate(sl){return pick(sl,['date','lesson_date','scheduled_date','day','slot_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);}
- function dateObj(sl){
-   const raw=rawDate(sl); if(!raw||raw==='—')return null;
-   const s=String(raw).trim(); let d=new Date(s);
+ function getDate(sl){
+   const raw=pick(sl,['date','lesson_date','scheduled_date','slot_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
+   if(raw==='—'||!raw)return null;
+   const s=String(raw).trim();
+   let d=new Date(s);
    if(Number.isFinite(d.getTime()))return d;
-   const m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-   return m?new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),12,0,0):null;
+   let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+   if(m)return new Date(+m[3],+m[2]-1,+m[1],12,0,0);
+   return null;
  }
- function startTime(sl){
-   const t=pick(sl,['start_time','starts_time','time','start','from']); if(t!=='—')return String(t).slice(0,5);
-   const raw=pick(sl,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
-   const m=raw!=='—'?String(raw).match(/T?(\d{1,2}):(\d{2})/):null;
-   return m?m[1].padStart(2,'0')+':'+m[2]:'';
+ function weekOf(d){
+   if(!d)return 0;
+   const n=new Date();n.setHours(0,0,0,0);
+   const mon=new Date(n);mon.setDate(n.getDate()-((n.getDay()+6)%7));
+   const t=new Date(d);t.setHours(0,0,0,0);
+   const diff=Math.floor((t-mon)/86400000);
+   return diff<0?-1:Math.floor(diff/7);
  }
- function endTime(sl){
-   const t=pick(sl,['end_time','ends_time','end','to']); if(t!=='—')return String(t).slice(0,5);
-   const raw=pick(sl,['ends_at','end_at','slot_end','end_datetime']);
-   const m=raw!=='—'?String(raw).match(/T?(\d{1,2}):(\d{2})/):null;
-   return m?m[1].padStart(2,'0')+':'+m[2]:'';
- }
- function category(sl){return String(pick(sl,['lesson_type','lesson_name','title','category','description'])||'Lezione').trim();}
- function matchesCat(sl){const f=window.clientBookingFilter.cat;return !f||category(sl).toLowerCase().includes(f);}
- function weekIndex(d){
-   if(!d||!Number.isFinite(d.getTime()))return 0;
-   const now=new Date();now.setHours(0,0,0,0);
-   const monday=new Date(now);monday.setDate(now.getDate()-((now.getDay()+6)%7));
-   const target=new Date(d);target.setHours(0,0,0,0);
-   const diff=Math.floor((target-monday)/86400000);return diff<0?-1:Math.floor(diff/7);
- }
- function fmtDay(d){
-   if(!d)return 'DATA';
-   const wd=['DOM','LUN','MAR','MER','GIO','VEN','SAB'][d.getDay()];
-   const months=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-   return wd+' '+String(d.getDate()).padStart(2,'0')+' '+months[d.getMonth()];
- }
- function durationMinutes(sl){
-   const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes','max_duration_minutes']));
-   return Number.isFinite(n)&&n>0?n:120;
- }
- function capacity(sl){return slotCapacity(sl);}
+ function cat(sl){return String(pick(sl,['lesson_type','lesson_name','title','category','description'])||'Lezione');}
  function durationLabel(m){return m>=120?(m%60?'2h '+(m%60)+'m':'2h'):m>=60?(m%60?'1h '+(m%60)+'m':'1h'):(m+' min');}
- const visible=(slots||[]).filter(sl=>{
-   const d=dateObj(sl),wi=weekIndex(d);
-   return (wi===window.clientBookingFilter.week||!d)&&matchesCat(sl);
- }).sort((a,b)=>{const da=dateObj(a),db=dateObj(b);if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;});
+ function dateLabel(d){if(!d)return 'DATA';const wd=['DOM','LUN','MAR','MER','GIO','VEN','SAB'];const mo=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];return wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+mo[d.getMonth()];}
+ function startText(sl){const x=slotTimeText(sl);return x&&x!=='—'?x:'';}
+ function endText(sl){const x=slotEndTimeText(sl);return x&&x!=='—'?x:'';}
 
- list.innerHTML=`<div class="bookingClientHero"><h2>Prenota lezione</h2><div class="muted big">Gli slot disponibili sono separati dalle tue prenotazioni attive.</div></div>
- <div class="bookingClientFilters"><div class="bookingFilterTitle">Categoria</div><div class="bookingFilterRow">
- ${categories.map(([label,key])=>`<button class="clientFilterBtn ${window.clientBookingFilter.cat===key?'active':''}" onclick="window.clientBookingFilter.cat='${key}';renderClientBookings(bookingSlots,bookingsData)">${label}</button>`).join('')}
- </div><div class="bookingFilterTitle">SETTIMANA</div><div class="bookingFilterRow">
- ${weeks.map(([label,i])=>`<button class="clientFilterBtn ${window.clientBookingFilter.week===i?'active':''}" onclick="window.clientBookingFilter.week=${i};renderClientBookings(bookingSlots,bookingsData)">${label}</button>`).join('')}
- </div></div><div class="bookingClientList"><h2>Slot disponibili per prenotare</h2>
+ const week=Number(window.clientBookingFilter.week)||0;
+ const filter=String(window.clientBookingFilter.cat||'').toLowerCase();
+ const visible=(slots||[]).filter(sl=>{
+   const d=getDate(sl), w=weekOf(d);
+   return (!d||w===week) && (!filter||cat(sl).toLowerCase().includes(filter));
+ }).sort((a,b)=>{
+   const da=getDate(a),db=getDate(b);
+   if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
+ });
+
+ list.innerHTML=`
+ <div class="bookingClientHero"><h2>Prenota lezione</h2><div class="muted big">Gli slot disponibili sono separati dalle tue prenotazioni attive.</div></div>
+ <div class="bookingClientFilters">
+   <div class="bookingFilterTitle">Categoria</div>
+   <div class="bookingFilterRow">${categories.map(([label,key])=>`<button type="button" class="clientFilterBtn ${filter===key?'active':''}" onclick="window.clientBookingFilter.cat='${key}';renderClientBookings(bookingSlots,bookingsData)">${label}</button>`).join('')}</div>
+   <div class="bookingFilterTitle">SETTIMANA</div>
+   <div class="bookingFilterRow">${weeks.map(([label,i])=>`<button type="button" class="clientFilterBtn ${week===i?'active':''}" onclick="window.clientBookingFilter.week=${i};renderClientBookings(bookingSlots,bookingsData)">${label}</button>`).join('')}</div>
+ </div>
+ <div class="bookingClientList"><h2>Slot disponibili per prenotare</h2>
  ${visible.length?visible.map(sl=>{
-   const d=dateObj(sl),mine=bookingForSlot(sl,rows),booked=slotBooked(sl,rows),cap=capacity(sl),remaining=cap===null?null:Math.max(0,cap-booked);
-   const st=startTime(sl),en=endTime(sl),maxDur=Math.max(30,durationMinutes(sl)),selected=(window.clientBookingFilter.selected[sl.id]||{time:st,duration:maxDur});
-   const times=[st].filter(Boolean);if(en&&en!==st)times.push(en);
-   const options=[30,60,90,120].filter(x=>x<=maxDur);
-   return `<div class="clientSlotCard"><div class="clientSlotDate">${esc(fmtDay(d))}</div><div class="clientSlotTitle">${esc(category(sl))}</div>
-   <div class="clientSlotCoach">Coach ${esc(pick(sl,['coach','coach_name','trainer'])==='—'?'KleosFit':pick(sl,['coach','coach_name','trainer']))} - slot ${esc(st||'--:--')}${en?'-'+esc(en):''}</div>
-   <div class="clientSlotMax">Max utilizzo ${esc(durationLabel(maxDur))} - ${remaining===null?'posti disponibili':remaining+' posti'}</div>
-   <div class="clientTimeRow">${times.map(t=>`<button class="clientChoice ${selected.time===t?'active':''}" onclick="setClientBookingChoice('${esc(sl.id)}','time','${esc(t)}')">${esc(t)}</button>`).join('')}</div>
-   <div class="clientDurationTitle">DURATA UTILIZZO</div><div class="clientTimeRow">${options.map(x=>`<button class="clientChoice ${Number(selected.duration)===x?'active':''}" onclick="setClientBookingChoice('${esc(sl.id)}','duration',${x})">${durationLabel(x)}</button>`).join('')}</div>
-   <div class="clientBookAction">${mine?`<button class="btn secondary" onclick="cancelMyBooking('${esc(mine.id)}')">ANNULLA PRENOTAZIONE</button>`:remaining===0?'<span class="pill">POSTI ESAURITI</span>':`<button class="btn" onclick="bookMySlot('${esc(sl.id)}')">Prenota</button>`}</div></div>`;
- }).join(''):'<div class="bookingNotice">Nessuno slot disponibile per i filtri selezionati.</div>'}</div>`;
+   const d=getDate(sl),mine=bookingForSlot(sl,rows),booked=slotBooked(sl,rows),cap=slotCapacity(sl),remaining=cap===null?null:Math.max(0,cap-booked);
+   const st=startText(sl),en=endText(sl),maxDur=Math.max(30,Number(pick(sl,['duration_minutes','duration','slot_duration_minutes','max_duration_minutes']))||120);
+   const selected=window.clientBookingFilter.selected[sl.id]||{time:st,duration:maxDur};
+   const times=[st];if(en&&en!==st)times.push(en);
+   const opts=[30,60,90,120].filter(x=>x<=maxDur);
+   return `<div class="clientSlotCard">
+     <div class="clientSlotDate">${esc(dateLabel(d))}</div>
+     <div class="clientSlotTitle">${esc(cat(sl))}</div>
+     <div class="clientSlotCoach">Coach ${esc(pick(sl,['coach','coach_name','trainer'])==='—'?'KleosFit':pick(sl,['coach','coach_name','trainer']))} - slot ${esc(st||'--:--')}${en?'-'+esc(en):''}</div>
+     <div class="clientSlotMax">Max utilizzo ${esc(durationLabel(maxDur))} - ${remaining===null?'posti disponibili':remaining+' posti'}</div>
+     <div class="clientTimeRow">${times.filter(Boolean).map(t=>`<button type="button" class="clientChoice ${selected.time===t?'active':''}" onclick="setClientBookingChoice('${esc(sl.id)}','time','${esc(t)}')">${esc(t)}</button>`).join('')}</div>
+     <div class="clientDurationTitle">DURATA UTILIZZO</div>
+     <div class="clientTimeRow">${opts.map(x=>`<button type="button" class="clientChoice ${Number(selected.duration)===x?'active':''}" onclick="setClientBookingChoice('${esc(sl.id)}','duration',${x})">${durationLabel(x)}</button>`).join('')}</div>
+     <div class="clientBookAction">${mine?`<button class="btn secondary" onclick="cancelMyBooking('${esc(mine.id)}')">ANNULLA PRENOTAZIONE</button>`:remaining===0?'<span class="pill">POSTI ESAURITI</span>':`<button class="btn" onclick="bookMySlot('${esc(sl.id)}')">Prenota</button>`}</div>
+   </div>`;
+ }).join(''):'<div class="bookingNotice">Nessuno slot disponibile per questa settimana.</div>'}
+ </div>`;
 }
 function setClientBookingChoice(id,key,val){
  window.clientBookingFilter=window.clientBookingFilter||{cat:'',week:0,selected:{}};

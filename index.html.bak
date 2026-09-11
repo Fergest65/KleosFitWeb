@@ -152,18 +152,6 @@ function openClientSheet(id){
  </div>`);
 }
 
-function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
-async function saveClientSheet(id){
- const msg=document.getElementById('cpMsg');
- if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_paid_amount:nullableNumber('cpPaid'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry')};
- const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
- if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
- if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
- const updated=clientsData.find(x=>String(x.id)===String(id));
- if(updated)Object.assign(updated,r.data);
- closeModal();renderClients(clientsData);
-}
 function drawQrInto(el,p){if(!el)return;el.innerHTML='';if(typeof QRCode==='undefined'){el.innerHTML='<div style="color:#111;font-size:11px">QR non disponibile</div>';return}new QRCode(el,{text:clientQrValue(p),width:100,height:100,correctLevel:QRCode.CorrectLevel.M});}
 function qrCardHtml(p){const name=clientName(p),card=clientCardNumber(p);return `<div class="qrClientCard" style="max-width:620px"><div id="qr_${esc(String(p.id).replace(/[^a-zA-Z0-9_-]/g,''))}" class="qrClientBox"></div><div><div class="qrClientName">${esc(name)}</div><div class="member">${esc(card||'Tessera non assegnata')}</div><div class="small">${esc(profileEmail(p)||'')} ${p.phone?' · '+esc(p.phone):''}</div><div class="qrClientActions"><button class="btn secondary mini" onclick="printQrCard('${p.id}')">Stampa QR</button><button class="btn secondary mini" onclick="openClientSheet('${p.id}')">Scheda cliente</button></div></div></div>`}
 function renderQrCodes(rows){const list=document.getElementById('qrList'),count=document.getElementById('qrCount');if(!list)return;count.textContent=rows.length?'1 cliente':'Nessun cliente collegato';list.innerHTML=rows.length?qrCardHtml(rows[0]):'<div class="muted">Nessun profilo cliente associato all’account loggato.</div>';if(rows.length)setTimeout(()=>drawQrInto(document.getElementById('qr_'+String(rows[0].id).replace(/[^a-zA-Z0-9_-]/g,'')),rows[0]),20)}

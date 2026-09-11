@@ -360,12 +360,12 @@ async function loadBookings(){
 }
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
 function slotDateValue(slot){
- const vals=['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
+ const vals=['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','slot_date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
  for(const k of vals){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
  return '—';
 }
 function slotStart(slot){
- const dateKeys=['date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
+ const dateKeys=['date','slot_date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date','starts_on','start_date'];
  const timeKeys=['start_time','starts_time','time'];
  let d='—',t='—';
  for(const k of dateKeys){if(slot?.[k]!==null&&slot?.[k]!==undefined&&String(slot[k]).trim()!==''){d=slot[k];break}}
@@ -376,7 +376,7 @@ function slotStart(slot){
  return t;
 }
 function slotEnd(slot){
- const dateKeys=['date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date'];
+ const dateKeys=['date','slot_date','lesson_date','scheduled_date','day','lesson_day','day_date','p_date','starts_on','start_date'];
  const timeKeys=['end_time','ends_time','to'];
  let d='—',t='—';
  for(const k of dateKeys){if(slot?.[k]!==null&&slot?.[k]!==undefined&&String(slot[k]).trim()!==''){d=slot[k];break}}
@@ -410,13 +410,11 @@ function slotEndTimeText(slot){
 function slotTitle(slot){return pick(slot,['lesson_type','lesson_name','title','category','description'])||'Lezione';}
 function slotCapacity(slot){const v=pick(slot,['max_participants','capacity','max_capacity','max_people','participants_limit']);return v==='—'?null:Number(v);}
 function slotBooked(slot,rows){const own=pick(slot,['booked_count','bookings_count','reserved_count']);if(own!=='—'&&own!==null&&own!==undefined&&own!=='')return Number(own)||0;const sid=slot.id;return rows.filter(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(sid)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled').length;}
-function slotDateText(slot){const raw=slotStart(slot);if(raw&&raw!=='—'){try{return new Date(raw).toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}catch{}}
- const d=pick(slot,['slot_date','date','lesson_date','scheduled_date','day']);if(d&&d!=='—'){try{return new Date(d+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}catch{}}
- return 'Data non disponibile';}
-function slotTimeText(slot){const raw=slotStart(slot);if(raw&&raw!=='—'){try{return new Date(raw).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}catch{}}
- const t=pick(slot,['start_time','time']);return t==='—'?'':String(t).slice(0,5);}
-function slotEndTimeText(slot){const raw=slotEnd(slot);if(raw&&raw!=='—'){try{return new Date(raw).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}catch{}}
- const t=pick(slot,['end_time']);return t==='—'?'':String(t).slice(0,5);}
+function slotDateText(slot){
+ const d=parseSlotDate(slot);
+ if(!d)return 'DATA DA DEFINIRE';
+ return d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});
+}
 function bookingForSlot(slot,rows){return rows.find(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(slot.id)&&String(pick(b,['user_id','profile_id','client_id']))===String(currentUser?.id)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled');}
 function renderClientBookings(slots,rows){
  const list=document.getElementById('bookingList');if(!list)return;

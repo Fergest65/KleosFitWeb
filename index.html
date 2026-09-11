@@ -1,0 +1,567 @@
+<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
+:root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
+
+.detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exImageWrap{width:118px;height:118px;border-radius:10px;overflow:hidden;background:#0b0e12;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer}.exImageWrap img{width:100%;height:100%;object-fit:cover;display:block}.exImagePlaceholder{font-size:11px;color:var(--muted);text-align:center;padding:10px}.logoFallback{gap:7px}.logoFallback img{width:62px;height:62px;object-fit:contain;display:block}.logoFallback span{font-weight:700;font-size:11px;color:#dce2ea}.exerciseDetail{grid-template-columns:34px 118px 1fr auto}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 1fr}.exImageWrap{width:100%;height:150px;grid-column:2}.exMain{grid-column:2}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
+.error{margin-top:15px;color:#ff8993;font-size:13px;display:none}.registerLink{display:block;width:100%;margin-top:12px;text-align:center;background:transparent;color:#d7ff3f;border:1px solid #2a2f38;padding:11px 14px;border-radius:9px;font-weight:750;cursor:pointer}.registerLink:hover{background:#1e222a}.registerHint{margin-top:12px;padding:10px 12px;border:1px solid #2a2f38;border-radius:9px;background:#111419;color:#aeb6c2;font-size:12px}.app{display:flex;min-height:100vh}.side{width:245px;background:#0b0d10;border-right:1px solid var(--line);padding:24px 16px;position:fixed;height:100vh}.logo{font-weight:900;font-size:25px;letter-spacing:2px;margin:0 10px 6px}.logo span{color:var(--accent)}.role{margin:0 10px 25px;color:var(--muted);font-size:12px;text-transform:uppercase}.nav button{width:100%;border:0;background:transparent;color:#b9bec7;text-align:left;padding:12px 13px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.logout{margin:25px 10px 0;width:calc(100% - 20px)}.main{margin-left:245px;width:calc(100% - 245px);padding:32px;max-width:1500px}.dashboardLogout{padding:10px 18px!important;font-size:13px;min-width:105px}.dashboardLogout:hover{filter:brightness(1.05)}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.title{font-size:28px;font-weight:800}.sub{color:var(--muted);margin-top:5px}.badge{background:var(--accent);color:#10130a;padding:7px 11px;border-radius:20px;font-weight:800;font-size:12px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}.metric{font-size:32px;font-weight:850;margin-top:8px}.label{color:var(--muted);font-size:13px}.section{margin-top:24px}.section h2{font-size:17px;margin:0 0 13px}.table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}.table th,.table td{text-align:left;padding:14px;border-bottom:1px solid var(--line);font-size:14px}.table th{color:var(--muted);font-size:12px;text-transform:uppercase}.status{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#cbd0d8;font-size:12px}.hide{display:none}@media(max-width:900px){.dashboardLogout{padding:9px 14px!important}.side{width:70px;padding:15px 9px}.logo{font-size:0}.logo:after{content:'K';font-size:24px}.role,.nav span,.logout{display:none}.nav button{text-align:center}.main{margin-left:70px;width:calc(100% - 70px);padding:20px}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid{grid-template-columns:1fr}.main{padding:16px}.table{font-size:12px}}
+/* iPhone: keep the athlete sheet action always visible */
+@media(max-width:700px){#clientList>div{overflow-x:auto;overflow-y:visible}#clientList .table{min-width:760px}#clientList .table th:last-child,#clientList .table td:last-child{position:sticky;right:0;background:var(--panel);z-index:3;box-shadow:-10px 0 14px rgba(0,0,0,.28);min-width:118px}#clientList .table th:last-child{background:var(--panel)}}
+@media(max-width:520px){#clientList .table{min-width:620px}#clientList .table th:nth-child(3),#clientList .table td:nth-child(3),#clientList .table th:nth-child(4),#clientList .table td:nth-child(4),#clientList .table th:nth-child(5),#clientList .table td:nth-child(5){display:none}#clientList .table th:nth-child(1),#clientList .table td:nth-child(1){min-width:150px}#clientList .table th:nth-child(2),#clientList .table td:nth-child(2){min-width:260px}}
+
+.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px 8px;border-bottom:1px solid #2a2f38;text-align:left;font-size:13px}.table th{color:#9aa4b2;font-weight:600}.inputrow{display:flex;gap:10px;margin-bottom:14px}.inputrow input{flex:1;padding:12px;border-radius:10px;border:1px solid #303743;background:#11151b;color:#fff}.muted{color:#9aa4b2}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#1c2430;color:#dbe3ed;font-size:12px}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;place-items:center;padding:20px;z-index:50}.modal.open{display:grid}.modalbox{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}.modalhead{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px}.modalhead h2{margin:0}.close{background:transparent;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .wide{grid-column:1/-1}.formgrid label{margin:5px 0 6px}.checkrow{display:flex;gap:18px;align-items:center;margin-top:12px}.checkrow label{margin:0;display:flex;gap:7px;align-items:center}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.mini{padding:7px 10px;font-size:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rowactions{display:flex;gap:7px;flex-wrap:wrap}.success{color:#b9ff39;font-size:13px;margin-top:10px}.danger{color:#ff8993}
+.archiveBox{border:1px solid var(--line);border-radius:11px;padding:12px;background:#111419}.archiveBox h3{margin:0 0 8px;font-size:14px}.archiveSearch{margin:0}.archiveList{display:grid;gap:7px;margin-top:9px;max-height:210px;overflow:auto}.archiveItem{width:100%;text-align:left;background:#171b21;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px;cursor:pointer}.archiveItem:hover{border-color:#68727f;background:#1d222a}.archiveItem b{display:block}.archiveItem span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.archiveInfo{margin-top:9px;padding:9px 10px;border-radius:9px;background:#171b21;color:#cfd5dd;font-size:12px}.archiveInfo b{color:var(--accent)}
+@media(max-width:700px){.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}}
+
+.clientSheet{display:grid;gap:16px}.clientSheetGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.clientSheetGrid .wide{grid-column:1/-1}.clientSheetSection{border:1px solid var(--line);border-radius:12px;padding:14px;background:#111419}.clientSheetSection h3{margin:0 0 10px;font-size:14px;color:#fff}.clientSheetSection h3 span{color:var(--accent)}.qrCard{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:16px;background:#0d1014}.qrBox{width:150px;height:150px;background:#fff;padding:8px;border-radius:10px;display:grid;place-items:center}.qrBox img,.qrBox canvas{max-width:134px!important;max-height:134px!important}.clientCardInfo strong{font-size:22px;display:block}.clientCardInfo .member{color:var(--accent);font-size:18px;font-weight:800;margin-top:5px}.clientCardInfo .small{color:var(--muted);font-size:13px;margin-top:7px}.sheetBtn{padding:7px 10px;font-size:12px}.qrActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qrGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.qrClientCard{background:#111419;border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}.qrClientBox{width:112px;height:112px;background:#fff;border-radius:10px;padding:6px;display:grid;place-items:center}.qrClientBox img,.qrClientBox canvas{max-width:100px!important;max-height:100px!important}.qrClientName{font-size:17px;font-weight:800}.qrClientCard .member{color:var(--accent);font-weight:800;margin-top:4px}.qrClientCard .small{color:var(--muted);font-size:12px;margin-top:5px}.qrClientActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}@media(max-width:700px){.qrClientCard{grid-template-columns:1fr;text-align:center;justify-items:center}}@media(max-width:700px){.clientSheetGrid{grid-template-columns:1fr}.clientSheetGrid .wide{grid-column:auto}.qrCard{grid-template-columns:1fr;text-align:center;justify-items:center}}
+</style>
+<style>
+/* KLEOSFIT welcome screen */
+.welcome{position:fixed;inset:0;z-index:100;overflow:hidden;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;display:flex;align-items:center;justify-content:flex-end;padding:5vw;}
+.welcome:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.12) 0%,rgba(0,0,0,.18) 35%,rgba(0,0,0,.68) 68%,rgba(0,0,0,.88) 100%);}
+.welcomeContent{position:relative;z-index:1;width:min(470px,92vw);padding:34px;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(10,12,16,.72);backdrop-filter:blur(12px);box-shadow:0 25px 80px rgba(0,0,0,.45);text-align:left;}
+.welcomeBrand{font-size:42px;font-weight:950;letter-spacing:5px;margin-bottom:6px}.welcomeBrand span{color:var(--accent)}
+.welcomeTag{color:#e7e9ec;font-size:16px;letter-spacing:3px;text-transform:uppercase;margin-bottom:34px}
+.welcomeTitle{font-size:38px;line-height:1.04;font-weight:900;margin:0 0 14px}.welcomeText{color:#c7ccd4;font-size:16px;line-height:1.55;margin:0 0 28px;max-width:390px}
+.welcomeActions{display:grid;gap:11px}.welcomeBtn{width:100%;padding:16px 20px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;border:1px solid transparent}.welcomeBtn.primary{background:var(--accent);color:#10130a}.welcomeBtn.dark{background:rgba(10,12,16,.72);color:#fff;border-color:rgba(255,255,255,.2)}
+.welcomeQuote{margin-top:25px;color:#aeb5c0;font-size:13px;font-style:italic}
+.loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;position:relative;}
+.loginScreen:before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.64);}
+.loginScreen .loginbox{position:relative;z-index:1;background:rgba(15,17,21,.88);backdrop-filter:blur(10px);box-shadow:0 25px 80px rgba(0,0,0,.5)}
+.loginBack{margin-bottom:12px}
+@media(max-width:800px){.welcome{justify-content:center;padding:18px;background-position:center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}.welcomeContent{padding:26px}.welcomeTitle{font-size:32px}.welcomeBrand{font-size:32px}}
+</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
+<div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
+<h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
+<p class="welcomeText">Allenamenti personalizzati, piano nutrizionale e tutto ciò che serve per seguire il tuo percorso in una sola esperienza.</p>
+<div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openLogin()">Inizia ora</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">Accedi</button></div>
+<div class="welcomeQuote">Train · Evolve · Belong</div>
+</div></div>
+<div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1 id="authTitle">Coach Pro Web</h1><p id="authSubtitle">Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit" id="loginSubmit">Accedi</button><button class="registerLink" type="button" onclick="openRegister()">Non sei registrato? Registrati</button><div id="error" class="error"></div></form><form id="registerForm" style="display:none"><label>Nome e cognome</label><input id="regName" type="text" autocomplete="name" required><label>Email</label><input id="regEmail" type="email" autocomplete="email" required><label>Password</label><input id="regPassword" type="password" autocomplete="new-password" minlength="6" required><label>Conferma password</label><input id="regPassword2" type="password" autocomplete="new-password" minlength="6" required><button class="btn full" type="submit">Crea account</button><button class="registerLink" type="button" onclick="openLoginMode()">Hai già un account? Accedi</button><div id="registerError" class="error"></div><div class="registerHint">La registrazione crea un account atleta. Non puoi scegliere il ruolo: amministratore e coach vengono gestiti separatamente.</div></form></div></div><div id="app" class="app hide">
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('clients',this)">♙ <span>Clienti</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
+const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[];
+const views={
+dashboard:`<div class="top"><div><div class="title">Dashboard</div><div class="sub">Panoramica operativa KleosFit</div></div><button class="btn danger dashboardLogout" type="button" onclick="logout()">LOG OUT</button></div>
+<div class="grid">
+ <div class="card"><div class="label">Cliente / Profilo</div><div class="metric" id="profileName">—</div></div>
+ <div class="card"><div class="label">Ruolo</div><div class="metric" id="profileRole">—</div></div>
+ <div class="card"><div class="label">Clienti</div><div class="metric" id="metricClients">—</div></div>
+ <div class="card"><div class="label">Schede workout</div><div class="metric" id="metricWorkouts">—</div></div>
+</div>
+<div class="grid" style="margin-top:16px">
+ <div class="card"><div class="label">Piani nutrizionali</div><div class="metric" id="metricNutrition">—</div></div>
+ <div class="card"><div class="label">Prenotazioni</div><div class="metric" id="metricBookings">—</div></div>
+ <div class="card"><div class="label">Backend</div><div class="metric">LIVE</div></div>
+ <div class="card"><div class="label">Account</div><div class="metric">✓</div></div>
+</div>
+<div class="section"><h2>Connessione</h2><div class="card"><b>Supabase collegato</b><p class="sub" id="connectionText">Sessione autenticata correttamente.</p></div></div>`,
+clients:`<div class="top"><div><div class="title">Clienti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
+<div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
+<div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
+workout:`<div class="top"><div><div class="title">Workout</div><div class="sub">Schede ed esercizi reali</div></div></div>
+<div class="card"><div class="inputrow"><input id="workoutSearch" placeholder="Cerca scheda o esercizio" oninput="filterWorkouts()"><select id="workoutUserFilter" style="max-width:280px" onchange="filterWorkouts()"><option value="">Tutti gli utenti</option></select><button class="btn" onclick="loadWorkouts()">Aggiorna</button></div>
+<div class="muted" style="margin:4px 0 14px">Ogni scheda viene collegata al cliente tramite <b>user_id</b> di Supabase.</div><div id="workoutError" class="error"></div><div id="workoutCount" class="muted">Caricamento...</div><div id="workoutList" style="margin-top:12px">Caricamento schede...</div></div>`,
+nutrition:`<div class="top"><div><div class="title">Nutrizione</div><div class="sub">Piani nutrizionali e pasti reali</div></div></div>
+<div class="card"><div class="inputrow"><input id="nutritionSearch" placeholder="Cerca piano, descrizione o cliente" oninput="filterNutrition()"><button class="btn" onclick="loadNutrition()">Aggiorna</button></div>
+<div id="nutritionError" class="error"></div><div id="nutritionCount" class="muted">Caricamento...</div><div id="nutritionList" style="margin-top:12px">Caricamento piani...</div></div>`,
+booking:`<div class="top"><div><div class="title">Prenotazioni</div><div class="sub">Lezioni, slot e prenotazioni reali</div></div></div>
+<div class="grid" style="grid-template-columns:repeat(2,1fr)">
+ <div class="card"><div class="label">Slot disponibili</div><div class="metric" id="slotCount">—</div></div>
+ <div class="card"><div class="label">Prenotazioni</div><div class="metric" id="bookingCount">—</div></div>
+</div>
+<div class="section"><div class="card"><div class="inputrow"><input id="bookingSearch" placeholder="Cerca data, cliente, lezione o stato" oninput="filterBookings()"><button class="btn" onclick="loadBookings()">Aggiorna</button></div>
+<div id="bookingError" class="error"></div><div id="bookingList" style="margin-top:12px">Caricamento prenotazioni...</div></div></div>`,
+qrcodes:`<div class="top"><div><div class="title">QR Code</div><div class="sub">Schede QR personali dei clienti</div></div></div>
+<div class="card"><div class="sub" style="margin-bottom:12px">QR Code personale del cliente attualmente collegato</div><div id="qrError" class="error"></div><div id="qrCount" class="muted" style="margin-top:12px">Caricamento...</div><div id="qrList" class="qrGrid" style="margin-top:14px"></div></div>`,
+admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
+<div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
+<div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
+<div class="section"><div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><b>Storico pagamenti per atleta</b><select id="paymentClientFilter" style="max-width:360px" onchange="renderPayments()"><option value="">Seleziona atleta...</option></select></div><div id="paymentList" class="muted" style="margin-top:12px">Seleziona un atleta per visualizzare i pagamenti.</div></div></div>`
+};
+function show(v,el){
+ document.getElementById('content').innerHTML=views[v];
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+ if(el)el.classList.add('active');
+ if(v==='dashboard'){fillDashboard();}
+ if(v==='clients')loadClients();
+ if(v==='qrcodes')loadQrCodes();
+ if(v==='workout')loadWorkouts();
+ if(v==='nutrition')loadNutrition();
+ if(v==='booking')loadBookings();
+ if(v==='admin')loadAdmin();
+}
+async function loadProfile(){
+ const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+ if(!r.error) profile=r.data;
+ document.getElementById('role').textContent=(profile?.role||profile?.user_role||'Utente').toString();
+ show('dashboard',document.querySelector('.nav button'));
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
+function fmtPeriodDate(v){if(!v)return '—';try{const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return d.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})}catch{return String(v)}}
+function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
+function isAdmin(){return String(profile?.role||profile?.user_role||'').toLowerCase()==='admin'}
+let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],adminData=[];
+
+async function countTable(table){
+ const r=await db.from(table).select('*',{count:'exact',head:true});
+ return r.error?null:r.count;
+}
+async function fillDashboard(){
+ const name=(profile?.full_name||profile?.name||currentUser?.email||'Utente').slice(0,18);
+ document.getElementById('profileName').textContent=name;
+ document.getElementById('profileRole').textContent=(profile?.role||profile?.user_role||'Utente').toString().slice(0,12);
+ const [c,w,n,b]=await Promise.all([countTable('profiles'),countTable('workout_plans'),countTable('nutrition_plans'),countTable('lesson_bookings')]);
+ document.getElementById('metricClients').textContent=c??'—';
+ document.getElementById('metricWorkouts').textContent=w??'—';
+ document.getElementById('metricNutrition').textContent=n??'—';
+ document.getElementById('metricBookings').textContent=b??'—';
+}
+
+async function loadClients(){
+ const list=document.getElementById('clientList'),err=document.getElementById('clientError'),count=document.getElementById('clientCount');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento clienti...';
+ const r=await db.from('profiles').select('*').limit(500);
+ if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+ clientsData=r.data||[];renderClients(clientsData);
+}
+function renderClients(rows){
+ const list=document.getElementById('clientList'),count=document.getElementById('clientCount');if(!list)return;
+ count.textContent=rows.length+' profili';
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th>Ruolo</th><th></th></tr></thead><tbody>'+
+ rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role','user_role']))}</span></td><td><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda atleta</button></td></tr>`}).join('')+
+ '</tbody></table></div>';
+}
+function clientName(p){return profileDisplayName(p)||'Cliente'}
+function clientCardNumber(p){return pick(p,['member_card_number','member_card','card_number','tessera','member_code'])||''}
+function clientQrValue(p){const card=clientCardNumber(p);return card?`KLEOSFIT|TESSERA|${card}`:`KLEOSFIT|PROFILE|${p.id}`}
+function dateInputValue(v){if(!v)return ''; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:''}
+function openClientSheet(id){
+ const p=clientsData.find(x=>String(x.id)===String(id));if(!p)return;
+ const full=p.full_name||p.name||[p.first_name,p.last_name].filter(Boolean).join(' ');
+ const card=clientCardNumber(p);
+ const subscriptionFrom=pick(p,['subscription_paid_from']);
+ const subscriptionTo=pick(p,['subscription_paid_to']);
+ openModal(`<div class="modalhead"><h2>Scheda atleta</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+ <div class="clientSheet">
+  <div class="clientSheetSection"><h3><span>●</span> Dati atleta</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Importo pagato</label><input id="cpPaid" type="number" step="0.01" value="${esc(p.subscription_paid_amount??'')}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
+  <div id="cpMsg" class="error"></div>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva dati atleta</button></div>
+ </div>`);
+}
+
+function drawQrInto(el,p){if(!el)return;el.innerHTML='';if(typeof QRCode==='undefined'){el.innerHTML='<div style="color:#111;font-size:11px">QR non disponibile</div>';return}new QRCode(el,{text:clientQrValue(p),width:100,height:100,correctLevel:QRCode.CorrectLevel.M});}
+function qrCardHtml(p){const name=clientName(p),card=clientCardNumber(p);return `<div class="qrClientCard" style="max-width:620px"><div id="qr_${esc(String(p.id).replace(/[^a-zA-Z0-9_-]/g,''))}" class="qrClientBox"></div><div><div class="qrClientName">${esc(name)}</div><div class="member">${esc(card||'Tessera non assegnata')}</div><div class="small">${esc(profileEmail(p)||'')} ${p.phone?' · '+esc(p.phone):''}</div><div class="qrClientActions"><button class="btn secondary mini" onclick="printQrCard('${p.id}')">Stampa QR</button><button class="btn secondary mini" onclick="openClientSheet('${p.id}')">Scheda atleta</button></div></div></div>`}
+function renderQrCodes(rows){const list=document.getElementById('qrList'),count=document.getElementById('qrCount');if(!list)return;count.textContent=rows.length?'1 cliente':'Nessun cliente collegato';list.innerHTML=rows.length?qrCardHtml(rows[0]):'<div class="muted">Nessun profilo cliente associato all’account loggato.</div>';if(rows.length)setTimeout(()=>drawQrInto(document.getElementById('qr_'+String(rows[0].id).replace(/[^a-zA-Z0-9_-]/g,'')),rows[0]),20)}
+async function loadQrCodes(){const list=document.getElementById('qrList'),err=document.getElementById('qrError'),count=document.getElementById('qrCount');if(!list)return;err.style.display='none';list.innerHTML='Caricamento QR...';count.textContent='Caricamento...';const id=currentUser?.id;if(!id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';return}const r=await db.from('profiles').select('*').eq('id',id).maybeSingle();if(r.error){err.textContent=r.error.message;err.style.display='block';list.innerHTML='';return}if(!r.data){renderQrCodes([]);return}renderQrCodes([r.data])}
+function filterQrCodes(){/* Il QR è esclusivamente quello dell'account loggato. */loadQrCodes()}
+function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));if(!p)return;const name=clientName(p),card=clientCardNumber(p);const value=clientQrValue(p);const w=window.open('','_blank','width=520,height=700');if(!w)return;w.document.write(`<html><head><title>KLEOSFIT QR - ${esc(name)}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><style>body{font-family:Arial;text-align:center;padding:30px}.card{border:2px solid #111;border-radius:18px;padding:25px}#qr{width:260px;height:260px;margin:20px auto;display:grid;place-items:center}#qr img{width:260px;height:260px}</style></head><body><div class="card"><h1>KLEOSFIT</h1><h2>${esc(name)}</h2><h3>${esc(card||'Tessera')}</h3><div id="qr"></div><p>QR tessera personale</p></div><script>new QRCode(document.getElementById('qr'),{text:${JSON.stringify(value)},width:260,height:260});window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close()}
+function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
+
+async function loadWorkouts(){
+ const list=document.getElementById('workoutList'),err=document.getElementById('workoutError'),count=document.getElementById('workoutCount');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento schede...';count.textContent='Caricamento...';
+
+ const [r,pr]=await Promise.all([
+   db.from('workout_plans').select(`
+     id,user_id,title,description,is_active,is_visible,created_at,
+     workout_exercises (
+       id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,
+       duration_seconds,muscle_group,equipment,focus,image_url,rest_seconds,sort_order
+     )
+   `).order('created_at',{ascending:false}).limit(500),
+   db.from('profiles').select('*').limit(1000)
+ ]);
+ if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+
+ usersData=pr.error?[]:(pr.data||[]);
+ populateWorkoutUserFilter(usersData);
+
+ const byUser={};
+ usersData.forEach(u=>{byUser[u.id]=u});
+ const plans=r.data||[];
+ workoutsData=plans.map(p=>({
+   ...p,
+   user_profile:byUser[p.user_id]||null,
+   workout_exercises:Array.isArray(p.workout_exercises)?p.workout_exercises:[]
+ }));
+
+ // Gli esercizi vengono letti tramite la relazione Supabase workout_plans -> workout_exercises.
+ // Non assumiamo il nome della colonna FK, perché nella tabella reale non si chiama workout_plan_id.
+ if(r.data && r.data.some(p=>!Array.isArray(p.workout_exercises))){
+   err.textContent='Alcune schede non hanno restituito gli esercizi dalla relazione Supabase.';
+   err.style.display='block';
+ }
+ renderWorkouts(workoutsData);
+}
+
+function profileDisplayName(u){
+ if(!u)return 'Non assegnata';
+ return pick(u,['full_name','name'])||[u.first_name,u.last_name].filter(Boolean).join(' ')||pick(u,['email','contact_email','phone','member_card'])||u.id||'Utente';
+}
+function profileEmail(u){return u?pick(u,['email','contact_email'])||'':''}
+function populateWorkoutUserFilter(rows){
+ const s=document.getElementById('workoutUserFilter');if(!s)return;
+ const current=s.value||'';
+ const clients=(rows||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
+ s.innerHTML='<option value="">Tutti gli utenti</option>'+clients.map(u=>`<option value="${esc(u.id)}">${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('');
+ if(clients.some(u=>u.id===current))s.value=current;
+}
+
+function renderWorkouts(rows){
+ const list=document.getElementById('workoutList'),count=document.getElementById('workoutCount');if(!list)return;
+ count.textContent=rows.length+' schede';
+ if(!rows.length){list.innerHTML='<div class="muted">Nessuna scheda trovata.</div>';return}
+ list.innerHTML=rows.map(p=>{
+  const ex=p.workout_exercises||[];
+  const userName=profileDisplayName(p.user_profile);
+  const userEmail=profileEmail(p.user_profile);
+  const assignment = p.user_id
+    ? `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> ${esc(userName)}${userEmail?' · '+esc(userEmail):''}</div>`
+    : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${isAdmin()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:''}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td><td>${isAdmin()?`<button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+ }).join('');
+}
+function filterWorkouts(){
+ const q=(document.getElementById('workoutSearch')?.value||'').toLowerCase().trim();
+ const uid=document.getElementById('workoutUserFilter')?.value||'';
+ const rows=workoutsData.filter(p=>{
+  const hay=[p.title,p.description,p.user_id,profileDisplayName(p.user_profile),profileEmail(p.user_profile),...(p.workout_exercises||[]).flatMap(e=>[e.name,e.muscle_group,e.equipment,e.exercise_type])].map(v=>String(v||'').toLowerCase()).join(' ');
+  return (!q||hay.includes(q))&&(!uid||p.user_id===uid);
+ });
+ renderWorkouts(rows);
+}
+
+function rawExerciseImage(e){
+ const direct=e?.image_url||e?.image||e?.photo_url||'';
+ if(direct && typeof direct==='object'){
+   return String(direct.publicUrl||direct.public_url||direct.url||direct.path||'').trim();
+ }
+ if(String(direct).trim()) return String(direct).trim();
+ const match=(exerciseLibraryData||[]).find(x=>String(x.name||'').trim().toLowerCase()===String(e?.name||'').trim().toLowerCase());
+ const v=match?.image_url||match?.image||match?.photo_url||'';
+ if(v && typeof v==='object') return String(v.publicUrl||v.public_url||v.url||v.path||'').trim();
+ return String(v||'').trim();
+}
+function exerciseImageCandidates(e){
+ const raw=rawExerciseImage(e);
+ if(!raw) return [];
+ const out=[]; const add=u=>{if(u && !out.includes(u))out.push(u)};
+ let v=raw.trim();
+ if(v.startsWith('//')) v=location.protocol+v;
+ add(v);
+ try{
+   if(v.includes('/storage/v1/object/sign/')){
+     add(v.replace('/storage/v1/object/sign/','/storage/v1/object/public/').split('?')[0]);
+   }
+   if(v.includes('/storage/v1/object/public/')) add(v.split('?')[0]);
+   if(!/^https?:\/\//i.test(v) && !v.startsWith('data:')){
+     const path=v.replace(/^\/+/, '');
+     ['exercises','exercise-images','exercise_library','images'].forEach(bucket=>add(`${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`));
+   }
+ }catch(_){}
+ return out;
+}
+function exerciseFallbackHtml(){
+ return `<div class=\"exImagePlaceholder logoFallback\"><img src=\"icon.png\" alt=\"Kleosfit\"><span>Kleosfit</span></div>`;
+}
+function exerciseImageHtml(e){
+ const candidates=exerciseImageCandidates(e);
+ if(!candidates.length) return `<div class=\"exImageWrap\">${exerciseFallbackHtml()}</div>`;
+ const token='eximg_'+Math.random().toString(36).slice(2);
+ const first=candidates[0];
+ const js=JSON.stringify(candidates).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+ return `<div class=\"exImageWrap\" title=\"Apri immagine\" onclick=\"openExerciseImage('${token}')\"><img id=\"${token}\" src=\"${esc(first)}\" alt=\"${esc(e.name||'Esercizio')}\" data-candidates='${esc(JSON.stringify(candidates))}' data-idx=\"0\" onerror=\"tryNextExerciseImage(this)\"></div>`;
+}
+function tryNextExerciseImage(img){
+ try{
+   const candidates=JSON.parse(img.getAttribute('data-candidates')||'[]');
+   let idx=Number(img.getAttribute('data-idx')||0)+1;
+   if(idx<candidates.length){img.setAttribute('data-idx',String(idx));img.src=candidates[idx];return;}
+   img.parentElement.innerHTML=exerciseFallbackHtml();
+ }catch(_){ if(img?.parentElement) img.parentElement.innerHTML=exerciseFallbackHtml(); }
+}
+function openExerciseImage(token){
+ const img=document.getElementById(token);
+ if(!img || !img.src || img.src.endsWith('icon.png')) return;
+ window.open(img.src,'_blank');
+}
+
+function showWorkoutDetail(id){
+ const p=workoutsData.find(x=>x.id===id); if(!p)return;
+ const ex=(p.workout_exercises||[]).slice().sort((a,b)=>(a.sort_order??0)-(b.sort_order??0));
+ const client=profileDisplayName(p.user_profile);
+ const email=profileEmail(p.user_profile);
+ const rows=ex.length?ex.map((e,i)=>`
+   <div class="exerciseDetail">
+     <div class="exNo">${i+1}</div>
+     ${exerciseImageHtml(e)}
+     <div class="exMain">
+       <div class="exTitle">${esc(e.name||'Esercizio')}</div>
+       <div class="exMeta">${esc([e.muscle_group,e.equipment,e.focus,e.exercise_type].filter(Boolean).join(' · ')||'Dettagli esercizio')}</div>
+       ${e.notes?`<div class="exNotes">${esc(e.notes)}</div>`:''}
+     </div>
+     <div class="exStats">
+       <div><span>Serie</span><b>${esc(e.sets??'—')}</b></div>
+       <div><span>Rip.</span><b>${esc(e.reps??'—')}</b></div>
+       <div><span>Carico</span><b>${esc(e.weight??'—')}</b></div>
+       <div><span>Rec.</span><b>${e.rest_seconds!=null?esc(e.rest_seconds)+' s':'—'}</b></div>
+     </div>
+   </div>`).join(''):'<div class="muted">Nessun esercizio presente nella scheda.</div>';
+
+ openModal(`
+  <div class="modalhead">
+    <div><h2 style="margin:0">${esc(p.title||'Scheda allenamento')}</h2><div class="sub">${esc(p.description||'')}</div></div>
+    <button class="close" onclick="closeModal()">Chiudi</button>
+  </div>
+  <div class="detailHero">
+    <div><span class="label">Cliente</span><strong>${esc(client)}</strong>${email?`<div class="sub">${esc(email)}</div>`:''}</div>
+    <div><span class="label">Stato</span><strong>${p.is_active===false?'Non attiva':'Attiva'}</strong></div>
+    <div><span class="label">Esercizi</span><strong>${ex.length}</strong></div>
+  </div>
+  <div class="detailSection"><h3>Programma di allenamento</h3>${rows}</div>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button>${isAdmin()?`<button class="btn" onclick="closeModal();editWorkoutPlan('${id}')">Modifica scheda</button>`:''}</div>
+ `);
+}
+
+async function loadNutrition(){
+ const list=document.getElementById('nutritionList'),err=document.getElementById('nutritionError'),count=document.getElementById('nutritionCount');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento piani...';count.textContent='Caricamento...';
+ const r=await db.from('nutrition_plans').select('id,user_id,title,description,calories_target,protein_target,water_target_liters,is_active,created_at,nutrition_meals(id,meal_type,name,description,grams,sort_order)').order('created_at',{ascending:false}).limit(200);
+ if(r.error){
+   const fallback=await db.from('nutrition_plans').select('*').order('created_at',{ascending:false}).limit(200);
+   if(fallback.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+   nutritionData=fallback.data||[];
+ }else nutritionData=r.data||[];
+ renderNutrition(nutritionData);
+}
+function renderNutrition(rows){
+ const list=document.getElementById('nutritionList'),count=document.getElementById('nutritionCount');if(!list)return;
+ count.textContent=rows.length+' piani';
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun piano nutrizionale trovato.</div>';return}
+ list.innerHTML=rows.map(p=>{const meals=p.nutrition_meals||[];const target=[p.calories_target?`Kcal ${p.calories_target}`:'',p.protein_target?`Proteine ${p.protein_target} g`:'',p.water_target_liters?`Acqua ${p.water_target_liters} L`:'' ].filter(Boolean).join(' · ')||'Obiettivi non indicati';
+ const mealHtml=meals.length?`<div class="mealgrid">${meals.sort((a,b)=>(a.sort_order??0)-(b.sort_order??0)).map(m=>`<div class="meal"><b>${esc(m.meal_type||'Pasto')}</b><div>${esc(m.name||'—')}</div><span>${esc(m.grams??'')} ${m.grams?'g':''}</span></div>`).join('')}</div>`:'<div class="muted">Nessun pasto associato.</div>';
+ return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Piano senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div></div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attivo':'Attivo'}</span>${isAdmin()?`<button class="btn secondary mini" onclick="editNutritionPlan('${p.id}')">Modifica piano</button>`:''}</div></div><div class="targets">${esc(target)}</div><div style="margin-top:14px">${mealHtml}</div>${meals.length?`<div class="rowactions" style="margin-top:12px">${isAdmin()?meals.map(m=>`<button class="btn secondary mini" onclick="editNutritionMeal('${m.id}')">Modifica ${esc(m.meal_type||'pasto')}</button>`).join(''):''}</div>`:''}</div>`}).join('')
+}
+function filterNutrition(){const q=(document.getElementById('nutritionSearch')?.value||'').toLowerCase().trim();renderNutrition(!q?nutritionData:nutritionData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
+
+async function loadBookings(){
+ const list=document.getElementById('bookingList'),err=document.getElementById('bookingError');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento prenotazioni...';
+ const [b,s]=await Promise.all([
+   db.from('lesson_bookings').select('*').order('created_at',{ascending:false}).limit(300),
+   db.from('lesson_slots').select('*').order('slot_date',{ascending:true}).limit(300)
+ ]);
+ bookingsData=b.error?[]:b.data||[];
+ const slots=s.error?[]:s.data||[];
+ document.getElementById('bookingCount').textContent=bookingsData.length;
+ document.getElementById('slotCount').textContent=slots.length;
+ if(b.error && s.error){err.textContent='Impossibile leggere prenotazioni e slot: '+b.error.message;err.style.display='block';list.innerHTML='';return}
+ if(b.error){err.textContent='Prenotazioni non disponibili: '+b.error.message;err.style.display='block'}
+ renderBookings(bookingsData);
+}
+function renderBookings(rows){
+ const list=document.getElementById('bookingList');if(!list)return;
+ if(!rows.length){list.innerHTML='<div class="muted">Nessuna prenotazione trovata.</div>';return}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Lezione</th><th>Stato</th><th>Creato</th></tr></thead><tbody>'+
+ rows.map(b=>`<tr><td>${esc(fmtDate(pick(b,['slot_date','date','booking_date','starts_at','start_at'])))}</td><td>${esc(pick(b,['user_name','client_name','member_name','user_id']))}</td><td>${esc(pick(b,['lesson_name','title','lesson_type','category']))}</td><td><span class="pill">${esc(pick(b,['status','state']))}</span></td><td>${esc(fmtDate(b.created_at))}</td></tr>`).join('')+
+ '</tbody></table></div>';
+}
+function filterBookings(){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();renderBookings(!q?bookingsData:bookingsData.filter(b=>JSON.stringify(b).toLowerCase().includes(q)))}
+
+async function loadAdmin(){
+ const list=document.getElementById('adminList'),err=document.getElementById('adminError'),count=document.getElementById('adminCount');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento utenti...';
+ const r=await db.from('profiles').select('*').limit(500);
+ if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+ adminData=r.data||[];renderAdmin(adminData);loadPayments();
+}
+function renderAdmin(rows){
+ const list=document.getElementById('adminList'),count=document.getElementById('adminCount');if(!list)return;
+ count.textContent=rows.length+' profili';
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Tessera</th><th>Telefono</th><th>Creato</th></tr></thead><tbody>'+
+ rows.map(p=>`<tr><td><b>${esc(pick(p,['full_name','name'])||[p.first_name,p.last_name].filter(Boolean).join(' ')||'—')}</b></td><td>${esc(pick(p,['email','contact_email']))}</td><td><span class="pill">${esc(pick(p,['role','user_role']))}</span></td><td>${esc(pick(p,['member_card','card_number','tessera','member_code']))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(fmtDate(p.created_at))}</td></tr>`).join('')+
+ '</tbody></table></div>';
+}
+function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();renderAdmin(!q?adminData:adminData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
+async function loadPayments(){
+ const el=document.getElementById('paymentList');if(!el)return;
+ el.innerHTML='<span class="muted">Caricamento storico pagamenti...</span>';
+ const [pr,rr]=await Promise.all([
+  db.from('profiles').select('*').limit(500),
+  db.from('subscription_payment_history').select('*').order('created_at',{ascending:false}).limit(1000)
+ ]);
+ if(rr.error){el.innerHTML='<span class="muted">Storico pagamenti non leggibile con i permessi attuali.</span>';return}
+ const profiles=pr.error?[]:(pr.data||[]);
+ const byId=new Map(profiles.map(p=>[String(p.id),p]));
+ const rows=rr.data||[];
+ window.paymentRows=rows;
+ const sel=document.getElementById('paymentClientFilter');
+ if(sel){
+  const clients=profiles.filter(p=>String(pick(p,['role','user_role'])||'client').toLowerCase()==='client').sort((a,b)=>profileDisplayName(a).localeCompare(profileDisplayName(b),'it'));
+  sel.innerHTML='<option value="">Seleziona atleta...</option>'+clients.map(p=>`<option value="${esc(p.id)}">${esc(profileDisplayName(p))}${profileEmail(p)?' — '+esc(profileEmail(p)):''}</option>`).join('');
+ }
+ renderPayments();
+}
+function renderPayments(){
+ const el=document.getElementById('paymentList');if(!el)return;
+ const rows=window.paymentRows||[];
+ const sel=document.getElementById('paymentClientFilter');
+ const uid=sel?.value||'';
+ if(!uid){el.innerHTML='<span class="muted">Seleziona un atleta per visualizzare il suo storico pagamenti.</span>';return}
+ const money=v=>{if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?n.toLocaleString('it-IT',{style:'currency',currency:'EUR'}):esc(String(v))};
+ const paymentDate=x=>x.paid_at||x.payment_date||x.created_at||x.date||x.paid_on;
+ const profile=adminData.find(p=>String(p.id)===String(uid));
+ const clientRows=rows.filter(x=>String(x.user_id||x.client_id||x.profile_id||x.athlete_id||'')===String(uid));
+ if(!clientRows.length){el.innerHTML=`<div class="muted">Nessun pagamento registrato per <b>${esc(profile?profileDisplayName(profile):'questo atleta')}</b>.</div>`;return}
+ const period=x=>{
+  const from=x.paid_from||x.subscription_paid_from||x.period_from||x.from_date||x.start_date||x.subscription_from||x.valid_from||x.period_start;
+  const to=x.paid_to||x.subscription_paid_to||x.period_to||x.to_date||x.end_date||x.subscription_to||x.valid_to||x.period_end;
+  if(from||to)return `${from?fmtPeriodDate(from):'—'} → ${to?fmtPeriodDate(to):'—'}`;
+  const type=pick(x,['subscription_type','plan_type','description']);
+  const profileFrom=profile?.subscription_paid_from||profile?.subscription_from||profile?.valid_from;
+  const profileTo=profile?.subscription_paid_to||profile?.subscription_to||profile?.valid_to;
+  if(profileFrom||profileTo)return `${profileFrom?fmtPeriodDate(profileFrom):'—'} → ${profileTo?fmtPeriodDate(profileTo):'—'}`;
+  return type||'—';
+ };
+ const total=clientRows.reduce((sum,x)=>{const n=Number(pick(x,['amount','paid_amount','price','total','fee']));return sum+(Number.isFinite(n)?n:0)},0);
+ el.innerHTML=`<div style="margin-bottom:12px"><b>${esc(profile?profileDisplayName(profile):'Atleta')}</b> <span class="pill">${clientRows.length} pagamenti</span> <span class="pill">Totale ${money(total)}</span></div><div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Importo</th><th>Abbonamento / periodo</th><th>Stato</th></tr></thead><tbody>`+
+ clientRows.map(x=>`<tr><td>${esc(fmtDate(paymentDate(x)))}</td><td><b>${money(pick(x,['amount','paid_amount','price','total','fee']))}</b></td><td>${esc(period(x))}</td><td><span class="pill">${esc(pick(x,['status','state','payment_status'])||'Pagato')}</span></td></tr>`).join('')+
+ '</tbody></table></div>';
+}
+
+function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}
+async function editWorkoutPlan(id){
+ if(!isAdmin()){notice('workoutError',"Solo l'amministratore può modificare le schede allenamento.");return}
+ const p=workoutsData.find(x=>x.id===id);if(!p)return;
+ const clients=(usersData||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
+ const opts='<option value="">— Nessun cliente —</option>'+clients.map(u=>`<option value="${esc(u.id)}" ${p.user_id===u.id?'selected':''}>${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('');
+ openModal(`<div class="modalhead"><h2>Modifica scheda</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Cliente / Utente assegnato</label><select id="wpUser">${opts}</select></div><div class="wide"><label>Titolo</label><input id="wpTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="wpDesc" value="${esc(p.description||'')}"></div></div><div class="checkrow"><label><input id="wpActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attiva</label><label><input id="wpVisible" type="checkbox" ${p.is_visible!==false?'checked':''}> Visibile</label></div><div id="wpMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveWorkoutPlan('${id}')">Salva</button></div>`)
+}
+async function saveWorkoutPlan(id){
+ if(!isAdmin())return
+ const uid=document.getElementById('wpUser').value||null;
+ const payload={user_id:uid,title:document.getElementById('wpTitle').value.trim(),description:document.getElementById('wpDesc').value.trim(),is_active:document.getElementById('wpActive').checked,is_visible:document.getElementById('wpVisible').checked};
+ const r=await db.from('workout_plans').update(payload).eq('id',id);
+ if(r.error){notice('wpMsg',r.error.message);return}
+ closeModal();await loadWorkouts()
+}
+function firstVal(obj, keys, fallback=''){
+ for(const k of keys){ if(obj && obj[k]!==undefined && obj[k]!==null && String(obj[k]).trim()!=='') return obj[k]; }
+ return fallback;
+}
+async function loadExerciseLibrary(){
+ // NON assumiamo colonne come user_id/default_*: l'archivio dell'app può avere uno schema diverso.
+ // Leggiamo le righe reali e poi normalizziamo i possibili nomi dei campi.
+ let r=await db.from('exercise_library').select('*').limit(1000);
+ if(r.error){
+   exerciseLibraryData=[];
+   return r.error.message;
+ }
+ exerciseLibraryData=(r.data||[]).map(e=>({
+   ...e,
+   id:e.id,
+   name:firstVal(e,['name','exercise_name','title','nome']),
+   muscle_group:firstVal(e,['muscle_group','muscle','target_muscle','gruppo_muscolare']),
+   equipment:firstVal(e,['equipment','attrezzatura','tool']),
+   focus:firstVal(e,['focus','description','notes','note']),
+   image_url:firstVal(e,['image_url','image','photo_url']),
+   work_type:firstVal(e,['work_type','exercise_type','type','tipo']),
+   default_sets:firstVal(e,['default_sets','sets','serie','default_series']),
+   default_reps:firstVal(e,['default_reps','reps','ripetizioni','repetitions']),
+   default_duration_seconds:firstVal(e,['default_duration_seconds','duration_seconds','duration']),
+   default_rest_seconds:firstVal(e,['default_rest_seconds','rest_seconds','recovery_seconds','recupero'])
+ })).filter(e=>e.id && e.name);
+ exerciseLibraryData.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+ return null;
+}
+function archiveLabel(e){
+ return [e.name,e.muscle_group,e.equipment].filter(Boolean).join(' · ')
+}
+function renderArchiveSuggestions(){
+ const box=document.getElementById('weArchiveList'); if(!box)return;
+ const q=(document.getElementById('weArchiveSearch')?.value||'').toLowerCase().trim();
+ const rows=(exerciseLibraryData||[]).filter(e=>{
+   const hay=[e.name,e.muscle_group,e.equipment,e.focus,e.work_type].map(v=>String(v||'').toLowerCase()).join(' ');
+   return !q||hay.includes(q);
+ }).slice(0,40);
+ box.innerHTML=rows.length?rows.map(e=>`<button type="button" class="archiveItem" onclick="applyArchiveExercise('${e.id}')"><b>${esc(e.name||'Esercizio')}</b><span>${esc([e.muscle_group,e.equipment,e.focus].filter(Boolean).join(' · ')||'Nessun dettaglio')}</span></button>`).join(''):'<div class="muted">Nessun esercizio trovato nell\'archivio.</div>';
+}
+function applyArchiveExercise(id){
+ const e=(exerciseLibraryData||[]).find(x=>String(x.id)===String(id));if(!e)return;
+ document.getElementById('weArchiveId').value=e.id||'';
+ document.getElementById('weName').value=e.name||'';
+ if(e.default_sets!=null)document.getElementById('weSets').value=e.default_sets;
+ if(e.default_reps!=null)document.getElementById('weReps').value=e.default_reps;
+ if(e.default_rest_seconds!=null)document.getElementById('weRest').value=e.default_rest_seconds;
+ if(e.work_type!=null)document.getElementById('weType').value=e.work_type;
+ document.getElementById('weFocus').value=e.focus||'';
+ const info=document.getElementById('weArchiveInfo');
+ if(info)info.innerHTML=`<b>${esc(e.name||'Esercizio')}</b>${[e.muscle_group,e.equipment].filter(Boolean).length?' · '+esc([e.muscle_group,e.equipment].filter(Boolean).join(' · ')):''}${e.focus?' · Focus: '+esc(e.focus):''}`;
+ const search=document.getElementById('weArchiveSearch');if(search)search.value=e.name||'';
+ renderArchiveSuggestions();
+}
+async function editWorkoutExercise(id){
+ if(!isAdmin()){notice('workoutError',"Solo l'amministratore può modificare gli esercizi.");return}
+ const e=(workoutsData.flatMap(p=>p.workout_exercises||[])).find(x=>x.id===id);if(!e)return;
+ const archiveError=await loadExerciseLibrary();
+ const initialArchive=(exerciseLibraryData||[]).find(x=>String(x.name||'').toLowerCase()===String(e.name||'').toLowerCase());
+ openModal(`<div class="modalhead"><h2>Modifica esercizio</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+ <div class="archiveBox">
+   <h3>Archivio esercizi — come nell'app</h3>
+   <input id="weArchiveId" type="hidden" value="${esc(initialArchive?.id||'')}">
+   <input id="weArchiveSearch" class="archiveSearch" placeholder="Cerca nell'archivio esercizi..." value="${esc(e.name||'')}" oninput="renderArchiveSuggestions()">
+   <div id="weArchiveList" class="archiveList"></div>
+   <div id="weArchiveInfo" class="archiveInfo">${initialArchive?`<b>${esc(initialArchive.name||'')}</b>${[initialArchive.muscle_group,initialArchive.equipment].filter(Boolean).length?' · '+esc([initialArchive.muscle_group,initialArchive.equipment].filter(Boolean).join(' · ')):''}${initialArchive.focus?' · Focus: '+esc(initialArchive.focus):''}`:'Seleziona un esercizio: il Focus e i valori predefiniti verranno compilati automaticamente.'}</div>
+   ${archiveError?`<div class="error" style="display:block">Archivio esercizi non leggibile: ${esc(archiveError)}</div>`:''}
+ </div>
+ <div class="formgrid" style="margin-top:14px"><div class="wide"><label>Nome esercizio</label><input id="weName" value="${esc(e.name||'')}"></div><div><label>Serie</label><input id="weSets" type="number" value="${esc(e.sets??'')}"></div><div><label>Ripetizioni</label><input id="weReps" value="${esc(e.reps??'')}"></div><div><label>Carico</label><input id="weWeight" value="${esc(e.weight??'')}"></div><div><label>Recupero (sec)</label><input id="weRest" type="number" value="${esc(e.rest_seconds??'')}"></div><div><label>Tipo</label><input id="weType" value="${esc(e.work_type||e.exercise_type||'')}"></div><div><label>Focus</label><input id="weFocus" value="${esc(e.focus||'')}"></div></div>
+ <div id="weMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveWorkoutExercise('${id}')">Salva</button></div>`);
+ renderArchiveSuggestions();
+}
+
+function valOrNull(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:v}
+async function saveWorkoutExercise(id){
+ if(!isAdmin())return
+ const payload={name:valOrNull('weName'),sets:valOrNull('weSets'),reps:valOrNull('weReps'),weight:valOrNull('weWeight'),rest_seconds:valOrNull('weRest'),work_type:valOrNull('weType'),focus:valOrNull('weFocus')};
+ const r=await db.from('workout_exercises').update(payload).eq('id',id);if(r.error){notice('weMsg',r.error.message);return}closeModal();await loadWorkouts()
+}
+async function editNutritionPlan(id){
+ if(!isAdmin()){notice('nutritionError',"Solo l'amministratore può modificare i piani nutrizionali.");return}
+ const p=nutritionData.find(x=>x.id===id);if(!p)return;
+ openModal(`<div class="modalhead"><h2>Modifica piano nutrizionale</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Titolo</label><input id="npTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="npDesc" value="${esc(p.description||'')}"></div><div><label>Calorie target</label><input id="npCal" type="number" value="${esc(p.calories_target??'')}"></div><div><label>Proteine target (g)</label><input id="npProt" type="number" value="${esc(p.protein_target??'')}"></div><div><label>Acqua (L)</label><input id="npWater" type="number" step="0.1" value="${esc(p.water_target_liters??'')}"></div></div><div class="checkrow"><label><input id="npActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attivo</label></div><div id="npMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionPlan('${id}')">Salva</button></div>`)
+}
+async function saveNutritionPlan(id){
+ if(!isAdmin())return
+ const payload={title:valOrNull('npTitle'),description:valOrNull('npDesc'),calories_target:valOrNull('npCal'),protein_target:valOrNull('npProt'),water_target_liters:valOrNull('npWater'),is_active:document.getElementById('npActive').checked};
+ const r=await db.from('nutrition_plans').update(payload).eq('id',id);if(r.error){notice('npMsg',r.error.message);return}closeModal();await loadNutrition()
+}
+async function editNutritionMeal(id){
+ if(!isAdmin()){notice('nutritionError',"Solo l'amministratore può modificare i pasti.");return}
+ const m=nutritionData.flatMap(p=>p.nutrition_meals||[]).find(x=>x.id===id);if(!m)return;
+ openModal(`<div class="modalhead"><h2>Modifica pasto</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div><label>Tipo pasto</label><input id="nmType" value="${esc(m.meal_type||'')}"></div><div><label>Nome</label><input id="nmName" value="${esc(m.name||'')}"></div><div><label>Grammi</label><input id="nmGrams" type="number" value="${esc(m.grams??'')}"></div><div><label>Ordine</label><input id="nmSort" type="number" value="${esc(m.sort_order??'')}"></div><div class="wide"><label>Descrizione</label><input id="nmDesc" value="${esc(m.description||'')}"></div></div><div id="nmMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionMeal('${id}')">Salva</button></div>`)
+}
+async function saveNutritionMeal(id){
+ if(!isAdmin())return
+ const payload={meal_type:valOrNull('nmType'),name:valOrNull('nmName'),grams:valOrNull('nmGrams'),sort_order:valOrNull('nmSort'),description:valOrNull('nmDesc')};
+ const r=await db.from('nutrition_meals').update(payload).eq('id',id);if(r.error){notice('nmMsg',r.error.message);return}closeModal();await loadNutrition()
+}
+function openLogin(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='flex';openLoginMode();setTimeout(()=>document.getElementById('email')?.focus(),50)}
+function closeLogin(){document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='flex'}
+function openLoginMode(){document.getElementById('authTitle').textContent='Coach Pro Web';document.getElementById('authSubtitle').textContent="Accedi con le stesse credenziali dell'app Android.";document.getElementById('loginForm').style.display='block';document.getElementById('registerForm').style.display='none';document.getElementById('error').style.display='none';document.getElementById('registerError').style.display='none'}
+function openRegister(){document.getElementById('authTitle').textContent='Crea il tuo account';document.getElementById('authSubtitle').textContent='Registrati gratuitamente come atleta.';document.getElementById('loginForm').style.display='none';document.getElementById('registerForm').style.display='block';document.getElementById('registerError').style.display='none';setTimeout(()=>document.getElementById('regName')?.focus(),50)}
+async function login(e){e.preventDefault();const er=document.getElementById('error');er.style.display='none';const {data,error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){er.textContent=error.message;er.style.display='block';return}currentUser=data.user;document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
+async function register(e){e.preventDefault();const er=document.getElementById('registerError');er.style.display='none';const name=document.getElementById('regName').value.trim();const email=document.getElementById('regEmail').value.trim().toLowerCase();const password=document.getElementById('regPassword').value;const password2=document.getElementById('regPassword2').value;if(password!==password2){er.textContent='Le password non coincidono.';er.style.display='block';return}if(password.length<6){er.textContent='La password deve contenere almeno 6 caratteri.';er.style.display='block';return}const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,role:'client'}}});if(error){er.textContent=error.message;er.style.display='block';return}if(data.session&&data.user){currentUser=data.user;const pr=await db.from('profiles').upsert({id:data.user.id,email,name,full_name:name,role:'client'},{onConflict:'id'});if(pr.error){console.warn('Profilo non creato automaticamente:',pr.error.message)}document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile();return}er.style.color='#b9ff39';er.textContent="Registrazione completata. Controlla la tua email per confermare l'account, poi accedi.";er.style.display='block';document.getElementById('registerForm').reset();setTimeout(()=>openLoginMode(),3500)}
+async function logout(){await db.auth.signOut();location.reload()}
+document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('registerForm').addEventListener('submit',register);
+(async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}})();
+</script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();</script></body></html>

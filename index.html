@@ -29,6 +29,27 @@
 .loginScreen .loginbox{position:relative;z-index:1;background:rgba(15,17,21,.88);backdrop-filter:blur(10px);box-shadow:0 25px 80px rgba(0,0,0,.5)}
 .loginBack{margin-bottom:12px}
 @media(max-width:800px){.welcome{justify-content:center;padding:18px;background-position:center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}.welcomeContent{padding:26px}.welcomeTitle{font-size:32px}.welcomeBrand{font-size:32px}}
+</style><style>
+.clientBookingHeader h2{font-size:28px;font-weight:900;margin:0 0 8px}
+.clientBookingSubtitle{color:var(--muted);font-size:16px;margin-bottom:18px}
+.clientBookingFilters{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:20px}
+.clientFilterLabel,.clientDurationLabel{font-size:15px;font-weight:900;color:#cbd1da;margin:8px 0 10px;letter-spacing:.04em}
+.clientFilterRow,.clientChoiceRow{display:flex;gap:10px;flex-wrap:wrap}
+.clientFilterBtn,.clientChoice{appearance:none;background:#111419!important;color:#aeb6c4!important;border:1px solid var(--line)!important;border-radius:10px!important;padding:11px 18px!important;font-weight:850!important;cursor:pointer!important;min-height:46px}
+.clientFilterBtn{flex:1;min-width:130px}
+.clientFilterBtn.active,.clientChoice.active{background:#263615!important;color:var(--accent)!important;border-color:var(--accent)!important;box-shadow:0 0 0 1px var(--accent) inset!important}
+.clientBookingList h2{font-size:24px;font-weight:900;margin:0 0 12px}
+.clientSlotCard{background:#050607;border:1px solid var(--line);border-radius:14px;padding:20px;margin:14px 0}
+.clientSlotDate{font-size:22px;font-weight:900;color:var(--accent)}
+.clientSlotTitle{font-size:28px;font-weight:900;margin-top:10px}
+.clientSlotCoach{font-size:18px;color:#aeb6c4;font-weight:700;margin-top:10px}
+.clientSlotMax{font-size:18px;color:var(--accent);font-weight:900;margin-top:8px}
+.clientChoiceRow{margin-top:14px}
+.clientChoice{min-width:90px;font-size:17px}
+.clientDurationLabel{margin-top:22px}
+.clientBookAction{margin-top:18px}
+.clientBookBtn{width:100%;font-size:19px;font-weight:900;padding:14px!important}
+@media(max-width:700px){.clientFilterBtn{min-width:100px;padding:10px 12px!important}.clientSlotTitle{font-size:24px}.clientSlotCoach,.clientSlotMax{font-size:16px}}
 </style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
@@ -101,7 +122,7 @@ async function loadProfile(){
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
-let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],adminData=[];
+let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
 
 async function countTable(table){
  const r=await db.from(table).select('*',{count:'exact',head:true});
@@ -314,22 +335,37 @@ async function loadBookings(){
  ]);
  bookingsData=b.error?[]:b.data||[];
  const slots=s.error?[]:s.data||[];
+ bookingSlots=slots;
  document.getElementById('bookingCount').textContent=bookingsData.length;
  document.getElementById('slotCount').textContent=slots.length;
  if(b.error && s.error){err.textContent='Impossibile caricare prenotazioni e slot: '+(s.error.message||b.error.message);err.style.display='block';list.innerHTML='';return}
  if(s.error){err.textContent='Impossibile caricare gli slot: '+s.error.message;err.style.display='block';}
  if(isClientRole()) renderClientBookings(slots,bookingsData);
- else renderBookings(bookingsData);
+ else renderBookings(bookingsData,slots);
 }
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
-function slotDateValue(slot){return pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','slot_date','date']);}
-function slotStart(slot){return pick(slot,['starts_at','start_at','slot_start','start_datetime','start_time','time']);}
-function slotEnd(slot){return pick(slot,['ends_at','end_at','slot_end','end_datetime','end_time']);}
+function slotDateValue(slot){return pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','lesson_date','scheduled_date','day']);}
+function slotStart(slot){
+ const d=pick(slot,['slot_date','date','lesson_date','scheduled_date','day']);
+ const t=pick(slot,['start_time','time','starts_time']);
+ if(d!=='—'&&t!=='—') return String(d).slice(0,10)+'T'+String(t).slice(0,8);
+ const direct=pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
+ if(direct!=='—') return direct;
+ return t;
+}
+function slotEnd(slot){
+ const d=pick(slot,['slot_date','date','lesson_date','scheduled_date','day']);
+ const tm=pick(slot,['end_time','ends_time']);
+ if(d!=='—'&&tm!=='—') return String(d).slice(0,10)+'T'+String(tm).slice(0,8);
+ const direct=pick(slot,['ends_at','end_at','slot_end','end_datetime']);
+ if(direct!=='—'&&direct!==null&&direct!==undefined&&String(direct).trim())return direct;
+ return tm;
+}
 function slotTitle(slot){return pick(slot,['lesson_type','lesson_name','title','category','description'])||'Lezione';}
 function slotCapacity(slot){const v=pick(slot,['max_participants','capacity','max_capacity','max_people','participants_limit']);return v==='—'?null:Number(v);}
 function slotBooked(slot,rows){const own=pick(slot,['booked_count','bookings_count','reserved_count']);if(own!=='—'&&own!==null&&own!==undefined&&own!=='')return Number(own)||0;const sid=slot.id;return rows.filter(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(sid)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled').length;}
 function slotDateText(slot){const raw=slotStart(slot);if(raw&&raw!=='—'){try{return new Date(raw).toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}catch{}}
- const d=pick(slot,['slot_date','date']);if(d&&d!=='—'){try{return new Date(d+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}catch{}}
+ const d=pick(slot,['slot_date','date','lesson_date','scheduled_date','day']);if(d&&d!=='—'){try{return new Date(d+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}catch{}}
  return 'Data non disponibile';}
 function slotTimeText(slot){const raw=slotStart(slot);if(raw&&raw!=='—'){try{return new Date(raw).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}catch{}}
  const t=pick(slot,['start_time','time']);return t==='—'?'':String(t).slice(0,5);}
@@ -338,24 +374,103 @@ function slotEndTimeText(slot){const raw=slotEnd(slot);if(raw&&raw!=='—'){try{
 function bookingForSlot(slot,rows){return rows.find(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(slot.id)&&String(pick(b,['user_id','profile_id','client_id']))===String(currentUser?.id)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled');}
 function renderClientBookings(slots,rows){
  const list=document.getElementById('bookingList');if(!list)return;
- const now=Date.now();
- const upcoming=(slots||[]).filter(sl=>{const raw=slotStart(sl);const t=raw&&raw!=='—'?new Date(raw).getTime():NaN;return !Number.isFinite(t)||t>now-60*60*1000;}).sort((a,b)=>{const ta=new Date(slotStart(a)).getTime(),tb=new Date(slotStart(b)).getTime();return (Number.isFinite(ta)?ta:0)-(Number.isFinite(tb)?tb:0)});
- if(!upcoming.length){list.innerHTML='<div class="bookingNotice">Nessuna lezione disponibile al momento.</div>';return}
- list.innerHTML='<div class="bookingNotice"><b>Prenotazioni personali</b><br><span class="muted">Puoi prenotare gli slot disponibili. Le prenotazioni passate non vengono mostrate.</span></div><div class="bookingGrid">'+upcoming.map(sl=>{
-   const mine=bookingForSlot(sl,rows), booked=slotBooked(sl,rows), cap=slotCapacity(sl), full=cap!==null&&booked>=cap;
-   const start=slotTimeText(sl),end=slotEndTimeText(sl); const label=end&&end!==start?start+' – '+end:start||'Orario da definire';
-   const status=String(pick(sl,['status','state'])||'active').toLowerCase();
-   const inactive=['cancelled','canceled','inactive','disabled','closed'].includes(status);
-   const disabled=inactive||full||!!mine;
-   return `<div class="bookingCard ${mine?'mine':''}"><div class="bookingDate">${esc(slotDateText(sl))}</div><div class="bookingTime">${esc(label)}</div><div class="bookingMeta"><b>${esc(slotTitle(sl))}</b>${pick(sl,['coach','coach_name','trainer'])!=='—'?'<br>Coach: '+esc(pick(sl,['coach','coach_name','trainer'])):''}</div><div class="bookingPlaces">${cap!==null?`Posti: <b>${Math.max(0,cap-booked)}</b> disponibili su ${cap}`:`Posti prenotati: <b>${booked}</b>`}</div><div class="bookingActions">${mine?`<button class="btn secondary mini" onclick="cancelMyBooking('${esc(mine.id)}')">ANNULLA PRENOTAZIONE</button>`:inactive?'<span class="pill">Non disponibile</span>':full?'<span class="pill">Posti esauriti</span>':`<button class="btn mini" onclick="bookMySlot('${esc(sl.id)}')">PRENOTA</button>`}</div></div>`;
- }).join('')+'</div>';
+ if(!window.clientBookingFilter)window.clientBookingFilter={cat:'',week:0,selected:{}};
+ const f=window.clientBookingFilter;
+ const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
+ const weeks=[['Questa',0],['Prossima',1],['+2 sett.',2]];
+
+ function dateOf(sl){const raw=slotStart(sl);if(!raw||raw==='—')return null;const d=new Date(raw);return Number.isFinite(d.getTime())?d:null}
+ function weekOf(d){
+   if(!d)return null;
+   const n=new Date();n.setHours(0,0,0,0);
+   const monday=new Date(n);monday.setDate(n.getDate()-((n.getDay()+6)%7));
+   const target=new Date(d);target.setHours(0,0,0,0);
+   return Math.floor((target-monday)/86400000/7);
+ }
+ function dayLabel(d){
+   if(!d)return 'DATA';
+   const wd=['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
+   const mo=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+   return wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+mo[d.getMonth()];
+ }
+ function durationLabel(m){return m>=120?(m%60?'2h '+(m%60)+'m':'2h'):m>=60?(m%60?'1h '+(m%60)+'m':'1h'):(m+' min')}
+ function maxDuration(sl){const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes','max_duration_minutes']));return Number.isFinite(n)&&n>0?n:120}
+ function category(sl){return String(slotTitle(sl)||'Lezione')}
+ const week=Number(f.week)||0, catFilter=String(f.cat||'').toLowerCase();
+
+ const visible=(slots||[]).filter(sl=>{
+   const d=dateOf(sl), w=weekOf(d);
+   return (!d || w===week) && (!catFilter || category(sl).toLowerCase().includes(catFilter));
+ }).sort((a,b)=>{
+   const da=dateOf(a),db=dateOf(b);
+   if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
+ });
+
+ list.innerHTML=`
+ <div class="clientBookingHeader">
+   <h2>Prenota lezione</h2>
+   <div class="clientBookingSubtitle">Gli slot disponibili sono separati dalle tue prenotazioni attive.</div>
+ </div>
+ <div class="clientBookingFilters">
+   <div class="clientFilterLabel">CATEGORIA</div>
+   <div class="clientFilterRow">
+    ${cats.map(([label,key])=>`<button type="button" class="clientFilterBtn ${catFilter===key?'active':''}" data-cat="${esc(key)}">${label}</button>`).join('')}
+   </div>
+   <div class="clientFilterLabel">SETTIMANA</div>
+   <div class="clientFilterRow">
+    ${weeks.map(([label,i])=>`<button type="button" class="clientFilterBtn ${week===i?'active':''}" data-week="${i}">${label}</button>`).join('')}
+   </div>
+ </div>
+ <div class="clientBookingList"><h2>Slot disponibili per prenotare</h2>
+ ${visible.length?visible.map(sl=>{
+   const d=dateOf(sl),mine=bookingForSlot(sl,rows),booked=slotBooked(sl,rows),cap=slotCapacity(sl);
+   const remaining=cap===null?null:Math.max(0,cap-booked);
+   const st=slotTimeText(sl),en=slotEndTimeText(sl),maxD=maxDuration(sl);
+   const selected=f.selected[sl.id]||{time:st,duration:maxD};
+   const times=[st].filter(Boolean);
+   if(en&&en!==st)times.push(en);
+   const durations=[30,60,90,120].filter(x=>x<=maxD);
+   const coach=pick(sl,['coach','coach_name','trainer']);
+   return `<div class="clientSlotCard">
+    <div class="clientSlotDate">${esc(dayLabel(d))}</div>
+    <div class="clientSlotTitle">${esc(category(sl))}</div>
+    <div class="clientSlotCoach">Coach ${esc(coach==='—'?'KleosFit':coach)} - slot ${esc(st||'--:--')}${en?'-'+esc(en):''}</div>
+    <div class="clientSlotMax">Max utilizzo ${esc(durationLabel(maxD))} - ${remaining===null?'posti disponibili':remaining+' posti'}</div>
+    <div class="clientChoiceRow">${times.map(t=>`<button type="button" class="clientChoice ${selected.time===t?'active':''}" data-slot="${esc(sl.id)}" data-choice="time" data-value="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <div class="clientDurationLabel">DURATA UTILIZZO</div>
+    <div class="clientChoiceRow">${durations.map(x=>`<button type="button" class="clientChoice ${Number(selected.duration)===x?'active':''}" data-slot="${esc(sl.id)}" data-choice="duration" data-value="${x}">${durationLabel(x)}</button>`).join('')}</div>
+    <div class="clientBookAction">${mine?`<button type="button" class="btn secondary clientBookBtn" onclick="cancelMyBooking('${esc(mine.id)}')">ANNULLA PRENOTAZIONE</button>`:remaining===0?'<span class="pill">POSTI ESAURITI</span>':`<button type="button" class="btn clientBookBtn" onclick="bookMySlot('${esc(sl.id)}')">PRENOTA</button>`}</div>
+   </div>`;
+ }).join(''):'<div class="bookingNotice">Nessuno slot disponibile per questa settimana.</div>'}
+ </div>`;
+
+ list.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()=>{
+   f.cat=b.dataset.cat||''; renderClientBookings(bookingSlots,bookingsData);
+ }));
+ list.querySelectorAll('[data-week]').forEach(b=>b.addEventListener('click',()=>{
+   f.week=Number(b.dataset.week); renderClientBookings(bookingSlots,bookingsData);
+ }));
+ list.querySelectorAll('[data-choice]').forEach(b=>b.addEventListener('click',()=>{
+   const id=b.dataset.slot,key=b.dataset.choice,val=key==='duration'?Number(b.dataset.value):b.dataset.value;
+   f.selected[id]=Object.assign({},f.selected[id]||{}, {[key]:val});
+   renderClientBookings(bookingSlots,bookingsData);
+ }));
 }
-function renderBookings(rows){
+function renderBookings(rows,slots=bookingSlots){
  const list=document.getElementById('bookingList');if(!list)return;
- if(!rows.length){list.innerHTML='<div class="muted">Nessuna prenotazione trovata.</div>';return}
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Lezione</th><th>Stato</th><th>Creato</th></tr></thead><tbody>'+rows.map(b=>`<tr><td>${esc(fmtDate(pick(b,['starts_at','slot_date','date','booking_date','start_at'])))}</td><td>${esc(pick(b,['user_name','client_name','member_name','user_id']))}</td><td>${esc(pick(b,['lesson_name','title','lesson_type','category']))}</td><td><span class="pill">${esc(pick(b,['status','state','booking_status']))}</span></td><td>${esc(fmtDate(b.created_at))}</td></tr>`).join('')+'</tbody></table></div>';
+ const availability=(slots||[]).filter(sl=>{const raw=slotStart(sl);const tm=raw&&raw!=='—'?new Date(raw).getTime():NaN;return !Number.isFinite(tm)||tm> Date.now()-60*60*1000;}).sort((a,b)=>{
+   const ta=new Date(slotStart(a)).getTime(),tb=new Date(slotStart(b)).getTime();return (Number.isFinite(ta)?ta:0)-(Number.isFinite(tb)?tb:0);
+ });
+ const cards=availability.length?'<div class="bookingNotice"><b>Slot disponibili per i corsi</b><br><span class="muted">Elenco degli slot presenti in lesson_slots.</span></div><div class="bookingGrid">'+availability.map(sl=>{
+   const booked=slotBooked(sl,rows),cap=slotCapacity(sl),full=cap!==null&&booked>=cap; const st=slotTimeText(sl),en=slotEndTimeText(sl); const label=en&&en!==st?st+' – '+en:st||'Orario da definire';
+   const status=String(pick(sl,['status','state'])||'active').toLowerCase(); const inactive=['cancelled','canceled','inactive','disabled','closed'].includes(status);
+   return '<div class="bookingCard"><div class="bookingDate">'+esc(slotDateText(sl))+'</div><div class="bookingTime">'+esc(label)+'</div><div class="bookingMeta"><b>'+esc(slotTitle(sl))+'</b>'+(pick(sl,['coach','coach_name','trainer'])!=='—'?'<br>Coach: '+esc(pick(sl,['coach','coach_name','trainer'])):'')+'</div><div class="bookingPlaces">'+(cap!==null?'Posti: <b>'+Math.max(0,cap-booked)+'</b> disponibili su '+cap:'Posti prenotati: <b>'+booked+'</b>')+'</div><div class="bookingActions"><span class="pill">'+(inactive?'Non disponibile':full?'Posti esauriti':'Disponibile')+'</span></div></div>';
+ }).join('')+'</div>':'<div class="bookingNotice">Nessuno slot disponibile al momento.</div>';
+ const table=rows.length?'<div class="bookingNotice" style="margin-top:18px"><b>Prenotazioni registrate</b></div><div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Lezione</th><th>Stato</th><th>Creato</th></tr></thead><tbody>'+rows.map(b=>'<tr><td>'+esc(fmtDate(pick(b,['starts_at','slot_date','date','booking_date','start_at'])))+'</td><td>'+esc(pick(b,['user_name','client_name','member_name','user_id']))+'</td><td>'+esc(pick(b,['lesson_name','title','lesson_type','category']))+'</td><td><span class="pill">'+esc(pick(b,['status','state','booking_status']))+'</span></td><td>'+esc(fmtDate(b.created_at))+'</td></tr>').join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:18px">Nessuna prenotazione registrata.</div>';
+ list.innerHTML=cards+table;
 }
-function filterBookings(){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();if(isClientRole()){const cards=[...document.querySelectorAll('.bookingCard')];cards.forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none'});return}renderBookings(!q?bookingsData:bookingsData.filter(b=>JSON.stringify(b).toLowerCase().includes(q)))}
+
+function filterBookings(){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();if(isClientRole()){const cards=[...document.querySelectorAll('.bookingCard')];cards.forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none'});return}renderBookings(!q?bookingsData:bookingsData.filter(b=>JSON.stringify(b).toLowerCase().includes(q)),bookingSlots)}
 async function bookMySlot(slotId){
  const err=document.getElementById('bookingError');err.style.display='none';
  if(!currentUser?.id){err.textContent='Utente non autenticato.';err.style.display='block';return}

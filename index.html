@@ -1,7 +1,7 @@
-<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.3</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
+<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.6</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
 :root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
 
-.detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 1fr}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
+.detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 92px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exImage{width:92px;height:92px;border-radius:10px;object-fit:cover;background:#171b21;border:1px solid var(--line);display:block}.exImageWrap{display:flex;align-items:center;justify-content:center}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 92px 1fr}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
 .error{margin-top:15px;color:#ff8993;font-size:13px;display:none}.app{display:flex;min-height:100vh}.side{width:245px;background:#0b0d10;border-right:1px solid var(--line);padding:24px 16px;position:fixed;height:100vh}.logo{font-weight:900;font-size:25px;letter-spacing:2px;margin:0 10px 6px}.logo span{color:var(--accent)}.role{margin:0 10px 25px;color:var(--muted);font-size:12px;text-transform:uppercase}.nav button{width:100%;border:0;background:transparent;color:#b9bec7;text-align:left;padding:12px 13px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.logout{margin:25px 10px 0;width:calc(100% - 20px)}.main{margin-left:245px;width:calc(100% - 245px);padding:32px;max-width:1500px}.dashboardLogout{padding:10px 18px!important;font-size:13px;min-width:105px}.dashboardLogout:hover{filter:brightness(1.05)}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.title{font-size:28px;font-weight:800}.sub{color:var(--muted);margin-top:5px}.badge{background:var(--accent);color:#10130a;padding:7px 11px;border-radius:20px;font-weight:800;font-size:12px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}.metric{font-size:32px;font-weight:850;margin-top:8px}.label{color:var(--muted);font-size:13px}.section{margin-top:24px}.section h2{font-size:17px;margin:0 0 13px}.table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}.table th,.table td{text-align:left;padding:14px;border-bottom:1px solid var(--line);font-size:14px}.table th{color:var(--muted);font-size:12px;text-transform:uppercase}.status{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#cbd0d8;font-size:12px}.hide{display:none}@media(max-width:900px){.dashboardLogout{padding:9px 14px!important}.side{width:70px;padding:15px 9px}.logo{font-size:0}.logo:after{content:'K';font-size:24px}.role,.nav span,.logout{display:none}.nav button{text-align:center}.main{margin-left:70px;width:calc(100% - 70px);padding:20px}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid{grid-template-columns:1fr}.main{padding:16px}.table{font-size:12px}}
 
 .table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px 8px;border-bottom:1px solid #2a2f38;text-align:left;font-size:13px}.table th{color:#9aa4b2;font-weight:600}.inputrow{display:flex;gap:10px;margin-bottom:14px}
@@ -218,17 +218,15 @@ async function loadWorkouts(){
 
  const workoutSelect=`
      id,user_id,title,description,is_active,is_visible,created_at,
-     workout_exercises (
-       id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,
-       duration_seconds,muscle_group,equipment,focus,image_url,rest_seconds,sort_order
-     )
+     workout_exercises (*)
    `;
  let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
  // Il cliente può solo visualizzare la propria scheda: non deve vedere né modificare le schede degli altri.
  if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
- const [r,pr]=await Promise.all([
+ const [r,pr,lr]=await Promise.all([
    workoutQuery,
-   db.from('profiles').select('*').limit(1000)
+   db.from('profiles').select('*').limit(1000),
+   db.from('exercise_library').select('*').limit(1000)
  ]);
  if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
 
@@ -237,11 +235,21 @@ async function loadWorkouts(){
 
  const byUser={};
  usersData.forEach(u=>{byUser[u.id]=u});
+ const byExerciseName={};
+ if(!lr.error){
+   (lr.data||[]).forEach(x=>{
+     const n=firstVal(x,['name','exercise_name','title','nome']);
+     if(n)byExerciseName[String(n).trim().toLowerCase()]=x;
+   });
+ }
  const plans=r.data||[];
  workoutsData=plans.map(p=>({
    ...p,
    user_profile:byUser[p.user_id]||null,
-   workout_exercises:Array.isArray(p.workout_exercises)?p.workout_exercises:[]
+   workout_exercises:(Array.isArray(p.workout_exercises)?p.workout_exercises:[]).map(e=>{
+     const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||null;
+     return {...e, image_url:firstVal(e,['image_url','image','photo_url'],firstVal(lib,['image_url','image','photo_url'],'')), exercise_library:lib};
+   })
  }));
 
  // Gli esercizi vengono letti tramite la relazione Supabase workout_plans -> workout_exercises.
@@ -279,7 +287,7 @@ function renderWorkouts(rows){
     : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
   const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
   const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>';
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(e.image_url)}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
  }).join('');
 }
 function filterWorkouts(){
@@ -300,6 +308,7 @@ function showWorkoutDetail(id){
  const rows=ex.length?ex.map((e,i)=>`
    <div class="exerciseDetail">
      <div class="exNo">${i+1}</div>
+     ${e.image_url?`<div class="exImageWrap"><img class="exImage" src="${esc(e.image_url)}" alt="${esc(e.name||'Esercizio')}" loading="lazy" onerror="this.closest('.exImageWrap').style.display='none'"></div>`:''}
      <div class="exMain">
        <div class="exTitle">${esc(e.name||'Esercizio')}</div>
        <div class="exMeta">${esc([e.muscle_group,e.equipment,e.focus,e.exercise_type].filter(Boolean).join(' · ')||'Dettagli esercizio')}</div>

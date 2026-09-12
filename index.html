@@ -870,6 +870,8 @@ function renderClientBookings(slots,rows){
    renderClientBookings(bookingSlots,bookingsData);
  }));
 }
+function adminDay(sl){const d=parseSlotDate(sl);const wd=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];const mon=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];return d?wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+mon[d.getMonth()]:'Data da definire'}
+function durationAdmin(sl){const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes']));return Number.isFinite(n)&&n>0?(n%60===0?(n/60)+' h':n+' min'):'60 min'}
 function renderBookings(rows,slots=bookingSlots){
  const list=document.getElementById('bookingList');if(!list)return;
  if(!window.slotCategoryFilter)window.slotCategoryFilter='';
@@ -883,8 +885,6 @@ function renderBookings(rows,slots=bookingSlots){
    return (ma?(+ma[1])*60+ +ma[2]:9999)-(mb?(+mb[1])*60+ +mb[2]:9999);
  });
  const wd=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
- function adminDay(sl){const d=parseSlotDate(sl);return d?wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: 'Data da definire'}
- function durationAdmin(sl){const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes']));return Number.isFinite(n)&&n>0?(n%60===0?(n/60)+' h':n+' min'):'60 min'}
  list.innerHTML=`
  <div class="slotAdminWrap">
   <h1 class="slotAdminTitle">Slot per categoria</h1>

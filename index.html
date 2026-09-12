@@ -594,6 +594,20 @@ async function loadBookings(){
  if(!isClientRole())queries.push(db.from('profiles').select('*').limit(1000));
  const results=await Promise.all(queries),b=results[0],ss=results[1],pp=results[2];
  bookingsData=b.error?[]:b.data||[];const slots=ss.error?[]:ss.data||[];bookingSlots=slots;bookingProfiles=!isClientRole()?(pp?.error?[]:pp?.data||[]):[];
+ // Se la lettura generale dei profili non restituisce dati, recuperiamo espressamente
+ // i profili degli atleti presenti nelle prenotazioni. In questo modo la tabella
+ // mostra il nome anche quando il payload della prenotazione contiene solo l'ID.
+ if(!isClientRole() && bookingsData.length){
+   const ids=[...new Set(bookingsData.map(bookingAthleteId).filter(Boolean).map(String))];
+   if(ids.length){
+     const pr=await db.from('profiles').select('*').in('id',ids).limit(1000);
+     if(!pr.error && pr.data?.length){
+       const map=new Map(bookingProfiles.map(p=>[String(p.id),p]));
+       pr.data.forEach(p=>map.set(String(p.id),p));
+       bookingProfiles=[...map.values()];
+     }
+   }
+ }
  document.getElementById('bookingCount').textContent=bookingsData.length;
  document.getElementById('slotCount').textContent=slots.filter(sl=>String(sl?.is_available).toLowerCase()!=='false').length;
  if(b.error&&ss.error){err.textContent='Impossibile caricare prenotazioni e slot: '+(ss.error.message||b.error.message);err.style.display='block';list.innerHTML='';return}
@@ -601,7 +615,18 @@ async function loadBookings(){
  if(ss.error){err.textContent=(err.textContent?err.textContent+' | ':'')+'Impossibile caricare gli slot: '+ss.error.message;err.style.display='block'}
  if(isClientRole())renderClientBookings(slots,bookingsData);else renderAdminReservations(bookingsData,slots);
 }
-function bookingAthleteName(b){const id=pick(b,['user_id','profile_id','client_id']);const prof=bookingProfiles.find(p=>String(p.id)===String(id));return pick(b,['user_name','client_name','profile_name','athlete_name','name','full_name'])||(prof?(pick(prof,['full_name','name'])||[prof.first_name,prof.last_name].filter(Boolean).join(' ')||pick(prof,['email','phone'])):'')||id||'Atleta'}
+function bookingAthleteId(b){return pick(b,['user_id','profile_id','client_id','client_profile_id','athlete_id','customer_id','member_id','p_profile_id','profileId','userId','clientId'])}
+function bookingAthleteName(b){
+ const direct=pick(b,['user_name','client_name','profile_name','athlete_name','athlete_name_full','client_full_name','full_name','name']);
+ if(direct)return direct;
+ const id=bookingAthleteId(b);
+ const prof=bookingProfiles.find(p=>String(p.id)===String(id)||String(p.user_id||p.profile_id||'')===String(id));
+ if(prof){
+   const n=pick(prof,['full_name','name','display_name','athlete_name','client_name'])||[prof.first_name,prof.last_name].filter(Boolean).join(' ')||pick(prof,['email','phone']);
+   if(n)return n;
+ }
+ return id?'Atleta':'—';
+}
 function bookingDateForRow(b,sl){return sl?parseSlotDate(sl):parseAnySlotDate(pick(b,['date','booking_date','scheduled_date','starts_at','created_at']))}
 function bookingActivity(sl,b){return sl?slotTitle(sl):pick(b,['lesson_type','lesson_name','activity','activity_name','category','title'])||'Lezione'}
 function bookingTimes(sl,b){if(sl){const st=slotTimeText(sl),en=slotEndTimeText(sl);return st+(en&&en!==st?' - '+en:'')}return pick(b,['time','starts_at','start_time','booking_time'])||'—'}

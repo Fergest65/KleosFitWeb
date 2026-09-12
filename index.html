@@ -230,7 +230,7 @@ async function loadWorkouts(){
    `;
  let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
  // Il cliente può solo visualizzare la propria scheda: non deve vedere né modificare le schede degli altri.
- if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('profile_id',currentUser.id);
+ if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
  const [r,pr,lr]=await Promise.all([
    workoutQuery,
    db.from('profiles').select('*').limit(1000),

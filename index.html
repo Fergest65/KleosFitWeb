@@ -163,6 +163,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
 `,
+anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Dati anagrafici e contatti — area riservata amministratori.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
  <button type="button">Prezzi abbonamenti</button>
@@ -171,16 +172,18 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button">Progressi</button>
  <button type="button">Notifiche</button>
  <button type="button" onclick="show('clients')">Utenti</button>
+ <button type="button" onclick="show('anagrafica')">Anagrafica</button>
  <button type="button">Circuiti</button>
 </div>`,
 };
 function show(v,el){
- if(v==='superuser'&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica')&&!isSuperuserRole()) return;
  document.getElementById('content').innerHTML=views[v];
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
  if(el)el.classList.add('active');
  if(v==='dashboard'){fillDashboard();}
  if(v==='clients')loadClients();
+ if(v==='anagrafica')loadAnagrafica();
  if(v==='qrcodes')loadQrCodes();
  if(v==='workout')loadWorkouts();
  if(v==='nutrition')loadNutrition();
@@ -252,6 +255,26 @@ async function fillDashboard(){
  }
 }
 
+async function loadAnagrafica(){
+ if(!isSuperuserRole())return;
+ const list=document.getElementById('anaList'),err=document.getElementById('anaError'),count=document.getElementById('anaCount');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento...';
+ const r=await db.from('profiles').select('*').limit(500);
+ if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+ anagraficaData=(r.data||[]).filter(p=>['client','cliente'].includes(String(pick(p,['role','user_role'])||'client').toLowerCase()));
+ renderAnagrafica(anagraficaData);
+}
+function renderAnagrafica(rows){
+ const list=document.getElementById('anaList'),count=document.getElementById('anaCount');if(!list)return;
+ count.textContent=rows.length+' clienti';
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun cliente trovato.</div>';return}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Data nascita</th><th>Codice fiscale</th><th>Telefono</th><th>Città</th><th></th></tr></thead><tbody>'+rows.map(p=>`<tr><td><b>${esc(profileDisplayName(p))}</b></td><td>${esc(dateInputValue(p.birth_date)||'—')}</td><td>${esc(p.fiscal_code||'—')}</td><td>${esc(p.phone||p.phone_number||p.mobile||'—')}</td><td>${esc(p.city||'—')}</td><td><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Apri anagrafica</button></td></tr>`).join('')+'</tbody></table></div>';
+}
+function filterAnagrafica(){
+ const q=(document.getElementById('anaSearch')?.value||'').toLowerCase().trim();
+ const rows=(anagraficaData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),p.phone,p.phone_number,p.mobile,p.member_card_number,p.member_card,p.card_number,p.tessera,p.member_code,p.fiscal_code,p.city,p.address].some(v=>String(v||'').toLowerCase().includes(q)));
+ renderAnagrafica(rows);
+}
 async function loadClients(){
  const list=document.getElementById('clientList'),err=document.getElementById('clientError'),count=document.getElementById('clientCount');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento clienti...';

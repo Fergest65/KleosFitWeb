@@ -133,7 +133,7 @@ dashboard:`<div class="dashboardHero">
 <div class="dashboardProgressDelta" id="dashboardWeightDelta">Prima rilevazione</div>
 <div class="dashboardProgressCaption">Peso corporeo</div>
 </div>
-</div>
+</div>`,
 clients:`<div class="top"><div><div class="title">Clienti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
 <div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
 <div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
@@ -172,7 +172,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button">Notifiche</button>
  <button type="button">Utenti</button>
  <button type="button">Circuiti</button>
-</div>
+</div>`,
 };
 function show(v,el){
  if(v==='superuser'&&!isSuperuserRole()) return;

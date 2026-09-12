@@ -39,6 +39,14 @@
  .dashboardProgressValue{font-size:46px}
  .dashboardStartBtn{min-width:0;width:100%}
 }
+
+<style>
+.adminMenuGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:0}
+.adminMenuGrid button{min-height:82px;border:1px solid #2b2f38;border-radius:18px;background:#111318;color:#fff;font-size:25px;font-weight:900;cursor:pointer}
+.adminMenuGrid button:hover{border-color:#c4ff3d}
+.adminAccessBanner{margin-bottom:0}
+@media(max-width:700px){.adminMenuGrid{grid-template-columns:1fr}.adminMenuGrid button{min-height:68px;font-size:21px}}
+</style>
 </style>
 </style>
 <style>
@@ -112,7 +120,16 @@ let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[];
 const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div></div>
-<div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
+<div id="adminAccessBanner" class="adminAccessBanner" style="display:none">ACCESSO ADMIN / SUPERUSER</div>
+<div id="adminMenuGrid" class="adminMenuGrid" style="display:none">
+ <button type="button" onclick="show('admin',document.querySelector('.nav button[onclick*=admin]'))">Prezzi abbonamenti</button>
+ <button type="button" onclick="show('slots',document.querySelector('.nav button[onclick*=slot]'))">Gestione slot</button>
+ <button type="button" onclick="show('bookings',document.querySelector('.nav button[onclick*=prenot]'))">Prenotazioni</button>
+ <button type="button" onclick="show('progress',document.querySelector('.nav button[onclick*=progress]'))">Progressi</button>
+ <button type="button" onclick="show('notifications',document.querySelector('.nav button[onclick*=notif]'))">Notifiche</button>
+ <button type="button" onclick="show('users',document.querySelector('.nav button[onclick*=client]'))">Utenti</button>
+ <button type="button" onclick="show('circuits',document.querySelector('.nav button[onclick*=circuit]'))">Circuiti</button>
+</div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -197,6 +214,8 @@ async function fillDashboard(){
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
  if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
+ const adminMenu=document.getElementById('adminMenuGrid');
+ if(adminMenu) adminMenu.style.display=isSuperuserRole()?'grid':'none';
 
  const title=document.getElementById('dashboardWorkoutTitle');
  const sub=document.getElementById('dashboardWorkoutSub');

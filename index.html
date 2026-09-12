@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.16</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
+<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.26</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
 :root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
 
 .detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 92px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exImage{width:92px;height:92px;border-radius:10px;object-fit:cover;background:#171b21;border:1px solid var(--line);display:block}.exImageWrap{display:flex;align-items:center;justify-content:center}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 92px 1fr}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
@@ -103,6 +103,10 @@
 .apkExerciseCard{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#101217}.apkExTop{display:grid;grid-template-columns:34px 92px 1fr;gap:12px;align-items:center}.apkExNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:800}.apkExImageWrap{width:92px;height:92px;border-radius:10px;overflow:hidden;background:#171b21;border:1px solid var(--line);display:grid;place-items:center}.apkExImage{width:100%;height:100%;object-fit:cover;display:block}.apkExImageFallback{font-size:11px;color:var(--muted);font-weight:800}.apkExTitle{font-size:16px;font-weight:850}.apkExMeta{font-size:12px;color:var(--muted);margin-top:4px}.apkExType{font-size:12px;color:#cfd5dd;margin-top:5px}.apkExNotes{font-size:12px;color:#cfd5dd;margin-top:6px}.apkExStats{display:grid;grid-template-columns:repeat(6,minmax(72px,1fr));gap:8px;margin-top:11px}.apkExStats div{padding:8px 6px;text-align:center;border-radius:8px;background:#171b21;min-height:44px}.apkExStats span{display:block;font-size:10px;color:var(--muted)}.apkExStats b{display:block;margin-top:3px;font-size:12px;word-break:break-word}@media(max-width:900px){.apkExStats{grid-template-columns:repeat(3,1fr)}}@media(max-width:600px){.apkExTop{grid-template-columns:30px 72px 1fr}.apkExImageWrap{width:72px;height:72px}.apkExTitle{font-size:14px}.apkExStats{grid-template-columns:repeat(2,1fr)}}
 
 .progressGuide{margin:0 0 18px;border:1px solid var(--line);border-radius:14px;background:#0f1217;overflow:hidden}.progressGuide img{display:block;width:100%;height:auto;max-height:620px;object-fit:contain}.progressGuideCaption{padding:10px 14px;color:var(--muted);font-size:12px}.progressGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.progressCard{background:#14161a;border:1px solid var(--line);border-radius:14px;padding:24px;min-height:250px}.progressCardHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.progressCardTitle{font-size:27px;font-weight:850;color:#aeb4c1}.progressTrend{font-size:28px;color:var(--accent);font-weight:900}.progressValue{font-size:56px;font-weight:900;margin-top:42px;letter-spacing:-1px}.progressChange{font-size:28px;font-weight:850;color:var(--accent);margin-top:20px}.progressFirst{font-size:18px;font-weight:800;color:var(--accent);margin-top:20px}.progressDate{color:var(--muted);font-size:12px;margin-top:8px}.progressTableWrap{overflow:auto}.progressTable{min-width:1100px}.progressInfo{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#111419;color:#cbd1da;margin-bottom:16px}.progressReadOnly{display:inline-block;padding:5px 9px;border-radius:999px;background:#1d2514;color:var(--accent);font-size:12px;font-weight:800}@media(max-width:700px){.progressGrid{grid-template-columns:1fr}.progressCard{min-height:220px}.progressValue{font-size:46px}}
+</style><style>
+.slotAdminWrap{padding:4px 0 28px}.slotAdminTitle{font-size:36px;line-height:1.05;margin:4px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.slotAdminTab{min-height:58px;border:1px solid #303640!important;border-radius:12px!important;background:#111419!important;color:#aeb6c4!important;font-size:18px!important;font-weight:900!important;cursor:pointer!important}.slotAdminTab.active{background:#c6ff35!important;color:#08090a!important;border-color:#c6ff35!important}.slotAdminCategory{font-size:18px;font-weight:900;color:#c6ff35;margin:8px 0 14px;text-transform:uppercase}.slotAdminCard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:8px 18px;align-items:center;background:#08090a;border:1px solid #292d35;border-radius:15px;padding:16px 18px;margin-bottom:10px}.slotAdminMainLine{font-size:20px;font-weight:900;color:#fff}.slotAdminDay{color:#c6ff35}.slotAdminTime{margin-left:8px}.slotAdminMeta{grid-column:1;font-size:15px;color:#aeb6c4;margin-top:2px}.slotAdminActions{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px}.slotAdminBtn{height:52px;border-radius:11px!important;border:0!important;color:#08090a!important;font-size:16px!important;font-weight:900!important;cursor:pointer!important}.slotAdminBtn.slotEditBtn{background:#c6ff35!important}.slotAdminBtn.slotDeleteBtn{background:#ef3f43!important;color:#fff!important}.slotAdminBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+@media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
 </style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
@@ -165,10 +169,11 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione completa dei dati cliente — area amministratori. Tutti i campi della scheda sono modificabili.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
 anagraficaClient:`<div class="top"><div><div class="title">La mia anagrafica</div><div class="sub">Visualizza e modifica i tuoi dati personali e di contatto.</div></div><button class="btn" onclick="loadClientAnagrafica()">Aggiorna</button></div><div class="card"><div id="myAnaError" class="error"></div><div id="myAnaBox">Caricamento...</div></div>`,
+slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div class="sub">Gestione degli slot disponibili per categoria.</div></div><button class="btn" type="button" onclick="loadSlotAdmin()">Aggiorna</button></div><div class="card"><div class="inputrow"><input id="slotAdminSearch" placeholder="Cerca data, coach o categoria" oninput="filterSlotAdmin()"></div><div id="slotAdminError" class="error"></div><div id="slotAdminList">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
  <button type="button">Prezzi abbonamenti</button>
- <button type="button">Gestione slot</button>
+ <button type="button" onclick="show('slotAdmin')">Gestione slot</button>
  <button type="button">Prenotazioni</button>
  <button type="button">Progressi</button>
  <button type="button">Notifiche</button>
@@ -178,7 +183,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
 </div>`,
 };
 function show(v,el){
- if((v==='superuser'||v==='anagrafica')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='slotAdmin')&&!isSuperuserRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  document.getElementById('content').innerHTML=views[v];
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
@@ -187,6 +192,7 @@ function show(v,el){
  if(v==='clients')loadClients();
  if(v==='anagrafica')loadAnagrafica();
  if(v==='anagraficaClient')loadClientAnagrafica();
+ if(v==='slotAdmin')loadSlotAdmin();
  if(v==='qrcodes')loadQrCodes();
  if(v==='workout')loadWorkouts();
  if(v==='nutrition')loadNutrition();
@@ -357,6 +363,10 @@ async function loadQrCodes(){const list=document.getElementById('qrList'),err=do
 function filterQrCodes(){/* Il QR è esclusivamente quello dell'account loggato. */loadQrCodes()}
 function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));if(!p)return;const name=clientName(p),card=clientCardNumber(p);const value=clientQrValue(p);const w=window.open('','_blank','width=520,height=700');if(!w)return;w.document.write(`<html><head><title>KLEOSFIT QR - ${esc(name)}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><style>body{font-family:Arial;text-align:center;padding:30px}.card{border:2px solid #111;border-radius:18px;padding:25px}#qr{width:260px;height:260px;margin:20px auto;display:grid;place-items:center}#qr img{width:260px;height:260px}
 .slotAdminWrap{padding:0 2px 28px}.slotAdminTitle{font-size:38px;line-height:1.05;margin:8px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}.slotAdminTab{min-height:70px;border:1px solid #2c3038;border-radius:16px;background:#121318;color:#aeb3c1;font-size:22px;font-weight:800;cursor:pointer}.slotAdminTab.active{border-color:#c6ff32;background:#c6ff32;color:#08090a}.slotAdminCategory{font-size:25px;font-weight:900;color:#c6ff32;margin:8px 0 18px;text-transform:uppercase}.slotAdminCard{background:#08090a;border:1px solid #292d35;border-radius:18px;padding:20px 22px 18px;margin-bottom:12px}.slotAdminMainLine{font-size:25px;font-weight:900;color:#fff}.slotAdminTime{margin-left:8px}.slotAdminDash{margin:0 6px}.slotAdminDate{font-weight:900}.slotAdminMeta{font-size:21px;color:#aeb3c1;margin-top:10px}.slotAdminActions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.slotAdminBtn{height:64px;border-radius:15px;border:0;color:#08090a;font-size:21px;font-weight:900;cursor:pointer;transition:transform .12s,filter .12s}.slotAdminBtn[data-edit-slot]{background:#c6ff32}.slotAdminBtn[data-delete-slot]{background:#ef3f43;color:#fff}.slotAdminBtn:hover{filter:brightness(1.05);transform:translateY(-1px)}@media(max-width:900px){.slotAdminTabs{grid-template-columns:1fr 1fr}}@media(max-width:700px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:18px;min-height:54px}.slotAdminMainLine{font-size:20px}.slotAdminMeta{font-size:16px}.slotAdminBtn{font-size:17px;height:56px}}}
+</style><style>
+.slotAdminWrap{padding:4px 0 28px}.slotAdminTitle{font-size:36px;line-height:1.05;margin:4px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.slotAdminTab{min-height:58px;border:1px solid #303640!important;border-radius:12px!important;background:#111419!important;color:#aeb6c4!important;font-size:18px!important;font-weight:900!important;cursor:pointer!important}.slotAdminTab.active{background:#c6ff35!important;color:#08090a!important;border-color:#c6ff35!important}.slotAdminCategory{font-size:18px;font-weight:900;color:#c6ff35;margin:8px 0 14px;text-transform:uppercase}.slotAdminCard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:8px 18px;align-items:center;background:#08090a;border:1px solid #292d35;border-radius:15px;padding:16px 18px;margin-bottom:10px}.slotAdminMainLine{font-size:20px;font-weight:900;color:#fff}.slotAdminDay{color:#c6ff35}.slotAdminTime{margin-left:8px}.slotAdminMeta{grid-column:1;font-size:15px;color:#aeb6c4;margin-top:2px}.slotAdminActions{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px}.slotAdminBtn{height:52px;border-radius:11px!important;border:0!important;color:#08090a!important;font-size:16px!important;font-weight:900!important;cursor:pointer!important}.slotAdminBtn.slotEditBtn{background:#c6ff35!important}.slotAdminBtn.slotDeleteBtn{background:#ef3f43!important;color:#fff!important}.slotAdminBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+@media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
 </style></head><body><div class="card"><h1>KLEOSFIT</h1><h2>${esc(name)}</h2><h3>${esc(card||'Tessera')}</h3><div id="qr"></div><p>QR tessera personale</p></div><script>new QRCode(document.getElementById('qr'),{text:${JSON.stringify(value)},width:260,height:260});window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close()}
 function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
@@ -591,8 +601,19 @@ async function loadBookings(){
  if(b.error && s.error){err.textContent='Impossibile caricare prenotazioni e slot: '+(s.error.message||b.error.message);err.style.display='block';list.innerHTML='';return}
  if(s.error){err.textContent='Impossibile caricare gli slot: '+s.error.message;err.style.display='block';}
  if(isClientRole()) renderClientBookings(slots,bookingsData);
- else renderBookings(bookingsData,slots);
+ else renderAdminReservations(bookingsData,slots);
 }
+function renderAdminReservations(rows,slots){
+ const list=document.getElementById('bookingList');if(!list)return;
+ const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();
+ const filtered=!q?rows:rows.filter(b=>JSON.stringify(b).toLowerCase().includes(q));
+ if(!filtered.length){list.innerHTML='<div class="bookingNotice">Nessuna prenotazione trovata.</div>';return}
+ list.innerHTML=`<div class="card"><h2 style="margin-top:0">Prenotazioni</h2><div class="tableWrap"><table class="table"><thead><tr><th>Slot</th><th>Cliente</th><th>Stato</th><th>Creato</th></tr></thead><tbody>${filtered.map(b=>{
+   const sl=slots.find(x=>String(x.id)===String(pick(b,['slot_id','lesson_slot_id'])));
+   return `<tr><td>${esc(sl?slotDateText(sl)+' · '+slotTimeText(sl):pick(b,['slot_id','lesson_slot_id']))}</td><td>${esc(pick(b,['user_name','client_name','profile_name','user_id','profile_id']))}</td><td>${esc(pick(b,['status','state','booking_status'])||'attiva')}</td><td>${esc(fmtDate(pick(b,['created_at','createdAt'])))}</td></tr>`;
+ }).join('')}</tbody></table></div></div>`;
+}
+
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
 function isSuperuserRole(){
  const r=String(profile?.role||profile?.user_role||'').toLowerCase().trim();
@@ -905,7 +926,51 @@ async function editAdminSlot(id){
  await loadBookings();
 }
 
-function filterBookings(){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();if(isClientRole()){const cards=[...document.querySelectorAll('.bookingCard')];cards.forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none'});return}renderBookings(!q?bookingsData:bookingsData.filter(b=>JSON.stringify(b).toLowerCase().includes(q)),bookingSlots)}
+async function loadSlotAdmin(){
+ const list=document.getElementById('slotAdminList'),err=document.getElementById('slotAdminError');
+ if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento slot...';
+ const [b,s]=await Promise.all([
+   db.from('lesson_bookings').select('*').limit(500),
+   db.from('lesson_slots').select('*').limit(500)
+ ]);
+ bookingsData=b.error?[]:b.data||[];
+ bookingSlots=s.error?[]:s.data||[];
+ if(s.error){err.textContent='Impossibile caricare gli slot: '+s.error.message;err.style.display='block';list.innerHTML='';return}
+ renderSlotAdmin(bookingsData,bookingSlots);
+}
+function filterSlotAdmin(){
+ const q=(document.getElementById('slotAdminSearch')?.value||'').toLowerCase().trim();
+ const rows=!q?bookingSlots:bookingSlots.filter(sl=>JSON.stringify(sl).toLowerCase().includes(q));
+ renderSlotAdmin(bookingsData,rows);
+}
+function renderSlotAdmin(rows,slots){
+ const list=document.getElementById('slotAdminList');if(!list)return;
+ if(!window.slotCategoryFilter)window.slotCategoryFilter='';
+ const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
+ const selected=String(window.slotCategoryFilter||'').toLowerCase();
+ const visible=(slots||[]).filter(sl=>parseSlotDate(sl)).filter(sl=>!selected||String(slotTitle(sl)||'').toLowerCase().includes(selected)).sort((a,b)=>{
+   const da=parseSlotDate(a)?.getTime()||0,dbv=parseSlotDate(b)?.getTime()||0;
+   if(da!==dbv)return da-dbv;
+   return String(slotTimeText(a)||'').localeCompare(String(slotTimeText(b)||''));
+ });
+ const cards=visible.map(sl=>{
+   const d=parseSlotDate(sl),st=slotTimeText(sl),en=slotEndTimeText(sl),booked=slotBooked(sl,rows),cap=slotCapacity(sl),coach=pick(sl,['coach','coach_name','trainer']);
+   const time=en&&en!==st?`${st||'--:--'} - ${en}`:(st||'--:--');
+   const day=adminDay(sl);
+   const date=d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]:'—';
+   return `<div class="slotAdminCard">
+     <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(day)}</span> <span>${esc(date)}</span> <span class="slotAdminTime">${esc(time)}</span></div>
+     <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} · max utilizzo ${esc(durationAdmin(sl))} · ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
+     <div class="slotAdminActions"><button type="button" class="slotAdminBtn slotEditBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn slotDeleteBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp;ELIMINA</button></div>
+   </div>`;
+ }).join('');
+ list.innerHTML=`<div class="slotAdminWrap"><h1 class="slotAdminTitle">Slot per categoria</h1><div class="slotAdminTabs">${cats.map(([label,key])=>`<button type="button" class="slotAdminTab ${selected===key?'active':''}" data-slot-cat="${esc(key)}">${label}</button>`).join('')}</div><div class="slotAdminCategory">${selected?esc(cats.find(x=>x[1]===selected)?.[0]||'Slot'):'TUTTE'}</div><div class="slotAdminCards">${cards||'<div class="bookingNotice">Nessuno slot disponibile.</div>'}</div></div>`;
+ list.querySelectorAll('[data-slot-cat]').forEach(b=>b.addEventListener('click',()=>{window.slotCategoryFilter=b.dataset.slotCat||'';renderSlotAdmin(bookingsData,bookingSlots)}));
+ list.querySelectorAll('[data-delete-slot]').forEach(b=>b.addEventListener('click',()=>deleteAdminSlot(b.dataset.deleteSlot)));
+ list.querySelectorAll('[data-edit-slot]').forEach(b=>b.addEventListener('click',()=>editAdminSlot(b.dataset.editSlot)));
+}
+function filterBookings(){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();if(isClientRole()){const cards=[...document.querySelectorAll('.bookingCard')];cards.forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none'});return}renderAdminReservations(!q?bookingsData:bookingsData.filter(b=>JSON.stringify(b).toLowerCase().includes(q)),bookingSlots)}
 async function bookMySlot(slotId){
  const err=document.getElementById('bookingError');err.style.display='none';
  if(!currentUser?.id){err.textContent='Utente non autenticato.';err.style.display='block';return}

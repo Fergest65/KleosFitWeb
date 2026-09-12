@@ -41,11 +41,10 @@
 }
 
 <style>
-.adminMenuGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:0}
-.adminMenuGrid button{min-height:82px;border:1px solid #2b2f38;border-radius:18px;background:#111318;color:#fff;font-size:25px;font-weight:900;cursor:pointer}
-.adminMenuGrid button:hover{border-color:#c4ff3d}
-.adminAccessBanner{margin-bottom:0}
-@media(max-width:700px){.adminMenuGrid{grid-template-columns:1fr}.adminMenuGrid button{min-height:68px;font-size:21px}}
+.superuserMenuGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.superuserMenuGrid button{min-height:82px;border:1px solid #2b2f38;border-radius:18px;background:#111318;color:#fff;font-size:25px;font-weight:900;cursor:pointer}
+.superuserMenuGrid button:hover{border-color:#c4ff3d}
+@media(max-width:700px){.superuserMenuGrid{grid-template-columns:1fr}.superuserMenuGrid button{min-height:68px;font-size:21px}}
 </style>
 </style>
 </style>
@@ -120,30 +119,21 @@ let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[];
 const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div></div>
-<div id="adminAccessBanner" class="adminAccessBanner" style="display:none">ACCESSO ADMIN / SUPERUSER</div>
-<div id="adminMenuGrid" class="adminMenuGrid" style="display:none">
- <button type="button" onclick="show('admin',document.querySelector('.nav button[onclick*=admin]'))">Prezzi abbonamenti</button>
- <button type="button" onclick="show('slots',document.querySelector('.nav button[onclick*=slot]'))">Gestione slot</button>
- <button type="button" onclick="show('bookings',document.querySelector('.nav button[onclick*=prenot]'))">Prenotazioni</button>
- <button type="button" onclick="show('progress',document.querySelector('.nav button[onclick*=progress]'))">Progressi</button>
- <button type="button" onclick="show('notifications',document.querySelector('.nav button[onclick*=notif]'))">Notifiche</button>
- <button type="button" onclick="show('users',document.querySelector('.nav button[onclick*=client]'))">Utenti</button>
- <button type="button" onclick="show('circuits',document.querySelector('.nav button[onclick*=circuit]'))">Circuiti</button>
-</div>
+<div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
 <div class="dashboardWorkoutSub" id="dashboardWorkoutSub">Quando il coach assegna una scheda attiva, la trovi qui.</div>
-<button class="btn dashboardStartBtn" type="button" onclick="show('workout',document.querySelector('.nav button[onclick*='workout']'))">＋ Inizia allenamento</button>
+<button class="btn dashboardStartBtn" type="button" onclick="show('workout')">＋ Inizia allenamento</button>
 </div>
 <div class="dashboardProgressTitle">I TUOI PROGRESSI</div>
-<div class="dashboardProgress card" onclick="show('progress',document.querySelector('.clientOnlyNav'))">
+<div class="dashboardProgress card" onclick="show('progress')">
 <div class="dashboardProgressLabel">Peso attuale</div>
 <div class="dashboardProgressValue" id="dashboardWeight">—</div>
 <div class="dashboardProgressDelta" id="dashboardWeightDelta">Prima rilevazione</div>
 <div class="dashboardProgressCaption">Peso corporeo</div>
 </div>
-</div>`,
+</div>
 clients:`<div class="top"><div><div class="title">Clienti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
 <div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
 <div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
@@ -173,8 +163,16 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
 `,
-superuser:`<div class="top"><div><div class="title">Superuser</div><div class="sub">Area riservata ad amministratori e superuser</div></div></div>
-<div class="card"><div class="label">Accesso autorizzato</div><div class="metric" style="font-size:24px">Pannello Superuser</div><div class="sub" style="margin-top:10px">Questa sezione è visibile esclusivamente agli utenti con ruolo amministratore o superuser.</div></div>`
+superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
+<div class="superuserMenuGrid">
+ <button type="button">Prezzi abbonamenti</button>
+ <button type="button">Gestione slot</button>
+ <button type="button">Prenotazioni</button>
+ <button type="button">Progressi</button>
+ <button type="button">Notifiche</button>
+ <button type="button">Utenti</button>
+ <button type="button">Circuiti</button>
+</div>
 };
 function show(v,el){
  if(v==='superuser'&&!isSuperuserRole()) return;
@@ -214,8 +212,6 @@ async function fillDashboard(){
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
  if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
- const adminMenu=document.getElementById('adminMenuGrid');
- if(adminMenu) adminMenu.style.display=isSuperuserRole()?'grid':'none';
 
  const title=document.getElementById('dashboardWorkoutTitle');
  const sub=document.getElementById('dashboardWorkoutSub');

@@ -390,18 +390,20 @@ function splitTimeRange(value){
  return one?{start:one[1].padStart(2,'0')+':'+one[2],end:''}:{start:'',end:''};
 }
 function slotDateRaw(slot){
- // lesson_slots: la colonna DATE contiene la data reale dello slot (es. 14 Set, 18 Set, 08/06/2026).
- // NON usare starts_at come prima scelta: in questa tabella puo' rappresentare un timestamp tecnico/storico e non la data mostrata nell'app Android.
+ // lesson_slots: starts_at e date sono presenti; per la data mostrata usiamo
+ // prima starts_at, che identifica in modo univoco la singola riga/slot.
+ const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
+ if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
  for(const k of keys){
    const v=slot?.[k];
    if(v!==null&&v!==undefined&&String(v).trim()!=='') return String(v).trim();
  }
- const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
- if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  return '—';
 }
 function slotStart(slot){
+ const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
+ if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  const d=slotDateRaw(slot);
  const t=pick(slot,['time','start_time','starts_time']);
  if(d!=='—'&&t!=='—'){
@@ -411,13 +413,17 @@ function slotStart(slot){
  return d;
 }
 function slotEnd(slot){
- const d=slotDateRaw(slot);
  const t=pick(slot,['time','end_time','ends_time','to']);
+ const d=slotDateRaw(slot);
  if(d!=='—'&&t!=='—'){
    const range=splitTimeRange(t);
-   if(range.end)return String(d).trim()+'T'+range.end;
+   if(range.end){
+     // if d is an ISO timestamp, keep only its date portion
+     const base=String(d).match(/^(\d{4}-\d{2}-\d{2})/);
+     return (base?base[1]:String(d).trim())+'T'+range.end;
+   }
  }
- for(const k of ['ends_at','end_at','slot_end','end_datetime']){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
+ for(const k of ['ends_at','end_at','slot_end','end_datetime']){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return String(v).trim();}
  return '—';
 }
 function parseSlotDate(slot){

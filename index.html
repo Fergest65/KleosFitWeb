@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.7.8</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
+<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.1</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
 :root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
 
 .detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 1fr}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
@@ -392,22 +392,25 @@ function splitTimeRange(value){
  return one?{start:one[1].padStart(2,'0')+':'+one[2],end:''}:{start:'',end:''};
 }
 function slotDateRaw(slot){
-  // Per distinguere correttamente OGNI riga, usa prima il timestamp dello slot.
-  // starts_at appartiene alla singola riga di lesson_slots ed evita che una
-  // data testuale abbreviata venga interpretata uguale per più slot.
+  // DATA DELLO SLOT: usa prima la colonna date se contiene una data reale.
+  // Se date è abbreviata/non interpretabile, usa starts_at della STESSA riga.
   const candidates=[];
   const add=(v)=>{if(v!==null&&v!==undefined&&String(v).trim()!=='')candidates.push(String(v).trim())};
+  add(slot?.date);
+  add(slot?.slot_date); add(slot?.lesson_date); add(slot?.scheduled_date); add(slot?.day_date); add(slot?.p_date);
   add(slot?.starts_at); add(slot?.start_at); add(slot?.slot_start); add(slot?.start_datetime); add(slot?.date_time); add(slot?.scheduled_at);
-  add(slot?.date); add(slot?.slot_date); add(slot?.lesson_date); add(slot?.scheduled_date); add(slot?.day_date); add(slot?.p_date);
   return candidates[0]||'—';
 }
 function parseAnySlotDate(value){
   if(value===null||value===undefined)return null;
   const s=String(value).trim(); if(!s)return null;
+  // ISO timestamp: prendi SOLO la parte YYYY-MM-DD, senza conversioni UTC.
   let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(m)return new Date(+m[1],+m[2]-1,+m[3],12,0,0);
+  // GG/MM/AAAA o GG-MM-AAAA
   m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
   if(m)return new Date(+m[3],+m[2]-1,+m[1],12,0,0);
+  // GG mese italiano, con o senza spazio e con o senza anno: 14 Set / 14Set / 29 Mag 2026
   m=s.match(/^(\d{1,2})\s*([A-Za-zÀ-ÿ\.]+)(?:\s+(\d{4}))?/i);
   if(m){
     const months={gen:0,feb:1,mar:2,apr:3,mag:4,giu:5,lug:6,ago:7,set:8,ott:9,nov:10,dic:11};
@@ -417,32 +420,68 @@ function parseAnySlotDate(value){
   return null;
 }
 function parseSlotDate(slot){
-  const keys=['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
-  for(const k of keys){const d=parseAnySlotDate(slot?.[k]);if(d&&Number.isFinite(d.getTime()))return d;}
+  // Prova tutte le fonti della singola riga. Questo impedisce che una data
+  // non interpretabile faccia ricadere TUTTI gli slot sulla stessa data.
+  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at'];
+  for(const k of keys){
+    const d=parseAnySlotDate(slot?.[k]);
+    if(d&&Number.isFinite(d.getTime()))return d;
+  }
   return null;
 }
 function slotStart(slot){
-  const d=slotDateRaw(slot),t=pick(slot,['time','start_time','starts_time']);
-  if(d!=='—'&&t!=='—'){const range=splitTimeRange(t);if(range.start){const iso=String(d).match(/^(\d{4}-\d{2}-\d{2})/);return (iso?iso[1]:String(d).trim())+'T'+range.start;}}
-  return pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
+  const d=slotDateRaw(slot);
+  const t=pick(slot,['time','start_time','starts_time']);
+  if(d!=='—'&&t!=='—'){
+    const range=splitTimeRange(t);
+    if(range.start){
+      const iso=String(d).match(/^(\d{4}-\d{2}-\d{2})/);
+      return (iso?iso[1]:String(d).trim())+'T'+range.start;
+    }
+  }
+  const direct=pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
+  return direct;
 }
 function slotEnd(slot){
-  const t=pick(slot,['time','end_time','ends_time','to']),d=slotDateRaw(slot);
-  if(d!=='—'&&t!=='—'){const range=splitTimeRange(t);if(range.end){const iso=String(d).match(/^(\d{4}-\d{2}-\d{2})/);return (iso?iso[1]:String(d).trim())+'T'+range.end;}}
+  const t=pick(slot,['time','end_time','ends_time','to']);
+  const d=slotDateRaw(slot);
+  if(d!=='—'&&t!=='—'){
+    const range=splitTimeRange(t);
+    if(range.end){
+      const iso=String(d).match(/^(\d{4}-\d{2}-\d{2})/);
+      const base=iso?iso[1]:String(d).trim();
+      return base+'T'+range.end;
+    }
+  }
   return pick(slot,['ends_at','end_at','slot_end','end_datetime']);
 }
 function slotTimeText(slot){
-  const t=pick(slot,['time','start_time','starts_time']),range=splitTimeRange(t);if(range.start)return range.start;
-  const raw=slotStart(slot),s=raw&&raw!=='—'?String(raw).trim():'';const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);return m?m[1].padStart(2,'0')+':'+m[2]:'';
+  const t=pick(slot,['time','start_time','starts_time']);
+  const range=splitTimeRange(t); if(range.start)return range.start;
+  const raw=slotStart(slot),s=raw&&raw!=='—'?String(raw).trim():'';
+  const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+  return m?m[1].padStart(2,'0')+':'+m[2]:'';
 }
 function slotEndTimeText(slot){
-  const t=pick(slot,['time','end_time','ends_time','to']),range=splitTimeRange(t);if(range.end)return range.end;
-  const raw=slotEnd(slot),s=raw&&raw!=='—'?String(raw).trim():'';const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);return m?m[1].padStart(2,'0')+':'+m[2]:'';
+  const t=pick(slot,['time','end_time','ends_time','to']);
+  const range=splitTimeRange(t); if(range.end)return range.end;
+  const raw=slotEnd(slot),s=raw&&raw!=='—'?String(raw).trim():'';
+  const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+  return m?m[1].padStart(2,'0')+':'+m[2]:'';
 }
-function slotDateText(slot){const d=parseSlotDate(slot);if(!d)return 'DATA DA DEFINIRE';return d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});}
+function slotDateText(slot){
+  const d=parseSlotDate(slot);
+  if(!d)return 'DATA DA DEFINIRE';
+  return d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});
+}
 function slotTitle(slot){return pick(slot,['lesson_type','lesson_name','title','category','description'])||'Lezione';}
 function slotCapacity(slot){const v=pick(slot,['max_participants','capacity','max_capacity','max_people','participants_limit']);return v==='—'?null:Number(v);}
 function slotBooked(slot,rows){const own=pick(slot,['booked_count','bookings_count','reserved_count']);if(own!=='—'&&own!==null&&own!==undefined&&own!=='')return Number(own)||0;const sid=slot.id;return rows.filter(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(sid)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled').length;}
+function slotDateText(slot){
+ const d=parseSlotDate(slot);
+ if(!d)return 'DATA DA DEFINIRE';
+ return d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});
+}
 function bookingForSlot(slot,rows){return rows.find(b=>String(pick(b,['slot_id','lesson_slot_id']))===String(slot.id)&&String(pick(b,['user_id','profile_id','client_id']))===String(currentUser?.id)&&String(pick(b,['status','state','booking_status'])||'active').toLowerCase()!=='cancelled');}
 function renderClientBookings(slots,rows){
  const list=document.getElementById('bookingList');if(!list)return;
@@ -470,11 +509,23 @@ function renderClientBookings(slots,rows){
    const target=new Date(d);target.setHours(0,0,0,0);
    return Math.floor((target-monday)/86400000/7);
  }
- function dayLabel(d){
-   if(!d||!Number.isFinite(d.getTime()))return 'DATA DA DEFINIRE';
-   const wd=['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
+ function dayLabelForSlot(sl,d){
+   // Come Android: il giorno della settimana viene dal campo `day`
+   // della stessa riga di lesson_slots. Non viene calcolato da Date.
+   const raw=String(sl?.day??'').trim();
+   const map={
+     'lun':'LUN','lunedì':'LUN','lunedi':'LUN',
+     'mar':'MAR','martedì':'MAR','martedi':'MAR',
+     'mer':'MER','mercoledì':'MER','mercoledi':'MER',
+     'gio':'GIO','giovedì':'GIO','giovedi':'GIO',
+     'ven':'VEN','venerdì':'VEN','venerdi':'VEN',
+     'sab':'SAB','sabato':'SAB',
+     'dom':'DOM','domenica':'DOM'
+   };
+   const wd=map[raw.toLowerCase().replace(/\./g,'')] || raw.toUpperCase();
+   if(!d||!Number.isFinite(d.getTime())) return wd ? wd+' DATA DA DEFINIRE' : 'DATA DA DEFINIRE';
    const mo=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-   return wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+mo[d.getMonth()];
+   return wd+' '+String(d.getDate()).padStart(2,'0')+' '+mo[d.getMonth()];
  }
  function durationLabel(m){return m>=120?(m%60?'2h '+(m%60)+'m':'2h'):m>=60?(m%60?'1h '+(m%60)+'m':'1h'):(m+' min')}
  function maxDuration(sl){const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes','max_duration_minutes']));return Number.isFinite(n)&&n>0?n:120}
@@ -519,7 +570,7 @@ function renderClientBookings(slots,rows){
    const durations=[30,60,90,120].filter(x=>x<=maxD);
    const coach=pick(sl,['coach','coach_name','trainer']);
    return `<div class="clientSlotCard">
-    <div class="clientSlotDate">${esc(dayLabel(d))}</div>
+    <div class="clientSlotDate">${esc(dayLabelForSlot(sl,d))}</div>
     <div class="clientSlotTitle">${esc(category(sl))}</div>
     <div class="clientSlotCoach">Coach ${esc(coach==='—'?'KleosFit':coach)} - slot ${esc(st||'--:--')}${en?'-'+esc(en):''}</div>
     <div class="clientSlotMax">Max utilizzo ${esc(durationLabel(maxD))} - ${remaining===null?'posti disponibili':remaining+' posti'}</div>

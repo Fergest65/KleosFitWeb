@@ -429,7 +429,7 @@ function renderNutrition(rows){
  if(!rows.length){list.innerHTML='<div class="muted">Nessun piano nutrizionale trovato.</div>';return}
  list.innerHTML=rows.map(p=>{const meals=p.nutrition_meals||[];const target=[p.calories_target?`Kcal ${p.calories_target}`:'',p.protein_target?`Proteine ${p.protein_target} g`:'',p.water_target_liters?`Acqua ${p.water_target_liters} L`:'' ].filter(Boolean).join(' · ')||'Obiettivi non indicati';
  const mealHtml=meals.length?`<div class="mealgrid">${meals.sort((a,b)=>(a.sort_order??0)-(b.sort_order??0)).map(m=>`<div class="meal"><b>${esc(m.meal_type||'Pasto')}</b><div>${esc(m.name||'—')}</div><span>${esc(m.grams??'')} ${m.grams?'g':''}</span></div>`).join('')}</div>`:'<div class="muted">Nessun pasto associato.</div>';
- return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Piano senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div></div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attivo':'Attivo'}</span><button class="btn secondary mini" onclick="editNutritionPlan('${p.id}')">Modifica piano</button></div></div><div class="targets">${esc(target)}</div><div style="margin-top:14px">${mealHtml}</div>${meals.length?`<div class="rowactions" style="margin-top:12px">${meals.map(m=>`<button class="btn secondary mini" onclick="editNutritionMeal('${m.id}')">Modifica ${esc(m.meal_type||'pasto')}</button>`).join('')}</div>`:''}</div>`}).join('')
+ const editPlanAction=canEditNutrition()?`<button class="btn secondary mini" onclick="editNutritionPlan('${p.id}')">Modifica piano</button>`:''; const editMealActions=canEditNutrition()&&meals.length?`<div class="rowactions" style="margin-top:12px">${meals.map(m=>`<button class="btn secondary mini" onclick="editNutritionMeal('${m.id}')">Modifica ${esc(m.meal_type||'pasto')}</button>`).join('')}</div>`:''; return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Piano senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div></div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attivo':'Attivo'}</span>${editPlanAction}</div></div><div class="targets">${esc(target)}</div><div style="margin-top:14px">${mealHtml}</div>${editMealActions}</div>`}).join('')
 }
 function filterNutrition(){const q=(document.getElementById('nutritionSearch')?.value||'').toLowerCase().trim();renderNutrition(!q?nutritionData:nutritionData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
@@ -914,19 +914,24 @@ async function saveWorkoutExercise(id){
  const payload={name:valOrNull('weName'),sets:valOrNull('weSets'),reps:valOrNull('weReps'),weight:valOrNull('weWeight'),rest_seconds:valOrNull('weRest'),work_type:valOrNull('weType'),focus:valOrNull('weFocus')};
  const r=await db.from('workout_exercises').update(payload).eq('id',id);if(r.error){notice('weMsg',r.error.message);return}closeModal();await loadWorkouts()
 }
+function canEditNutrition(){return !isClientRole();}
 async function editNutritionPlan(id){
+ if(!canEditNutrition()){alert('Il piano alimentare è in sola visualizzazione per il cliente.');return;}
  const p=nutritionData.find(x=>x.id===id);if(!p)return;
  openModal(`<div class="modalhead"><h2>Modifica piano nutrizionale</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Titolo</label><input id="npTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="npDesc" value="${esc(p.description||'')}"></div><div><label>Calorie target</label><input id="npCal" type="number" value="${esc(p.calories_target??'')}"></div><div><label>Proteine target (g)</label><input id="npProt" type="number" value="${esc(p.protein_target??'')}"></div><div><label>Acqua (L)</label><input id="npWater" type="number" step="0.1" value="${esc(p.water_target_liters??'')}"></div></div><div class="checkrow"><label><input id="npActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attivo</label></div><div id="npMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionPlan('${id}')">Salva</button></div>`)
 }
 async function saveNutritionPlan(id){
+ if(!canEditNutrition()){alert('Operazione non consentita: il cliente non può modificare il piano alimentare.');return;}
  const payload={title:valOrNull('npTitle'),description:valOrNull('npDesc'),calories_target:valOrNull('npCal'),protein_target:valOrNull('npProt'),water_target_liters:valOrNull('npWater'),is_active:document.getElementById('npActive').checked};
  const r=await db.from('nutrition_plans').update(payload).eq('id',id);if(r.error){notice('npMsg',r.error.message);return}closeModal();await loadNutrition()
 }
 async function editNutritionMeal(id){
+ if(!canEditNutrition()){alert('Il pasto è in sola visualizzazione per il cliente.');return;}
  const m=nutritionData.flatMap(p=>p.nutrition_meals||[]).find(x=>x.id===id);if(!m)return;
  openModal(`<div class="modalhead"><h2>Modifica pasto</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div><label>Tipo pasto</label><input id="nmType" value="${esc(m.meal_type||'')}"></div><div><label>Nome</label><input id="nmName" value="${esc(m.name||'')}"></div><div><label>Grammi</label><input id="nmGrams" type="number" value="${esc(m.grams??'')}"></div><div><label>Ordine</label><input id="nmSort" type="number" value="${esc(m.sort_order??'')}"></div><div class="wide"><label>Descrizione</label><input id="nmDesc" value="${esc(m.description||'')}"></div></div><div id="nmMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionMeal('${id}')">Salva</button></div>`)
 }
 async function saveNutritionMeal(id){
+ if(!canEditNutrition()){alert('Operazione non consentita: il cliente non può modificare il piano alimentare.');return;}
  const payload={meal_type:valOrNull('nmType'),name:valOrNull('nmName'),grams:valOrNull('nmGrams'),sort_order:valOrNull('nmSort'),description:valOrNull('nmDesc')};
  const r=await db.from('nutrition_meals').update(payload).eq('id',id);if(r.error){notice('nmMsg',r.error.message);return}closeModal();await loadNutrition()
 }

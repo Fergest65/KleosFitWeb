@@ -216,14 +216,18 @@ async function loadWorkouts(){
  const list=document.getElementById('workoutList'),err=document.getElementById('workoutError'),count=document.getElementById('workoutCount');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento schede...';count.textContent='Caricamento...';
 
- const [r,pr]=await Promise.all([
-   db.from('workout_plans').select(`
+ const workoutSelect=`
      id,user_id,title,description,is_active,is_visible,created_at,
      workout_exercises (
        id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,
        duration_seconds,muscle_group,equipment,focus,image_url,rest_seconds,sort_order
      )
-   `).order('created_at',{ascending:false}).limit(500),
+   `;
+ let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
+ // Il cliente può solo visualizzare la propria scheda: non deve vedere né modificare le schede degli altri.
+ if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
+ const [r,pr]=await Promise.all([
+   workoutQuery,
    db.from('profiles').select('*').limit(1000)
  ]);
  if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
@@ -273,7 +277,9 @@ function renderWorkouts(rows){
   const assignment = p.user_id
     ? `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> ${esc(userName)}${userEmail?' · '+esc(userEmail):''}</div>`
     : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button><button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button></div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td><td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td></tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+  const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
+  const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>';
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
  }).join('');
 }
 function filterWorkouts(){
@@ -318,7 +324,7 @@ function showWorkoutDetail(id){
     <div><span class="label">Esercizi</span><strong>${ex.length}</strong></div>
   </div>
   <div class="detailSection"><h3>Programma di allenamento</h3>${rows}</div>
-  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="closeModal();editWorkoutPlan('${id}')">Modifica scheda</button></div>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button>${canEditWorkout()?`<button class="btn" onclick="closeModal();editWorkoutPlan('${id}')">Modifica scheda</button>`:''}</div>
  `);
 }
 
@@ -361,6 +367,7 @@ async function loadBookings(){
  else renderBookings(bookingsData,slots);
 }
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
+function canEditWorkout(){return !isClientRole();}
 function slotDateValue(slot){
  const vals=['date','slot_date','lesson_date','scheduled_date','day_date','p_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at'];
  for(const k of vals){const v=slot?.[k];if(v!==null&&v!==undefined&&String(v).trim()!=='')return v;}
@@ -712,12 +719,14 @@ function openModal(html){document.getElementById('modalContent').innerHTML=html;
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}
 async function editWorkoutPlan(id){
+ if(!canEditWorkout()){alert('La scheda workout è in sola visualizzazione per il cliente.');return;}
  const p=workoutsData.find(x=>x.id===id);if(!p)return;
  const clients=(usersData||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
  const opts='<option value="">— Nessun cliente —</option>'+clients.map(u=>`<option value="${esc(u.id)}" ${p.user_id===u.id?'selected':''}>${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('');
  openModal(`<div class="modalhead"><h2>Modifica scheda</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Cliente / Utente assegnato</label><select id="wpUser">${opts}</select></div><div class="wide"><label>Titolo</label><input id="wpTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="wpDesc" value="${esc(p.description||'')}"></div></div><div class="checkrow"><label><input id="wpActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attiva</label><label><input id="wpVisible" type="checkbox" ${p.is_visible!==false?'checked':''}> Visibile</label></div><div id="wpMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveWorkoutPlan('${id}')">Salva</button></div>`)
 }
 async function saveWorkoutPlan(id){
+ if(!canEditWorkout()){alert('Operazione non consentita: il cliente non può modificare la scheda workout.');return;}
  const uid=document.getElementById('wpUser').value||null;
  const payload={user_id:uid,title:document.getElementById('wpTitle').value.trim(),description:document.getElementById('wpDesc').value.trim(),is_active:document.getElementById('wpActive').checked,is_visible:document.getElementById('wpVisible').checked};
  const r=await db.from('workout_plans').update(payload).eq('id',id);
@@ -780,6 +789,7 @@ function applyArchiveExercise(id){
  renderArchiveSuggestions();
 }
 async function editWorkoutExercise(id){
+ if(!canEditWorkout()){alert('La scheda workout è in sola visualizzazione per il cliente.');return;}
  const e=(workoutsData.flatMap(p=>p.workout_exercises||[])).find(x=>x.id===id);if(!e)return;
  const archiveError=await loadExerciseLibrary();
  const initialArchive=(exerciseLibraryData||[]).find(x=>String(x.name||'').toLowerCase()===String(e.name||'').toLowerCase());
@@ -799,6 +809,7 @@ async function editWorkoutExercise(id){
 
 function valOrNull(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:v}
 async function saveWorkoutExercise(id){
+ if(!canEditWorkout()){alert('Operazione non consentita: il cliente non può modificare la scheda workout.');return;}
  const payload={name:valOrNull('weName'),sets:valOrNull('weSets'),reps:valOrNull('weReps'),weight:valOrNull('weWeight'),rest_seconds:valOrNull('weRest'),work_type:valOrNull('weType'),focus:valOrNull('weFocus')};
  const r=await db.from('workout_exercises').update(payload).eq('id',id);if(r.error){notice('weMsg',r.error.message);return}closeModal();await loadWorkouts()
 }

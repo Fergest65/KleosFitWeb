@@ -118,7 +118,7 @@ payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div c
 admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
-<div class="section"><div class="card"><b>Storico pagamenti</b><div id="paymentList" class="muted" style="margin-top:12px">Caricamento...</div></div></div>`
+`
 };
 function show(v,el){
  document.getElementById('content').innerHTML=views[v];
@@ -796,7 +796,7 @@ async function loadAdmin(){
  err.style.display='none';list.innerHTML='Caricamento utenti...';
  const r=await db.from('profiles').select('*').limit(500);
  if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
- adminData=r.data||[];renderAdmin(adminData);loadPayments();
+ adminData=r.data||[];renderAdmin(adminData);
 }
 function renderAdmin(rows){
  const list=document.getElementById('adminList'),count=document.getElementById('adminCount');if(!list)return;
@@ -806,16 +806,6 @@ function renderAdmin(rows){
  '</tbody></table></div>';
 }
 function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();renderAdmin(!q?adminData:adminData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
-async function loadPayments(){
- const el=document.getElementById('paymentList');if(!el)return;
- const r=await db.from('subscription_payment_history').select('*').order('created_at',{ascending:false}).limit(100);
- if(r.error){el.innerHTML='<span class="muted">Storico pagamenti non leggibile con i permessi attuali.</span>';return}
- const rows=r.data||[];
- if(!rows.length){el.innerHTML='<span class="muted">Nessun pagamento nello storico.</span>';return}
- el.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Importo</th><th>Stato</th></tr></thead><tbody>'+
- rows.map(x=>`<tr><td>${esc(fmtDate(x.created_at||x.paid_at||x.payment_date))}</td><td>${esc(pick(x,['user_name','client_name','user_id']))}</td><td>${esc(pick(x,['amount','price','total','fee']))}</td><td><span class="pill">${esc(pick(x,['status','state']))}</span></td></tr>`).join('')+
- '</tbody></table></div>';
-}
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('open')}
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}

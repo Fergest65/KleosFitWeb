@@ -13,6 +13,33 @@
 @media(max-width:700px){.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}}
 
 .clientSheet{display:grid;gap:16px}.clientSheetGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.clientSheetGrid .wide{grid-column:1/-1}.clientSheetSection{border:1px solid var(--line);border-radius:12px;padding:14px;background:#111419}.clientSheetSection h3{margin:0 0 10px;font-size:14px;color:#fff}.clientSheetSection h3 span{color:var(--accent)}.qrCard{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:16px;background:#0d1014}.qrBox{width:150px;height:150px;background:#fff;padding:8px;border-radius:10px;display:grid;place-items:center}.qrBox img,.qrBox canvas{max-width:134px!important;max-height:134px!important}.clientCardInfo strong{font-size:22px;display:block}.clientCardInfo .member{color:var(--accent);font-size:18px;font-weight:800;margin-top:5px}.clientCardInfo .small{color:var(--muted);font-size:13px;margin-top:7px}.sheetBtn{padding:7px 10px;font-size:12px}.qrActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qrGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.qrClientCard{background:#111419;border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}.qrClientBox{width:112px;height:112px;background:#fff;border-radius:10px;padding:6px;display:grid;place-items:center}.qrClientBox img,.qrClientBox canvas{max-width:100px!important;max-height:100px!important}.qrClientName{font-size:17px;font-weight:800}.qrClientCard .member{color:var(--accent);font-weight:800;margin-top:4px}.qrClientCard .small{color:var(--muted);font-size:12px;margin-top:5px}.qrClientActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}@media(max-width:700px){.qrClientCard{grid-template-columns:1fr;text-align:center;justify-items:center}}@media(max-width:700px){.clientSheetGrid{grid-template-columns:1fr}.clientSheetGrid .wide{grid-column:auto}.qrCard{grid-template-columns:1fr;text-align:center;justify-items:center}}
+
+<style>
+.dashboardHero{display:flex;flex-direction:column;gap:18px}
+.dashboardWelcome{padding:6px 0 0}
+.dashboardGreeting{font-size:44px;font-weight:800;letter-spacing:-1.5px;color:#fff}
+.adminAccessBanner{min-height:72px;border-radius:40px;background:#c4ff3d;color:#0a0d08;align-items:center;justify-content:center;font-size:25px;font-weight:900;cursor:pointer;text-align:center}
+.dashboardWorkout{padding:28px 26px 30px;min-height:290px}
+.dashboardSectionTitle{font-size:22px;font-weight:900;color:#c4ff3d;margin-bottom:20px}
+.dashboardWorkoutTitle{font-size:38px;font-weight:900;color:#fff;letter-spacing:-1px}
+.dashboardWorkoutSub{font-size:22px;line-height:1.35;color:#a8adb9;margin-top:10px;max-width:850px}
+.dashboardStartBtn{margin-top:28px;min-width:310px;font-size:20px;font-weight:900}
+.dashboardProgressTitle{font-size:31px;font-weight:900;color:#fff;margin-top:12px}
+.dashboardProgress{padding:28px 26px 34px;cursor:pointer;min-height:235px}
+.dashboardProgressLabel{font-size:23px;font-weight:800;color:#a8adb9}
+.dashboardProgressValue{font-size:54px;font-weight:900;color:#fff;margin-top:22px}
+.dashboardProgressDelta{font-size:27px;font-weight:800;color:#c4ff3d;margin-top:6px}
+.dashboardProgressCaption{font-size:28px;font-weight:900;color:#fff;margin-top:38px}
+@media(max-width:700px){
+ .dashboardGreeting{font-size:34px}
+ .adminAccessBanner{font-size:20px}
+ .dashboardWorkoutTitle{font-size:30px}
+ .dashboardWorkoutSub{font-size:18px}
+ .dashboardProgressTitle{font-size:26px}
+ .dashboardProgressValue{font-size:46px}
+ .dashboardStartBtn{min-width:0;width:100%}
+}
+</style>
 </style>
 <style>
 /* KLEOSFIT welcome screen */
@@ -68,7 +95,7 @@
 
 .apkExerciseCard{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#101217}.apkExTop{display:grid;grid-template-columns:34px 92px 1fr;gap:12px;align-items:center}.apkExNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:800}.apkExImageWrap{width:92px;height:92px;border-radius:10px;overflow:hidden;background:#171b21;border:1px solid var(--line);display:grid;place-items:center}.apkExImage{width:100%;height:100%;object-fit:cover;display:block}.apkExImageFallback{font-size:11px;color:var(--muted);font-weight:800}.apkExTitle{font-size:16px;font-weight:850}.apkExMeta{font-size:12px;color:var(--muted);margin-top:4px}.apkExType{font-size:12px;color:#cfd5dd;margin-top:5px}.apkExNotes{font-size:12px;color:#cfd5dd;margin-top:6px}.apkExStats{display:grid;grid-template-columns:repeat(6,minmax(72px,1fr));gap:8px;margin-top:11px}.apkExStats div{padding:8px 6px;text-align:center;border-radius:8px;background:#171b21;min-height:44px}.apkExStats span{display:block;font-size:10px;color:var(--muted)}.apkExStats b{display:block;margin-top:3px;font-size:12px;word-break:break-word}@media(max-width:900px){.apkExStats{grid-template-columns:repeat(3,1fr)}}@media(max-width:600px){.apkExTop{grid-template-columns:30px 72px 1fr}.apkExImageWrap{width:72px;height:72px}.apkExTitle{font-size:14px}.apkExStats{grid-template-columns:repeat(2,1fr)}}
 
-.progressGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.progressCard{background:#14161a;border:1px solid var(--line);border-radius:14px;padding:24px;min-height:250px}.progressCardHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.progressCardTitle{font-size:27px;font-weight:850;color:#aeb4c1}.progressTrend{font-size:28px;color:var(--accent);font-weight:900}.progressValue{font-size:56px;font-weight:900;margin-top:42px;letter-spacing:-1px}.progressChange{font-size:28px;font-weight:850;color:var(--accent);margin-top:20px}.progressFirst{font-size:18px;font-weight:800;color:var(--accent);margin-top:20px}.progressDate{color:var(--muted);font-size:12px;margin-top:8px}.progressTableWrap{overflow:auto}.progressTable{min-width:1100px}.progressInfo{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#111419;color:#cbd1da;margin-bottom:16px}.progressReadOnly{display:inline-block;padding:5px 9px;border-radius:999px;background:#1d2514;color:var(--accent);font-size:12px;font-weight:800}@media(max-width:700px){.progressGrid{grid-template-columns:1fr}.progressCard{min-height:220px}.progressValue{font-size:46px}}
+.progressGuide{margin:0 0 18px;border:1px solid var(--line);border-radius:14px;background:#0f1217;overflow:hidden}.progressGuide img{display:block;width:100%;height:auto;max-height:620px;object-fit:contain}.progressGuideCaption{padding:10px 14px;color:var(--muted);font-size:12px}.progressGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.progressCard{background:#14161a;border:1px solid var(--line);border-radius:14px;padding:24px;min-height:250px}.progressCardHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.progressCardTitle{font-size:27px;font-weight:850;color:#aeb4c1}.progressTrend{font-size:28px;color:var(--accent);font-weight:900}.progressValue{font-size:56px;font-weight:900;margin-top:42px;letter-spacing:-1px}.progressChange{font-size:28px;font-weight:850;color:var(--accent);margin-top:20px}.progressFirst{font-size:18px;font-weight:800;color:var(--accent);margin-top:20px}.progressDate{color:var(--muted);font-size:12px;margin-top:8px}.progressTableWrap{overflow:auto}.progressTable{min-width:1100px}.progressInfo{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#111419;color:#cbd1da;margin-bottom:16px}.progressReadOnly{display:inline-block;padding:5px 9px;border-radius:999px;background:#1d2514;color:var(--accent);font-size:12px;font-weight:800}@media(max-width:700px){.progressGrid{grid-template-columns:1fr}.progressCard{min-height:220px}.progressValue{font-size:46px}}
 </style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
@@ -77,26 +104,29 @@
 <div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('clients',this)">♙ <span>Clienti</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('clients',this)">♙ <span>Clienti</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[];
 const views={
-dashboard:`<div class="top"><div><div class="title">Dashboard</div><div class="sub">Panoramica operativa KleosFit</div></div><button class="btn danger dashboardLogout" type="button" onclick="logout()">LOG OUT</button></div>
-<div class="grid">
- <div class="card"><div class="label">Cliente / Profilo</div><div class="metric" id="profileName">—</div></div>
- <div class="card"><div class="label">Ruolo</div><div class="metric" id="profileRole">—</div></div>
- <div class="card"><div class="label">Clienti</div><div class="metric" id="metricClients">—</div></div>
- <div class="card"><div class="label">Schede workout</div><div class="metric" id="metricWorkouts">—</div></div>
+dashboard:`<div class="dashboardHero">
+<div class="dashboardWelcome"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div></div>
+<div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
+<div class="dashboardWorkout card">
+<div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
+<div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
+<div class="dashboardWorkoutSub" id="dashboardWorkoutSub">Quando il coach assegna una scheda attiva, la trovi qui.</div>
+<button class="btn dashboardStartBtn" type="button" onclick="show('workout',document.querySelector('.nav button[onclick*='workout']'))">＋ Inizia allenamento</button>
 </div>
-<div class="grid" style="margin-top:16px">
- <div class="card"><div class="label">Piani nutrizionali</div><div class="metric" id="metricNutrition">—</div></div>
- <div class="card"><div class="label">Prenotazioni</div><div class="metric" id="metricBookings">—</div></div>
- <div class="card"><div class="label">Backend</div><div class="metric">LIVE</div></div>
- <div class="card"><div class="label">Account</div><div class="metric">✓</div></div>
+<div class="dashboardProgressTitle">I TUOI PROGRESSI</div>
+<div class="dashboardProgress card" onclick="show('progress',document.querySelector('.clientOnlyNav'))">
+<div class="dashboardProgressLabel">Peso attuale</div>
+<div class="dashboardProgressValue" id="dashboardWeight">—</div>
+<div class="dashboardProgressDelta" id="dashboardWeightDelta">Prima rilevazione</div>
+<div class="dashboardProgressCaption">Peso corporeo</div>
 </div>
-<div class="section"><h2>Connessione</h2><div class="card"><b>Supabase collegato</b><p class="sub" id="connectionText">Sessione autenticata correttamente.</p></div></div>`,
+</div>`,
 clients:`<div class="top"><div><div class="title">Clienti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
 <div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
 <div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
@@ -117,6 +147,7 @@ qrcodes:`<div class="top"><div><div class="title">QR Code</div><div class="sub">
 <div class="card"><div class="sub" style="margin-bottom:12px">QR Code personale del cliente attualmente collegato</div><div id="qrError" class="error"></div><div id="qrCount" class="muted" style="margin-top:12px">Caricamento...</div><div id="qrList" class="qrGrid" style="margin-top:14px"></div></div>`,
 progress:`<div class="top"><div><div class="title">Progressi</div><div class="sub">Storico delle tue misurazioni corporee</div></div><button class="btn" type="button" onclick="loadClientProgress()">Aggiorna</button></div>
 <div class="progressInfo"><span class="progressReadOnly">SOLA VISUALIZZAZIONE</span><div style="margin-top:8px">Le rilevazioni vengono inserite dal coach. Qui puoi consultare soltanto lo storico delle tue misurazioni.</div></div>
+<div class="progressGuide"><img src="misurazioni-corpo.png" alt="Guida alle misurazioni corporee"><div class="progressGuideCaption">Guida visiva alle zone di misurazione — area informativa, non modificabile dal cliente.</div></div>
 <div id="progressError" class="error"></div><div id="progressCount" class="muted">Caricamento...</div><div id="progressCards" class="progressGrid" style="margin-top:14px"></div>
 <div class="section"><div class="card"><h2>Storico misurazioni</h2><div id="progressTable" class="progressTableWrap">Caricamento...</div></div></div>`,
 payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza i tuoi pagamenti e lo stato degli abbonamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
@@ -124,9 +155,12 @@ payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div c
 admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
-`
+`,
+superuser:`<div class="top"><div><div class="title">Superuser</div><div class="sub">Area riservata ad amministratori e superuser</div></div></div>
+<div class="card"><div class="label">Accesso autorizzato</div><div class="metric" style="font-size:24px">Pannello Superuser</div><div class="sub" style="margin-top:10px">Questa sezione è visibile esclusivamente agli utenti con ruolo amministratore o superuser.</div></div>`
 };
 function show(v,el){
+ if(v==='superuser'&&!isSuperuserRole()) return;
  document.getElementById('content').innerHTML=views[v];
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
  if(el)el.classList.add('active');
@@ -139,12 +173,14 @@ function show(v,el){
  if(v==='payments')loadClientPayments();
  if(v==='progress')loadClientProgress();
  if(v==='admin')loadAdmin();
+ if(v==='superuser'&&!isSuperuserRole()) return;
 }
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
  if(!r.error) profile=r.data;
  document.getElementById('role').textContent=(profile?.role||profile?.user_role||'Utente').toString();
  document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
+ document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -157,14 +193,48 @@ async function countTable(table){
  return r.error?null:r.count;
 }
 async function fillDashboard(){
- const name=(profile?.full_name||profile?.name||currentUser?.email||'Utente').slice(0,18);
- document.getElementById('profileName').textContent=name;
- document.getElementById('profileRole').textContent=(profile?.role||profile?.user_role||'Utente').toString().slice(0,12);
- const [c,w,n,b]=await Promise.all([countTable('profiles'),countTable('workout_plans'),countTable('nutrition_plans'),countTable('lesson_bookings')]);
- document.getElementById('metricClients').textContent=c??'—';
- document.getElementById('metricWorkouts').textContent=w??'—';
- document.getElementById('metricNutrition').textContent=n??'—';
- document.getElementById('metricBookings').textContent=b??'—';
+ const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
+ const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
+ const adminBanner=document.getElementById('adminAccessBanner');
+ if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
+
+ const title=document.getElementById('dashboardWorkoutTitle');
+ const sub=document.getElementById('dashboardWorkoutSub');
+ if(isClientRole() && currentUser?.id){
+   const r=await db.from('workout_plans').select('*').eq('user_id',currentUser.id).eq('is_active',true).limit(1).maybeSingle();
+   if(!r.error && r.data){
+     if(title) title.textContent=r.data.title||'Scheda attiva';
+     if(sub) sub.textContent=r.data.description||'La tua scheda di allenamento è pronta.';
+   }
+ }else{
+   if(title) title.textContent='Nessuna scheda attiva';
+   if(sub) sub.textContent='Quando il coach assegna una scheda attiva, la trovi qui.';
+ }
+
+ const w=document.getElementById('dashboardWeight');
+ const d=document.getElementById('dashboardWeightDelta');
+ if(isClientRole() && currentUser?.id){
+   const r=await db.from('progress_entries').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(2);
+   const rows=r.error?[]:(r.data||[]);
+   if(rows.length){
+     const weightKey=['weight','peso','weight_kg'];
+     const cur=pick(rows[0],weightKey);
+     if(w) w.textContent=cur==='—'?'—':String(cur).replace('.',',')+' kg';
+     if(d){
+       if(rows.length>1){
+         const prev=Number(pick(rows[1],weightKey));
+         const now=Number(cur);
+         d.textContent=(Number.isFinite(now)&&Number.isFinite(prev)?((now-prev>0?'+':'')+(now-prev).toFixed(1).replace('.',',')+' kg ultima rilevazione'):'Ultima rilevazione');
+       }else d.textContent='Prima rilevazione';
+     }
+   }else{
+     if(w) w.textContent='—';
+     if(d) d.textContent='Prima rilevazione';
+   }
+ }else{
+   if(w) w.textContent='—';
+   if(d) d.textContent='Prima rilevazione';
+ }
 }
 
 async function loadClients(){
@@ -460,6 +530,10 @@ async function loadBookings(){
  else renderBookings(bookingsData,slots);
 }
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
+function isSuperuserRole(){
+ const r=String(profile?.role||profile?.user_role||'').toLowerCase().trim();
+ return ['admin','administrator','amministratore','superuser'].includes(r);
+}
 function canViewClientProgress(){return isClientRole()&&!!currentUser?.id;}
 function canEditWorkout(){return !isClientRole();}
 function slotDateValue(slot){

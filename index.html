@@ -912,7 +912,7 @@ async function deleteAdminSlot(id){
  let r=await db.rpc('coach_delete_lesson_slots',{p_slot_id:id});
  if(r.error) r=await db.from('lesson_slots').delete().eq('id',id);
  if(r.error){alert('Impossibile eliminare lo slot: '+r.error.message);return}
- await loadBookings();
+ if(document.getElementById('slotAdminList')) await loadSlotAdmin(); else await loadBookings();
 }
 async function editAdminSlot(id){
  const sl=bookingSlots.find(x=>String(x.id)===String(id));if(!sl)return;
@@ -923,21 +923,39 @@ async function editAdminSlot(id){
  const cap=prompt('Numero massimo partecipanti:',String(sl.max_participants||20));if(cap===null)return;
  const r=await db.from('lesson_slots').update({date:date.trim(),time:time.trim(),coach:coach.trim(),duration_minutes:Number(duration)||60,max_participants:Number(cap)||20}).eq('id',id);
  if(r.error){alert('Impossibile modificare lo slot: '+r.error.message);return}
- await loadBookings();
+ if(document.getElementById('slotAdminList')) await loadSlotAdmin(); else await loadBookings();
 }
 
 async function loadSlotAdmin(){
  const list=document.getElementById('slotAdminList'),err=document.getElementById('slotAdminError');
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento slot...';
- const [b,s]=await Promise.all([
-   db.from('lesson_bookings').select('*').limit(500),
-   db.from('lesson_slots').select('*').limit(500)
- ]);
- bookingsData=b.error?[]:b.data||[];
- bookingSlots=s.error?[]:s.data||[];
- if(s.error){err.textContent='Impossibile caricare gli slot: '+s.error.message;err.style.display='block';list.innerHTML='';return}
- renderSlotAdmin(bookingsData,bookingSlots);
+ try{
+   // Carichiamo prima gli slot: la gestione deve funzionare anche se la tabella
+   // prenotazioni ha un problema di RLS o una risposta lenta.
+   const slotPromise=db.from('lesson_slots').select('*').limit(500);
+   const timeout=new Promise(resolve=>setTimeout(()=>resolve({data:null,error:{message:'Timeout caricamento slot'}}),10000));
+   const s=await Promise.race([slotPromise,timeout]);
+   if(s.error){
+     err.textContent='Impossibile caricare gli slot: '+s.error.message;
+     err.style.display='block';
+     list.innerHTML='<div class="bookingNotice">Nessuno slot caricato. Premi Aggiorna per riprovare.</div>';
+     return;
+   }
+   bookingSlots=s.data||[];
+   // Le prenotazioni servono solo per il conteggio. Se falliscono, gli slot
+   // restano comunque visibili e modificabili.
+   const b=await Promise.race([
+     db.from('lesson_bookings').select('*').limit(500),
+     new Promise(resolve=>setTimeout(()=>resolve({data:[],error:null}),5000))
+   ]);
+   bookingsData=b.error?[]:(b.data||[]);
+   renderSlotAdmin(bookingsData,bookingSlots);
+ }catch(e){
+   err.textContent='Errore nella gestione slot: '+(e?.message||e);
+   err.style.display='block';
+   list.innerHTML='<div class="bookingNotice">Impossibile caricare gli slot. Premi Aggiorna per riprovare.</div>';
+ }
 }
 function filterSlotAdmin(){
  const q=(document.getElementById('slotAdminSearch')?.value||'').toLowerCase().trim();

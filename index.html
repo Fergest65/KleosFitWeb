@@ -390,15 +390,16 @@ function splitTimeRange(value){
  return one?{start:one[1].padStart(2,'0')+':'+one[2],end:''}:{start:'',end:''};
 }
 function slotDateRaw(slot){
- // lesson_slots: starts_at e date sono presenti; per la data mostrata usiamo
- // prima starts_at, che identifica in modo univoco la singola riga/slot.
- const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
- if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
+ // lesson_slots: la data mostrata all'utente è la colonna DATE.
+ // Usiamo DATE come fonte primaria per evitare che starts_at (timestamp tecnico)
+ // sovrascriva la data reale della riga.
  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
  for(const k of keys){
    const v=slot?.[k];
    if(v!==null&&v!==undefined&&String(v).trim()!=='') return String(v).trim();
  }
+ const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
+ if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  return '—';
 }
 function slotStart(slot){

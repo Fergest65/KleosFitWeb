@@ -230,7 +230,7 @@ async function loadWorkouts(){
    `;
  let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
  // Il cliente può solo visualizzare la propria scheda: non deve vedere né modificare le schede degli altri.
- if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
+ if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('profile_id',currentUser.id);
  const [r,pr,lr]=await Promise.all([
    workoutQuery,
    db.from('profiles').select('*').limit(1000),
@@ -779,16 +779,16 @@ async function loadClientPayments(){
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento storico...';count.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
- const r=await db.from('subscription_payment_history').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
+ const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
  if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
  const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
  if(!rows.length){list.innerHTML='<div class="muted">Nessun pagamento presente nello storico.</div>';return}
- const dateVal=x=>x.created_at||x.paid_at||x.payment_date||x.date||x.transaction_date;
- const amountVal=x=>x.amount??x.price??x.total??x.fee??x.value;
- const methodVal=x=>pick(x,['payment_method','method','payment_type','type','gateway']);
- const statusVal=x=>pick(x,['status','state','payment_status']);
- const refVal=x=>pick(x,['transaction_id','payment_id','reference','receipt_number']);
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Importo</th><th>Metodo</th><th>Stato</th><th>Riferimento</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(amountVal(x)??'—')}</td><td>${esc(methodVal(x))}</td><td><span class="pill">${esc(statusVal(x))}</span></td><td>${esc(refVal(x))}</td></tr>`).join('')+'</tbody></table></div>';
+ const dateVal=x=>x.created_at;
+ const fromVal=x=>x.paid_from;
+ const toVal=x=>x.paid_to;
+ const amountVal=x=>x.amount;
+ const noteVal=x=>x.note;
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fromVal(x)||'—')} → ${esc(toVal(x)||'—')}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
 }
 
 async function loadAdmin(){

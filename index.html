@@ -420,16 +420,37 @@ function parseAnySlotDate(value){
   return null;
 }
 function parseSlotDate(slot){
-  // DATA REALE DELLO SLOT: nell'app Android la data visualizzata
-  // corrisponde alla data/ora propria dello slot. `day` resta invece
-  // il testo del giorno (LUN/MAR/MER...) della stessa riga.
-  const keys=['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at','date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
-  for(const k of keys){
-    const v=slot?.[k];
-    const d=parseAnySlotDate(v);
-    if(d&&Number.isFinite(d.getTime())) return d;
+  // Come l'app Android: la riga contiene sia il giorno (`day`) sia una data
+  // di riferimento. Il giorno viene proiettato sulla settimana della data
+  // di riferimento, invece di mostrare la stessa data per tutti gli slot.
+  const rawDay=String(slot?.day??'').trim().toLowerCase().replace(/\./g,'');
+  const dayMap={
+    'lun':1,'lunedi':1,'lunedì':1,'lunedì':1,
+    'mar':2,'martedi':2,'martedì':2,
+    'mer':3,'mercoledi':3,'mercoledì':3,
+    'gio':4,'giovedi':4,'giovedì':4,
+    'ven':5,'venerdi':5,'venerdì':5,
+    'sab':6,'sabato':6,
+    'dom':0,'domenica':0
+  };
+  const wanted=dayMap[rawDay];
+  const baseKeys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at'];
+  let base=null;
+  for(const k of baseKeys){
+    const d=parseAnySlotDate(slot?.[k]);
+    if(d&&Number.isFinite(d.getTime())){base=d;break;}
   }
-  return null;
+  if(!base)return null;
+  if(wanted===undefined)return base;
+  // Monday-based week, exactly one date per weekday.
+  const monday=new Date(base);
+  monday.setHours(12,0,0,0);
+  const dow=monday.getDay()||7;
+  monday.setDate(monday.getDate()-(dow-1));
+  const projected=new Date(monday);
+  projected.setDate(monday.getDate()+(wanted===0?6:wanted-1));
+  projected.setHours(12,0,0,0);
+  return projected;
 }
 function slotStart(slot){
   const d=slotDateRaw(slot);

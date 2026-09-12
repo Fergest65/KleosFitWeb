@@ -239,7 +239,7 @@ async function loadWorkouts(){
  if(!lr.error){
    (lr.data||[]).forEach(x=>{
      const n=firstVal(x,['name','exercise_name','title','nome']);
-     if(n)byExerciseName[String(n).trim().toLowerCase()]=x;
+     if(n){ byExerciseName[String(n).trim().toLowerCase()]=x; byExerciseName[normalizeExerciseKey(n)]=x; }
    });
  }
  const plans=r.data||[];
@@ -247,8 +247,9 @@ async function loadWorkouts(){
    ...p,
    user_profile:byUser[p.user_id]||null,
    workout_exercises:(Array.isArray(p.workout_exercises)?p.workout_exercises:[]).map(e=>{
-     const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||null;
-     return {...e, image_url:firstVal(e,['image_url','image','photo_url'],firstVal(lib,['image_url','image','photo_url'],'')), exercise_library:lib};
+     const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||byExerciseName[normalizeExerciseKey(e.name)]||null;
+     const merged={...e, exercise_library:lib};
+     return {...merged, image_url:getExerciseImageUrl(merged)};
    })
  }));
 
@@ -259,6 +260,71 @@ async function loadWorkouts(){
    err.style.display='block';
  }
  renderWorkouts(workoutsData);
+}
+
+// Immagini esercizi: comportamento allineato all'app Android.
+// 1) usa l'image_url salvato nell'esercizio;
+// 2) se manca, usa l'immagine collegata nella exercise_library;
+// 3) se Supabase restituisce un path relativo, lo trasforma nell'URL pubblico del bucket;
+// 4) come fallback usa gli asset esercizi pubblici già utilizzati dall'APK.
+const APK_EXERCISE_ASSETS={
+ 'ab wheel rollout':'ab-wheel-rollout-ai.jpg','ab wheel':'ab-wheel-rollout-ai.jpg',
+ 'advanced tuck front lever':'advanced-tuck-front-lever-ai.jpg','front lever tuck':'advanced-tuck-front-lever-ai.jpg',
+ 'alternating dumbbell press':'alternating-dumbbell-press-ai.jpg',
+ 'ankle dorsiflexion':'ankle-dorsiflexion-ai-v2.jpg','arch hold':'arch-hold-ai-v2.jpg',
+ 'assault bike':'assault-bike-photo.jpg','assisted chin up':'assisted-chin-up-ai.jpg',
+ 'band hip abduction seated':'band-hip-abduction-seated-ai.jpg','band pulldown':'band-pulldown-ai.jpg',
+ 'banded ankle dorsiflexion':'banded-ankle-dorsiflexion-ai.jpg','barbell curl':'barbell-curl.jpg',
+ 'barbell squat':'barbell-squat-ai.jpg','barbell z press':'barbell-z-press-ai.jpg',
+ 'bench press':'bench-press-ai.jpg','panca piana':'bench-press-ai.jpg',
+ 'bulgarian split squat':'bulgarian-split-squat-ai.jpg','cable chest fly':'cable-chest-fly-ai.jpg',
+ 'cable kickback glute':'cable-kickback-glute-ai.jpg','dead bug':'dead-bug-photo.jpg',
+ 'dumbbell curl':'dumbbell-curl-photo.jpg','dumbbell pullover':'dumbbell-pullover-ai.jpg',
+ 'dumbbell shoulder press':'dumbbell-shoulder-press-ai.jpg','dumbbell step up':'dumbbell-step-up-ai.jpg',
+ 'farmer walk':'farmer-walk-photo.jpg','glute bridge':'glute-bridge-ai.jpg',
+ 'hack squat machine':'hack-squat-machine-ai.jpg','hammer curl':'hammer-curl-photo.jpg',
+ 'hip abductor machine':'hip-abductor-machine-ai.jpg','hip adductor machine':'hip-adductor-machine-ai.jpg',
+ 'hip thrust':'hip-thrust-ai.jpg','hyperextension 45 glute bias':'hyperextension-45-glute-bias-ai.jpg',
+ 'incline dumbbell press':'incline-dumbbell-press-ai.jpg','lat pulldown':'lat-pulldown-ai.jpg',
+ 'leg extension machine':'leg-extension-machine-ai.jpg','leg press':'leg-press.jpg',
+ 'mountain climber':'mountain-climber-photo.jpg','one arm dumbbell row':'one-arm-dumbbell-row-ai.jpg',
+ 'plank':'plank-photo.jpg','push up':'push-up-ai.jpg','romanian deadlift':'romanian-deadlift-ai.jpg',
+ 'russian twist':'russian-twist-photo.jpg','seated cable row':'seated-cable-row-ai.jpg',
+ 'seated leg curl':'seated-leg-curl-photo.jpg','shrug':'shrug-photo.jpg',
+ 'single cable rear delt':'single-cable-rear-delt-ai-v2.jpg','sled push':'sled-push-photo.jpg',
+ 'standing calf raise':'standing-calf-raise-ai.jpg','sumo squat':'sumo-squat-ai.jpg',
+ 'thruster':'thruster-photo.jpg','treadmill':'treadmill-photo.jpg','triceps pushdown':'triceps-pushdown-ai.jpg',
+ 'trx burpee':'trx-burpee-ai.jpg','trx hamstring curl':'trx-hamstring-curl-ai.jpg',
+ 'trx mountain climber':'trx-mountain-climber-ai.jpg','trx row':'trx-row-ai.jpg',
+ 'trx single leg squat':'trx-single-leg-squat-ai.jpg','trx squat':'trx-squat-ai.jpg',
+ 'trx triceps extension':'trx-triceps-extension-ai.jpg','trx y fly':'trx-y-fly-ai.jpg',
+ 'wall ball':'wall-ball-photo.jpg'
+};
+function normalizeExerciseKey(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function resolveExerciseImageUrl(v){
+ const raw=String(v||'').trim();
+ if(!raw)return '';
+ if(/^data:image\//i.test(raw)||/^https?:\/\//i.test(raw))return raw;
+ if(raw.startsWith('//'))return location.protocol+raw;
+ const clean=raw.replace(/^\.?\//,'');
+ if(clean.startsWith('storage/v1/object/public/'))return SUPABASE_URL+'/'+clean;
+ if(clean.startsWith('/storage/v1/object/public/'))return SUPABASE_URL+clean;
+ if(clean.startsWith('exercise-images/'))return SUPABASE_URL+'/storage/v1/object/public/'+clean;
+ // In exercise_library some records can contain only the object filename/path.
+ if(/\.(jpe?g|png|webp|gif)$/i.test(clean))return SUPABASE_URL+'/storage/v1/object/public/exercise-images/eventi/'+clean.split('/').map(encodeURIComponent).join('/');
+ return raw;
+}
+function getExerciseImageUrl(e){
+ if(!e)return '';
+ const direct=firstVal(e,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']);
+ const fromLib=e.exercise_library||{};
+ const lib=firstVal(fromLib,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']);
+ const candidate=resolveExerciseImageUrl(direct||lib);
+ if(candidate)return candidate;
+ const key=normalizeExerciseKey(e.name||e.exercise_name||e.title||'');
+ const asset=APK_EXERCISE_ASSETS[key];
+ if(asset)return 'https://classic-assets.eascdn.net/~assets/exercise-images-optimized/'+asset;
+ return '';
 }
 
 function profileDisplayName(u){
@@ -287,7 +353,7 @@ function renderWorkouts(rows){
     : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
   const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
   const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>';
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(e.image_url)}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
  }).join('');
 }
 function filterWorkouts(){
@@ -308,7 +374,7 @@ function showWorkoutDetail(id){
  const rows=ex.length?ex.map((e,i)=>`
    <div class="exerciseDetail">
      <div class="exNo">${i+1}</div>
-     ${e.image_url?`<div class="exImageWrap"><img class="exImage" src="${esc(e.image_url)}" alt="${esc(e.name||'Esercizio')}" loading="lazy" onerror="this.closest('.exImageWrap').style.display='none'"></div>`:''}
+     ${e.image_url?`<div class="exImageWrap"><img class="exImage" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="${esc(e.name||'Esercizio')}" loading="lazy" onerror="this.closest('.exImageWrap').style.display='none'"></div>`:''}
      <div class="exMain">
        <div class="exTitle">${esc(e.name||'Esercizio')}</div>
        <div class="exMeta">${esc([e.muscle_group,e.equipment,e.focus,e.exercise_type].filter(Boolean).join(' · ')||'Dettagli esercizio')}</div>
@@ -761,7 +827,7 @@ async function loadExerciseLibrary(){
    muscle_group:firstVal(e,['muscle_group','muscle','target_muscle','gruppo_muscolare']),
    equipment:firstVal(e,['equipment','attrezzatura','tool']),
    focus:firstVal(e,['focus','description','notes','note']),
-   image_url:firstVal(e,['image_url','image','photo_url']),
+   image_url:firstVal(e,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']),
    work_type:firstVal(e,['work_type','exercise_type','type','tipo']),
    default_sets:firstVal(e,['default_sets','sets','serie','default_series']),
    default_reps:firstVal(e,['default_reps','reps','ripetizioni','repetitions']),

@@ -390,16 +390,16 @@ function splitTimeRange(value){
  return one?{start:one[1].padStart(2,'0')+':'+one[2],end:''}:{start:'',end:''};
 }
 function slotDateRaw(slot){
- // lesson_slots: la data mostrata all'utente è la colonna DATE.
- // Usiamo DATE come fonte primaria per evitare che starts_at (timestamp tecnico)
- // sovrascriva la data reale della riga.
+ // lesson_slots: la data reale di ogni singolo slot è derivata prima da starts_at.
+ // Ogni riga viene quindi identificata dalla propria data/ora, evitando che
+ // il valore testuale DATE (che può essere ripetuto) faccia apparire tutti gli slot uguali.
+ const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
+ if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
  for(const k of keys){
    const v=slot?.[k];
    if(v!==null&&v!==undefined&&String(v).trim()!=='') return String(v).trim();
  }
- const direct=slot?.starts_at??slot?.start_at??slot?.slot_start??slot?.start_datetime??slot?.date_time??slot?.scheduled_at;
- if(direct!==null&&direct!==undefined&&String(direct).trim()!=='') return String(direct).trim();
  return '—';
 }
 function slotStart(slot){
@@ -722,4 +722,4 @@ async function login(e){e.preventDefault();const er=document.getElementById('err
 async function logout(){await db.auth.signOut();location.reload()}
 document.getElementById('loginForm').addEventListener('submit',login);
 (async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}})();
-</script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();</script></body></html>
+</script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}}catch(e){}try{await navigator.serviceWorker.register('./sw.js?v=18.7.3')}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();</script></body></html>

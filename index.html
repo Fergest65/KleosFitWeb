@@ -442,16 +442,24 @@ function parseSlotDate(slot){
 function slotTimeText(slot){
  const t=pick(slot,['time','start_time','starts_time']);
  const range=splitTimeRange(t); if(range.start)return range.start;
- const raw=slotStart(slot),s=raw&&raw!=='—'?String(raw).trim():'';
- const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
- return m?m[1].padStart(2,'0')+':'+m[2]:'';
+ const raw=pick(slot,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
+ const rs=raw&&raw!=='—'?String(raw).trim():'';
+ const m=rs.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+ if(m)return m[1].padStart(2,'0')+':'+m[2];
+ const fallback=slotStart(slot),s=fallback&&fallback!=='—'?String(fallback).trim():'';
+ const mf=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+ return mf?mf[1].padStart(2,'0')+':'+mf[2]:'';
 }
 function slotEndTimeText(slot){
  const t=pick(slot,['time','end_time','ends_time','to']);
  const range=splitTimeRange(t); if(range.end)return range.end;
- const raw=slotEnd(slot),s=raw&&raw!=='—'?String(raw).trim():'';
- const m=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
- return m?m[1].padStart(2,'0')+':'+m[2]:'';
+ const raw=pick(slot,['ends_at','end_at','slot_end','end_datetime']);
+ const rs=raw&&raw!=='—'?String(raw).trim():'';
+ const m=rs.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+ if(m)return m[1].padStart(2,'0')+':'+m[2];
+ const fallback=slotEnd(slot),s=fallback&&fallback!=='—'?String(fallback).trim():'';
+ const mf=s.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);
+ return mf?mf[1].padStart(2,'0')+':'+mf[2]:'';
 }
 function slotTitle(slot){return pick(slot,['lesson_type','lesson_name','title','category','description'])||'Lezione';}
 function slotCapacity(slot){const v=pick(slot,['max_participants','capacity','max_capacity','max_people','participants_limit']);return v==='—'?null:Number(v);}
@@ -469,7 +477,18 @@ function renderClientBookings(slots,rows){
  const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
  const weeks=[['Questa',0],['Prossima',1],['+2 sett.',2]];
 
- function dateOf(sl){return parseSlotDate(sl)}
+ function dateOf(sl){
+   // Per il cliente usiamo prima il timestamp della singola riga (se presente):
+   // contiene la data reale dello slot e impedisce che più slot ereditino la stessa data.
+   const direct=pick(sl,['starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at']);
+   if(direct!=='—'){
+     const d=parseItalianDateText(String(direct).slice(0,10));
+     if(d&&Number.isFinite(d.getTime()))return d;
+     const js=new Date(String(direct));
+     if(Number.isFinite(js.getTime()))return js;
+   }
+   return parseSlotDate(sl);
+ }
  function weekOf(d){
    if(!d)return null;
    const n=new Date();n.setHours(0,0,0,0);

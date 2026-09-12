@@ -111,7 +111,7 @@
 <div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -163,7 +163,8 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
 `,
-anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Dati anagrafici e contatti — area riservata amministratori.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
+anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione anagrafiche — area amministratori.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
+anagraficaClient:`<div class="top"><div><div class="title">La mia anagrafica</div><div class="sub">Visualizza e modifica i tuoi dati personali e di contatto.</div></div><button class="btn" onclick="loadClientAnagrafica()">Aggiorna</button></div><div class="card"><div id="myAnaError" class="error"></div><div id="myAnaBox">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
  <button type="button">Prezzi abbonamenti</button>
@@ -178,12 +179,14 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
 };
 function show(v,el){
  if((v==='superuser'||v==='anagrafica')&&!isSuperuserRole()) return;
+ if(v==='anagraficaClient'&&!isClientRole()) return;
  document.getElementById('content').innerHTML=views[v];
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
  if(el)el.classList.add('active');
  if(v==='dashboard'){fillDashboard();}
  if(v==='clients')loadClients();
  if(v==='anagrafica')loadAnagrafica();
+ if(v==='anagraficaClient')loadClientAnagrafica();
  if(v==='qrcodes')loadQrCodes();
  if(v==='workout')loadWorkouts();
  if(v==='nutrition')loadNutrition();
@@ -255,6 +258,29 @@ async function fillDashboard(){
  }
 }
 
+
+async function loadClientAnagrafica(){
+ const box=document.getElementById('myAnaBox'),err=document.getElementById('myAnaError');if(!box)return;
+ if(!isClientRole()||!currentUser?.id)return;
+ if(err){err.style.display='none';err.textContent=''} box.innerHTML='Caricamento...';
+ const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+ if(r.error||!r.data){if(err){err.textContent=r.error?.message||'Profilo non trovato';err.style.display='block'}box.innerHTML='';return}
+ const p=r.data;
+ box.innerHTML=`<div class="clientSheet">
+  <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="myFullName" value="${esc(p.full_name||p.name||'')}"></div><div><label>Data di nascita</label><input id="myBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="myFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="myEmail" type="email" value="${esc(p.email||currentUser.email||'')}"></div><div><label>Telefono</label><input id="myPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="myAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="myCity" value="${esc(p.city||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
+  <div id="myAnaMsg" class="error"></div><div class="actions"><button class="btn" onclick="saveClientAnagrafica()">Salva modifiche</button></div></div>`;
+}
+async function saveClientAnagrafica(){
+ const msg=document.getElementById('myAnaMsg');if(msg){msg.className='';msg.style.display='block';msg.textContent='Salvataggio...'}
+ if(!isClientRole()||!currentUser?.id)return;
+ const payload={full_name:valOrNull('myFullName'),birth_date:valOrNull('myBirth'),fiscal_code:valOrNull('myFiscal'),email:valOrNull('myEmail'),phone:valOrNull('myPhone'),address:valOrNull('myAddress'),city:valOrNull('myCity')};
+ const r=await db.from('profiles').update(payload).eq('id',currentUser.id).select('*').maybeSingle();
+ if(r.error||!r.data){if(msg){msg.className='error';msg.textContent='Errore salvataggio: '+(r.error?.message||'modifica non autorizzata')};return}
+ profile=Object.assign(profile||{},r.data); document.getElementById('role').textContent=(profile.role||profile.user_role||'Utente').toString();
+ if(msg){msg.className='';msg.textContent='Dati salvati correttamente.';msg.style.display='block'}
+}
 async function loadAnagrafica(){
  if(!isSuperuserRole())return;
  const list=document.getElementById('anaList'),err=document.getElementById('anaError'),count=document.getElementById('anaCount');if(!list)return;

@@ -1,3 +1,4 @@
+// KleosFit Web Push Service Worker V18.8.39
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('push',event=>{let data={title:'KLEOSFIT',body:'Hai una nuova notifica.'};try{if(event.data)data={...data,...event.data.json()}}catch(e){try{data.body=event.data.text()}catch(_e){}}event.waitUntil(self.registration.showNotification(data.title||'KLEOSFIT',{body:data.body||'',icon:'/icon-192.png',badge:'/icon-192.png',data:data.url||'/'}));});

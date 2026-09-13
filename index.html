@@ -122,7 +122,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[],bookingProfiles=[];
 const views={
 dashboard:`<div class="dashboardHero">
-<div class="dashboardWelcome"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div></div>
+<div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>

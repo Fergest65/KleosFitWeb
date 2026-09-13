@@ -115,7 +115,7 @@
 <div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -179,6 +179,7 @@ notifications:`<div class="top"><div><div class="title">Gestione notifiche</div>
 </div>
 <div class="section"><div class="card"><h2>Invia nuova notifica</h2><div class="inputrow"><select id="notifTarget"><option value="all">Tutti i clienti</option><option value="admin">Amministratori</option></select><input id="notifTitle" placeholder="Titolo"></div><textarea id="notifBody" placeholder="Messaggio della notifica" style="width:100%;min-height:110px;margin-top:12px;resize:vertical"></textarea><div class="inputrow" style="margin-top:12px"><button class="btn" type="button" onclick="sendAdminNotification()">INVIA NOTIFICA</button><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="notifError" class="error"></div><div id="notifStatus" class="muted" style="margin-top:12px"></div></div></div>
 <div class="section"><div class="card"><h2>Ultime notifiche</h2><div id="notifList">Caricamento...</div></div></div>`,
+myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
  <button type="button">Prezzi abbonamenti</button>
@@ -193,6 +194,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
 };
 function show(v,el){
  if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications')&&!isSuperuserRole()) return;
+ if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  document.getElementById('content').innerHTML=views[v];
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
@@ -203,6 +205,7 @@ function show(v,el){
  if(v==='anagraficaClient')loadClientAnagrafica();
  if(v==='slotAdmin')loadSlotAdmin();
  if(v==='notifications')loadNotifications();
+ if(v==='myNotifications')loadMyNotifications();
  if(v==='qrcodes')loadQrCodes();
  if(v==='workout')loadWorkouts();
  if(v==='nutrition')loadNutrition();
@@ -212,37 +215,69 @@ function show(v,el){
  if(v==='admin')loadAdmin();
  if(v==='superuser'&&!isSuperuserRole()) return;
 }
+const VAPID_PUBLIC_KEY='BF3sh9vV60FkOEH-lMcvI8Dl8vZsImpfm2WVwFBmSKx9uPcwythx0Mx-it4nTwobAs0JxNjyi5z0pElYegZorU4';
+function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+async function getPushSubscription(){
+ if(!('serviceWorker' in navigator)||!('PushManager' in window)) return null;
+ const reg=await navigator.serviceWorker.ready;
+ let sub=await reg.pushManager.getSubscription();
+ if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+ return sub;
+}
+async function savePushSubscription(sub){
+ const j=sub.toJSON();
+ const payload={user_id:currentUser.id,endpoint:j.endpoint,p256dh:j.keys?.p256dh||'',auth:j.keys?.auth||'',user_agent:navigator.userAgent,updated_at:new Date().toISOString()};
+ const r=await db.from('push_subscriptions').upsert(payload,{onConflict:'endpoint'});
+ if(r.error) throw r.error;
+ return r;
+}
 async function requestNotificationPermission(){
- const el=document.getElementById('notifStatus');
+ const el=document.getElementById('notifStatus')||document.getElementById('myNotifStatus');
  if(!('Notification' in window)){if(el)el.textContent='Il browser non supporta le notifiche.';return 'unsupported'}
- try{const p=await Notification.requestPermission();updateNotificationPermission();if(el)el.textContent=p==='granted'?'Notifiche browser attivate su questo dispositivo.':('Permesso notifiche: '+p);return p}catch(e){if(el)el.textContent='Impossibile richiedere il permesso notifiche.';return 'error'}
+ try{
+  const p=await Notification.requestPermission(); updateNotificationPermission();
+  if(p==='granted'){
+   if(!('serviceWorker' in navigator)||!('PushManager' in window)) throw new Error('Push Web non supportato da questo browser.');
+   const sub=await getPushSubscription(); await savePushSubscription(sub);
+   if(el)el.textContent='Notifiche push attivate su questo dispositivo.';
+  } else if(el) el.textContent='Permesso notifiche: '+p;
+  return p;
+ }catch(e){if(el)el.textContent='Errore attivazione notifiche: '+e.message;return 'error'}
 }
 function updateNotificationPermission(){
  const el=document.getElementById('notifPermission'); if(!el)return;
  el.textContent=('Notification' in window)?(Notification.permission==='granted'?'ATTIVE':Notification.permission==='denied'?'BLOCCATE':'NON ATTIVE'):'NON SUPPORTATE';
 }
-function testBrowserNotification(){
+async function testBrowserNotification(){
  const el=document.getElementById('notifStatus');
- if(!('Notification' in window)){if(el)el.textContent='Notifiche non supportate da questo browser.';return}
- if(Notification.permission!=='granted'){requestNotificationPermission().then(p=>{if(p==='granted')testBrowserNotification()});return}
- try{new Notification('KLEOSFIT',{body:'Test notifiche: tutto funziona su questo dispositivo.'});if(el)el.textContent='Notifica di test inviata.'}catch(e){if(el)el.textContent='Impossibile inviare la notifica di test.'}
+ try{
+  if(!('Notification' in window)||Notification.permission!=='granted'){const p=await requestNotificationPermission();if(p!=='granted')return;}
+  const reg=await navigator.serviceWorker.ready;
+  await reg.showNotification('KLEOSFIT',{body:'Test notifiche: il dispositivo è configurato correttamente.',icon:'/icon-192.png',badge:'/icon-192.png'});
+  if(el)el.textContent='Notifica di test inviata.';
+ }catch(e){if(el)el.textContent='Impossibile inviare la notifica di test: '+e.message}
 }
 async function loadNotifications(){
  updateNotificationPermission();
  const err=document.getElementById('notifError'), list=document.getElementById('notifList');
  if(err)err.style.display='none'; if(list)list.innerHTML='Caricamento...';
  const r=await db.from('notifications').select('*').order('created_at',{ascending:false}).limit(50);
- if(r.error){
-   if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent='—';
-   if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent='—';
-   if(list)list.innerHTML='<div class="muted">Nessuna tabella notifiche configurata. Le notifiche browser possono comunque essere attivate e testate su questo dispositivo.</div>';
-   return;
- }
+ if(r.error){if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent='—';if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent='—';if(list)list.innerHTML='<div class="muted">Configura la tabella notifications con lo script SQL incluso nel pacchetto.</div>';return}
  const rows=r.data||[];
  if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent=rows.length;
  if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent=new Set(rows.map(x=>x.user_id||x.profile_id).filter(Boolean)).size;
  if(!rows.length){if(list)list.innerHTML='<div class="muted">Nessuna notifica presente.</div>';return}
- if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||'Tutti')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td></tr>').join('')+'</tbody></table></div>';
+ if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||x.target||'—')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td></tr>').join('')+'</tbody></table></div>';
+}
+async function loadMyNotifications(){
+ const list=document.getElementById('myNotifList'), status=document.getElementById('myNotifStatus');
+ if(list)list.innerHTML='Caricamento...';
+ if(status)status.textContent='';
+ const r=await db.from('notifications').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(50);
+ if(r.error){if(list)list.innerHTML='<div class="error">Impossibile caricare le notifiche: '+esc(r.error.message)+'</div>';return}
+ const rows=r.data||[];
+ if(!rows.length){if(list)list.innerHTML='<div class="muted">Nessuna notifica ricevuta.</div>';return}
+ if(list)list.innerHTML=rows.map(x=>'<div class="card" style="margin-bottom:10px"><div style="font-weight:800">'+esc(x.title||'KLEOSFIT')+'</div><div class="muted" style="margin-top:4px">'+esc(fmtDate(x.created_at))+'</div><div style="margin-top:8px">'+esc(x.body||x.message||'')+'</div></div>').join('');
 }
 async function sendAdminNotification(){
  const err=document.getElementById('notifError'), status=document.getElementById('notifStatus');
@@ -251,12 +286,14 @@ async function sendAdminNotification(){
  const body=(document.getElementById('notifBody')?.value||'').trim();
  const target=document.getElementById('notifTarget')?.value||'all';
  if(!body){if(err){err.textContent='Inserisci il messaggio della notifica.';err.style.display='block'}return}
- const payload={title,body,created_at:new Date().toISOString(),status:'pending',target};
- const r=await db.from('notifications').insert(payload).select().maybeSingle();
- if(r.error){if(err){err.textContent='Impossibile salvare la notifica: '+r.error.message;err.style.display='block'}return}
- if(status)status.textContent="Notifica salvata. L'invio push reale richiede il collegamento del servizio Web Push/Supabase Edge Function.";
- const b=document.getElementById('notifBody'); if(b)b.value='';
- await loadNotifications();
+ try{
+  const {data:{session}}=await db.auth.getSession();
+  const r=await fetch(SUPABASE_URL+'/functions/v1/send-web-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({title,body,target})});
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(out.error||out.message||'Errore invio push');
+  if(status)status.textContent='Notifica inviata. Destinatari raggiunti: '+(out.sent??0);
+  const b=document.getElementById('notifBody');if(b)b.value='';await loadNotifications();
+ }catch(e){if(err){err.textContent='Invio non riuscito: '+e.message;err.style.display='block'}}
 }
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();

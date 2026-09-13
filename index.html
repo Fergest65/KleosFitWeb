@@ -1,8 +1,8 @@
-<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.9</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
+<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.40</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
 :root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
 
 .detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 92px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exImage{width:92px;height:92px;border-radius:10px;object-fit:cover;background:#171b21;border:1px solid var(--line);display:block}.exImageWrap{display:flex;align-items:center;justify-content:center}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 92px 1fr}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
-.error{margin-top:15px;color:#ff8993;font-size:13px;display:none}.app{display:flex;min-height:100vh}.side{width:245px;background:#0b0d10;border-right:1px solid var(--line);padding:24px 16px;position:fixed;height:100vh}.logo{font-weight:900;font-size:25px;letter-spacing:2px;margin:0 10px 6px}.logo span{color:var(--accent)}.role{margin:0 10px 25px;color:var(--muted);font-size:12px;text-transform:uppercase}.nav button{width:100%;border:0;background:transparent;color:#b9bec7;text-align:left;padding:12px 13px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.logout{margin:25px 10px 0;width:calc(100% - 20px)}.main{margin-left:245px;width:calc(100% - 245px);padding:32px;max-width:1500px}.dashboardLogout{padding:10px 18px!important;font-size:13px;min-width:105px}.dashboardLogout:hover{filter:brightness(1.05)}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.title{font-size:28px;font-weight:800}.sub{color:var(--muted);margin-top:5px}.badge{background:var(--accent);color:#10130a;padding:7px 11px;border-radius:20px;font-weight:800;font-size:12px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}.metric{font-size:32px;font-weight:850;margin-top:8px}.label{color:var(--muted);font-size:13px}.section{margin-top:24px}.section h2{font-size:17px;margin:0 0 13px}.table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}.table th,.table td{text-align:left;padding:14px;border-bottom:1px solid var(--line);font-size:14px}.table th{color:var(--muted);font-size:12px;text-transform:uppercase}.status{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#cbd0d8;font-size:12px}.hide{display:none}@media(max-width:900px){.dashboardLogout{padding:9px 14px!important}.side{width:70px;padding:15px 9px}.logo{font-size:0}.logo:after{content:'K';font-size:24px}.role,.nav span,.logout{display:none}.nav button{text-align:center}.main{margin-left:70px;width:calc(100% - 70px);padding:20px}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid{grid-template-columns:1fr}.main{padding:16px}.table{font-size:12px}}
+.error{margin-top:15px;color:#ff8993;font-size:13px;display:none}.app{display:flex;min-height:100vh}.side{width:100%;background:#0b0d10;border-top:1px solid var(--line);padding:8px 10px;position:fixed;height:78px;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;gap:10px}.logo,.role,.logout{display:none}.nav{display:flex;align-items:stretch;justify-content:center;gap:6px;width:100%;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav button{flex:0 0 auto;min-width:78px;border:0;background:transparent;color:#b9bec7;text-align:center;padding:8px 9px;border-radius:11px;margin:0;cursor:pointer;font-size:12px;line-height:1.15}.nav button span{display:block;margin-top:4px;font-size:10px;white-space:nowrap}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.main{margin-left:0;margin-bottom:78px;width:100%;padding:32px;max-width:1500px}.dashboardLogout{padding:10px 18px!important;font-size:13px;min-width:105px}.dashboardLogout:hover{filter:brightness(1.05)}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.title{font-size:28px;font-weight:800}.sub{color:var(--muted);margin-top:5px}.badge{background:var(--accent);color:#10130a;padding:7px 11px;border-radius:20px;font-weight:800;font-size:12px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}.metric{font-size:32px;font-weight:850;margin-top:8px}.label{color:var(--muted);font-size:13px}.section{margin-top:24px}.section h2{font-size:17px;margin:0 0 13px}.table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}.table th,.table td{text-align:left;padding:14px;border-bottom:1px solid var(--line);font-size:14px}.table th{color:var(--muted);font-size:12px;text-transform:uppercase}.status{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#cbd0d8;font-size:12px}.hide{display:none}@media(max-width:900px){.dashboardLogout{padding:9px 14px!important}.side{height:74px;padding:7px 6px}.nav{justify-content:flex-start;gap:4px}.nav button{min-width:68px;padding:7px 6px}.main{margin-left:0;margin-bottom:74px;width:100%;padding:20px}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid{grid-template-columns:1fr}.main{padding:16px}.table{font-size:12px}.side{height:70px}.main{margin-bottom:70px}.nav button{min-width:64px;font-size:11px}.nav button span{font-size:9px}}.main{padding:16px}.table{font-size:12px}}
 
 .table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px 8px;border-bottom:1px solid #2a2f38;text-align:left;font-size:13px}.table th{color:#9aa4b2;font-weight:600}.inputrow{display:flex;gap:10px;margin-bottom:14px}
 .bookingGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}.bookingCard{background:#111419;border:1px solid var(--line);border-radius:14px;padding:16px}.bookingCard.mine{border-color:#647d18}.bookingDate{font-size:20px;font-weight:850}.bookingTime{font-size:25px;font-weight:900;color:var(--accent);margin:5px 0}.bookingMeta{color:#cbd1da;font-size:13px;line-height:1.5}.bookingPlaces{margin:12px 0;padding:9px 10px;border-radius:9px;background:#171b21;color:#dce2ea;font-size:12px}.bookingActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.bookingNotice{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419;color:#cbd1da;margin-bottom:14px}.bookingPast{opacity:.55}
@@ -13,6 +13,40 @@
 @media(max-width:700px){.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}}
 
 .clientSheet{display:grid;gap:16px}.clientSheetGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.clientSheetGrid .wide{grid-column:1/-1}.clientSheetSection{border:1px solid var(--line);border-radius:12px;padding:14px;background:#111419}.clientSheetSection h3{margin:0 0 10px;font-size:14px;color:#fff}.clientSheetSection h3 span{color:var(--accent)}.qrCard{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:16px;background:#0d1014}.qrBox{width:150px;height:150px;background:#fff;padding:8px;border-radius:10px;display:grid;place-items:center}.qrBox img,.qrBox canvas{max-width:134px!important;max-height:134px!important}.clientCardInfo strong{font-size:22px;display:block}.clientCardInfo .member{color:var(--accent);font-size:18px;font-weight:800;margin-top:5px}.clientCardInfo .small{color:var(--muted);font-size:13px;margin-top:7px}.sheetBtn{padding:7px 10px;font-size:12px}.qrActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qrGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.qrClientCard{background:#111419;border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}.qrClientBox{width:112px;height:112px;background:#fff;border-radius:10px;padding:6px;display:grid;place-items:center}.qrClientBox img,.qrClientBox canvas{max-width:100px!important;max-height:100px!important}.qrClientName{font-size:17px;font-weight:800}.qrClientCard .member{color:var(--accent);font-weight:800;margin-top:4px}.qrClientCard .small{color:var(--muted);font-size:12px;margin-top:5px}.qrClientActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}@media(max-width:700px){.qrClientCard{grid-template-columns:1fr;text-align:center;justify-items:center}}@media(max-width:700px){.clientSheetGrid{grid-template-columns:1fr}.clientSheetGrid .wide{grid-column:auto}.qrCard{grid-template-columns:1fr;text-align:center;justify-items:center}}
+
+<style>
+.dashboardHero{display:flex;flex-direction:column;gap:18px}
+.dashboardWelcome{padding:6px 0 0}
+.dashboardGreeting{font-size:44px;font-weight:800;letter-spacing:-1.5px;color:#fff}
+.adminAccessBanner{min-height:72px;border-radius:40px;background:#c4ff3d;color:#0a0d08;align-items:center;justify-content:center;font-size:25px;font-weight:900;cursor:pointer;text-align:center}
+.dashboardWorkout{padding:28px 26px 30px;min-height:290px}
+.dashboardSectionTitle{font-size:22px;font-weight:900;color:#c4ff3d;margin-bottom:20px}
+.dashboardWorkoutTitle{font-size:38px;font-weight:900;color:#fff;letter-spacing:-1px}
+.dashboardWorkoutSub{font-size:22px;line-height:1.35;color:#a8adb9;margin-top:10px;max-width:850px}
+.dashboardStartBtn{margin-top:28px;min-width:310px;font-size:20px;font-weight:900}
+.dashboardProgressTitle{font-size:31px;font-weight:900;color:#fff;margin-top:12px}
+.dashboardProgress{padding:28px 26px 34px;cursor:pointer;min-height:235px}
+.dashboardProgressLabel{font-size:23px;font-weight:800;color:#a8adb9}
+.dashboardProgressValue{font-size:54px;font-weight:900;color:#fff;margin-top:22px}
+.dashboardProgressDelta{font-size:27px;font-weight:800;color:#c4ff3d;margin-top:6px}
+.dashboardProgressCaption{font-size:28px;font-weight:900;color:#fff;margin-top:38px}
+@media(max-width:700px){
+ .dashboardGreeting{font-size:34px}
+ .adminAccessBanner{font-size:20px}
+ .dashboardWorkoutTitle{font-size:30px}
+ .dashboardWorkoutSub{font-size:18px}
+ .dashboardProgressTitle{font-size:26px}
+ .dashboardProgressValue{font-size:46px}
+ .dashboardStartBtn{min-width:0;width:100%}
+}
+
+<style>
+.superuserMenuGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.superuserMenuGrid button{min-height:82px;border:1px solid #2b2f38;border-radius:18px;background:#111318;color:#fff;font-size:25px;font-weight:900;cursor:pointer}
+.superuserMenuGrid button:hover{border-color:#c4ff3d}
+@media(max-width:700px){.superuserMenuGrid{grid-template-columns:1fr}.superuserMenuGrid button{min-height:68px;font-size:21px}}
+.side{padding-bottom:calc(8px + env(safe-area-inset-bottom));height:calc(78px + env(safe-area-inset-bottom))}.main{padding-bottom:calc(32px + env(safe-area-inset-bottom))}</style>
+</style>
 </style>
 <style>
 /* KLEOSFIT welcome screen */
@@ -67,7 +101,13 @@
 @media(max-width:700px){.clientFilterRow{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.clientFilterBtn{font-size:14px!important;padding:9px 5px!important}.clientSlotTitle{font-size:24px}.clientSlotCoach,.clientSlotMax{font-size:16px}}
 
 .apkExerciseCard{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#101217}.apkExTop{display:grid;grid-template-columns:34px 92px 1fr;gap:12px;align-items:center}.apkExNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:800}.apkExImageWrap{width:92px;height:92px;border-radius:10px;overflow:hidden;background:#171b21;border:1px solid var(--line);display:grid;place-items:center}.apkExImage{width:100%;height:100%;object-fit:cover;display:block}.apkExImageFallback{font-size:11px;color:var(--muted);font-weight:800}.apkExTitle{font-size:16px;font-weight:850}.apkExMeta{font-size:12px;color:var(--muted);margin-top:4px}.apkExType{font-size:12px;color:#cfd5dd;margin-top:5px}.apkExNotes{font-size:12px;color:#cfd5dd;margin-top:6px}.apkExStats{display:grid;grid-template-columns:repeat(6,minmax(72px,1fr));gap:8px;margin-top:11px}.apkExStats div{padding:8px 6px;text-align:center;border-radius:8px;background:#171b21;min-height:44px}.apkExStats span{display:block;font-size:10px;color:var(--muted)}.apkExStats b{display:block;margin-top:3px;font-size:12px;word-break:break-word}@media(max-width:900px){.apkExStats{grid-template-columns:repeat(3,1fr)}}@media(max-width:600px){.apkExTop{grid-template-columns:30px 72px 1fr}.apkExImageWrap{width:72px;height:72px}.apkExTitle{font-size:14px}.apkExStats{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
+
+.progressGuide{margin:0 0 18px;border:1px solid var(--line);border-radius:14px;background:#0f1217;overflow:hidden}.progressGuide img{display:block;width:100%;height:auto;max-height:620px;object-fit:contain}.progressGuideCaption{padding:10px 14px;color:var(--muted);font-size:12px}.progressGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.progressCard{background:#14161a;border:1px solid var(--line);border-radius:14px;padding:24px;min-height:250px}.progressCardHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.progressCardTitle{font-size:27px;font-weight:850;color:#aeb4c1}.progressTrend{font-size:28px;color:var(--accent);font-weight:900}.progressValue{font-size:56px;font-weight:900;margin-top:42px;letter-spacing:-1px}.progressChange{font-size:28px;font-weight:850;color:var(--accent);margin-top:20px}.progressFirst{font-size:18px;font-weight:800;color:var(--accent);margin-top:20px}.progressDate{color:var(--muted);font-size:12px;margin-top:8px}.progressTableWrap{overflow:auto}.progressTable{min-width:1100px}.progressInfo{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#111419;color:#cbd1da;margin-bottom:16px}.progressReadOnly{display:inline-block;padding:5px 9px;border-radius:999px;background:#1d2514;color:var(--accent);font-size:12px;font-weight:800}@media(max-width:700px){.progressGrid{grid-template-columns:1fr}.progressCard{min-height:220px}.progressValue{font-size:46px}}
+</style><style>
+.slotAdminWrap{padding:4px 0 28px}.slotAdminTitle{font-size:36px;line-height:1.05;margin:4px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.slotAdminTab{min-height:58px;border:1px solid #303640!important;border-radius:12px!important;background:#111419!important;color:#aeb6c4!important;font-size:18px!important;font-weight:900!important;cursor:pointer!important}.slotAdminTab.active{background:#c6ff35!important;color:#08090a!important;border-color:#c6ff35!important}.slotAdminCategory{font-size:18px;font-weight:900;color:#c6ff35;margin:8px 0 14px;text-transform:uppercase}.slotAdminCard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:8px 18px;align-items:center;background:#08090a;border:1px solid #292d35;border-radius:15px;padding:16px 18px;margin-bottom:10px}.slotAdminMainLine{font-size:20px;font-weight:900;color:#fff}.slotAdminDay{color:#c6ff35}.slotAdminTime{margin-left:8px}.slotAdminMeta{grid-column:1;font-size:15px;color:#aeb6c4;margin-top:2px}.slotAdminActions{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px}.slotAdminBtn{height:52px;border-radius:11px!important;border:0!important;color:#08090a!important;font-size:16px!important;font-weight:900!important;cursor:pointer!important}.slotAdminBtn.slotEditBtn{background:#c6ff35!important}.slotAdminBtn.slotDeleteBtn{background:#ef3f43!important;color:#fff!important}.slotAdminBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+@media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
+</style><style>.bookingDateFilters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:0 0 16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#111419}.bookingDateFilters label{margin:0 0 6px}.bookingDateFilters .btn{height:44px}.bookingResultHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.bookingAdminTable th{white-space:nowrap}.bookingAdminTable td{font-size:14px;vertical-align:middle}.bookingActivity{font-weight:850;color:var(--accent)}@media(max-width:700px){.bookingDateFilters{grid-template-columns:1fr 1fr}.bookingDateFilters .btn{grid-column:1/-1;width:100%}.bookingResultHead{align-items:flex-start;flex-direction:column}}</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
 <p class="welcomeText">Allenamenti personalizzati, piano nutrizionale e tutto ciò che serve per seguire il tuo percorso in una sola esperienza.</p>
@@ -75,27 +115,30 @@
 <div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('clients',this)">♙ <span>Clienti</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[];
+let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[],bookingProfiles=[];
 const views={
-dashboard:`<div class="top"><div><div class="title">Dashboard</div><div class="sub">Panoramica operativa KleosFit</div></div><button class="btn danger dashboardLogout" type="button" onclick="logout()">LOG OUT</button></div>
-<div class="grid">
- <div class="card"><div class="label">Cliente / Profilo</div><div class="metric" id="profileName">—</div></div>
- <div class="card"><div class="label">Ruolo</div><div class="metric" id="profileRole">—</div></div>
- <div class="card"><div class="label">Clienti</div><div class="metric" id="metricClients">—</div></div>
- <div class="card"><div class="label">Schede workout</div><div class="metric" id="metricWorkouts">—</div></div>
+dashboard:`<div class="dashboardHero">
+<div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
+<div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
+<div class="dashboardWorkout card">
+<div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
+<div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
+<div class="dashboardWorkoutSub" id="dashboardWorkoutSub">Quando il coach assegna una scheda attiva, la trovi qui.</div>
+<button class="btn dashboardStartBtn" type="button" onclick="show('workout')">＋ Inizia allenamento</button>
 </div>
-<div class="grid" style="margin-top:16px">
- <div class="card"><div class="label">Piani nutrizionali</div><div class="metric" id="metricNutrition">—</div></div>
- <div class="card"><div class="label">Prenotazioni</div><div class="metric" id="metricBookings">—</div></div>
- <div class="card"><div class="label">Backend</div><div class="metric">LIVE</div></div>
- <div class="card"><div class="label">Account</div><div class="metric">✓</div></div>
+<div class="dashboardProgressTitle">I TUOI PROGRESSI</div>
+<div class="dashboardProgress card" onclick="show('progress')">
+<div class="dashboardProgressLabel">Peso attuale</div>
+<div class="dashboardProgressValue" id="dashboardWeight">—</div>
+<div class="dashboardProgressDelta" id="dashboardWeightDelta">Prima rilevazione</div>
+<div class="dashboardProgressCaption">Peso corporeo</div>
 </div>
-<div class="section"><h2>Connessione</h2><div class="card"><b>Supabase collegato</b><p class="sub" id="connectionText">Sessione autenticata correttamente.</p></div></div>`,
-clients:`<div class="top"><div><div class="title">Clienti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
+</div>`,
+clients:`<div class="top"><div><div class="title">Utenti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
 <div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
 <div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
 workout:`<div class="top"><div><div class="title">Workout</div><div class="sub">Schede ed esercizi reali</div></div></div>
@@ -109,34 +152,166 @@ booking:`<div class="top"><div><div class="title">Prenotazioni</div><div class="
  <div class="card"><div class="label">Slot disponibili</div><div class="metric" id="slotCount">—</div></div>
  <div class="card"><div class="label">Prenotazioni</div><div class="metric" id="bookingCount">—</div></div>
 </div>
-<div class="section"><div class="card"><div class="inputrow"><input id="bookingSearch" placeholder="${isClientRole()?'Cerca lezione o data':'Cerca data, cliente, lezione o stato'}" oninput="filterBookings()"><button class="btn" onclick="loadBookings()">Aggiorna</button></div>
+<div class="section"><div class="card"><div class="inputrow"><input id="bookingSearch" placeholder="${isClientRole()?'Cerca lezione o data':'Cerca attività, atleta o stato'}" oninput="filterBookings()"><button class="btn" onclick="loadBookings()">Aggiorna</button></div>
+${isClientRole()?'':`<div class="bookingDateFilters"><div><label>DAL</label><input id="bookingDateFrom" type="date" onchange="filterBookings()"></div><div><label>AL</label><input id="bookingDateTo" type="date" onchange="filterBookings()"></div><button type="button" class="btn secondary" onclick="clearBookingDateRange()">Tutte le date</button></div>`}
 <div id="bookingError" class="error"></div><div id="bookingList" style="margin-top:12px">Caricamento prenotazioni...</div></div></div>`,
 qrcodes:`<div class="top"><div><div class="title">QR Code</div><div class="sub">Schede QR personali dei clienti</div></div></div>
 <div class="card"><div class="sub" style="margin-bottom:12px">QR Code personale del cliente attualmente collegato</div><div id="qrError" class="error"></div><div id="qrCount" class="muted" style="margin-top:12px">Caricamento...</div><div id="qrList" class="qrGrid" style="margin-top:14px"></div></div>`,
+progress:`<div class="top"><div><div class="title">Progressi</div><div class="sub">Storico delle tue misurazioni corporee</div></div><button class="btn" type="button" onclick="loadClientProgress()">Aggiorna</button></div>
+<div class="progressInfo"><span class="progressReadOnly">SOLA VISUALIZZAZIONE</span><div style="margin-top:8px">Le rilevazioni vengono inserite dal coach. Qui puoi consultare soltanto lo storico delle tue misurazioni.</div></div>
+<div class="progressGuide"><img src="misurazioni-corpo.png" alt="Guida alle misurazioni corporee"><div class="progressGuideCaption">Guida visiva alle zone di misurazione — area informativa, non modificabile dal cliente.</div></div>
+<div id="progressError" class="error"></div><div id="progressCount" class="muted">Caricamento...</div><div id="progressCards" class="progressGrid" style="margin-top:14px"></div>
+<div class="section"><div class="card"><h2>Storico misurazioni</h2><div id="progressTable" class="progressTableWrap">Caricamento...</div></div></div>`,
 payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza i tuoi pagamenti e lo stato degli abbonamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
 <div class="card"><div id="clientPaymentError" class="error"></div><div id="clientPaymentCount" class="muted">Caricamento...</div><div id="clientPaymentList" style="margin-top:14px">Caricamento storico...</div></div>`,
 admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
-<div class="section"><div class="card"><b>Storico pagamenti</b><div id="paymentList" class="muted" style="margin-top:12px">Caricamento...</div></div></div>`
+`,
+anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione completa dei dati cliente — area amministratori. Tutti i campi della scheda sono modificabili.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
+anagraficaClient:`<div class="top"><div><div class="title">La mia anagrafica</div><div class="sub">Visualizza e modifica i tuoi dati personali e di contatto.</div></div><button class="btn" onclick="loadClientAnagrafica()">Aggiorna</button></div><div class="card"><div id="myAnaError" class="error"></div><div id="myAnaBox">Caricamento...</div></div>`,
+slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div class="sub">Gestione degli slot disponibili per categoria.</div></div><button class="btn" type="button" onclick="loadSlotAdmin()">Aggiorna</button></div><div class="card"><div class="inputrow"><input id="slotAdminSearch" placeholder="Cerca data, coach o categoria" oninput="filterSlotAdmin()"></div><div id="slotAdminError" class="error"></div><div id="slotAdminList">Caricamento...</div></div>`,
+notifications:`<div class="top"><div><div class="title">Gestione notifiche</div><div class="sub">Invia comunicazioni ai clienti e gestisci le notifiche dell'app.</div></div><button class="btn" type="button" onclick="loadNotifications()">Aggiorna</button></div>
+<div class="grid" style="grid-template-columns:repeat(3,1fr)">
+ <div class="card"><div class="label">Notifiche</div><div class="metric" id="notifCount">—</div></div>
+ <div class="card"><div class="label">Destinatari</div><div class="metric" id="notifRecipients">—</div></div>
+ <div class="card"><div class="label">Push browser</div><div class="metric" id="notifPermission">—</div></div>
+</div>
+<div class="section"><div class="card"><h2>Invia nuova notifica</h2><div class="inputrow"><select id="notifTarget"><option value="all">Tutti i clienti</option><option value="admin">Amministratori</option></select><input id="notifTitle" placeholder="Titolo"></div><textarea id="notifBody" placeholder="Messaggio della notifica" style="width:100%;min-height:110px;margin-top:12px;resize:vertical"></textarea><div class="inputrow" style="margin-top:12px"><button class="btn" type="button" onclick="sendAdminNotification()">INVIA NOTIFICA</button><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="notifError" class="error"></div><div id="notifStatus" class="muted" style="margin-top:12px"></div></div></div>
+<div class="section"><div class="card"><h2>Ultime notifiche</h2><div id="notifList">Caricamento...</div></div></div>`,
+myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
+superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
+<div class="superuserMenuGrid">
+ <button type="button">Prezzi abbonamenti</button>
+ <button type="button" onclick="show('slotAdmin')">Gestione slot</button>
+ <button type="button">Prenotazioni</button>
+ <button type="button">Progressi</button>
+ <button type="button" onclick="show('notifications')">Notifiche</button>
+ <button type="button" onclick="show('clients')">Utenti</button>
+ <button type="button" onclick="show('anagrafica')">Anagrafica</button>
+ <button type="button">Circuiti</button>
+</div>`,
 };
 function show(v,el){
+ if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications')&&!isSuperuserRole()) return;
+ if(v==='myNotifications'&&!isClientRole()) return;
+ if(v==='anagraficaClient'&&!isClientRole()) return;
  document.getElementById('content').innerHTML=views[v];
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
  if(el)el.classList.add('active');
  if(v==='dashboard'){fillDashboard();}
  if(v==='clients')loadClients();
+ if(v==='anagrafica')loadAnagrafica();
+ if(v==='anagraficaClient')loadClientAnagrafica();
+ if(v==='slotAdmin')loadSlotAdmin();
+ if(v==='notifications')loadNotifications();
+ if(v==='myNotifications')loadMyNotifications();
  if(v==='qrcodes')loadQrCodes();
  if(v==='workout')loadWorkouts();
  if(v==='nutrition')loadNutrition();
  if(v==='booking')loadBookings();
  if(v==='payments')loadClientPayments();
+ if(v==='progress')loadClientProgress();
  if(v==='admin')loadAdmin();
+ if(v==='superuser'&&!isSuperuserRole()) return;
+}
+const VAPID_PUBLIC_KEY='BF3sh9vV60FkOEH-lMcvI8Dl8vZsImpfm2WVwFBmSKx9uPcwythx0Mx-it4nTwobAs0JxNjyi5z0pElYegZorU4';
+function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+async function getPushSubscription(){
+ if(!('serviceWorker' in navigator)||!('PushManager' in window)) return null;
+ const reg=await navigator.serviceWorker.ready;
+ let sub=await reg.pushManager.getSubscription();
+ if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+ return sub;
+}
+async function savePushSubscription(sub){
+ const j=sub.toJSON();
+ const r=await db.rpc('save_push_subscription',{
+  p_endpoint:j.endpoint,
+  p_p256dh:j.keys?.p256dh||'',
+  p_auth:j.keys?.auth||'',
+  p_user_agent:navigator.userAgent
+ });
+ if(r.error) throw r.error;
+ return r;
+}
+async function requestNotificationPermission(){
+ const el=document.getElementById('notifStatus')||document.getElementById('myNotifStatus');
+ if(!('Notification' in window)){if(el)el.textContent='Il browser non supporta le notifiche.';return 'unsupported'}
+ try{
+  const p=await Notification.requestPermission(); updateNotificationPermission();
+  if(p==='granted'){
+   if(!('serviceWorker' in navigator)||!('PushManager' in window)) throw new Error('Push Web non supportato da questo browser.');
+   const sub=await getPushSubscription(); await savePushSubscription(sub);
+   if(el)el.textContent='Notifiche push attivate su questo dispositivo.';
+  } else if(el) el.textContent='Permesso notifiche: '+p;
+  return p;
+ }catch(e){if(el)el.textContent='Errore attivazione notifiche: '+e.message;return 'error'}
+}
+function updateNotificationPermission(){
+ const el=document.getElementById('notifPermission'); if(!el)return;
+ el.textContent=('Notification' in window)?(Notification.permission==='granted'?'ATTIVE':Notification.permission==='denied'?'BLOCCATE':'NON ATTIVE'):'NON SUPPORTATE';
+}
+async function testBrowserNotification(){
+ const el=document.getElementById('notifStatus')||document.getElementById('myNotifStatus');
+ try{
+  if(!('Notification' in window)){if(el)el.textContent='Il browser non supporta le notifiche.';return;}
+  if(Notification.permission!=='granted'){
+   const p=await requestNotificationPermission();
+   if(p!=='granted')return;
+  }
+  if(!('serviceWorker' in navigator)) throw new Error('Service Worker non supportato.');
+  const reg=await navigator.serviceWorker.ready;
+  await reg.showNotification('KLEOSFIT',{body:'Test notifiche: il dispositivo è configurato correttamente.',icon:'/icon-192.png',badge:'/icon-192.png',tag:'kleosfit-test',data:{url:'/'}});
+  if(el)el.textContent='✅ Notifica di test inviata. Controlla le notifiche di Windows/Chrome.';
+ }catch(e){
+  if(el)el.textContent='❌ Test notifiche non riuscito: '+(e?.message||e);
+ }
+}
+async function loadNotifications(){
+ updateNotificationPermission();
+ const err=document.getElementById('notifError'), list=document.getElementById('notifList');
+ if(err)err.style.display='none'; if(list)list.innerHTML='Caricamento...';
+ const r=await db.from('notifications').select('*').order('created_at',{ascending:false}).limit(50);
+ if(r.error){if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent='—';if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent='—';if(list)list.innerHTML='<div class="muted">Configura la tabella notifications con lo script SQL incluso nel pacchetto.</div>';return}
+ const rows=r.data||[];
+ if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent=rows.length;
+ if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent=new Set(rows.map(x=>x.user_id||x.profile_id).filter(Boolean)).size;
+ if(!rows.length){if(list)list.innerHTML='<div class="muted">Nessuna notifica presente.</div>';return}
+ if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||x.target||'—')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td></tr>').join('')+'</tbody></table></div>';
+}
+async function loadMyNotifications(){
+ const list=document.getElementById('myNotifList'), status=document.getElementById('myNotifStatus');
+ if(list)list.innerHTML='Caricamento...';
+ if(status)status.textContent='';
+ const r=await db.from('notifications').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(50);
+ if(r.error){if(list)list.innerHTML='<div class="error">Impossibile caricare le notifiche: '+esc(r.error.message)+'</div>';return}
+ const rows=r.data||[];
+ if(!rows.length){if(list)list.innerHTML='<div class="muted">Nessuna notifica ricevuta.</div>';return}
+ if(list)list.innerHTML=rows.map(x=>'<div class="card" style="margin-bottom:10px"><div style="font-weight:800">'+esc(x.title||'KLEOSFIT')+'</div><div class="muted" style="margin-top:4px">'+esc(fmtDate(x.created_at))+'</div><div style="margin-top:8px">'+esc(x.body||x.message||'')+'</div></div>').join('');
+}
+async function sendAdminNotification(){
+ const err=document.getElementById('notifError'), status=document.getElementById('notifStatus');
+ if(err){err.style.display='none';err.textContent=''}
+ const title=(document.getElementById('notifTitle')?.value||'KLEOSFIT').trim();
+ const body=(document.getElementById('notifBody')?.value||'').trim();
+ const target=document.getElementById('notifTarget')?.value||'all';
+ if(!body){if(err){err.textContent='Inserisci il messaggio della notifica.';err.style.display='block'}return}
+ try{
+  const {data:{session}}=await db.auth.getSession();
+  const r=await fetch(SUPABASE_URL+'/functions/v1/send-web-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({title,body,target})});
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(out.error||out.message||'Errore invio push');
+  if(status)status.textContent='Notifica inviata. Destinatari raggiunti: '+(out.sent??0);
+  const b=document.getElementById('notifBody');if(b)b.value='';await loadNotifications();
+ }catch(e){if(err){err.textContent='Invio non riuscito: '+e.message;err.style.display='block'}}
 }
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
  if(!r.error) profile=r.data;
  document.getElementById('role').textContent=(profile?.role||profile?.user_role||'Utente').toString();
+ document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
+ document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -149,16 +324,93 @@ async function countTable(table){
  return r.error?null:r.count;
 }
 async function fillDashboard(){
- const name=(profile?.full_name||profile?.name||currentUser?.email||'Utente').slice(0,18);
- document.getElementById('profileName').textContent=name;
- document.getElementById('profileRole').textContent=(profile?.role||profile?.user_role||'Utente').toString().slice(0,12);
- const [c,w,n,b]=await Promise.all([countTable('profiles'),countTable('workout_plans'),countTable('nutrition_plans'),countTable('lesson_bookings')]);
- document.getElementById('metricClients').textContent=c??'—';
- document.getElementById('metricWorkouts').textContent=w??'—';
- document.getElementById('metricNutrition').textContent=n??'—';
- document.getElementById('metricBookings').textContent=b??'—';
+ const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
+ const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
+ const adminBanner=document.getElementById('adminAccessBanner');
+ if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
+
+ const title=document.getElementById('dashboardWorkoutTitle');
+ const sub=document.getElementById('dashboardWorkoutSub');
+ if(isClientRole() && currentUser?.id){
+   const r=await db.from('workout_plans').select('*').eq('user_id',currentUser.id).eq('is_active',true).limit(1).maybeSingle();
+   if(!r.error && r.data){
+     if(title) title.textContent=r.data.title||'Scheda attiva';
+     if(sub) sub.textContent=r.data.description||'La tua scheda di allenamento è pronta.';
+   }
+ }else{
+   if(title) title.textContent='Nessuna scheda attiva';
+   if(sub) sub.textContent='Quando il coach assegna una scheda attiva, la trovi qui.';
+ }
+
+ const w=document.getElementById('dashboardWeight');
+ const d=document.getElementById('dashboardWeightDelta');
+ if(isClientRole() && currentUser?.id){
+   const r=await db.from('progress_entries').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(2);
+   const rows=r.error?[]:(r.data||[]);
+   if(rows.length){
+     const weightKey=['weight','peso','weight_kg'];
+     const cur=pick(rows[0],weightKey);
+     if(w) w.textContent=cur==='—'?'—':String(cur).replace('.',',')+' kg';
+     if(d){
+       if(rows.length>1){
+         const prev=Number(pick(rows[1],weightKey));
+         const now=Number(cur);
+         d.textContent=(Number.isFinite(now)&&Number.isFinite(prev)?((now-prev>0?'+':'')+(now-prev).toFixed(1).replace('.',',')+' kg ultima rilevazione'):'Ultima rilevazione');
+       }else d.textContent='Prima rilevazione';
+     }
+   }else{
+     if(w) w.textContent='—';
+     if(d) d.textContent='Prima rilevazione';
+   }
+ }else{
+   if(w) w.textContent='—';
+   if(d) d.textContent='Prima rilevazione';
+ }
 }
 
+
+async function loadClientAnagrafica(){
+ const box=document.getElementById('myAnaBox'),err=document.getElementById('myAnaError');if(!box)return;
+ if(!isClientRole()||!currentUser?.id)return;
+ if(err){err.style.display='none';err.textContent=''} box.innerHTML='Caricamento...';
+ const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+ if(r.error||!r.data){if(err){err.textContent=r.error?.message||'Profilo non trovato';err.style.display='block'}box.innerHTML='';return}
+ const p=r.data;
+ box.innerHTML=`<div class="clientSheet">
+  <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="myFullName" value="${esc(p.full_name||p.name||'')}"></div><div><label>Data di nascita</label><input id="myBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="myFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="myEmail" type="email" value="${esc(p.email||currentUser.email||'')}"></div><div><label>Telefono</label><input id="myPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="myAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="myCity" value="${esc(p.city||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
+  <div id="myAnaMsg" class="error"></div><div class="actions"><button class="btn" onclick="saveClientAnagrafica()">Salva modifiche</button></div></div>`;
+}
+async function saveClientAnagrafica(){
+ const msg=document.getElementById('myAnaMsg');if(msg){msg.className='';msg.style.display='block';msg.textContent='Salvataggio...'}
+ if(!isClientRole()||!currentUser?.id)return;
+ const payload={full_name:valOrNull('myFullName'),birth_date:valOrNull('myBirth'),fiscal_code:valOrNull('myFiscal'),email:valOrNull('myEmail'),phone:valOrNull('myPhone'),address:valOrNull('myAddress'),city:valOrNull('myCity')};
+ const r=await db.from('profiles').update(payload).eq('id',currentUser.id).select('*').maybeSingle();
+ if(r.error||!r.data){if(msg){msg.className='error';msg.textContent='Errore salvataggio: '+(r.error?.message||'modifica non autorizzata')};return}
+ profile=Object.assign(profile||{},r.data); document.getElementById('role').textContent=(profile.role||profile.user_role||'Utente').toString();
+ if(msg){msg.className='';msg.textContent='Dati salvati correttamente.';msg.style.display='block'}
+}
+async function loadAnagrafica(){
+ if(!isSuperuserRole())return;
+ const list=document.getElementById('anaList'),err=document.getElementById('anaError'),count=document.getElementById('anaCount');if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento...';
+ const r=await db.from('profiles').select('*').limit(500);
+ if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+ anagraficaData=(r.data||[]).filter(p=>['client','cliente'].includes(String(pick(p,['role','user_role'])||'client').toLowerCase()));
+ renderAnagrafica(anagraficaData);
+}
+function renderAnagrafica(rows){
+ const list=document.getElementById('anaList'),count=document.getElementById('anaCount');if(!list)return;
+ count.textContent=rows.length+' clienti';
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun cliente trovato.</div>';return}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Data nascita</th><th>Codice fiscale</th><th>Telefono</th><th>Città</th><th></th></tr></thead><tbody>'+rows.map(p=>`<tr><td><b>${esc(profileDisplayName(p))}</b></td><td>${esc(dateInputValue(p.birth_date)||'—')}</td><td>${esc(p.fiscal_code||'—')}</td><td>${esc(p.phone||p.phone_number||p.mobile||'—')}</td><td>${esc(p.city||'—')}</td><td><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Apri anagrafica</button></td></tr>`).join('')+'</tbody></table></div>';
+}
+function filterAnagrafica(){
+ const q=(document.getElementById('anaSearch')?.value||'').toLowerCase().trim();
+ const rows=(anagraficaData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),p.phone,p.phone_number,p.mobile,p.member_card_number,p.member_card,p.card_number,p.tessera,p.member_code,p.fiscal_code,p.city,p.address].some(v=>String(v||'').toLowerCase().includes(q)));
+ renderAnagrafica(rows);
+}
 async function loadClients(){
  const list=document.getElementById('clientList'),err=document.getElementById('clientError'),count=document.getElementById('clientCount');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento clienti...';
@@ -188,10 +440,11 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}" disabled></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}" disabled></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" disabled></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" disabled></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" disabled></div><div><label>Importo pagato</label><input id="cpPaid" type="number" step="0.01" value="${esc(p.subscription_paid_amount??'')}" disabled></div><div><label>Abbonamento attivo</label><select id="cpActive" disabled><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen" disabled><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}" disabled></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}" disabled></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div id="cpMsg" class="error"></div>
-  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva dati cliente</button></div>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div>
  </div>`);
 }
 
@@ -199,7 +452,7 @@ function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();r
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_paid_amount:nullableNumber('cpPaid'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
@@ -213,7 +466,11 @@ function renderQrCodes(rows){const list=document.getElementById('qrList'),count=
 async function loadQrCodes(){const list=document.getElementById('qrList'),err=document.getElementById('qrError'),count=document.getElementById('qrCount');if(!list)return;err.style.display='none';list.innerHTML='Caricamento QR...';count.textContent='Caricamento...';const id=currentUser?.id;if(!id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';return}const r=await db.from('profiles').select('*').eq('id',id).maybeSingle();if(r.error){err.textContent=r.error.message;err.style.display='block';list.innerHTML='';return}if(!r.data){renderQrCodes([]);return}renderQrCodes([r.data])}
 function filterQrCodes(){/* Il QR è esclusivamente quello dell'account loggato. */loadQrCodes()}
 function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));if(!p)return;const name=clientName(p),card=clientCardNumber(p);const value=clientQrValue(p);const w=window.open('','_blank','width=520,height=700');if(!w)return;w.document.write(`<html><head><title>KLEOSFIT QR - ${esc(name)}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><style>body{font-family:Arial;text-align:center;padding:30px}.card{border:2px solid #111;border-radius:18px;padding:25px}#qr{width:260px;height:260px;margin:20px auto;display:grid;place-items:center}#qr img{width:260px;height:260px}
-.slotAdminWrap{padding:0 2px 28px}.slotAdminTitle{font-size:38px;line-height:1.05;margin:8px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}.slotAdminTab{min-height:70px;border:1px solid #2c3038;border-radius:16px;background:#121318;color:#aeb3c1;font-size:25px;font-weight:800;cursor:pointer}.slotAdminTab.active{border-color:#c6ff32;background:#283813;color:#c6ff32}.slotAdminCategory{font-size:25px;font-weight:900;color:#c6ff32;margin:8px 0 18px;text-transform:uppercase}.slotAdminCard{background:#08090a;border:1px solid #292d35;border-radius:18px;padding:24px 22px 20px;margin-bottom:16px}.slotAdminMainLine{font-size:25px;font-weight:900;color:#fff}.slotAdminTime{margin-left:8px}.slotAdminDash{margin:0 6px}.slotAdminDate{font-weight:900}.slotAdminMeta{font-size:21px;color:#aeb3c1;margin-top:14px}.slotAdminActions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}.slotAdminBtn{height:64px;border-radius:15px;border:1px solid #292d35;background:#090a0b;color:#fff;font-size:22px;font-weight:900;cursor:pointer}.slotAdminBtn:hover{border-color:#c6ff32;color:#c6ff32}@media(max-width:700px){.slotAdminTitle{font-size:30px}.slotAdminTabs{grid-template-columns:1fr 1fr}.slotAdminTab{font-size:18px;min-height:54px}.slotAdminMainLine{font-size:20px}.slotAdminMeta{font-size:16px}.slotAdminBtn{font-size:17px}}
+.slotAdminWrap{padding:0 2px 28px}.slotAdminTitle{font-size:38px;line-height:1.05;margin:8px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}.slotAdminTab{min-height:70px;border:1px solid #2c3038;border-radius:16px;background:#121318;color:#aeb3c1;font-size:22px;font-weight:800;cursor:pointer}.slotAdminTab.active{border-color:#c6ff32;background:#c6ff32;color:#08090a}.slotAdminCategory{font-size:25px;font-weight:900;color:#c6ff32;margin:8px 0 18px;text-transform:uppercase}.slotAdminCard{background:#08090a;border:1px solid #292d35;border-radius:18px;padding:20px 22px 18px;margin-bottom:12px}.slotAdminMainLine{font-size:25px;font-weight:900;color:#fff}.slotAdminTime{margin-left:8px}.slotAdminDash{margin:0 6px}.slotAdminDate{font-weight:900}.slotAdminMeta{font-size:21px;color:#aeb3c1;margin-top:10px}.slotAdminActions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.slotAdminBtn{height:64px;border-radius:15px;border:0;color:#08090a;font-size:21px;font-weight:900;cursor:pointer;transition:transform .12s,filter .12s}.slotAdminBtn[data-edit-slot]{background:#c6ff32}.slotAdminBtn[data-delete-slot]{background:#ef3f43;color:#fff}.slotAdminBtn:hover{filter:brightness(1.05);transform:translateY(-1px)}@media(max-width:900px){.slotAdminTabs{grid-template-columns:1fr 1fr}}@media(max-width:700px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:18px;min-height:54px}.slotAdminMainLine{font-size:20px}.slotAdminMeta{font-size:16px}.slotAdminBtn{font-size:17px;height:56px}}}
+</style><style>
+.slotAdminWrap{padding:4px 0 28px}.slotAdminTitle{font-size:36px;line-height:1.05;margin:4px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.slotAdminTab{min-height:58px;border:1px solid #303640!important;border-radius:12px!important;background:#111419!important;color:#aeb6c4!important;font-size:18px!important;font-weight:900!important;cursor:pointer!important}.slotAdminTab.active{background:#c6ff35!important;color:#08090a!important;border-color:#c6ff35!important}.slotAdminCategory{font-size:18px;font-weight:900;color:#c6ff35;margin:8px 0 14px;text-transform:uppercase}.slotAdminCard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:8px 18px;align-items:center;background:#08090a;border:1px solid #292d35;border-radius:15px;padding:16px 18px;margin-bottom:10px}.slotAdminMainLine{font-size:20px;font-weight:900;color:#fff}.slotAdminDay{color:#c6ff35}.slotAdminTime{margin-left:8px}.slotAdminMeta{grid-column:1;font-size:15px;color:#aeb6c4;margin-top:2px}.slotAdminActions{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px}.slotAdminBtn{height:52px;border-radius:11px!important;border:0!important;color:#08090a!important;font-size:16px!important;font-weight:900!important;cursor:pointer!important}.slotAdminBtn.slotEditBtn{background:#c6ff35!important}.slotAdminBtn.slotDeleteBtn{background:#ef3f43!important;color:#fff!important}.slotAdminBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+@media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
 </style></head><body><div class="card"><h1>KLEOSFIT</h1><h2>${esc(name)}</h2><h3>${esc(card||'Tessera')}</h3><div id="qr"></div><p>QR tessera personale</p></div><script>new QRCode(document.getElementById('qr'),{text:${JSON.stringify(value)},width:260,height:260});window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close()}
 function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
@@ -429,28 +686,72 @@ function renderNutrition(rows){
  if(!rows.length){list.innerHTML='<div class="muted">Nessun piano nutrizionale trovato.</div>';return}
  list.innerHTML=rows.map(p=>{const meals=p.nutrition_meals||[];const target=[p.calories_target?`Kcal ${p.calories_target}`:'',p.protein_target?`Proteine ${p.protein_target} g`:'',p.water_target_liters?`Acqua ${p.water_target_liters} L`:'' ].filter(Boolean).join(' · ')||'Obiettivi non indicati';
  const mealHtml=meals.length?`<div class="mealgrid">${meals.sort((a,b)=>(a.sort_order??0)-(b.sort_order??0)).map(m=>`<div class="meal"><b>${esc(m.meal_type||'Pasto')}</b><div>${esc(m.name||'—')}</div><span>${esc(m.grams??'')} ${m.grams?'g':''}</span></div>`).join('')}</div>`:'<div class="muted">Nessun pasto associato.</div>';
- return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Piano senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div></div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attivo':'Attivo'}</span><button class="btn secondary mini" onclick="editNutritionPlan('${p.id}')">Modifica piano</button></div></div><div class="targets">${esc(target)}</div><div style="margin-top:14px">${mealHtml}</div>${meals.length?`<div class="rowactions" style="margin-top:12px">${meals.map(m=>`<button class="btn secondary mini" onclick="editNutritionMeal('${m.id}')">Modifica ${esc(m.meal_type||'pasto')}</button>`).join('')}</div>`:''}</div>`}).join('')
+ const editPlanAction=canEditNutrition()?`<button class="btn secondary mini" onclick="editNutritionPlan('${p.id}')">Modifica piano</button>`:''; const editMealActions=canEditNutrition()&&meals.length?`<div class="rowactions" style="margin-top:12px">${meals.map(m=>`<button class="btn secondary mini" onclick="editNutritionMeal('${m.id}')">Modifica ${esc(m.meal_type||'pasto')}</button>`).join('')}</div>`:''; return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Piano senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div></div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attivo':'Attivo'}</span>${editPlanAction}</div></div><div class="targets">${esc(target)}</div><div style="margin-top:14px">${mealHtml}</div>${editMealActions}</div>`}).join('')
 }
 function filterNutrition(){const q=(document.getElementById('nutritionSearch')?.value||'').toLowerCase().trim();renderNutrition(!q?nutritionData:nutritionData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
 async function loadBookings(){
  const list=document.getElementById('bookingList'),err=document.getElementById('bookingError');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento prenotazioni...';
- const [b,s]=await Promise.all([
-   db.from('lesson_bookings').select('*').order('created_at',{ascending:false}).limit(500),
-   db.from('lesson_slots').select('*').limit(500)
- ]);
- bookingsData=b.error?[]:b.data||[];
- const slots=s.error?[]:s.data||[];
- bookingSlots=slots;
+ const queries=[db.from('lesson_bookings').select('*').order('created_at',{ascending:false}).limit(500),db.from('lesson_slots').select('*').limit(500)];
+ if(!isClientRole())queries.push(db.from('profiles').select('*').limit(1000));
+ const results=await Promise.all(queries),b=results[0],ss=results[1],pp=results[2];
+ bookingsData=b.error?[]:b.data||[];const slots=ss.error?[]:ss.data||[];bookingSlots=slots;bookingProfiles=!isClientRole()?(pp?.error?[]:pp?.data||[]):[];
+ // Se la lettura generale dei profili non restituisce dati, recuperiamo espressamente
+ // i profili degli atleti presenti nelle prenotazioni. In questo modo la tabella
+ // mostra il nome anche quando il payload della prenotazione contiene solo l'ID.
+ if(!isClientRole() && bookingsData.length){
+   const ids=[...new Set(bookingsData.map(bookingAthleteId).filter(Boolean).map(String))];
+   if(ids.length){
+     const pr=await db.from('profiles').select('*').in('id',ids).limit(1000);
+     if(!pr.error && pr.data?.length){
+       const map=new Map(bookingProfiles.map(p=>[String(p.id),p]));
+       pr.data.forEach(p=>map.set(String(p.id),p));
+       bookingProfiles=[...map.values()];
+     }
+   }
+ }
  document.getElementById('bookingCount').textContent=bookingsData.length;
  document.getElementById('slotCount').textContent=slots.filter(sl=>String(sl?.is_available).toLowerCase()!=='false').length;
- if(b.error && s.error){err.textContent='Impossibile caricare prenotazioni e slot: '+(s.error.message||b.error.message);err.style.display='block';list.innerHTML='';return}
- if(s.error){err.textContent='Impossibile caricare gli slot: '+s.error.message;err.style.display='block';}
- if(isClientRole()) renderClientBookings(slots,bookingsData);
- else renderBookings(bookingsData,slots);
+ if(b.error&&ss.error){err.textContent='Impossibile caricare prenotazioni e slot: '+(ss.error.message||b.error.message);err.style.display='block';list.innerHTML='';return}
+ if(b.error){err.textContent='Impossibile caricare le prenotazioni: '+b.error.message;err.style.display='block'}
+ if(ss.error){err.textContent=(err.textContent?err.textContent+' | ':'')+'Impossibile caricare gli slot: '+ss.error.message;err.style.display='block'}
+ if(isClientRole())renderClientBookings(slots,bookingsData);else renderAdminReservations(bookingsData,slots);
 }
+function bookingAthleteId(b){return pick(b,['user_id','profile_id','client_id','client_profile_id','athlete_id','customer_id','member_id','p_profile_id','profileId','userId','clientId'])}
+function bookingAthleteName(b){
+ const direct=firstVal(b,['user_name','client_name','profile_name','athlete_name','athlete_name_full','client_full_name','full_name','name']);
+ if(direct)return direct;
+ const id=bookingAthleteId(b);
+ if(!id || id==='—')return '—';
+ const sid=String(id);
+ const prof=bookingProfiles.find(p=>[p.id,p.user_id,p.profile_id,p.auth_user_id,p.userId].some(v=>v!==undefined&&v!==null&&String(v)===sid));
+ if(prof){
+   const n=firstVal(prof,['full_name','name','display_name','athlete_name','client_name']) || [prof.first_name,prof.last_name].filter(Boolean).join(' ') || firstVal(prof,['email','phone','mobile']);
+   if(n)return n;
+ }
+ return 'Atleta non trovato';
+}
+function bookingDateForRow(b,sl){return sl?parseSlotDate(sl):parseAnySlotDate(pick(b,['date','booking_date','scheduled_date','starts_at','created_at']))}
+function bookingActivity(sl,b){return sl?slotTitle(sl):pick(b,['lesson_type','lesson_name','activity','activity_name','category','title'])||'Lezione'}
+function bookingTimes(sl,b){if(sl){const st=slotTimeText(sl),en=slotEndTimeText(sl);return st+(en&&en!==st?' - '+en:'')}return pick(b,['time','starts_at','start_time','booking_time'])||'—'}
+function bookingDateInputValue(d){return d&&Number.isFinite(d.getTime())?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:''}
+function clearBookingDateRange(){const a=document.getElementById('bookingDateFrom'),b=document.getElementById('bookingDateTo');if(a)a.value='';if(b)b.value='';filterBookings()}
+function renderAdminReservations(rows,slots){
+ const list=document.getElementById('bookingList');if(!list)return;const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim(),from=document.getElementById('bookingDateFrom')?.value||'',to=document.getElementById('bookingDateTo')?.value||'';
+ const filtered=(rows||[]).filter(b=>{const sl=slots.find(x=>String(x.id)===String(pick(b,['slot_id','lesson_slot_id']))),d=bookingDateForRow(b,sl),ds=bookingDateInputValue(d),activity=bookingActivity(sl,b),athlete=bookingAthleteName(b),times=bookingTimes(sl,b),status=pick(b,['status','state','booking_status'])||'attiva';return(!q||[activity,athlete,times,status,ds].join(' ').toLowerCase().includes(q))&&(!from||ds>=from)&&(!to||ds<=to)});
+ document.getElementById('bookingCount').textContent=filtered.length;
+ if(!filtered.length){list.innerHTML='<div class="bookingNotice">Nessuna prenotazione trovata nel periodo selezionato.</div>';return}
+ const sorted=[...filtered].sort((a,b)=>{const sa=slots.find(x=>String(x.id)===String(pick(a,['slot_id','lesson_slot_id']))),sb=slots.find(x=>String(x.id)===String(pick(b,['slot_id','lesson_slot_id']))),da=bookingDateForRow(a,sa)?.getTime()||0,dbv=bookingDateForRow(b,sb)?.getTime()||0;if(da!==dbv)return da-dbv;return String(bookingTimes(sa,a)).localeCompare(String(bookingTimes(sb,b)))});
+ list.innerHTML=`<div class="card"><div class="bookingResultHead"><h2 style="margin:0">Prenotazioni</h2><span class="pill">${sorted.length} risultati</span></div><div class="tableWrap"><table class="table bookingAdminTable"><thead><tr><th>DATA</th><th>ORARIO</th><th>ATTIVITÀ</th><th>ATLETA</th><th>STATO</th></tr></thead><tbody>${sorted.map(b=>{const sl=slots.find(x=>String(x.id)===String(pick(b,['slot_id','lesson_slot_id']))),d=bookingDateForRow(b,sl);return `<tr><td><b>${esc(d?d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'—')}</b></td><td><b>${esc(bookingTimes(sl,b))}</b></td><td><span class="bookingActivity">${esc(bookingActivity(sl,b))}</span></td><td>${esc(bookingAthleteName(b))}</td><td><span class="pill">${esc(pick(b,['status','state','booking_status'])||'attiva')}</span></td></tr>`}).join('')}</tbody></table></div></div>`;
+}
+
 function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
+function isSuperuserRole(){
+ const r=String(profile?.role||profile?.user_role||'').toLowerCase().trim();
+ return ['admin','administrator','amministratore','superuser'].includes(r);
+}
+function canViewClientProgress(){return isClientRole()&&!!currentUser?.id;}
 function canEditWorkout(){return !isClientRole();}
 function slotDateValue(slot){
  const vals=['date','slot_date','lesson_date','scheduled_date','day_date','p_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at'];
@@ -701,6 +1002,8 @@ function renderClientBookings(slots,rows){
    renderClientBookings(bookingSlots,bookingsData);
  }));
 }
+function adminDay(sl){const d=parseSlotDate(sl);const wd=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];const mon=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];return d?wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+mon[d.getMonth()]:'Data da definire'}
+function durationAdmin(sl){const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes']));return Number.isFinite(n)&&n>0?(n%60===0?(n/60)+' h':n+' min'):'60 min'}
 function renderBookings(rows,slots=bookingSlots){
  const list=document.getElementById('bookingList');if(!list)return;
  if(!window.slotCategoryFilter)window.slotCategoryFilter='';
@@ -714,8 +1017,6 @@ function renderBookings(rows,slots=bookingSlots){
    return (ma?(+ma[1])*60+ +ma[2]:9999)-(mb?(+mb[1])*60+ +mb[2]:9999);
  });
  const wd=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
- function adminDay(sl){const d=parseSlotDate(sl);return d?wd[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: 'Data da definire'}
- function durationAdmin(sl){const n=Number(pick(sl,['duration_minutes','duration','slot_duration_minutes']));return Number.isFinite(n)&&n>0?(n%60===0?(n/60)+' h':n+' min'):'60 min'}
  list.innerHTML=`
  <div class="slotAdminWrap">
   <h1 class="slotAdminTitle">Slot per categoria</h1>
@@ -728,7 +1029,7 @@ function renderBookings(rows,slots=bookingSlots){
     return `<div class="slotAdminCard" data-slot-id="${esc(sl.id)}">
       <div class="slotAdminMainLine">${esc(adminDay(sl))} <span class="slotAdminTime">${esc(time)}</span> <span class="slotAdminDash">-</span> <span class="slotAdminDate">${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span></div>
       <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} - max cliente ${esc(durationAdmin(sl))} - ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
-      <div class="slotAdminActions"><button type="button" class="slotAdminBtn" data-edit-slot="${esc(sl.id)}">MODIFICA</button><button type="button" class="slotAdminBtn" data-delete-slot="${esc(sl.id)}">ELIMINA</button></div>
+      <div class="slotAdminActions"><button type="button" class="slotAdminBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp; ELIMINA</button></div>
     </div>`;
   }).join(''):'<div class="bookingNotice">Nessuno slot disponibile.</div>'}
   </div>
@@ -743,7 +1044,7 @@ async function deleteAdminSlot(id){
  let r=await db.rpc('coach_delete_lesson_slots',{p_slot_id:id});
  if(r.error) r=await db.from('lesson_slots').delete().eq('id',id);
  if(r.error){alert('Impossibile eliminare lo slot: '+r.error.message);return}
- await loadBookings();
+ if(document.getElementById('slotAdminList')) await loadSlotAdmin(); else await loadBookings();
 }
 async function editAdminSlot(id){
  const sl=bookingSlots.find(x=>String(x.id)===String(id));if(!sl)return;
@@ -754,10 +1055,72 @@ async function editAdminSlot(id){
  const cap=prompt('Numero massimo partecipanti:',String(sl.max_participants||20));if(cap===null)return;
  const r=await db.from('lesson_slots').update({date:date.trim(),time:time.trim(),coach:coach.trim(),duration_minutes:Number(duration)||60,max_participants:Number(cap)||20}).eq('id',id);
  if(r.error){alert('Impossibile modificare lo slot: '+r.error.message);return}
- await loadBookings();
+ if(document.getElementById('slotAdminList')) await loadSlotAdmin(); else await loadBookings();
 }
 
-function filterBookings(){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();if(isClientRole()){const cards=[...document.querySelectorAll('.bookingCard')];cards.forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none'});return}renderBookings(!q?bookingsData:bookingsData.filter(b=>JSON.stringify(b).toLowerCase().includes(q)),bookingSlots)}
+async function loadSlotAdmin(){
+ const list=document.getElementById('slotAdminList'),err=document.getElementById('slotAdminError');
+ if(!list)return;
+ err.style.display='none';list.innerHTML='Caricamento slot...';
+ try{
+   // Carichiamo prima gli slot: la gestione deve funzionare anche se la tabella
+   // prenotazioni ha un problema di RLS o una risposta lenta.
+   const slotPromise=db.from('lesson_slots').select('*').limit(500);
+   const timeout=new Promise(resolve=>setTimeout(()=>resolve({data:null,error:{message:'Timeout caricamento slot'}}),10000));
+   const s=await Promise.race([slotPromise,timeout]);
+   if(s.error){
+     err.textContent='Impossibile caricare gli slot: '+s.error.message;
+     err.style.display='block';
+     list.innerHTML='<div class="bookingNotice">Nessuno slot caricato. Premi Aggiorna per riprovare.</div>';
+     return;
+   }
+   bookingSlots=s.data||[];
+   // Le prenotazioni servono solo per il conteggio. Se falliscono, gli slot
+   // restano comunque visibili e modificabili.
+   const b=await Promise.race([
+     db.from('lesson_bookings').select('*').limit(500),
+     new Promise(resolve=>setTimeout(()=>resolve({data:[],error:null}),5000))
+   ]);
+   bookingsData=b.error?[]:(b.data||[]);
+   renderSlotAdmin(bookingsData,bookingSlots);
+ }catch(e){
+   err.textContent='Errore nella gestione slot: '+(e?.message||e);
+   err.style.display='block';
+   list.innerHTML='<div class="bookingNotice">Impossibile caricare gli slot. Premi Aggiorna per riprovare.</div>';
+ }
+}
+function filterSlotAdmin(){
+ const q=(document.getElementById('slotAdminSearch')?.value||'').toLowerCase().trim();
+ const rows=!q?bookingSlots:bookingSlots.filter(sl=>JSON.stringify(sl).toLowerCase().includes(q));
+ renderSlotAdmin(bookingsData,rows);
+}
+function renderSlotAdmin(rows,slots){
+ const list=document.getElementById('slotAdminList');if(!list)return;
+ if(!window.slotCategoryFilter)window.slotCategoryFilter='';
+ const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
+ const selected=String(window.slotCategoryFilter||'').toLowerCase();
+ const visible=(slots||[]).filter(sl=>parseSlotDate(sl)).filter(sl=>!selected||String(slotTitle(sl)||'').toLowerCase().includes(selected)).sort((a,b)=>{
+   const da=parseSlotDate(a)?.getTime()||0,dbv=parseSlotDate(b)?.getTime()||0;
+   if(da!==dbv)return da-dbv;
+   return String(slotTimeText(a)||'').localeCompare(String(slotTimeText(b)||''));
+ });
+ const cards=visible.map(sl=>{
+   const d=parseSlotDate(sl),st=slotTimeText(sl),en=slotEndTimeText(sl),booked=slotBooked(sl,rows),cap=slotCapacity(sl),coach=pick(sl,['coach','coach_name','trainer']);
+   const time=en&&en!==st?`${st||'--:--'} - ${en}`:(st||'--:--');
+   const day=adminDay(sl);
+   const date=d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]:'—';
+   return `<div class="slotAdminCard">
+     <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(day)}</span> <span>${esc(date)}</span> <span class="slotAdminTime">${esc(time)}</span></div>
+     <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} · max utilizzo ${esc(durationAdmin(sl))} · ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
+     <div class="slotAdminActions"><button type="button" class="slotAdminBtn slotEditBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn slotDeleteBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp;ELIMINA</button></div>
+   </div>`;
+ }).join('');
+ list.innerHTML=`<div class="slotAdminWrap"><h1 class="slotAdminTitle">Slot per categoria</h1><div class="slotAdminTabs">${cats.map(([label,key])=>`<button type="button" class="slotAdminTab ${selected===key?'active':''}" data-slot-cat="${esc(key)}">${label}</button>`).join('')}</div><div class="slotAdminCategory">${selected?esc(cats.find(x=>x[1]===selected)?.[0]||'Slot'):'TUTTE'}</div><div class="slotAdminCards">${cards||'<div class="bookingNotice">Nessuno slot disponibile.</div>'}</div></div>`;
+ list.querySelectorAll('[data-slot-cat]').forEach(b=>b.addEventListener('click',()=>{window.slotCategoryFilter=b.dataset.slotCat||'';renderSlotAdmin(bookingsData,bookingSlots)}));
+ list.querySelectorAll('[data-delete-slot]').forEach(b=>b.addEventListener('click',()=>deleteAdminSlot(b.dataset.deleteSlot)));
+ list.querySelectorAll('[data-edit-slot]').forEach(b=>b.addEventListener('click',()=>editAdminSlot(b.dataset.editSlot)));
+}
+function filterBookings(){if(isClientRole()){const q=(document.getElementById('bookingSearch')?.value||'').toLowerCase().trim();const cards=[...document.querySelectorAll('.bookingCard')];cards.forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none'});return}renderAdminReservations(bookingsData,bookingSlots)}
 async function bookMySlot(slotId){
  const err=document.getElementById('bookingError');err.style.display='none';
  if(!currentUser?.id){err.textContent='Utente non autenticato.';err.style.display='block';return}
@@ -774,21 +1137,55 @@ async function cancelMyBooking(bookingId){
  alert('Prenotazione annullata.');loadBookings();
 }
 
+function progressNum(v){if(v===null||v===undefined||v==='')return null;const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:null}
+function progressDate(r){return firstVal(r,['date','measurement_date','measured_at','created_at','recorded_at','rilevazione_date'],null)}
+function progressField(r,names){return progressNum(firstVal(r,names,null))}
+function progressUnit(label){return label==='Peso'?' kg':' cm'}
+function progressChange(latest,previous,label){if(latest===null)return '';if(previous===null)return '<div class="progressFirst">Prima rilevazione</div>';const d=latest-previous;const sign=d>0?'+':d<0?'':'';return `<div class="progressChange">${sign}${d.toFixed(1).replace('.',',')}${progressUnit(label)}</div>`}
+const progressDefs=[
+ ['Peso',['weight','peso','body_weight','weight_kg'],' kg'],
+ ['Vita',['waist','vita'],' cm'],
+ ['Petto',['chest','petto'],' cm'],
+ ['Fianchi',['hips','fianchi','hip'],' cm'],
+ ['Glutei',['glutes','glutei','buttocks'],' cm'],
+ ['Braccio',['arm','braccio','arm_circumference'],' cm'],
+ ['Coscia',['thigh','coscia'],' cm'],
+ ['Polpaccio',['calf','polpaccio'],' cm'],
+ ['Avambraccio',['forearm','avambraccio'],' cm'],
+ ['Polso',['wrist','polso'],' cm']
+];
+async function loadClientProgress(){
+ if(!canViewClientProgress())return;
+ const err=document.getElementById('progressError'),count=document.getElementById('progressCount'),cards=document.getElementById('progressCards'),table=document.getElementById('progressTable');
+ if(!cards||!table)return;
+ err.style.display='none';cards.innerHTML='';table.innerHTML='Caricamento...';count.textContent='Caricamento...';
+ if(!currentUser?.id){err.textContent='Utente non autenticato.';err.style.display='block';return}
+ const r=await db.from('progress_entries').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(200);
+ if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return}
+ const rows=(r.data||[]).slice().sort((a,b)=>{const da=new Date(progressDate(a)||0).getTime(),db=new Date(progressDate(b)||0).getTime();return db-da});
+ count.textContent=rows.length+(rows.length===1?' rilevazione':' rilevazioni');
+ if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return}
+ const latest=rows[0],previous=rows[1]||null;
+ cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend">↗</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
+ const cols=['Data',...progressDefs.map(x=>x[0]),'Note'];
+ table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
+}
+
 async function loadClientPayments(){
  const list=document.getElementById('clientPaymentList'),err=document.getElementById('clientPaymentError'),count=document.getElementById('clientPaymentCount');
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento storico...';count.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
- const r=await db.from('subscription_payment_history').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
+ const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
  if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
  const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
  if(!rows.length){list.innerHTML='<div class="muted">Nessun pagamento presente nello storico.</div>';return}
- const dateVal=x=>x.created_at||x.paid_at||x.payment_date||x.date||x.transaction_date;
- const amountVal=x=>x.amount??x.price??x.total??x.fee??x.value;
- const methodVal=x=>pick(x,['payment_method','method','payment_type','type','gateway']);
- const statusVal=x=>pick(x,['status','state','payment_status']);
- const refVal=x=>pick(x,['transaction_id','payment_id','reference','receipt_number']);
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Importo</th><th>Metodo</th><th>Stato</th><th>Riferimento</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(amountVal(x)??'—')}</td><td>${esc(methodVal(x))}</td><td><span class="pill">${esc(statusVal(x))}</span></td><td>${esc(refVal(x))}</td></tr>`).join('')+'</tbody></table></div>';
+ const dateVal=x=>x.created_at;
+ const fromVal=x=>x.paid_from;
+ const toVal=x=>x.paid_to;
+ const amountVal=x=>x.amount;
+ const noteVal=x=>x.note;
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fromVal(x)||'—')} → ${esc(toVal(x)||'—')}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
 }
 
 async function loadAdmin(){
@@ -796,7 +1193,7 @@ async function loadAdmin(){
  err.style.display='none';list.innerHTML='Caricamento utenti...';
  const r=await db.from('profiles').select('*').limit(500);
  if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
- adminData=r.data||[];renderAdmin(adminData);loadPayments();
+ adminData=r.data||[];renderAdmin(adminData);
 }
 function renderAdmin(rows){
  const list=document.getElementById('adminList'),count=document.getElementById('adminCount');if(!list)return;
@@ -806,16 +1203,6 @@ function renderAdmin(rows){
  '</tbody></table></div>';
 }
 function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();renderAdmin(!q?adminData:adminData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
-async function loadPayments(){
- const el=document.getElementById('paymentList');if(!el)return;
- const r=await db.from('subscription_payment_history').select('*').order('created_at',{ascending:false}).limit(100);
- if(r.error){el.innerHTML='<span class="muted">Storico pagamenti non leggibile con i permessi attuali.</span>';return}
- const rows=r.data||[];
- if(!rows.length){el.innerHTML='<span class="muted">Nessun pagamento nello storico.</span>';return}
- el.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Importo</th><th>Stato</th></tr></thead><tbody>'+
- rows.map(x=>`<tr><td>${esc(fmtDate(x.created_at||x.paid_at||x.payment_date))}</td><td>${esc(pick(x,['user_name','client_name','user_id']))}</td><td>${esc(pick(x,['amount','price','total','fee']))}</td><td><span class="pill">${esc(pick(x,['status','state']))}</span></td></tr>`).join('')+
- '</tbody></table></div>';
-}
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('open')}
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}
@@ -914,19 +1301,24 @@ async function saveWorkoutExercise(id){
  const payload={name:valOrNull('weName'),sets:valOrNull('weSets'),reps:valOrNull('weReps'),weight:valOrNull('weWeight'),rest_seconds:valOrNull('weRest'),work_type:valOrNull('weType'),focus:valOrNull('weFocus')};
  const r=await db.from('workout_exercises').update(payload).eq('id',id);if(r.error){notice('weMsg',r.error.message);return}closeModal();await loadWorkouts()
 }
+function canEditNutrition(){return !isClientRole();}
 async function editNutritionPlan(id){
+ if(!canEditNutrition()){alert('Il piano alimentare è in sola visualizzazione per il cliente.');return;}
  const p=nutritionData.find(x=>x.id===id);if(!p)return;
  openModal(`<div class="modalhead"><h2>Modifica piano nutrizionale</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Titolo</label><input id="npTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="npDesc" value="${esc(p.description||'')}"></div><div><label>Calorie target</label><input id="npCal" type="number" value="${esc(p.calories_target??'')}"></div><div><label>Proteine target (g)</label><input id="npProt" type="number" value="${esc(p.protein_target??'')}"></div><div><label>Acqua (L)</label><input id="npWater" type="number" step="0.1" value="${esc(p.water_target_liters??'')}"></div></div><div class="checkrow"><label><input id="npActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attivo</label></div><div id="npMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionPlan('${id}')">Salva</button></div>`)
 }
 async function saveNutritionPlan(id){
+ if(!canEditNutrition()){alert('Operazione non consentita: il cliente non può modificare il piano alimentare.');return;}
  const payload={title:valOrNull('npTitle'),description:valOrNull('npDesc'),calories_target:valOrNull('npCal'),protein_target:valOrNull('npProt'),water_target_liters:valOrNull('npWater'),is_active:document.getElementById('npActive').checked};
  const r=await db.from('nutrition_plans').update(payload).eq('id',id);if(r.error){notice('npMsg',r.error.message);return}closeModal();await loadNutrition()
 }
 async function editNutritionMeal(id){
+ if(!canEditNutrition()){alert('Il pasto è in sola visualizzazione per il cliente.');return;}
  const m=nutritionData.flatMap(p=>p.nutrition_meals||[]).find(x=>x.id===id);if(!m)return;
  openModal(`<div class="modalhead"><h2>Modifica pasto</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div><label>Tipo pasto</label><input id="nmType" value="${esc(m.meal_type||'')}"></div><div><label>Nome</label><input id="nmName" value="${esc(m.name||'')}"></div><div><label>Grammi</label><input id="nmGrams" type="number" value="${esc(m.grams??'')}"></div><div><label>Ordine</label><input id="nmSort" type="number" value="${esc(m.sort_order??'')}"></div><div class="wide"><label>Descrizione</label><input id="nmDesc" value="${esc(m.description||'')}"></div></div><div id="nmMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionMeal('${id}')">Salva</button></div>`)
 }
 async function saveNutritionMeal(id){
+ if(!canEditNutrition()){alert('Operazione non consentita: il cliente non può modificare il piano alimentare.');return;}
  const payload={meal_type:valOrNull('nmType'),name:valOrNull('nmName'),grams:valOrNull('nmGrams'),sort_order:valOrNull('nmSort'),description:valOrNull('nmDesc')};
  const r=await db.from('nutrition_meals').update(payload).eq('id',id);if(r.error){notice('nmMsg',r.error.message);return}closeModal();await loadNutrition()
 }
@@ -936,4 +1328,4 @@ async function login(e){e.preventDefault();const er=document.getElementById('err
 async function logout(){await db.auth.signOut();location.reload()}
 document.getElementById('loginForm').addEventListener('submit',login);
 (async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}})();
-</script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}}catch(e){}try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();</script></body></html>
+</script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();</script></body></html>

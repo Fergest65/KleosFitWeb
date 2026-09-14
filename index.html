@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.40</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
+<!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KleosFit Coach Pro • V18.8.41</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101317"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="icon.png"><link rel="apple-touch-icon" href="icon.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
 :root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
 
 .detailHero{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:11px;background:#111419}.detailHero strong{display:block;margin-top:4px;font-size:17px}.detailSection h3{margin:18px 0 10px}.exerciseDetail{display:grid;grid-template-columns:34px 92px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:12px;margin:9px 0;background:#101217}.exNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#242a32;font-weight:700}.exImage{width:92px;height:92px;border-radius:10px;object-fit:cover;background:#171b21;border:1px solid var(--line);display:block}.exImageWrap{display:flex;align-items:center;justify-content:center}.exTitle{font-weight:700}.exMeta{font-size:12px;color:var(--muted);margin-top:4px}.exNotes{font-size:12px;margin-top:7px;color:#cfd5dd}.exStats{display:grid;grid-template-columns:repeat(4,72px);gap:8px}.exStats div{padding:7px 5px;text-align:center;border-radius:8px;background:#171b21}.exStats span{display:block;font-size:10px;color:var(--muted)}.exStats b{display:block;margin-top:2px;font-size:13px}@media(max-width:700px){.detailHero{grid-template-columns:1fr}.exerciseDetail{grid-template-columns:30px 92px 1fr}.exStats{grid-column:2;grid-template-columns:repeat(2,1fr)}}
@@ -107,7 +107,49 @@
 .slotAdminWrap{padding:4px 0 28px}.slotAdminTitle{font-size:36px;line-height:1.05;margin:4px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.slotAdminTab{min-height:58px;border:1px solid #303640!important;border-radius:12px!important;background:#111419!important;color:#aeb6c4!important;font-size:18px!important;font-weight:900!important;cursor:pointer!important}.slotAdminTab.active{background:#c6ff35!important;color:#08090a!important;border-color:#c6ff35!important}.slotAdminCategory{font-size:18px;font-weight:900;color:#c6ff35;margin:8px 0 14px;text-transform:uppercase}.slotAdminCard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:8px 18px;align-items:center;background:#08090a;border:1px solid #292d35;border-radius:15px;padding:16px 18px;margin-bottom:10px}.slotAdminMainLine{font-size:20px;font-weight:900;color:#fff}.slotAdminDay{color:#c6ff35}.slotAdminTime{margin-left:8px}.slotAdminMeta{grid-column:1;font-size:15px;color:#aeb6c4;margin-top:2px}.slotAdminActions{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px}.slotAdminBtn{height:52px;border-radius:11px!important;border:0!important;color:#08090a!important;font-size:16px!important;font-weight:900!important;cursor:pointer!important}.slotAdminBtn.slotEditBtn{background:#c6ff35!important}.slotAdminBtn.slotDeleteBtn{background:#ef3f43!important;color:#fff!important}.slotAdminBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
 @media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
-</style><style>.bookingDateFilters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:0 0 16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#111419}.bookingDateFilters label{margin:0 0 6px}.bookingDateFilters .btn{height:44px}.bookingResultHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.bookingAdminTable th{white-space:nowrap}.bookingAdminTable td{font-size:14px;vertical-align:middle}.bookingActivity{font-weight:850;color:var(--accent)}@media(max-width:700px){.bookingDateFilters{grid-template-columns:1fr 1fr}.bookingDateFilters .btn{grid-column:1/-1;width:100%}.bookingResultHead{align-items:flex-start;flex-direction:column}}.notifComposeRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}.notifComposeRow label{display:block;color:#c8ccd3;font-size:13px;margin:0 0 7px}.notifComposeRow select,.notifComposeRow input{width:100%}@media(max-width:700px){.notifComposeRow{grid-template-columns:1fr}}}</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
+</style><style>.bookingDateFilters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:0 0 16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#111419}.bookingDateFilters label{margin:0 0 6px}.bookingDateFilters .btn{height:44px}.bookingResultHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.bookingAdminTable th{white-space:nowrap}.bookingAdminTable td{font-size:14px;vertical-align:middle}.bookingActivity{font-weight:850;color:var(--accent)}@media(max-width:700px){.bookingDateFilters{grid-template-columns:1fr 1fr}.bookingDateFilters .btn{grid-column:1/-1;width:100%}.bookingResultHead{align-items:flex-start;flex-direction:column}}</style>
+<style>
+/* KLEOSFIT - workout execution mode */
+.workoutExecBtn{background:var(--accent)!important;color:#080b06!important;font-weight:950!important;min-width:150px}
+.workoutExecHero{background:#080a0d;border:1px solid var(--line);border-radius:20px;padding:24px;text-align:center}
+.workoutExecName{font-size:26px;font-weight:950;margin:0 0 6px}
+.workoutExecState{font-size:15px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.workoutExecBig{font-size:96px;line-height:.95;font-weight:950;margin:22px 0 4px;letter-spacing:-4px}
+.workoutExecBig.accent{color:var(--accent)}
+.workoutExecUnit{font-size:22px;font-weight:850;color:#fff}
+.workoutExecProgress{height:9px;background:#242830;border-radius:99px;overflow:hidden;margin:20px 0 8px}
+.workoutExecProgress>div{height:100%;width:0;background:var(--accent);transition:width .2s linear}
+.workoutExecTempo{font-size:22px;font-weight:900;color:var(--accent);margin-top:14px}
+.workoutExecMeta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.workoutExecMeta>div{background:#111419;border:1px solid var(--line);border-radius:12px;padding:12px}
+.workoutExecMeta span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}
+.workoutExecMeta b{display:block;font-size:19px;margin-top:4px}
+.workoutExecActions{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px;margin-top:18px}
+.workoutExecActions button{min-height:58px;border-radius:13px;border:1px solid var(--line);font-weight:950;cursor:pointer}
+.workoutExecActions .primary{background:var(--accent);color:#080b06;border-color:var(--accent)}
+.workoutExecActions .dark{background:#171a20;color:#fff}
+.workoutExecList{display:grid;gap:8px;margin-top:18px}
+.workoutExecListItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line);border-radius:11px;background:#111419}
+.workoutExecListItem.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.workoutExecListItem .n{width:30px;height:30px;border-radius:50%;background:#242a32;display:grid;place-items:center;font-weight:900}
+.workoutExecListItem .info{flex:1;text-align:left}
+.workoutExecListItem .info b{display:block}
+.workoutExecListItem .info span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.workoutExecVoice{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.workoutExecVoice button{background:#111419;color:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-weight:850;cursor:pointer}
+.workoutExecDone{text-align:center;padding:30px 10px}
+.workoutExecDone .check{font-size:72px;color:var(--accent);font-weight:950}
+.workoutExecDone h2{font-size:30px;margin:8px 0}
+.workoutExecDone p{color:var(--muted);font-size:16px}
+@media(max-width:600px){
+ .workoutExecBig{font-size:82px}
+ .workoutExecMeta{grid-template-columns:1fr 1fr 1fr}
+ .workoutExecMeta b{font-size:16px}
+ .workoutExecActions{grid-template-columns:1fr 1.4fr 1fr}
+ .workoutExecActions button{min-height:54px;font-size:13px}
+}
+</style>
+</head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
 <p class="welcomeText">Allenamenti personalizzati, piano nutrizionale e tutto ciò che serve per seguire il tuo percorso in una sola esperienza.</p>
@@ -177,14 +219,14 @@ notifications:`<div class="top"><div><div class="title">Gestione notifiche</div>
  <div class="card"><div class="label">Destinatari</div><div class="metric" id="notifRecipients">—</div></div>
  <div class="card"><div class="label">Push browser</div><div class="metric" id="notifPermission">—</div></div>
 </div>
-<div class="section"><div class="card"><h2>Invia nuova notifica</h2><div class="notifComposeRow"><div><label style="margin-top:0">DESTINATARI</label><select id="notifTarget" onchange="toggleNotifRecipients()"><option value="all">Tutti i clienti</option><option value="selected">Clienti selezionati</option><option value="admin">Amministratori</option></select></div><div><label style="margin-top:0">TITOLO</label><input id="notifTitle" placeholder="Titolo della notifica"></div></div>
+<div class="section"><div class="card"><h2>Invia nuova notifica</h2><div class="inputrow"><select id="notifTarget" onchange="toggleNotifRecipients()"><option value="all">Tutti i clienti</option><option value="selected">Clienti selezionati</option><option value="admin">Amministratori</option></select><input id="notifTitle" placeholder="Titolo"></div>
 <div id="notifRecipientsBox" style="display:none;margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#111419">
  <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><b>Seleziona clienti</b><div class="inputrow" style="margin:0"><button class="btn secondary mini" type="button" onclick="selectAllNotifRecipients()">Seleziona tutti</button><button class="btn secondary mini" type="button" onclick="clearNotifRecipients()">Deseleziona tutti</button></div></div>
  <input id="notifRecipientSearch" placeholder="Cerca cliente..." oninput="filterNotifRecipients()" style="margin-top:10px">
  <div id="notifRecipientsList" style="margin-top:10px;max-height:260px;overflow:auto"></div>
  <div id="notifRecipientsCount" class="muted" style="margin-top:8px"></div>
 </div><textarea id="notifBody" placeholder="Messaggio della notifica" style="width:100%;min-height:110px;margin-top:12px;resize:vertical"></textarea><div class="inputrow" style="margin-top:12px"><button class="btn" type="button" onclick="sendAdminNotification()">INVIA NOTIFICA</button><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="notifError" class="error"></div><div id="notifStatus" class="muted" style="margin-top:12px"></div></div></div>
-<div class="section"><div class="card"><div class="top" style="margin-bottom:12px"><h2 style="margin:0">Ultime notifiche</h2><button class="btn secondary" type="button" onclick="deleteAllNotifications()">ELIMINA TUTTE</button></div><div id="notifList">Caricamento...</div></div></div>`,
+<div class="section"><div class="card"><h2>Ultime notifiche</h2><div id="notifList">Caricamento...</div></div></div>`,
 myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
@@ -314,26 +356,7 @@ async function loadNotifications(){
  if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent=rows.length;
  if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent=new Set(rows.map(x=>x.user_id||x.profile_id).filter(Boolean)).size;
  if(!rows.length){if(list)list.innerHTML='<div class="muted">Nessuna notifica presente.</div>';return}
- if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th><th></th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||x.target||'—')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td><td><button class="btn secondary" type="button" style="padding:6px 9px;font-size:11px" data-id="'+esc(x.id)+'" onclick="deleteNotification(this.dataset.id)">ELIMINA</button></td></tr>').join('')+'</tbody></table></div>';
-}
-async function deleteNotification(id){
- if(!id)return;
- if(!confirm('Eliminare questa notifica?'))return;
- const status=document.getElementById('notifStatus'), err=document.getElementById('notifError');
- if(err){err.style.display='none';err.textContent=''}
- const r=await db.from('notifications').delete().eq('id',id);
- if(r.error){if(err){err.textContent='Eliminazione non riuscita: '+r.error.message;err.style.display='block'}return}
- if(status)status.textContent='Notifica eliminata.';
- await loadNotifications();
-}
-async function deleteAllNotifications(){
- if(!confirm('ATTENZIONE: eliminare TUTTE le notifiche? Questa operazione non può essere annullata.'))return;
- const status=document.getElementById('notifStatus'), err=document.getElementById('notifError');
- if(err){err.style.display='none';err.textContent=''}
- const r=await db.from('notifications').delete().not('id','is',null);
- if(r.error){if(err){err.textContent='Eliminazione non riuscita: '+r.error.message;err.style.display='block'}return}
- if(status)status.textContent='Tutte le notifiche sono state eliminate.';
- await loadNotifications();
+ if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||x.target||'—')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td></tr>').join('')+'</tbody></table></div>';
 }
 async function loadMyNotifications(){
  const list=document.getElementById('myNotifList'), status=document.getElementById('myNotifStatus');
@@ -528,7 +551,7 @@ function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));
 .slotAdminWrap{padding:4px 0 28px}.slotAdminTitle{font-size:36px;line-height:1.05;margin:4px 0 22px;font-weight:900}.slotAdminTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.slotAdminTab{min-height:58px;border:1px solid #303640!important;border-radius:12px!important;background:#111419!important;color:#aeb6c4!important;font-size:18px!important;font-weight:900!important;cursor:pointer!important}.slotAdminTab.active{background:#c6ff35!important;color:#08090a!important;border-color:#c6ff35!important}.slotAdminCategory{font-size:18px;font-weight:900;color:#c6ff35;margin:8px 0 14px;text-transform:uppercase}.slotAdminCard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:8px 18px;align-items:center;background:#08090a;border:1px solid #292d35;border-radius:15px;padding:16px 18px;margin-bottom:10px}.slotAdminMainLine{font-size:20px;font-weight:900;color:#fff}.slotAdminDay{color:#c6ff35}.slotAdminTime{margin-left:8px}.slotAdminMeta{grid-column:1;font-size:15px;color:#aeb6c4;margin-top:2px}.slotAdminActions{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px}.slotAdminBtn{height:52px;border-radius:11px!important;border:0!important;color:#08090a!important;font-size:16px!important;font-weight:900!important;cursor:pointer!important}.slotAdminBtn.slotEditBtn{background:#c6ff35!important}.slotAdminBtn.slotDeleteBtn{background:#ef3f43!important;color:#fff!important}.slotAdminBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
 @media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
-.notifComposeRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}.notifComposeRow label{display:block;color:#c8ccd3;font-size:13px;margin:0 0 7px}.notifComposeRow select,.notifComposeRow input{width:100%}@media(max-width:700px){.notifComposeRow{grid-template-columns:1fr}}}</style></head><body><div class="card"><h1>KLEOSFIT</h1><h2>${esc(name)}</h2><h3>${esc(card||'Tessera')}</h3><div id="qr"></div><p>QR tessera personale</p></div><script>new QRCode(document.getElementById('qr'),{text:${JSON.stringify(value)},width:260,height:260});window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close()}
+</style></head><body><div class="card"><h1>KLEOSFIT</h1><h2>${esc(name)}</h2><h3>${esc(card||'Tessera')}</h3><div id="qr"></div><p>QR tessera personale</p></div><script>new QRCode(document.getElementById('qr'),{text:${JSON.stringify(value)},width:260,height:260});window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close()}
 function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
 async function loadWorkouts(){
@@ -674,10 +697,302 @@ function renderWorkouts(rows){
     ? `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> ${esc(userName)}${userEmail?' · '+esc(userEmail):''}</div>`
     : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
   const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
-  const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>';
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+  const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:`<td><button class="btn mini workoutExecBtn" onclick="startWorkoutExecution('${p.id}', '${e.id}')">Esegui</button></td>`;
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span>${isClientRole()&&ex.length?`<button class="btn mini workoutExecBtn" onclick="startWorkoutExecution('${p.id}')">Esegui workout</button>`:''}<button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
  }).join('');
 }
+
+let workoutExecState=null;
+let workoutExecTimer=null;
+let workoutExecWakeLock=null;
+
+function workoutExecClearTimer(){
+  if(workoutExecTimer){clearInterval(workoutExecTimer);workoutExecTimer=null;}
+}
+function workoutExecSpeak(text){
+  try{
+    if(!workoutExecState?.voice || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='it-IT'; u.rate=1.05; u.pitch=1;
+    window.speechSynthesis.speak(u);
+  }catch(_e){}
+}
+function workoutExecBeep(freq=880,duration=.08){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(!C)return;
+    const c=new C(),o=c.createOscillator(),g=c.createGain();
+    o.frequency.value=freq;o.type='sine';g.gain.value=.035;
+    o.connect(g);g.connect(c.destination);o.start();
+    setTimeout(()=>{o.stop();c.close()},duration*1000);
+  }catch(_e){}
+}
+async function workoutExecKeepAwake(){
+  try{
+    if('wakeLock' in navigator) workoutExecWakeLock=await navigator.wakeLock.request('screen');
+  }catch(_e){}
+}
+async function workoutExecReleaseWake(){
+  try{if(workoutExecWakeLock){await workoutExecWakeLock.release();workoutExecWakeLock=null;}}catch(_e){}
+}
+function workoutExecFmt(sec){
+  sec=Math.max(0,Math.ceil(Number(sec)||0));
+  const m=Math.floor(sec/60),s=sec%60;
+  return m+':'+String(s).padStart(2,'0');
+}
+function workoutExecNum(v, fallback=0){
+  const n=Number(String(v??'').replace(',','.').match(/-?\d+(?:\.\d+)?/)?.[0]);
+  return Number.isFinite(n)?n:fallback;
+}
+function workoutExecTimed(e){
+  const type=String(e?.work_type||e?.exercise_type||'').toLowerCase();
+  return Number(e?.duration_seconds)>0 || /tempo|time|tempo|secondi|sec|plank|hold|tenuta/.test(type) && !Number(e?.reps);
+}
+function workoutExecTempoText(e){
+  const r=Number(e?.rep_seconds);
+  if(Number.isFinite(r)&&r>0) return r+'s per prossima rep';
+  return 'Ritmo libero';
+}
+function workoutExecBuildHtml(){
+  const st=workoutExecState,p=st.plan,e=st.exercise;
+  const exs=st.exercises;
+  const currentIndex=st.exerciseIndex;
+  const timed=workoutExecTimed(e);
+  return `<div class="modalhead">
+    <div><h2 style="margin:0">ESECUZIONE WORKOUT</h2><div class="sub">${esc(p.title||'Scheda allenamento')}</div></div>
+    <button class="close" onclick="closeWorkoutExecution()">✕</button>
+  </div>
+  <div class="workoutExecHero">
+    <div class="workoutExecState" id="weState">PRONTO</div>
+    <div class="workoutExecName" id="weNameExec">${esc(e.name||'Esercizio')}</div>
+    <div class="workoutExecBig accent" id="weBig">0</div>
+    <div class="workoutExecUnit" id="weUnit">${timed?'secondi':'di '+workoutExecNum(e.reps,0)+' ripetizioni'}</div>
+    <div class="workoutExecProgress"><div id="weProgress"></div></div>
+    <div class="workoutExecTempo" id="weTempo">${timed?(workoutExecNum(e.duration_seconds,0)+'s di lavoro'):workoutExecTempoText(e)}</div>
+    <div class="workoutExecMeta">
+      <div><span>Serie</span><b id="weSet">1 / ${workoutExecNum(e.sets,1)}</b></div>
+      <div><span>Carico</span><b id="weWeight">${esc(e.weight||'—')}</b></div>
+      <div><span>Recupero</span><b id="weRest">${workoutExecNum(e.rest_seconds,0)}s</b></div>
+    </div>
+    <div class="workoutExecActions">
+      <button class="dark" onclick="workoutExecPrev()">← Indietro</button>
+      <button class="primary" id="weMainBtn" onclick="workoutExecToggle()">▶ AVVIA</button>
+      <button class="dark" onclick="workoutExecNext()">Avanti →</button>
+    </div>
+    <div class="workoutExecVoice">
+      <button onclick="workoutExecToggleVoice()" id="weVoiceBtn">🔊 Voce: ON</button>
+      <button onclick="workoutExecRestart()">↻ Ripeti serie</button>
+    </div>
+  </div>
+  <div class="workoutExecList">
+    ${exs.map((x,i)=>`<div class="workoutExecListItem ${i===currentIndex?'active':''}" id="weEx_${i}">
+      <div class="n">${i+1}</div><div class="info"><b>${esc(x.name||'Esercizio')}</b><span>${esc(x.sets??1)} serie · ${esc(x.reps??x.duration_seconds??'—')} ${x.duration_seconds?'s':''} · rec. ${esc(x.rest_seconds??0)}s</span></div>
+    </div>`).join('')}
+  </div>`;
+}
+function workoutExecRender(){
+  if(!workoutExecState)return;
+  const box=document.getElementById('modalContent'); if(!box)return;
+  box.innerHTML=workoutExecBuildHtml();
+}
+async function startWorkoutExecution(planId,exerciseId){
+  if(!isClientRole()){alert('La modalità esecuzione è disponibile per il cliente.');return;}
+  const p=workoutsData.find(x=>String(x.id)===String(planId)); if(!p)return;
+  const exs=(p.workout_exercises||[]).slice().sort((a,b)=>(a.sort_order??0)-(b.sort_order??0));
+  if(!exs.length){alert('La scheda non contiene esercizi.');return;}
+  let idx=exerciseId?exs.findIndex(x=>String(x.id)===String(exerciseId)):0;
+  if(idx<0)idx=0;
+  workoutExecClearTimer();
+  if('speechSynthesis' in window)window.speechSynthesis.cancel();
+  workoutExecState={plan:p,exercises:exs,exerciseIndex:idx,exercise:exs[idx],setIndex:1,phase:'ready',remaining:0,elapsed:0,voice:true,completedSets:0,totalSets:exs.reduce((a,x)=>a+Math.max(1,workoutExecNum(x.sets,1)),0)};
+  openModal('');
+  workoutExecRender();
+  await workoutExecKeepAwake();
+}
+function workoutExecUpdate(){
+  const st=workoutExecState;if(!st)return;
+  const e=st.exercise,timed=workoutExecTimed(e);
+  const big=document.getElementById('weBig'),unit=document.getElementById('weUnit'),state=document.getElementById('weState'),progress=document.getElementById('weProgress'),tempo=document.getElementById('weTempo'),setEl=document.getElementById('weSet'),btn=document.getElementById('weMainBtn');
+  if(!big)return;
+  setEl.textContent=st.setIndex+' / '+Math.max(1,workoutExecNum(e.sets,1));
+  if(st.phase==='ready'){
+    state.textContent='PRONTO';
+    big.textContent='0';
+    unit.textContent=timed?'secondi':'di '+workoutExecNum(e.reps,0)+' ripetizioni';
+    progress.style.width='0%';
+    tempo.textContent=timed?(workoutExecNum(e.duration_seconds,0)+'s di lavoro'):workoutExecTempoText(e);
+    btn.textContent='▶ AVVIA';
+    return;
+  }
+  if(st.phase==='initial'){
+    state.textContent='PREPARATI';
+    big.textContent=Math.ceil(st.remaining);
+    unit.textContent='secondi';
+    progress.style.width='0%';
+    btn.textContent='❚❚ PAUSA';
+    return;
+  }
+  if(st.phase==='work'){
+    btn.textContent='❚❚ PAUSA';
+    if(timed){
+      const total=Math.max(1,workoutExecNum(e.duration_seconds,30));
+      big.textContent=Math.ceil(st.remaining);
+      unit.textContent='secondi';
+      progress.style.width=Math.min(100,Math.max(0,((total-st.remaining)/total)*100))+'%';
+    }else{
+      const reps=Math.max(1,workoutExecNum(e.reps,1));
+      big.textContent=Math.min(reps,st.repIndex||0);
+      unit.textContent='di '+reps+' ripetizioni';
+      const rs=Math.max(.25,workoutExecNum(e.rep_seconds,2));
+      const frac=(st.repIndex-1+(1-(st.repRemaining/rs)))/reps;
+      progress.style.width=Math.min(100,Math.max(0,frac*100))+'%';
+    }
+    tempo.textContent=timed?'LAVORO':workoutExecTempoText(e);
+    return;
+  }
+  if(st.phase==='rest'){
+    state.textContent='RECUPERO';
+    big.textContent=workoutExecFmt(st.remaining);
+    unit.textContent='fino alla prossima serie';
+    progress.style.width='100%';
+    tempo.textContent='Respira · prepara la prossima serie';
+    btn.textContent='❚❚ PAUSA';
+  }
+}
+function workoutExecStartTick(){
+  workoutExecClearTimer();
+  const st=workoutExecState;if(!st)return;
+  st.lastTick=performance.now();
+  workoutExecTimer=setInterval(workoutExecTick,100);
+}
+function workoutExecTick(){
+  const st=workoutExecState;if(!st||st.phase==='ready'||st.phase==='paused')return;
+  const now=performance.now(),dt=Math.min(.25,(now-st.lastTick)/1000);st.lastTick=now;
+  st.remaining-=dt;
+  if(st.phase==='initial'){
+    if(st.remaining<=0){workoutExecBeginWork();return;}
+    workoutExecUpdate();return;
+  }
+  if(st.phase==='work'){
+    const e=st.exercise;
+    if(workoutExecTimed(e)){
+      if(st.remaining<=0){workoutExecFinishSet();return;}
+    }else{
+      st.repRemaining-=dt;
+      if(st.repRemaining<=0){
+        const reps=Math.max(1,workoutExecNum(e.reps,1));
+        workoutExecBeep(st.repIndex>=reps?1200:880,.06);
+        st.repIndex++;
+        if(st.repIndex>reps){workoutExecFinishSet();return;}
+        st.repRemaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));
+        workoutExecSpeak(String(st.repIndex));
+      }
+    }
+    workoutExecUpdate();return;
+  }
+  if(st.phase==='rest'){
+    if(st.remaining<=0){workoutExecNextSetOrExercise();return;}
+    workoutExecUpdate();
+  }
+}
+function workoutExecBeginWork(){
+  const st=workoutExecState,e=st.exercise;st.phase='work';st.repIndex=1;
+  if(workoutExecTimed(e)){st.remaining=Math.max(1,workoutExecNum(e.duration_seconds,30));}
+  else{st.remaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));st.repRemaining=st.remaining;}
+  workoutExecBeep(1000,.1);
+  workoutExecSpeak(e.name||'Esercizio');
+  workoutExecUpdate();workoutExecStartTick();
+}
+function workoutExecBeginSet(){
+  const st=workoutExecState,e=st.exercise;
+  const initial=Math.max(0,workoutExecNum(e.initial_seconds,0));
+  if(initial>0){st.phase='initial';st.remaining=initial;workoutExecSpeak('Preparati');workoutExecUpdate();workoutExecStartTick();}
+  else workoutExecBeginWork();
+}
+function workoutExecStart(){
+  const st=workoutExecState;if(!st)return;
+  if(st.phase==='ready'||st.phase==='paused'){
+    if(st.phase==='ready')workoutExecBeginSet();
+    else {st.phase=st.pausedFrom||'work';st.lastTick=performance.now();workoutExecStartTick();workoutExecUpdate();}
+  }
+}
+function workoutExecToggle(){
+  const st=workoutExecState;if(!st)return;
+  if(st.phase==='ready'||st.phase==='paused'){workoutExecStart();return;}
+  st.pausedFrom=st.phase;st.phase='paused';workoutExecClearTimer();
+  const btn=document.getElementById('weMainBtn');if(btn)btn.textContent='▶ RIPRENDI';
+  const state=document.getElementById('weState');if(state)state.textContent='PAUSA';
+}
+function workoutExecFinishSet(){
+  const st=workoutExecState;if(!st)return;
+  workoutExecClearTimer();
+  st.completedSets++;
+  const totalSets=Math.max(1,workoutExecNum(st.exercise.sets,1));
+  workoutExecSpeak('Serie completata');
+  if(st.setIndex<totalSets){
+    const rest=Math.max(0,workoutExecNum(st.exercise.rest_seconds,60));
+    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecUpdate();workoutExecStartTick();}
+    else workoutExecNextSetOrExercise();
+  }else workoutExecNextSetOrExercise();
+}
+function workoutExecNextSetOrExercise(){
+  const st=workoutExecState,e=st.exercise,totalSets=Math.max(1,workoutExecNum(e.sets,1));
+  workoutExecClearTimer();
+  if(st.setIndex<totalSets){
+    st.setIndex++;st.phase='ready';st.remaining=0;workoutExecRender();workoutExecUpdate();workoutExecSpeak('Serie '+st.setIndex);return;
+  }
+  if(st.exerciseIndex<st.exercises.length-1){
+    st.exerciseIndex++;st.exercise=st.exercises[st.exerciseIndex];st.setIndex=1;st.phase='ready';st.remaining=0;
+    workoutExecRender();workoutExecUpdate();workoutExecSpeak('Prossimo esercizio');return;
+  }
+  workoutExecComplete();
+}
+function workoutExecComplete(){
+  workoutExecClearTimer();const st=workoutExecState;if(!st)return;
+  st.phase='done';
+  const totalExercises=st.exercises.length;
+  const totalSets=st.totalSets;
+  document.getElementById('modalContent').innerHTML=`<div class="workoutExecDone">
+    <div class="check">✓</div><h2>WORKOUT COMPLETATO</h2>
+    <p>${esc(st.plan.title||'Scheda allenamento')}</p>
+    <div class="workoutExecMeta">
+      <div><span>Esercizi</span><b>${totalExercises}</b></div>
+      <div><span>Serie</span><b>${totalSets}</b></div>
+      <div><span>Stato</span><b>COMPLETATO</b></div>
+    </div>
+    <div class="actions"><button class="btn" onclick="closeWorkoutExecution()">TERMINA</button></div>
+  </div>`;
+  workoutExecSpeak('Workout completato');
+}
+function workoutExecRestart(){
+  const st=workoutExecState;if(!st)return;
+  workoutExecClearTimer();st.phase='ready';st.remaining=0;st.repIndex=1;workoutExecUpdate();
+}
+function workoutExecPrev(){
+  const st=workoutExecState;if(!st)return;
+  workoutExecClearTimer();
+  if(st.exerciseIndex>0){st.exerciseIndex--;st.exercise=st.exercises[st.exerciseIndex];st.setIndex=1;st.phase='ready';workoutExecRender();workoutExecUpdate();}
+}
+function workoutExecNext(){
+  const st=workoutExecState;if(!st)return;
+  workoutExecClearTimer();
+  if(st.exerciseIndex<st.exercises.length-1){st.exerciseIndex++;st.exercise=st.exercises[st.exerciseIndex];st.setIndex=1;st.phase='ready';workoutExecRender();workoutExecUpdate();}
+  else workoutExecComplete();
+}
+function workoutExecToggleVoice(){
+  const st=workoutExecState;if(!st)return;
+  st.voice=!st.voice;
+  const b=document.getElementById('weVoiceBtn');if(b)b.textContent=st.voice?'🔊 Voce: ON':'🔇 Voce: OFF';
+  if(!st.voice&&'speechSynthesis' in window)window.speechSynthesis.cancel();
+}
+async function closeWorkoutExecution(){
+  workoutExecClearTimer();
+  if('speechSynthesis' in window)window.speechSynthesis.cancel();
+  await workoutExecReleaseWake();
+  workoutExecState=null;closeModal();
+}
+
 function filterWorkouts(){
  const q=(document.getElementById('workoutSearch')?.value||'').toLowerCase().trim();
  const uid=document.getElementById('workoutUserFilter')?.value||'';
@@ -723,7 +1038,7 @@ function showWorkoutDetail(id){
     <div><span class="label">Esercizi</span><strong>${ex.length}</strong></div>
   </div>
   <div class="detailSection"><h3>Programma di allenamento</h3>${rows}</div>
-  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button>${canEditWorkout()?`<button class="btn" onclick="closeModal();editWorkoutPlan('${id}')">Modifica scheda</button>`:''}</div>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button>${isClientRole()&&ex.length?`<button class="btn workoutExecBtn" onclick="closeModal();startWorkoutExecution('${id}')">▶ ESEGUI WORKOUT</button>`:''}${canEditWorkout()?`<button class="btn" onclick="closeModal();editWorkoutPlan('${id}')">Modifica scheda</button>`:''}</div>
  `);
 }
 async function loadNutrition(){

@@ -184,7 +184,7 @@ notifications:`<div class="top"><div><div class="title">Gestione notifiche</div>
  <div id="notifRecipientsList" style="margin-top:10px;max-height:260px;overflow:auto"></div>
  <div id="notifRecipientsCount" class="muted" style="margin-top:8px"></div>
 </div><textarea id="notifBody" placeholder="Messaggio della notifica" style="width:100%;min-height:110px;margin-top:12px;resize:vertical"></textarea><div class="inputrow" style="margin-top:12px"><button class="btn" type="button" onclick="sendAdminNotification()">INVIA NOTIFICA</button><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="notifError" class="error"></div><div id="notifStatus" class="muted" style="margin-top:12px"></div></div></div>
-<div class="section"><div class="card"><h2>Ultime notifiche</h2><div id="notifList">Caricamento...</div></div></div>`,
+<div class="section"><div class="card"><div class="top" style="margin-bottom:12px"><h2 style="margin:0">Ultime notifiche</h2><button class="btn secondary" type="button" onclick="deleteAllNotifications()">ELIMINA TUTTE</button></div><div id="notifList">Caricamento...</div></div></div>`,
 myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
@@ -314,7 +314,26 @@ async function loadNotifications(){
  if(document.getElementById('notifCount'))document.getElementById('notifCount').textContent=rows.length;
  if(document.getElementById('notifRecipients'))document.getElementById('notifRecipients').textContent=new Set(rows.map(x=>x.user_id||x.profile_id).filter(Boolean)).size;
  if(!rows.length){if(list)list.innerHTML='<div class="muted">Nessuna notifica presente.</div>';return}
- if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||x.target||'—')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td></tr>').join('')+'</tbody></table></div>';
+ if(list)list.innerHTML='<div class="tableWrap"><table class="table"><thead><tr><th>DATA</th><th>TITOLO</th><th>MESSAGGIO</th><th>DESTINATARIO</th><th>STATO</th><th></th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(fmtDate(x.created_at))+'</td><td>'+esc(x.title||'KLEOSFIT')+'</td><td>'+esc(x.body||x.message||'—')+'</td><td>'+esc(x.user_id||x.profile_id||x.target||'—')+'</td><td><span class="status">'+esc(x.status||'pending')+'</span></td><td><button class="btn secondary" type="button" style="padding:6px 9px;font-size:11px" data-id="'+esc(x.id)+'" onclick="deleteNotification(this.dataset.id)">ELIMINA</button></td></tr>').join('')+'</tbody></table></div>';
+}
+async function deleteNotification(id){
+ if(!id)return;
+ if(!confirm('Eliminare questa notifica?'))return;
+ const status=document.getElementById('notifStatus'), err=document.getElementById('notifError');
+ if(err){err.style.display='none';err.textContent=''}
+ const r=await db.from('notifications').delete().eq('id',id);
+ if(r.error){if(err){err.textContent='Eliminazione non riuscita: '+r.error.message;err.style.display='block'}return}
+ if(status)status.textContent='Notifica eliminata.';
+ await loadNotifications();
+}
+async function deleteAllNotifications(){
+ if(!confirm('ATTENZIONE: eliminare TUTTE le notifiche? Questa operazione non può essere annullata.'))return;
+ const status=document.getElementById('notifStatus'), err=document.getElementById('notifError');
+ if(err){err.style.display='none';err.textContent=''}
+ const r=await db.from('notifications').delete().not('id','is',null);
+ if(r.error){if(err){err.textContent='Eliminazione non riuscita: '+r.error.message;err.style.display='block'}return}
+ if(status)status.textContent='Tutte le notifiche sono state eliminate.';
+ await loadNotifications();
 }
 async function loadMyNotifications(){
  const list=document.getElementById('myNotifList'), status=document.getElementById('myNotifStatus');

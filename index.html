@@ -177,7 +177,13 @@ notifications:`<div class="top"><div><div class="title">Gestione notifiche</div>
  <div class="card"><div class="label">Destinatari</div><div class="metric" id="notifRecipients">—</div></div>
  <div class="card"><div class="label">Push browser</div><div class="metric" id="notifPermission">—</div></div>
 </div>
-<div class="section"><div class="card"><h2>Invia nuova notifica</h2><div class="inputrow"><select id="notifTarget"><option value="all">Tutti i clienti</option><option value="admin">Amministratori</option></select><input id="notifTitle" placeholder="Titolo"></div><textarea id="notifBody" placeholder="Messaggio della notifica" style="width:100%;min-height:110px;margin-top:12px;resize:vertical"></textarea><div class="inputrow" style="margin-top:12px"><button class="btn" type="button" onclick="sendAdminNotification()">INVIA NOTIFICA</button><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="notifError" class="error"></div><div id="notifStatus" class="muted" style="margin-top:12px"></div></div></div>
+<div class="section"><div class="card"><h2>Invia nuova notifica</h2><div class="inputrow"><select id="notifTarget" onchange="toggleNotifRecipients()"><option value="all">Tutti i clienti</option><option value="selected">Clienti selezionati</option><option value="admin">Amministratori</option></select><input id="notifTitle" placeholder="Titolo"></div>
+<div id="notifRecipientsBox" style="display:none;margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#111419">
+ <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><b>Seleziona clienti</b><div class="inputrow" style="margin:0"><button class="btn secondary mini" type="button" onclick="selectAllNotifRecipients()">Seleziona tutti</button><button class="btn secondary mini" type="button" onclick="clearNotifRecipients()">Deseleziona tutti</button></div></div>
+ <input id="notifRecipientSearch" placeholder="Cerca cliente..." oninput="filterNotifRecipients()" style="margin-top:10px">
+ <div id="notifRecipientsList" style="margin-top:10px;max-height:260px;overflow:auto"></div>
+ <div id="notifRecipientsCount" class="muted" style="margin-top:8px"></div>
+</div><textarea id="notifBody" placeholder="Messaggio della notifica" style="width:100%;min-height:110px;margin-top:12px;resize:vertical"></textarea><div class="inputrow" style="margin-top:12px"><button class="btn" type="button" onclick="sendAdminNotification()">INVIA NOTIFICA</button><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="notifError" class="error"></div><div id="notifStatus" class="muted" style="margin-top:12px"></div></div></div>
 <div class="section"><div class="card"><h2>Ultime notifiche</h2><div id="notifList">Caricamento...</div></div></div>`,
 myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
@@ -204,7 +210,7 @@ function show(v,el){
  if(v==='anagrafica')loadAnagrafica();
  if(v==='anagraficaClient')loadClientAnagrafica();
  if(v==='slotAdmin')loadSlotAdmin();
- if(v==='notifications')loadNotifications();
+ if(v==='notifications'){loadNotifications();notifRecipientUsers=[];notifSelectedRecipientIds.clear();}
  if(v==='myNotifications')loadMyNotifications();
  if(v==='qrcodes')loadQrCodes();
  if(v==='workout')loadWorkouts();
@@ -268,6 +274,36 @@ async function testBrowserNotification(){
   if(el)el.textContent='❌ Test notifiche non riuscito: '+(e?.message||e);
  }
 }
+let notifRecipientUsers=[];
+let notifSelectedRecipientIds=new Set();
+function notifUserName(u){return pick(u,['full_name','name'])||[u.first_name,u.last_name].filter(Boolean).join(' ')||pick(u,['email','contact_email','phone'])||u.id||'Cliente'}
+function notifUserEmail(u){return pick(u,['email','contact_email'])||''}
+async function loadNotifRecipients(){
+ const box=document.getElementById('notifRecipientsList');
+ if(!box)return;
+ const r=await db.from('profiles').select('*').limit(1000);
+ if(r.error){box.innerHTML='<div class="error">Impossibile caricare i clienti: '+esc(r.error.message)+'</div>';return}
+ notifRecipientUsers=(r.data||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
+ renderNotifRecipients();
+}
+function renderNotifRecipients(){
+ const box=document.getElementById('notifRecipientsList'); if(!box)return;
+ const q=(document.getElementById('notifRecipientSearch')?.value||'').toLowerCase().trim();
+ const rows=notifRecipientUsers.filter(u=>!q||JSON.stringify(u).toLowerCase().includes(q));
+ box.innerHTML=rows.length?rows.map(u=>{
+  const id=String(u.id); const checked=notifSelectedRecipientIds.has(id)?'checked':'';
+  const name=esc(notifUserName(u)); const email=notifUserEmail(u)?' <span class="muted">· '+esc(notifUserEmail(u))+'</span>':'';
+  return `<label style="display:flex;align-items:center;gap:10px;padding:9px 6px;margin:0;border-bottom:1px solid var(--line);cursor:pointer"><input type="checkbox" class="notifRecipientCheck" value="${esc(id)}" ${checked} onchange="toggleNotifRecipient('${esc(id)}')"> <span><b>${name}</b>${email}</span></label>`;
+ }).join(''):'<div class="muted">Nessun cliente trovato.</div>';
+ updateNotifRecipientsCount();
+}
+function toggleNotifRecipient(id){id=String(id);if(notifSelectedRecipientIds.has(id))notifSelectedRecipientIds.delete(id);else notifSelectedRecipientIds.add(id);updateNotifRecipientsCount()}
+function selectAllNotifRecipients(){notifRecipientUsers.forEach(u=>notifSelectedRecipientIds.add(String(u.id)));renderNotifRecipients()}
+function clearNotifRecipients(){notifSelectedRecipientIds.clear();renderNotifRecipients()}
+function filterNotifRecipients(){renderNotifRecipients()}
+function updateNotifRecipientsCount(){const e=document.getElementById('notifRecipientsCount');if(e)e.textContent=notifSelectedRecipientIds.size+' clienti selezionati';}
+function toggleNotifRecipients(){const target=document.getElementById('notifTarget')?.value;const box=document.getElementById('notifRecipientsBox');if(box)box.style.display=target==='selected'?'block':'none';if(target==='selected'&&!notifRecipientUsers.length)loadNotifRecipients();}
+
 async function loadNotifications(){
  updateNotificationPermission();
  const err=document.getElementById('notifError'), list=document.getElementById('notifList');
@@ -296,10 +332,12 @@ async function sendAdminNotification(){
  const title=(document.getElementById('notifTitle')?.value||'KLEOSFIT').trim();
  const body=(document.getElementById('notifBody')?.value||'').trim();
  const target=document.getElementById('notifTarget')?.value||'all';
+ const recipient_user_ids=target==='selected'?[...notifSelectedRecipientIds]:[];
+ if(target==='selected'&&!recipient_user_ids.length){if(err){err.textContent='Seleziona almeno un cliente.';err.style.display='block'}return}
  if(!body){if(err){err.textContent='Inserisci il messaggio della notifica.';err.style.display='block'}return}
  try{
   const {data:{session}}=await db.auth.getSession();
-  const r=await fetch(SUPABASE_URL+'/functions/v1/send-web-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({title,body,target})});
+  const r=await fetch(SUPABASE_URL+'/functions/v1/send-web-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({title,body,target,recipient_user_ids})});
   const out=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(out.error||out.message||'Errore invio push');
   if(status)status.textContent='Notifica inviata. Destinatari raggiunti: '+(out.sent??0);

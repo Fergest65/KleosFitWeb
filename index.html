@@ -485,8 +485,7 @@ async function loadDeadlineAlert(){
  });
  if(isClientRole()&&!certAlerts.length && profile?.medical_certificate_expiry_date){certAlerts.push({priority:3,status:'active',title:'CERTIFICATO MEDICO VALIDO',text:'Il tuo certificato medico è valido.',icon:'✓'});}
  if(certAlerts.length){certAlerts.sort((a,b)=>a.priority-b.priority);const st=certAlerts[0];certUI.title.textContent=st.title;certUI.text.textContent=st.text;certUI.icon.textContent=st.icon;if(st.status==='active')certUI.el.classList.add('deadlineAlertOk');}
-}
- // ASSICURAZIONE
+// ASSICURAZIONE
  const insuranceAlerts=[];
  rows.forEach(p=>{
    const name=p?.full_name||p?.name||p?.email||'Cliente';
@@ -502,6 +501,8 @@ async function loadDeadlineAlert(){
  if(isClientRole()&&!insuranceAlerts.length && profile?.insurance_expiry_date){insuranceAlerts.push({priority:3,status:'active',title:'ASSICURAZIONE VALIDA',text:'La tua assicurazione è valida.',icon:'✓'});}
  if(isClientRole()&&!insuranceAlerts.length){insuranceUI.title.textContent='ASSICURAZIONE';insuranceUI.text.textContent='Nessuna scadenza assicurativa registrata.';insuranceUI.icon.textContent='🛡️';insuranceUI.el.classList.remove('deadlineAlertOk');}
  if(insuranceAlerts.length){insuranceAlerts.sort((a,b)=>a.priority-b.priority);const st=insuranceAlerts[0];insuranceUI.title.textContent=st.title;insuranceUI.text.textContent=st.text;insuranceUI.icon.textContent=st.icon;insuranceUI.el.classList.toggle('deadlineAlertOk',st.status==='active');}
+}
+
 
 async function fillDashboard(){
  await loadDeadlineAlert();

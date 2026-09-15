@@ -703,7 +703,23 @@ function drawGuardianQr(el,url){if(!el)return;el.innerHTML='';if(typeof QRCode==
 async function requestGuardianSignature(id){
  if(!isSuperuserRole()){alert('Operazione consentita solo all’amministratore.');return;}
  const p=clientsData.find(x=>String(x.id)===String(id));if(!p)return;
- if(!p.is_minor){alert('Il cliente non è impostato come minorenne.');return;}
+ // La richiesta firma può essere fatta prima del salvataggio definitivo della scheda:
+ // leggiamo il checkbox della schermata e salviamo solo i dati necessari per aprire la firma.
+ const minorChecked=!!document.getElementById('cpIsMinor')?.checked;
+ if(!minorChecked){alert('Seleziona prima “Cliente minorenne”.');return;}
+ const guardianData={
+   is_minor:true,
+   guardian_full_name:valOrNull('cpGuardianFullName'),
+   guardian_fiscal_code:valOrNull('cpGuardianFiscalCode'),
+   guardian_phone:valOrNull('cpGuardianPhone'),
+   guardian_email:valOrNull('cpGuardianEmail'),
+   guardian_sport_consent:!!document.getElementById('cpGuardianSportConsent')?.checked,
+   guardian_privacy_accepted:!!document.getElementById('cpGuardianPrivacyAccepted')?.checked
+ };
+ if(!guardianData.guardian_full_name||!guardianData.guardian_fiscal_code||!guardianData.guardian_phone||!guardianData.guardian_email){alert('Compila prima tutti i dati obbligatori del tutore.');return;}
+ const pre=await db.from('profiles').update(guardianData).eq('id',id).select('*').maybeSingle();
+ if(pre.error||!pre.data){alert('Impossibile salvare i dati del tutore: '+(pre.error?.message||'operazione non autorizzata'));return;}
+ Object.assign(p,pre.data);
  const token=guardianToken(),expires=new Date(Date.now()+30*60*1000).toISOString();
  const r=await db.from('profiles').update({guardian_signature_token:token,guardian_signature_token_expires_at:expires,guardian_signature_requested_at:new Date().toISOString()}).eq('id',id);
  if(r.error){alert('Impossibile generare la firma: '+r.error.message);return;}

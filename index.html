@@ -555,58 +555,79 @@ function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));
 function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
 async function loadWorkouts(){
- const list=document.getElementById('workoutList'),err=document.getElementById('workoutError'),count=document.getElementById('workoutCount');if(!list)return;
- err.style.display='none';list.innerHTML='Caricamento schede...';count.textContent='Caricamento...';
+  const list=document.getElementById('workoutList'),err=document.getElementById('workoutError'),count=document.getElementById('workoutCount');
+  if(!list)return;
+  err.style.display='none'; list.innerHTML='Caricamento schede...'; count.textContent='Caricamento...';
 
- const workoutSelect=`
-     id,user_id,title,description,is_active,is_visible,created_at,
-     workout_exercises (
-       id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,duration_seconds,
-       muscle_group,equipment,focus,image_url,rest_seconds,sort_order
-     )
-   `;
- let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
- // Il cliente può solo visualizzare la propria scheda: non deve vedere né modificare le schede degli altri.
- if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
- const [r,pr,lr]=await Promise.all([
-   workoutQuery,
-   db.from('profiles').select('*').limit(1000),
-   db.from('exercise_library').select('*').limit(1000)
- ]);
- if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+  const timeout=(promise,ms,label)=>Promise.race([
+    promise,
+    new Promise(resolve=>setTimeout(()=>resolve({data:null,error:{message:'Timeout '+label+' ('+Math.round(ms/1000)+'s)'}}),ms))
+  ]);
 
- usersData=pr.error?[]:(pr.data||[]);
- populateWorkoutUserFilter(usersData);
+  try{
+    // Prima leggiamo SOLO le schede. La relazione annidata può bloccarsi per RLS/
+    // relazione FK non riconosciuta; in quel caso usiamo il fallback semplice.
+    const simpleSelect='id,user_id,title,description,is_active,is_visible,created_at';
+    let r=await timeout(
+      db.from('workout_plans').select(simpleSelect).order('created_at',{ascending:false}).limit(500),
+      10000,'caricamento schede'
+    );
+    if(r.error){
+      err.textContent='Impossibile caricare le schede: '+r.error.message;
+      err.style.display='block'; count.textContent='Errore'; list.innerHTML=''; return;
+    }
 
- const byUser={};
- usersData.forEach(u=>{byUser[u.id]=u});
- const byExerciseName={};
- if(!lr.error){
-   (lr.data||[]).forEach(x=>{
-     const n=firstVal(x,['name','exercise_name','title','nome']);
-     if(n){ byExerciseName[String(n).trim().toLowerCase()]=x; byExerciseName[normalizeExerciseKey(n)]=x; }
-   });
- }
- const plans=r.data||[];
- workoutsData=plans.map(p=>({
-   ...p,
-   user_profile:byUser[p.user_id]||null,
-   workout_exercises:(Array.isArray(p.workout_exercises)?p.workout_exercises:[]).map(e=>{
-     const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||byExerciseName[normalizeExerciseKey(e.name)]||null;
-     const merged={...e, exercise_library:lib};
-     return {...merged, image_url:getExerciseImageUrl(merged)};
-   })
- }));
+    const plans=r.data||[];
 
- // Gli esercizi vengono letti tramite la relazione Supabase workout_plans -> workout_exercises.
- // Non assumiamo il nome della colonna FK, perché nella tabella reale non si chiama workout_plan_id.
- if(r.data && r.data.some(p=>!Array.isArray(p.workout_exercises))){
-   err.textContent='Alcune schede non hanno restituito gli esercizi dalla relazione Supabase.';
-   err.style.display='block';
- }
- renderWorkouts(workoutsData);
+    // Profili e archivio sono secondari: non devono mai impedire la visualizzazione.
+    const [pr,lr]=await Promise.all([
+      timeout(db.from('profiles').select('*').limit(1000),7000,'profili'),
+      timeout(db.from('exercise_library').select('*').limit(1000),7000,'archivio esercizi')
+    ]);
+    usersData=pr.error?[]:(pr.data||[]);
+    populateWorkoutUserFilter(usersData);
+
+    const byUser={}; usersData.forEach(u=>{byUser[u.id]=u});
+    const byExerciseName={};
+    if(!lr.error){
+      (lr.data||[]).forEach(x=>{
+        const n=firstVal(x,['name','exercise_name','title','nome']);
+        if(n){byExerciseName[String(n).trim().toLowerCase()]=x;byExerciseName[normalizeExerciseKey(n)]=x;}
+      });
+    }
+
+    // Recuperiamo gli esercizi con una relazione annidata solo se possibile.
+    // Se la relazione non è disponibile, le schede restano comunque visibili.
+    let plansWithExercises=plans.map(p=>({...p,workout_exercises:[]}));
+    if(plans.length){
+      const relSelect=`id,user_id,title,description,is_active,is_visible,created_at,
+        workout_exercises (
+          id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,duration_seconds,
+          muscle_group,equipment,focus,image_url,rest_seconds,sort_order
+        )`;
+      const rr=await timeout(
+        db.from('workout_plans').select(relSelect).order('created_at',{ascending:false}).limit(500),
+        10000,'esercizi della scheda'
+      );
+      if(!rr.error && Array.isArray(rr.data)) plansWithExercises=rr.data;
+    }
+
+    workoutsData=plansWithExercises.map(p=>({
+      ...p,
+      user_profile:byUser[p.user_id]||null,
+      workout_exercises:(Array.isArray(p.workout_exercises)?p.workout_exercises:[]).map(e=>{
+        const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||byExerciseName[normalizeExerciseKey(e.name)]||null;
+        const merged={...e,exercise_library:lib};
+        return {...merged,image_url:getExerciseImageUrl(merged)};
+      })
+    }));
+
+    renderWorkouts(workoutsData);
+  }catch(e){
+    err.textContent='Errore caricamento schede: '+(e?.message||e);
+    err.style.display='block'; count.textContent='Errore'; list.innerHTML='';
+  }
 }
-
 // Immagini esercizi: comportamento allineato all'app Android.
 // 1) usa l'image_url salvato nell'esercizio;
 // 2) se manca, usa l'immagine collegata nella exercise_library;
@@ -697,8 +718,7 @@ function renderWorkouts(rows){
     ? `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> ${esc(userName)}${userEmail?' · '+esc(userEmail):''}</div>`
     : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
   const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
-  const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:`<td><button class="btn mini workoutExecBtn" onclick="startWorkoutExecution('${p.id}', '${e.id}')">Esegui</button></td>`;
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span>${isClientRole()&&ex.length?`<button class="btn mini workoutExecBtn" onclick="startWorkoutExecution('${p.id}')">Esegui workout</button>`:''}<button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span>${isClientRole()&&ex.length?`<button class="btn mini workoutExecBtn" onclick="startWorkoutExecution('${p.id}')">Esegui workout</button>`:''}<button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>{const exerciseAction=canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:`<td><button class="btn mini workoutExecBtn" onclick="startWorkoutExecution('${p.id}', '${e.id}')">Esegui</button></td>`;return `<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${exerciseAction}</tr>`}).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
  }).join('');
 }
 
@@ -709,14 +729,79 @@ let workoutExecWakeLock=null;
 function workoutExecClearTimer(){
   if(workoutExecTimer){clearInterval(workoutExecTimer);workoutExecTimer=null;}
 }
+let workoutExecItalianVoice=null;
+function workoutExecPickVoice(){
+  try{
+    if(!('speechSynthesis' in window)) return null;
+    const voices=window.speechSynthesis.getVoices()||[];
+    if(!voices.length)return workoutExecItalianVoice;
+    const it=voices.filter(v=>/^it(?:-|_)/i.test(v.lang||''));
+    // Preferiamo voci naturali/locali: Google/Microsoft/Apple/Samsung, poi la prima italiana disponibile.
+    const preferred=it.find(v=>/Google|Microsoft|Apple|Siri|Samsung|Natural|Neural/i.test(v.name||''))||it[0]||voices.find(v=>/^it/i.test(v.lang||''));
+    if(preferred)workoutExecItalianVoice=preferred;
+    return workoutExecItalianVoice;
+  }catch(_e){return null;}
+}
+if('speechSynthesis' in window){
+  try{window.speechSynthesis.addEventListener('voiceschanged',workoutExecPickVoice);workoutExecPickVoice();}catch(_e){}
+}
+const KLEOS_AUDIO_BASE='https://dicfqbqdbqkyggjezpaz.supabase.co/storage/v1/object/public/Audio/';
+const KLEOS_AUDIO={inizio:'inizio.mp3',via:'via.mp3',uno:'uno.mp3',due:'due.mp3',tre:'tre.mp3',ultimi10:'ultimi-10.mp3',cambio:'cambio.mp3',fineCircuito:'fine-circuito.mp3',fineGiro:'fine-giro.mp3',pausa:'pausa.mp3',riprendi:'riprendi.mp3',stop:'stop.mp3',recupero:'recupero.mp3'};
+const workoutAudioCache={};
+function workoutExecAudioUrl(key){return KLEOS_AUDIO_BASE+encodeURIComponent(KLEOS_AUDIO[key]||'');}
+function workoutExecPlayAudio(key){
+  try{
+    if(!workoutExecState?.voice)return false;
+    const file=KLEOS_AUDIO[key]; if(!file)return false;
+    let a=workoutAudioCache[key];
+    if(!a){a=new Audio(workoutExecAudioUrl(key));a.preload='auto';workoutAudioCache[key]=a;}
+    a.currentTime=0; const pr=a.play(); if(pr&&typeof pr.catch==='function')pr.catch(()=>{});
+    return true;
+  }catch(_e){return false;}
+}
+function workoutExecPreloadAudio(){
+  try{Object.keys(KLEOS_AUDIO).forEach(k=>{const a=new Audio(workoutExecAudioUrl(k));a.preload='auto';workoutAudioCache[k]=a;});}catch(_e){}
+}
 function workoutExecSpeak(text){
   try{
-    if(!workoutExecState?.voice || !('speechSynthesis' in window)) return;
+    if(!workoutExecState?.voice)return;
+    const phrase=String(text||'').trim(); if(!phrase)return;
+    const low=phrase.toLowerCase(); let key=null;
+    if(low==='preparati'||low==='inizia')key='inizio';
+    else if(low.startsWith('via.'))key='via';
+    else if(/^\d+$/.test(low)){
+      const n=Math.round(Number(low));
+      if(n>=1&&n<=50){if(workoutExecPlayNumber(n))return;}
+    }
+    else if(low.startsWith('ripetizione ')){
+      const n=Math.round(Number(low.replace('ripetizione ','').trim()));
+      if(n>=1&&n<=50){if(workoutExecPlayNumber(n))return;}
+    }
+    else if(low==='ultimi 10')key='ultimi10';
+    else if(low.startsWith('serie completata'))key='cambio';
+    else if(low==='prossimo esercizio')key='cambio';
+    else if(low==='workout completato')key='fineCircuito';
+    else if(low.startsWith('recupera '))key='recupero';
+    else if(low.startsWith('serie '))key='inizio';
+    else if(low==='riprendi')key='riprendi';
+    if(key&&workoutExecPlayAudio(key))return;
+    if(!('speechSynthesis' in window))return;
     window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='it-IT'; u.rate=1.05; u.pitch=1;
-    window.speechSynthesis.speak(u);
+    const u=new SpeechSynthesisUtterance(phrase);u.lang='it-IT';u.rate=0.94;u.pitch=1.02;u.volume=1;
+    const v=workoutExecPickVoice();if(v)u.voice=v;window.speechSynthesis.speak(u);
   }catch(_e){}
+}
+function workoutExecPlayNumber(n){
+  const x=Math.round(Number(n)||0);
+  if(x<1||x>50)return false;
+  const key='numero'+x;
+  let a=workoutAudioCache[key];
+  if(!a){a=new Audio(KLEOS_AUDIO_BASE+'numero-'+x+'.mp3');a.preload='auto';workoutAudioCache[key]=a;}
+  try{a.currentTime=0;const pr=a.play();if(pr&&typeof pr.catch==='function')pr.catch(()=>{});return true;}catch(_e){return false;}
+}
+function workoutExecSpeakCountdown(n){
+  const x=Math.round(Number(n)||0);
+  if(x>=1&&x<=50){if(workoutExecPlayNumber(x))return;workoutExecSpeak(String(x));}
 }
 function workoutExecBeep(freq=880,duration=.08){
   try{
@@ -806,6 +891,7 @@ async function startWorkoutExecution(planId,exerciseId){
   workoutExecClearTimer();
   if('speechSynthesis' in window)window.speechSynthesis.cancel();
   workoutExecState={plan:p,exercises:exs,exerciseIndex:idx,exercise:exs[idx],setIndex:1,phase:'ready',remaining:0,elapsed:0,voice:true,completedSets:0,totalSets:exs.reduce((a,x)=>a+Math.max(1,workoutExecNum(x.sets,1)),0)};
+  workoutExecPreloadAudio();
   openModal('');
   workoutExecRender();
   await workoutExecKeepAwake();
@@ -872,6 +958,7 @@ function workoutExecTick(){
   st.remaining-=dt;
   if(st.phase==='initial'){
     if(st.remaining<=0){workoutExecBeginWork();return;}
+    if(Math.ceil(st.remaining)<=3 && Math.ceil(st.remaining)>0 && Math.abs(st.remaining-Math.round(st.remaining))<0.08) workoutExecSpeakCountdown(Math.ceil(st.remaining));
     workoutExecUpdate();return;
   }
   if(st.phase==='work'){
@@ -886,7 +973,7 @@ function workoutExecTick(){
         st.repIndex++;
         if(st.repIndex>reps){workoutExecFinishSet();return;}
         st.repRemaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));
-        workoutExecSpeak(String(st.repIndex));
+        if(st.repIndex<=50)workoutExecSpeakCountdown(st.repIndex);
       }
     }
     workoutExecUpdate();return;
@@ -901,7 +988,8 @@ function workoutExecBeginWork(){
   if(workoutExecTimed(e)){st.remaining=Math.max(1,workoutExecNum(e.duration_seconds,30));}
   else{st.remaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));st.repRemaining=st.remaining;}
   workoutExecBeep(1000,.1);
-  workoutExecSpeak(e.name||'Esercizio');
+  workoutExecSpeak('Via. '+(e.name||'Esercizio'));
+  if(!workoutExecTimed(e))setTimeout(()=>{if(workoutExecState===st&&st.phase==='work')workoutExecSpeakCountdown(1);},350);
   workoutExecUpdate();workoutExecStartTick();
 }
 function workoutExecBeginSet(){
@@ -932,7 +1020,7 @@ function workoutExecFinishSet(){
   workoutExecSpeak('Serie completata');
   if(st.setIndex<totalSets){
     const rest=Math.max(0,workoutExecNum(st.exercise.rest_seconds,60));
-    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecUpdate();workoutExecStartTick();}
+    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecSpeak('Serie completata. Recupera '+Math.round(rest)+' secondi.');workoutExecUpdate();workoutExecStartTick();}
     else workoutExecNextSetOrExercise();
   }else workoutExecNextSetOrExercise();
 }
@@ -985,6 +1073,7 @@ function workoutExecToggleVoice(){
   st.voice=!st.voice;
   const b=document.getElementById('weVoiceBtn');if(b)b.textContent=st.voice?'🔊 Voce: ON':'🔇 Voce: OFF';
   if(!st.voice&&'speechSynthesis' in window)window.speechSynthesis.cancel();
+  if(!st.voice)Object.values(workoutAudioCache).forEach(a=>{try{a.pause();a.currentTime=0;}catch(_e){}});
 }
 async function closeWorkoutExecution(){
   workoutExecClearTimer();

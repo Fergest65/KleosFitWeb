@@ -415,10 +415,10 @@ async function loadDeadlineAlert(){
  const today=new Date(); today.setHours(0,0,0,0);
  let rows=[];
  if(isSuperuserRole()){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').limit(500);
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to').limit(500);
    if(r.error)return; rows=r.data||[];
  }else if(isClientRole()&&currentUser?.id){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').eq('id',currentUser.id).maybeSingle();
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to').eq('id',currentUser.id).maybeSingle();
    if(r.error||!r.data)return; rows=[r.data];
  }else return;
  const alerts=[];

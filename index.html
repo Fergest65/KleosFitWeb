@@ -168,7 +168,8 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
-<div id="deadlineAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'payments')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla mensilità, certificati e assicurazioni.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'payments')">VEDI SCADENZE</button></div>
+<div id="deadlineAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'payments')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla l'abbonamento.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'payments')">VEDI ABBONAMENTO</button></div>
+<div id="certificateAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'anagraficaClient')"><div class="deadlineAlertIcon">🩺</div><div class="deadlineAlertText"><b>CERTIFICATO MEDICO</b><span id="certificateAlertText">Controlla la scadenza del certificato.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'anagraficaClient')">VEDI CERTIFICATO</button></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -408,77 +409,77 @@ async function countTable(table){
 }
 async function loadDeadlineAlert(){
  const alertEl=document.getElementById('deadlineAlert');
- const textEl=document.getElementById('deadlineAlertText');
- const titleEl=alertEl?.querySelector('.deadlineAlertText b');
+ const certEl=document.getElementById('certificateAlert');
  if(!alertEl)return;
- alertEl.style.display='none';
- alertEl.classList.remove('deadlineAlertOk');
- const icon=alertEl.querySelector('.deadlineAlertIcon');
- const btn=alertEl.querySelector('.deadlineAlertBtn');
+ const setupAlert=(el, okClass=true)=>{
+   if(!el)return null;
+   el.style.display='none';
+   if(okClass)el.classList.remove('deadlineAlertOk');
+   return {text:el.querySelector('.deadlineAlertText span'),title:el.querySelector('.deadlineAlertText b'),icon:el.querySelector('.deadlineAlertIcon'),btn:el.querySelector('.deadlineAlertBtn')};
+ };
+ const subUI=setupAlert(alertEl,true);
+ const certUI=setupAlert(certEl,true);
  const today=new Date(); today.setHours(0,0,0,0);
  let rows=[];
- 
- // Per il cliente usiamo direttamente il profilo già caricato, così l'alert
- // non dipende da una seconda lettura che potrebbe arrivare vuota.
  if(isClientRole() && currentUser?.id){
    rows=[profile||{}];
  }else if(isSuperuserRole()){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active').limit(500);
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active,medical_certificate_expiry_date').limit(500);
    if(r.error)return;
    rows=r.data||[];
  }else return;
- 
- const alerts=[];
+
+ const getState=(raw, active, labels)=>{
+   if(!raw){
+     return isClientRole() && active ? {priority:3,status:'active',title:labels.active,text:labels.activeText,icon:'✓'} : null;
+   }
+   const d=new Date(String(raw).slice(0,10)+'T00:00:00');
+   if(isNaN(d))return null;
+   const diffDays=Math.round((d-today)/86400000);
+   if(diffDays<0)return {priority:1,status:'expired',title:labels.expired,text:labels.expiredText,icon:'🔴'};
+   if(diffDays<=10)return {priority:2,status:'due',title:labels.due,text:labels.dueText(diffDays),icon:'⚠️'};
+   return {priority:3,status:'active',title:labels.active,text:labels.activeText,icon:'✓'};
+ };
+
+ // ABBONAMENTO
+ const subAlerts=[];
  rows.forEach(p=>{
-   const raw=p?.subscription_paid_to;
    const active=p?.subscription_active===true || String(p?.subscription_active||'').toLowerCase()==='true';
    const name=p?.full_name||p?.name||p?.email||'Cliente';
-   
-   if(raw){
-     const d=new Date(String(raw).slice(0,10)+'T00:00:00');
-     if(!isNaN(d)){
-       const diffDays=Math.round((d-today)/86400000);
-       if(diffDays<0){
-         alerts.push({priority:1,text:`${name} — abbonamento scaduto`,status:'scaduto'});
-       }else if(diffDays<=10){
-         alerts.push({priority:2,text:`${name} — ${diffDays===0?'abbonamento in scadenza oggi':`abbonamento in scadenza tra ${diffDays} giorni`}`,status:'scadenza'});
-       }else{
-         // Data presente e oltre i 10 giorni: abbonamento regolarmente attivo.
-         if(isClientRole()) alerts.push({priority:3,text:'Il tuo abbonamento è attivo e in regola.',status:'attivo'});
-       }
-     }
-   }else if(active && isClientRole()){
-     // Nessuna data ma flag attivo: mostra comunque lo stato in Home.
-     alerts.push({priority:3,text:'Il tuo abbonamento è attivo.',status:'attivo'});
-   }
+   const st=getState(p?.subscription_paid_to,active,{
+     active:'ABBONAMENTO ATTIVO', activeText:isClientRole()?'Il tuo abbonamento è attivo e in regola.':`${name} — abbonamento attivo`,
+     expired:'ABBONAMENTO SCADUTO', expiredText:`${name} — abbonamento scaduto`,
+     due:'ABBONAMENTO IN SCADENZA', dueText:(n)=>`${name} — ${n===0?'abbonamento in scadenza oggi':`abbonamento in scadenza tra ${n} giorni`}`
+   });
+   if(st)subAlerts.push(st);
  });
- 
- // Per il cliente l'alert di stato deve SEMPRE essere presente.
- if(isClientRole() && !alerts.length){
-   alerts.push({priority:3,text:'Verifica la data di scadenza del tuo abbonamento.',status:'attivo'});
+ if(isClientRole()&&!subAlerts.length)subAlerts.push({priority:3,status:'active',title:'ABBONAMENTO ATTIVO',text:'Il tuo abbonamento è attivo.',icon:'✓'});
+ if(subAlerts.length){
+   subAlerts.sort((a,b)=>a.priority-b.priority); const st=subAlerts[0];
+   subUI.title.textContent=st.title; subUI.text.textContent=st.text; subUI.icon.textContent=st.icon; subUI.btn.textContent='VEDI ABBONAMENTO';
+   if(st.status==='active')alertEl.classList.add('deadlineAlertOk');
+   alertEl.style.display='flex';
  }
- if(!alerts.length)return;
- 
- alerts.sort((a,b)=>a.priority-b.priority);
- const first=alerts[0];
- if(first.status==='attivo'){
-   if(titleEl) titleEl.textContent='ABBONAMENTO ATTIVO';
-   if(textEl) textEl.textContent=first.text;
-   if(icon) icon.textContent='✓';
-   if(btn) btn.textContent='VEDI ABBONAMENTO';
-   alertEl.classList.add('deadlineAlertOk');
- }else if(first.status==='scaduto'){
-   if(titleEl) titleEl.textContent='ABBONAMENTO SCADUTO';
-   if(textEl) textEl.textContent=first.text;
-   if(icon) icon.textContent='🔴';
-   if(btn) btn.textContent='VEDI ABBONAMENTO';
- }else{
-   if(titleEl) titleEl.textContent='ABBONAMENTO IN SCADENZA';
-   if(textEl) textEl.textContent=first.text;
-   if(icon) icon.textContent='⚠️';
-   if(btn) btn.textContent='VEDI ABBONAMENTO';
+
+ // CERTIFICATO MEDICO — stessa logica dell'abbonamento: 10 giorni prima, poi scaduto, altrimenti valido.
+ const certAlerts=[];
+ rows.forEach(p=>{
+   const name=p?.full_name||p?.name||p?.email||'Cliente';
+   const raw=p?.medical_certificate_expiry_date;
+   if(!raw)return;
+   const st=getState(raw,true,{
+     active:'CERTIFICATO MEDICO VALIDO', activeText:isClientRole()?'Il tuo certificato medico è valido.':`${name} — certificato medico valido`,
+     expired:'CERTIFICATO MEDICO SCADUTO', expiredText:`${name} — certificato medico scaduto`,
+     due:'CERTIFICATO MEDICO IN SCADENZA', dueText:(n)=>`${name} — ${n===0?'certificato in scadenza oggi':`certificato in scadenza tra ${n} giorni`}`
+   });
+   if(st)certAlerts.push(st);
+ });
+ if(certAlerts.length){
+   certAlerts.sort((a,b)=>a.priority-b.priority); const st=certAlerts[0];
+   certUI.title.textContent=st.title; certUI.text.textContent=st.text; certUI.icon.textContent=st.icon; certUI.btn.textContent='VEDI CERTIFICATO';
+   if(st.status==='active')certEl.classList.add('deadlineAlertOk');
+   certEl.style.display='flex';
  }
- alertEl.style.display='flex';
 }
 
 async function fillDashboard(){

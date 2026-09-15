@@ -412,53 +412,72 @@ async function loadDeadlineAlert(){
  const titleEl=alertEl?.querySelector('.deadlineAlertText b');
  if(!alertEl)return;
  alertEl.style.display='none';
+ alertEl.classList.remove('deadlineAlertOk');
+ const icon=alertEl.querySelector('.deadlineAlertIcon');
+ const btn=alertEl.querySelector('.deadlineAlertBtn');
  const today=new Date(); today.setHours(0,0,0,0);
  let rows=[];
- if(isSuperuserRole()){
+ 
+ // Per il cliente usiamo direttamente il profilo già caricato, così l'alert
+ // non dipende da una seconda lettura che potrebbe arrivare vuota.
+ if(isClientRole() && currentUser?.id){
+   rows=[profile||{}];
+ }else if(isSuperuserRole()){
    const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active').limit(500);
-   if(r.error)return; rows=r.data||[];
- }else if(isClientRole()&&currentUser?.id){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active').eq('id',currentUser.id).maybeSingle();
-   if(r.error||!r.data)return; rows=[r.data];
+   if(r.error)return;
+   rows=r.data||[];
  }else return;
+ 
  const alerts=[];
  rows.forEach(p=>{
-   const raw=p.subscription_paid_to;
-   if(!raw)return;
-   const d=new Date(String(raw).slice(0,10)+'T00:00:00');
-   if(isNaN(d))return;
-   const diffDays=Math.round((d-today)/86400000);
-   if(diffDays<0){
-     alerts.push({priority:1,text:`${p.full_name||p.name||p.email||'Cliente'} — abbonamento scaduto`,status:'scaduto'});
-   }else if(diffDays<=10){
-     alerts.push({priority:2,text:`${p.full_name||p.name||p.email||'Cliente'} — ${diffDays===0?'abbonamento in scadenza oggi':`abbonamento in scadenza tra ${diffDays} giorni`}`,status:'scadenza'});
+   const raw=p?.subscription_paid_to;
+   const active=p?.subscription_active===true || String(p?.subscription_active||'').toLowerCase()==='true';
+   const name=p?.full_name||p?.name||p?.email||'Cliente';
+   
+   if(raw){
+     const d=new Date(String(raw).slice(0,10)+'T00:00:00');
+     if(!isNaN(d)){
+       const diffDays=Math.round((d-today)/86400000);
+       if(diffDays<0){
+         alerts.push({priority:1,text:`${name} — abbonamento scaduto`,status:'scaduto'});
+       }else if(diffDays<=10){
+         alerts.push({priority:2,text:`${name} — ${diffDays===0?'abbonamento in scadenza oggi':`abbonamento in scadenza tra ${diffDays} giorni`}`,status:'scadenza'});
+       }else{
+         // Data presente e oltre i 10 giorni: abbonamento regolarmente attivo.
+         if(isClientRole()) alerts.push({priority:3,text:'Il tuo abbonamento è attivo e in regola.',status:'attivo'});
+       }
+     }
+   }else if(active && isClientRole()){
+     // Nessuna data ma flag attivo: mostra comunque lo stato in Home.
+     alerts.push({priority:3,text:'Il tuo abbonamento è attivo.',status:'attivo'});
    }
  });
- if(!alerts.length){
-   // Per il cliente la Home deve sempre mostrare lo stato dell'abbonamento:
-   // verde se attivo/in regola, anche quando subscription_active è valorizzato ma la data non è presente.
-   if(isClientRole()){
-     const row=rows[0]||{};
-     const raw=row.subscription_paid_to;
-     const active=row.subscription_active===true || String(row.subscription_active).toLowerCase()==='true';
-     if(raw || active){
-       if(titleEl) titleEl.textContent='ABBONAMENTO ATTIVO';
-       textEl.textContent=raw ? 'Il tuo abbonamento è attivo e in regola.' : 'Il tuo abbonamento è attivo.';
-       const icon=alertEl.querySelector('.deadlineAlertIcon'); if(icon) icon.textContent='✓';
-       const btn=alertEl.querySelector('.deadlineAlertBtn'); if(btn) btn.textContent='VEDI ABBONAMENTO';
-       alertEl.classList.add('deadlineAlertOk');
-       alertEl.style.display='flex';
-     }
-   }
-   return;
+ 
+ // Per il cliente l'alert di stato deve SEMPRE essere presente.
+ if(isClientRole() && !alerts.length){
+   alerts.push({priority:3,text:'Verifica la data di scadenza del tuo abbonamento.',status:'attivo'});
  }
+ if(!alerts.length)return;
+ 
  alerts.sort((a,b)=>a.priority-b.priority);
  const first=alerts[0];
- alertEl.classList.remove('deadlineAlertOk');
- const icon=alertEl.querySelector('.deadlineAlertIcon'); if(icon) icon.textContent='⚠️';
- if(titleEl) titleEl.textContent=first.status==='scaduto'?'ABBONAMENTO SCADUTO':'ABBONAMENTO IN SCADENZA';
- const btn=alertEl.querySelector('.deadlineAlertBtn'); if(btn) btn.textContent='VEDI SCADENZE';
- textEl.textContent=first.text;
+ if(first.status==='attivo'){
+   if(titleEl) titleEl.textContent='ABBONAMENTO ATTIVO';
+   if(textEl) textEl.textContent=first.text;
+   if(icon) icon.textContent='✓';
+   if(btn) btn.textContent='VEDI ABBONAMENTO';
+   alertEl.classList.add('deadlineAlertOk');
+ }else if(first.status==='scaduto'){
+   if(titleEl) titleEl.textContent='ABBONAMENTO SCADUTO';
+   if(textEl) textEl.textContent=first.text;
+   if(icon) icon.textContent='🔴';
+   if(btn) btn.textContent='VEDI ABBONAMENTO';
+ }else{
+   if(titleEl) titleEl.textContent='ABBONAMENTO IN SCADENZA';
+   if(textEl) textEl.textContent=first.text;
+   if(icon) icon.textContent='⚠️';
+   if(btn) btn.textContent='VEDI ABBONAMENTO';
+ }
  alertEl.style.display='flex';
 }
 

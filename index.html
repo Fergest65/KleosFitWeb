@@ -167,7 +167,7 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
-<div id="deadlineAlert" class="deadlineAlert" onclick="show('clients')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla mensilità, certificati e assicurazioni.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show('clients')">VEDI SCADENZE</button></div>
+<div id="deadlineAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'payments')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla mensilità, certificati e assicurazioni.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'payments')">VEDI SCADENZE</button></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -408,10 +408,10 @@ async function countTable(table){
 async function loadDeadlineAlert(){
  const alertEl=document.getElementById('deadlineAlert');
  const textEl=document.getElementById('deadlineAlertText');
+ const titleEl=alertEl?.querySelector('.deadlineAlertText b');
  if(!alertEl)return;
  alertEl.style.display='none';
  const today=new Date(); today.setHours(0,0,0,0);
- const limit=new Date(today); limit.setDate(limit.getDate()+30);
  let rows=[];
  if(isSuperuserRole()){
    const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').limit(500);
@@ -420,17 +420,25 @@ async function loadDeadlineAlert(){
    const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').eq('id',currentUser.id).maybeSingle();
    if(r.error||!r.data)return; rows=[r.data];
  }else return;
- let count=0, overdue=0;
- const fields=[['subscription_paid_to','mensilità'],['medical_certificate_expiry_date','certificati'],['insurance_expiry_date','assicurazioni']];
- rows.forEach(p=>fields.forEach(([field,label])=>{
-   const raw=p[field]; if(!raw)return;
-   const d=new Date(String(raw).slice(0,10)+'T00:00:00'); if(isNaN(d))return;
-   if(d<=limit){count++; if(d<today)overdue++;}
- }));
- if(count){
-   alertEl.style.display='flex';
-   textEl.textContent=overdue?`${count} scadenze da controllare, ${overdue} già scadute.`:`${count} scadenze entro i prossimi 30 giorni.`;
- }
+ const alerts=[];
+ rows.forEach(p=>{
+   const raw=p.subscription_paid_to;
+   if(!raw)return;
+   const d=new Date(String(raw).slice(0,10)+'T00:00:00');
+   if(isNaN(d))return;
+   const diffDays=Math.round((d-today)/86400000);
+   if(diffDays<0){
+     alerts.push({priority:1,text:`${p.full_name||p.name||p.email||'Cliente'} — abbonamento scaduto`,status:'scaduto'});
+   }else if(diffDays<=10){
+     alerts.push({priority:2,text:`${p.full_name||p.name||p.email||'Cliente'} — ${diffDays===0?'abbonamento in scadenza oggi':`abbonamento in scadenza tra ${diffDays} giorni`}`,status:'scadenza'});
+   }
+ });
+ if(!alerts.length)return;
+ alerts.sort((a,b)=>a.priority-b.priority);
+ const first=alerts[0];
+ if(titleEl) titleEl.textContent=first.status==='scaduto'?'ABBONAMENTO SCADUTO':'ABBONAMENTO IN SCADENZA';
+ textEl.textContent=first.text;
+ alertEl.style.display='flex';
 }
 
 async function fillDashboard(){

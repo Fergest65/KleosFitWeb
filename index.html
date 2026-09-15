@@ -415,10 +415,10 @@ async function loadDeadlineAlert(){
  const today=new Date(); today.setHours(0,0,0,0);
  let rows=[];
  if(isSuperuserRole()){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to').limit(500);
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active').limit(500);
    if(r.error)return; rows=r.data||[];
  }else if(isClientRole()&&currentUser?.id){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to').eq('id',currentUser.id).maybeSingle();
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active').eq('id',currentUser.id).maybeSingle();
    if(r.error||!r.data)return; rows=[r.data];
  }else return;
  const alerts=[];
@@ -435,13 +435,15 @@ async function loadDeadlineAlert(){
    }
  });
  if(!alerts.length){
-   // Per il cliente, quando l'abbonamento è oltre i 10 giorni dalla scadenza,
-   // la Home mostra chiaramente che è attivo. Per l'admin non mostriamo un alert personale.
+   // Per il cliente la Home deve sempre mostrare lo stato dell'abbonamento:
+   // verde se attivo/in regola, anche quando subscription_active è valorizzato ma la data non è presente.
    if(isClientRole()){
-     const raw=rows[0]?.subscription_paid_to;
-     if(raw){
+     const row=rows[0]||{};
+     const raw=row.subscription_paid_to;
+     const active=row.subscription_active===true || String(row.subscription_active).toLowerCase()==='true';
+     if(raw || active){
        if(titleEl) titleEl.textContent='ABBONAMENTO ATTIVO';
-       textEl.textContent='Il tuo abbonamento è attivo e in regola.';
+       textEl.textContent=raw ? 'Il tuo abbonamento è attivo e in regola.' : 'Il tuo abbonamento è attivo.';
        const icon=alertEl.querySelector('.deadlineAlertIcon'); if(icon) icon.textContent='✓';
        const btn=alertEl.querySelector('.deadlineAlertBtn'); if(btn) btn.textContent='VEDI ABBONAMENTO';
        alertEl.classList.add('deadlineAlertOk');

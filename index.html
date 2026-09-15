@@ -50,19 +50,19 @@
 </style>
 <style>
 /* KLEOSFIT welcome screen */
-.welcome{position:fixed;inset:0;z-index:100;overflow:hidden;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;display:flex;align-items:center;justify-content:flex-end;padding:5vw;}
-.welcome:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.12) 0%,rgba(0,0,0,.18) 35%,rgba(0,0,0,.68) 68%,rgba(0,0,0,.88) 100%);}
-.welcomeContent{position:relative;z-index:1;width:min(470px,92vw);padding:34px;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(10,12,16,.72);backdrop-filter:blur(12px);box-shadow:0 25px 80px rgba(0,0,0,.45);text-align:left;}
-.welcomeBrand{font-size:42px;font-weight:950;letter-spacing:5px;margin-bottom:6px}.welcomeBrand span{color:var(--accent)}
+.welcome{position:fixed;inset:0;z-index:100;overflow:hidden;background:#080a0d url('kleosfit-home-bg.png') center center/cover no-repeat;display:flex;align-items:flex-end;justify-content:center;padding:0 5vw 7vh;}
+.welcome:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.18) 72%,rgba(0,0,0,.72) 100%);pointer-events:none;}
+.welcomeContent{position:relative;z-index:1;width:min(470px,92vw);padding:0;background:transparent;border:0;box-shadow:none;text-align:center;}
+.welcomeBrand,.welcomeTag,.welcomeTitle,.welcomeText,.welcomeQuote{display:none}.welcomeBrand span{color:var(--accent)}
 .welcomeTag{color:#e7e9ec;font-size:16px;letter-spacing:3px;text-transform:uppercase;margin-bottom:34px}
 .welcomeTitle{font-size:38px;line-height:1.04;font-weight:900;margin:0 0 14px}.welcomeText{color:#c7ccd4;font-size:16px;line-height:1.55;margin:0 0 28px;max-width:390px}
-.welcomeActions{display:grid;gap:11px}.welcomeBtn{width:100%;padding:16px 20px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;border:1px solid transparent}.welcomeBtn.primary{background:var(--accent);color:#10130a}.welcomeBtn.dark{background:rgba(10,12,16,.72);color:#fff;border-color:rgba(255,255,255,.2)}
+.welcomeActions{display:grid;gap:11px;width:min(470px,92vw);}.welcomeBtn{width:100%;padding:16px 20px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;border:1px solid transparent;box-shadow:0 8px 25px rgba(0,0,0,.22)}.welcomeBtn.primary{background:var(--accent);color:#10130a}.welcomeBtn.dark{background:rgba(10,12,16,.82);color:#fff;border-color:rgba(255,255,255,.35)}
 .welcomeQuote{margin-top:25px;color:#aeb5c0;font-size:13px;font-style:italic}
 .loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;position:relative;}
 .loginScreen:before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.64);}
 .loginScreen .loginbox{position:relative;z-index:1;background:rgba(15,17,21,.88);backdrop-filter:blur(10px);box-shadow:0 25px 80px rgba(0,0,0,.5)}
 .loginBack{margin-bottom:12px}
-@media(max-width:800px){.welcome{justify-content:center;padding:18px;background-position:center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}.welcomeContent{padding:26px}.welcomeTitle{font-size:32px}.welcomeBrand{font-size:32px}}
+@media(max-width:800px){.welcome{justify-content:center;align-items:flex-end;padding:0 18px 28px;background-position:center center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,0) 48%,rgba(0,0,0,.18) 65%,rgba(0,0,0,.78) 100%)}.welcomeContent{padding:0}.welcomeActions{width:100%}.welcomeBtn{padding:15px 18px;font-size:17px}}
 </style><style>
 .clientBookingHeader h2{font-size:28px;font-weight:900;margin:0 0 8px}
 .clientBookingSubtitle{color:var(--muted);font-size:16px;margin-bottom:18px}
@@ -150,11 +150,7 @@
 }
 </style>
 </head><body><div id="welcome" class="welcome"><div class="welcomeContent">
-<div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
-<h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
-<p class="welcomeText">Allenamenti personalizzati, piano nutrizionale e tutto ciò che serve per seguire il tuo percorso in una sola esperienza.</p>
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openLogin()">Inizia ora</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">Accedi</button></div>
-<div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>

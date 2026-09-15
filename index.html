@@ -169,7 +169,7 @@ dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
 <div id="deadlineAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'payments')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla l'abbonamento.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'payments')">VEDI ABBONAMENTO</button></div>
-<div id="certificateAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'anagraficaClient')"><div class="deadlineAlertIcon">🩺</div><div class="deadlineAlertText"><b>CERTIFICATO MEDICO</b><span id="certificateAlertText">Controlla la scadenza del certificato.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'anagraficaClient')">VEDI CERTIFICATO</button></div>
+<div id="certificateAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'anagraficaClient')"><div class="deadlineAlertIcon">🩺</div><div class="deadlineAlertText"><b>CERTIFICATO MEDICO</b><span id="certificateAlertText">Controlla la scadenza del certificato.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'anagraficaClient')">VEDI CERTIFICATO</button></div><div id="insuranceAlert" class="deadlineAlert" onclick="show(isSuperuserRole()?'clients':'anagraficaClient')"><div class="deadlineAlertIcon">🛡️</div><div class="deadlineAlertText"><b>ASSICURAZIONE VALIDA</b><span id="insuranceAlertText">Controllo assicurazione...</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show(isSuperuserRole()?'clients':'anagraficaClient')">VEDI ASSICURAZIONE</button></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -414,6 +414,7 @@ async function loadDeadlineAlert(){
  // Crea/recupera gli alert direttamente nel DOM: non dipende dalla versione precedente della Home.
  let alertEl=document.getElementById('deadlineAlert');
  let certEl=document.getElementById('certificateAlert');
+ let insuranceEl=document.getElementById('insuranceAlert');
  const makeAlert=(id,icon,defaultTitle,defaultText,defaultBtn)=>{
    let el=document.getElementById(id);
    if(!el){
@@ -431,16 +432,17 @@ async function loadDeadlineAlert(){
  };
  const subUI=makeAlert('deadlineAlert','⚠️','ABBONAMENTO ATTIVO','Controllo abbonamento...','VEDI ABBONAMENTO');
  const certUI=makeAlert('certificateAlert','🩺','CERTIFICATO MEDICO VALIDO','Controllo certificato...','VEDI CERTIFICATO');
+ const insuranceUI=makeAlert('insuranceAlert','🛡️','ASSICURAZIONE VALIDA','Controllo assicurazione...','VEDI ASSICURAZIONE');
  const today=new Date(); today.setHours(0,0,0,0);
  let rows=[];
  if(isClientRole() && currentUser?.id){
    rows=[profile||{}];
  }else if(isSuperuserRole()){
-   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active,medical_certificate_expiry_date').limit(500);
-   if(r.error){subUI.el.style.display='none';certUI.el.style.display='none';return;}
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,subscription_active,medical_certificate_expiry_date,insurance_expiry_date').limit(500);
+   if(r.error){subUI.el.style.display='none';certUI.el.style.display='none';insuranceUI.el.style.display='none';return;}
    rows=r.data||[];
  }else{
-   subUI.el.style.display='none';certUI.el.style.display='none';return;
+   subUI.el.style.display='none';certUI.el.style.display='none';insuranceUI.el.style.display='none';return;
  }
  const getState=(raw, active, labels)=>{
    if(!raw){
@@ -484,6 +486,23 @@ async function loadDeadlineAlert(){
  if(isClientRole()&&!certAlerts.length && profile?.medical_certificate_expiry_date){certAlerts.push({priority:3,status:'active',title:'CERTIFICATO MEDICO VALIDO',text:'Il tuo certificato medico è valido.',icon:'✓'});}
  if(certAlerts.length){certAlerts.sort((a,b)=>a.priority-b.priority);const st=certAlerts[0];certUI.title.textContent=st.title;certUI.text.textContent=st.text;certUI.icon.textContent=st.icon;if(st.status==='active')certUI.el.classList.add('deadlineAlertOk');}
 }
+ // ASSICURAZIONE
+ const insuranceAlerts=[];
+ rows.forEach(p=>{
+   const name=p?.full_name||p?.name||p?.email||'Cliente';
+   const raw=p?.insurance_expiry_date;
+   if(!raw)return;
+   const st=getState(raw,true,{
+     active:'ASSICURAZIONE VALIDA',activeText:isClientRole()?'La tua assicurazione è valida.':`${name} — assicurazione valida`,
+     expired:'ASSICURAZIONE SCADUTA',expiredText:`${name} — assicurazione scaduta`,
+     due:'ASSICURAZIONE IN SCADENZA',dueText:(n)=>`${name} — ${n===0?'assicurazione in scadenza oggi':`assicurazione in scadenza tra ${n} giorni`}`
+   });
+   if(st)insuranceAlerts.push(st);
+ });
+ if(isClientRole()&&!insuranceAlerts.length && profile?.insurance_expiry_date){insuranceAlerts.push({priority:3,status:'active',title:'ASSICURAZIONE VALIDA',text:'La tua assicurazione è valida.',icon:'✓'});}
+ if(isClientRole()&&!insuranceAlerts.length){insuranceUI.title.textContent='ASSICURAZIONE';insuranceUI.text.textContent='Nessuna scadenza assicurativa registrata.';insuranceUI.icon.textContent='🛡️';insuranceUI.el.classList.remove('deadlineAlertOk');}
+ if(insuranceAlerts.length){insuranceAlerts.sort((a,b)=>a.priority-b.priority);const st=insuranceAlerts[0];insuranceUI.title.textContent=st.title;insuranceUI.text.textContent=st.text;insuranceUI.icon.textContent=st.icon;insuranceUI.el.classList.toggle('deadlineAlertOk',st.status==='active');}
+
 async function fillDashboard(){
  await loadDeadlineAlert();
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();

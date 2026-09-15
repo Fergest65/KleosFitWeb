@@ -748,13 +748,38 @@ async function handleGuardianSignatureRoute(){
  if(r.error||!r.data?.ok){document.getElementById('guardianSignBody').innerHTML='<div class="guardianSignError">Questo link non è valido oppure è scaduto. Chiedi all’amministratore di generare un nuovo QR.</div>';return true;}
  const d=r.data;
  if(d.already_signed){document.getElementById('guardianSignBody').innerHTML='<div class="guardianSignOk">La firma risulta già acquisita.</div>';return true;}
- document.getElementById('guardianSignBody').innerHTML=`<div class="guardianSignDoc"><h2>Autorizzazione e consensi per minore</h2><p><b>Minore:</b> ${esc(d.client_name||'')}</p><p><b>Genitore/Tutore:</b> ${esc(d.guardian_full_name||'')}</p><p>Il genitore/tutore dichiara di aver preso visione delle condizioni di partecipazione alle attività KLEOSFIT e autorizza la partecipazione del minore alle attività per le quali è stato iscritto.</p><p>Con la firma conferma inoltre i consensi richiesti per l’attività sportiva e per il trattamento dei dati personali secondo l’informativa resa dal Centro.</p></div><div class="guardianSignChecks"><label><input id="gsSport" type="checkbox"> Confermo il consenso alla partecipazione alle attività sportive del minore.</label><label><input id="gsPrivacy" type="checkbox"> Dichiaro di aver letto e accettato l’informativa privacy.</label></div><label style="margin-top:18px">Firma del genitore/tutore *</label><div class="guardianSignCanvasWrap"><canvas id="guardianSignCanvas" class="guardianSignCanvas" width="1000" height="360"></canvas></div><div class="sigActions"><button type="button" class="btn secondary mini" onclick="clearGuardianMobileSignature()">Cancella firma</button></div><div id="guardianSignError" class="guardianSignError"></div><button id="guardianSignSubmit" class="btn guardianSignBtn" type="button" onclick="submitGuardianMobileSignature(${JSON.stringify(token)})">FIRMA E INVIA</button>`;
- initGuardianMobileSignature();return true;
+ document.getElementById('guardianSignBody').innerHTML=`<div class="guardianSignDoc"><h2>Autorizzazione e consensi per minore</h2><p><b>Minore:</b> ${esc(d.client_name||'')}</p><p><b>Genitore/Tutore:</b> ${esc(d.guardian_full_name||'')}</p><p>Il genitore/tutore dichiara di aver preso visione delle condizioni di partecipazione alle attività KLEOSFIT e autorizza la partecipazione del minore alle attività per le quali è stato iscritto.</p><p>Con la firma conferma inoltre i consensi richiesti per l’attività sportiva e per il trattamento dei dati personali secondo l’informativa resa dal Centro.</p></div><div class="guardianSignChecks"><label><input id="gsSport" type="checkbox"> Confermo il consenso alla partecipazione alle attività sportive del minore.</label><label><input id="gsPrivacy" type="checkbox"> Dichiaro di aver letto e accettato l’informativa privacy.</label></div><label style="margin-top:18px">Firma del genitore/tutore *</label><div class="guardianSignCanvasWrap"><canvas id="guardianSignCanvas" class="guardianSignCanvas" width="1000" height="360"></canvas></div><div class="sigActions"><button type="button" class="btn secondary mini" onclick="clearGuardianMobileSignature()">Cancella firma</button></div><div id="guardianSignError" class="guardianSignError"></div><button id="guardianSignSubmit" class="btn guardianSignBtn" type="button">FIRMA E INVIA</button>`;
+ initGuardianMobileSignature();const submitBtn=document.getElementById('guardianSignSubmit');if(submitBtn)submitBtn.addEventListener('click',()=>submitGuardianMobileSignature(token));return true;
 }
 let guardianMobileCtx=null,guardianMobileHasInk=false;
 function initGuardianMobileSignature(){const c=document.getElementById('guardianSignCanvas');if(!c)return;guardianMobileCtx=c.getContext('2d');guardianMobileCtx.lineWidth=3;guardianMobileCtx.lineCap='round';guardianMobileCtx.lineJoin='round';const pos=e=>{const r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}};let drawing=false;c.onpointerdown=e=>{drawing=true;guardianMobileHasInk=true;c.setPointerCapture?.(e.pointerId);const p=pos(e);guardianMobileCtx.beginPath();guardianMobileCtx.moveTo(p.x,p.y)};c.onpointermove=e=>{if(!drawing)return;const p=pos(e);guardianMobileCtx.lineTo(p.x,p.y);guardianMobileCtx.stroke()};const end=()=>{drawing=false};c.onpointerup=end;c.onpointercancel=end;c.onpointerout=end}
 function clearGuardianMobileSignature(){const c=document.getElementById('guardianSignCanvas');if(c&&guardianMobileCtx)guardianMobileCtx.clearRect(0,0,c.width,c.height);guardianMobileHasInk=false}
-async function submitGuardianMobileSignature(token){const err=document.getElementById('guardianSignError');if(err)err.textContent='';const sport=document.getElementById('gsSport')?.checked,privacy=document.getElementById('gsPrivacy')?.checked,c=document.getElementById('guardianSignCanvas');if(!sport||!privacy||!guardianMobileHasInk){if(err)err.textContent='Devi accettare entrambi i consensi e apporre la firma.';return}const sig=c.toDataURL('image/png');const btn=document.getElementById('guardianSignSubmit');if(btn){btn.disabled=true;btn.textContent='INVIO IN CORSO...'}const r=await db.rpc('submit_guardian_signature',{p_token:token,p_signature_data:sig,p_sport_consent:true,p_privacy_accepted:true});if(r.error||!r.data?.ok){if(err)err.textContent=r.error?.message||r.data?.message||'Impossibile salvare la firma. Il link potrebbe essere scaduto.';if(btn){btn.disabled=false;btn.textContent='FIRMA E INVIA'}return}document.getElementById('guardianSignBody').innerHTML='<div class="guardianSignDoc"><h2>✅ Firma acquisita</h2><p>La firma del genitore/tutore è stata registrata correttamente.</p><p>Puoi chiudere questa pagina.</p></div>'}
+async function submitGuardianMobileSignature(token){
+ const err=document.getElementById('guardianSignError');
+ const btn=document.getElementById('guardianSignSubmit');
+ try{
+  if(err)err.textContent='';
+  const sport=!!document.getElementById('gsSport')?.checked;
+  const privacy=!!document.getElementById('gsPrivacy')?.checked;
+  const c=document.getElementById('guardianSignCanvas');
+  if(!sport||!privacy||!guardianMobileHasInk){if(err)err.textContent='Devi accettare entrambi i consensi e apporre la firma.';return}
+  if(!c){if(err)err.textContent='Area firma non disponibile. Ricarica la pagina.';return}
+  const sig=c.toDataURL('image/png');
+  if(btn){btn.disabled=true;btn.textContent='INVIO IN CORSO...'}
+  const r=await db.rpc('submit_guardian_signature',{p_token:token,p_signature_data:sig,p_sport_consent:true,p_privacy_accepted:true});
+  if(r.error||!r.data?.ok){
+   const message=r.error?.message||r.data?.message||'Impossibile salvare la firma. Il link potrebbe essere scaduto.';
+   if(err)err.textContent='Errore: '+message;
+   if(btn){btn.disabled=false;btn.textContent='RIPROVA FIRMA E INVIA'}
+   return;
+  }
+  document.getElementById('guardianSignBody').innerHTML='<div class="guardianSignDoc"><h2>✅ Firma acquisita</h2><p>La firma del genitore/tutore è stata registrata correttamente.</p><p>Puoi chiudere questa pagina.</p></div>';
+ }catch(e){
+  if(err)err.textContent='Errore di connessione: '+(e?.message||e);
+  if(btn){btn.disabled=false;btn.textContent='RIPROVA FIRMA E INVIA'}
+ }
+}
+
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');

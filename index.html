@@ -729,14 +729,79 @@ let workoutExecWakeLock=null;
 function workoutExecClearTimer(){
   if(workoutExecTimer){clearInterval(workoutExecTimer);workoutExecTimer=null;}
 }
+let workoutExecItalianVoice=null;
+function workoutExecPickVoice(){
+  try{
+    if(!('speechSynthesis' in window)) return null;
+    const voices=window.speechSynthesis.getVoices()||[];
+    if(!voices.length)return workoutExecItalianVoice;
+    const it=voices.filter(v=>/^it(?:-|_)/i.test(v.lang||''));
+    // Preferiamo voci naturali/locali: Google/Microsoft/Apple/Samsung, poi la prima italiana disponibile.
+    const preferred=it.find(v=>/Google|Microsoft|Apple|Siri|Samsung|Natural|Neural/i.test(v.name||''))||it[0]||voices.find(v=>/^it/i.test(v.lang||''));
+    if(preferred)workoutExecItalianVoice=preferred;
+    return workoutExecItalianVoice;
+  }catch(_e){return null;}
+}
+if('speechSynthesis' in window){
+  try{window.speechSynthesis.addEventListener('voiceschanged',workoutExecPickVoice);workoutExecPickVoice();}catch(_e){}
+}
+const KLEOS_AUDIO_BASE='https://dicfqbqdbqkyggjezpaz.supabase.co/storage/v1/object/public/Audio/';
+const KLEOS_AUDIO={inizio:'inizio.mp3',via:'via.mp3',uno:'uno.mp3',due:'due.mp3',tre:'tre.mp3',ultimi10:'ultimi-10.mp3',cambio:'cambio.mp3',fineCircuito:'fine-circuito.mp3',fineGiro:'fine-giro.mp3',pausa:'pausa.mp3',riprendi:'riprendi.mp3',stop:'stop.mp3',recupero:'recupero.mp3'};
+const workoutAudioCache={};
+function workoutExecAudioUrl(key){return KLEOS_AUDIO_BASE+encodeURIComponent(KLEOS_AUDIO[key]||'');}
+function workoutExecPlayAudio(key){
+  try{
+    if(!workoutExecState?.voice)return false;
+    const file=KLEOS_AUDIO[key]; if(!file)return false;
+    let a=workoutAudioCache[key];
+    if(!a){a=new Audio(workoutExecAudioUrl(key));a.preload='auto';workoutAudioCache[key]=a;}
+    a.currentTime=0; const pr=a.play(); if(pr&&typeof pr.catch==='function')pr.catch(()=>{});
+    return true;
+  }catch(_e){return false;}
+}
+function workoutExecPreloadAudio(){
+  try{Object.keys(KLEOS_AUDIO).forEach(k=>{const a=new Audio(workoutExecAudioUrl(k));a.preload='auto';workoutAudioCache[k]=a;});}catch(_e){}
+}
 function workoutExecSpeak(text){
   try{
-    if(!workoutExecState?.voice || !('speechSynthesis' in window)) return;
+    if(!workoutExecState?.voice)return;
+    const phrase=String(text||'').trim(); if(!phrase)return;
+    const low=phrase.toLowerCase(); let key=null;
+    if(low==='preparati'||low==='inizia')key='inizio';
+    else if(low.startsWith('via.'))key='via';
+    else if(/^\d+$/.test(low)){
+      const n=Math.round(Number(low));
+      if(n>=1&&n<=50){if(workoutExecPlayNumber(n))return;}
+    }
+    else if(low.startsWith('ripetizione ')){
+      const n=Math.round(Number(low.replace('ripetizione ','').trim()));
+      if(n>=1&&n<=50){if(workoutExecPlayNumber(n))return;}
+    }
+    else if(low==='ultimi 10')key='ultimi10';
+    else if(low.startsWith('serie completata'))key='cambio';
+    else if(low==='prossimo esercizio')key='cambio';
+    else if(low==='workout completato')key='fineCircuito';
+    else if(low.startsWith('recupera '))key='recupero';
+    else if(low.startsWith('serie '))key='inizio';
+    else if(low==='riprendi')key='riprendi';
+    if(key&&workoutExecPlayAudio(key))return;
+    if(!('speechSynthesis' in window))return;
     window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='it-IT'; u.rate=1.05; u.pitch=1;
-    window.speechSynthesis.speak(u);
+    const u=new SpeechSynthesisUtterance(phrase);u.lang='it-IT';u.rate=0.94;u.pitch=1.02;u.volume=1;
+    const v=workoutExecPickVoice();if(v)u.voice=v;window.speechSynthesis.speak(u);
   }catch(_e){}
+}
+function workoutExecPlayNumber(n){
+  const x=Math.round(Number(n)||0);
+  if(x<1||x>50)return false;
+  const key='numero'+x;
+  let a=workoutAudioCache[key];
+  if(!a){a=new Audio(KLEOS_AUDIO_BASE+'numero-'+x+'.mp3');a.preload='auto';workoutAudioCache[key]=a;}
+  try{a.currentTime=0;const pr=a.play();if(pr&&typeof pr.catch==='function')pr.catch(()=>{});return true;}catch(_e){return false;}
+}
+function workoutExecSpeakCountdown(n){
+  const x=Math.round(Number(n)||0);
+  if(x>=1&&x<=50){if(workoutExecPlayNumber(x))return;workoutExecSpeak(String(x));}
 }
 function workoutExecBeep(freq=880,duration=.08){
   try{
@@ -826,6 +891,7 @@ async function startWorkoutExecution(planId,exerciseId){
   workoutExecClearTimer();
   if('speechSynthesis' in window)window.speechSynthesis.cancel();
   workoutExecState={plan:p,exercises:exs,exerciseIndex:idx,exercise:exs[idx],setIndex:1,phase:'ready',remaining:0,elapsed:0,voice:true,completedSets:0,totalSets:exs.reduce((a,x)=>a+Math.max(1,workoutExecNum(x.sets,1)),0)};
+  workoutExecPreloadAudio();
   openModal('');
   workoutExecRender();
   await workoutExecKeepAwake();
@@ -892,6 +958,7 @@ function workoutExecTick(){
   st.remaining-=dt;
   if(st.phase==='initial'){
     if(st.remaining<=0){workoutExecBeginWork();return;}
+    if(Math.ceil(st.remaining)<=3 && Math.ceil(st.remaining)>0 && Math.abs(st.remaining-Math.round(st.remaining))<0.08) workoutExecSpeakCountdown(Math.ceil(st.remaining));
     workoutExecUpdate();return;
   }
   if(st.phase==='work'){
@@ -906,7 +973,7 @@ function workoutExecTick(){
         st.repIndex++;
         if(st.repIndex>reps){workoutExecFinishSet();return;}
         st.repRemaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));
-        workoutExecSpeak(String(st.repIndex));
+        if(st.repIndex<=50)workoutExecSpeakCountdown(st.repIndex);
       }
     }
     workoutExecUpdate();return;
@@ -921,7 +988,8 @@ function workoutExecBeginWork(){
   if(workoutExecTimed(e)){st.remaining=Math.max(1,workoutExecNum(e.duration_seconds,30));}
   else{st.remaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));st.repRemaining=st.remaining;}
   workoutExecBeep(1000,.1);
-  workoutExecSpeak(e.name||'Esercizio');
+  workoutExecSpeak('Via. '+(e.name||'Esercizio'));
+  if(!workoutExecTimed(e))setTimeout(()=>{if(workoutExecState===st&&st.phase==='work')workoutExecSpeakCountdown(1);},350);
   workoutExecUpdate();workoutExecStartTick();
 }
 function workoutExecBeginSet(){
@@ -952,7 +1020,7 @@ function workoutExecFinishSet(){
   workoutExecSpeak('Serie completata');
   if(st.setIndex<totalSets){
     const rest=Math.max(0,workoutExecNum(st.exercise.rest_seconds,60));
-    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecUpdate();workoutExecStartTick();}
+    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecSpeak('Serie completata. Recupera '+Math.round(rest)+' secondi.');workoutExecUpdate();workoutExecStartTick();}
     else workoutExecNextSetOrExercise();
   }else workoutExecNextSetOrExercise();
 }
@@ -1005,6 +1073,7 @@ function workoutExecToggleVoice(){
   st.voice=!st.voice;
   const b=document.getElementById('weVoiceBtn');if(b)b.textContent=st.voice?'🔊 Voce: ON':'🔇 Voce: OFF';
   if(!st.voice&&'speechSynthesis' in window)window.speechSynthesis.cancel();
+  if(!st.voice)Object.values(workoutAudioCache).forEach(a=>{try{a.pause();a.currentTime=0;}catch(_e){}});
 }
 async function closeWorkoutExecution(){
   workoutExecClearTimer();

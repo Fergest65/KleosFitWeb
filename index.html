@@ -152,6 +152,7 @@
 
 <style>
 .deadlineAlert{display:none;align-items:center;gap:14px;margin:14px 0;padding:16px 18px;border:1px solid #ff5d6c;background:linear-gradient(90deg,rgba(255,93,108,.16),rgba(255,93,108,.07));border-radius:14px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.22)}
+.deadlineAlertOk{border-color:#b9ff2c!important;background:linear-gradient(90deg,rgba(185,255,44,.16),rgba(185,255,44,.07))!important}.deadlineAlertOk .deadlineAlertIcon{color:#b9ff2c}.deadlineAlertOk .deadlineAlertText b{color:#b9ff2c}.deadlineAlertOk .deadlineAlertBtn{background:#b9ff2c!important;color:#090b0f!important}
 .deadlineAlertIcon{font-size:30px}.deadlineAlertText{display:flex;flex-direction:column;gap:4px;flex:1}.deadlineAlertText b{font-size:15px;color:#fff}.deadlineAlertText span{font-size:13px;color:#cbd1da}.deadlineAlertBtn{white-space:nowrap;background:#ff5d6c!important;color:#fff!important;border:0!important}@media(max-width:700px){.deadlineAlert{align-items:flex-start}.deadlineAlertBtn{display:none}}
 </style>
 </head><body><div id="welcome" class="welcome"><div class="welcomeContent">
@@ -433,10 +434,28 @@ async function loadDeadlineAlert(){
      alerts.push({priority:2,text:`${p.full_name||p.name||p.email||'Cliente'} — ${diffDays===0?'abbonamento in scadenza oggi':`abbonamento in scadenza tra ${diffDays} giorni`}`,status:'scadenza'});
    }
  });
- if(!alerts.length)return;
+ if(!alerts.length){
+   // Per il cliente, quando l'abbonamento è oltre i 10 giorni dalla scadenza,
+   // la Home mostra chiaramente che è attivo. Per l'admin non mostriamo un alert personale.
+   if(isClientRole()){
+     const raw=rows[0]?.subscription_paid_to;
+     if(raw){
+       if(titleEl) titleEl.textContent='ABBONAMENTO ATTIVO';
+       textEl.textContent='Il tuo abbonamento è attivo e in regola.';
+       const icon=alertEl.querySelector('.deadlineAlertIcon'); if(icon) icon.textContent='✓';
+       const btn=alertEl.querySelector('.deadlineAlertBtn'); if(btn) btn.textContent='VEDI ABBONAMENTO';
+       alertEl.classList.add('deadlineAlertOk');
+       alertEl.style.display='flex';
+     }
+   }
+   return;
+ }
  alerts.sort((a,b)=>a.priority-b.priority);
  const first=alerts[0];
+ alertEl.classList.remove('deadlineAlertOk');
+ const icon=alertEl.querySelector('.deadlineAlertIcon'); if(icon) icon.textContent='⚠️';
  if(titleEl) titleEl.textContent=first.status==='scaduto'?'ABBONAMENTO SCADUTO':'ABBONAMENTO IN SCADENZA';
+ const btn=alertEl.querySelector('.deadlineAlertBtn'); if(btn) btn.textContent='VEDI SCADENZE';
  textEl.textContent=first.text;
  alertEl.style.display='flex';
 }

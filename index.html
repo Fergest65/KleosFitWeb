@@ -15,10 +15,6 @@
 .clientSheet{display:grid;gap:16px}.clientSheetGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.clientSheetGrid .wide{grid-column:1/-1}.clientSheetSection{border:1px solid var(--line);border-radius:12px;padding:14px;background:#111419}.clientSheetSection h3{margin:0 0 10px;font-size:14px;color:#fff}.clientSheetSection h3 span{color:var(--accent)}.qrCard{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:16px;background:#0d1014}.qrBox{width:150px;height:150px;background:#fff;padding:8px;border-radius:10px;display:grid;place-items:center}.qrBox img,.qrBox canvas{max-width:134px!important;max-height:134px!important}.clientCardInfo strong{font-size:22px;display:block}.clientCardInfo .member{color:var(--accent);font-size:18px;font-weight:800;margin-top:5px}.clientCardInfo .small{color:var(--muted);font-size:13px;margin-top:7px}.sheetBtn{padding:7px 10px;font-size:12px}.qrActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qrGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.qrClientCard{background:#111419;border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}.qrClientBox{width:112px;height:112px;background:#fff;border-radius:10px;padding:6px;display:grid;place-items:center}.qrClientBox img,.qrClientBox canvas{max-width:100px!important;max-height:100px!important}.qrClientName{font-size:17px;font-weight:800}.qrClientCard .member{color:var(--accent);font-weight:800;margin-top:4px}.qrClientCard .small{color:var(--muted);font-size:12px;margin-top:5px}.qrClientActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}@media(max-width:700px){.qrClientCard{grid-template-columns:1fr;text-align:center;justify-items:center}}@media(max-width:700px){.clientSheetGrid{grid-template-columns:1fr}.clientSheetGrid .wide{grid-column:auto}.qrCard{grid-template-columns:1fr;text-align:center;justify-items:center}}
 
 <style>
-.deadlineAlert{display:flex;align-items:center;gap:14px;padding:15px 18px;border:1px solid #7a2d36;border-radius:13px;background:linear-gradient(90deg,#2a1115,#1d1317);box-shadow:0 8px 24px rgba(0,0,0,.22);cursor:pointer;animation:deadlinePulse 2.2s ease-in-out infinite}.deadlineAlertIcon{font-size:27px;line-height:1}.deadlineAlertText{flex:1;min-width:0}.deadlineAlertText b{display:block;color:#ff8993;font-size:14px;letter-spacing:.3px}.deadlineAlertText span{display:block;color:#d4aeb3;font-size:12px;margin-top:4px}.deadlineAlertBtn{background:#ff5d6c;color:#17090b;padding:9px 13px;font-size:11px;white-space:nowrap}@keyframes deadlinePulse{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.22)}50%{box-shadow:0 8px 28px rgba(255,93,108,.18)}}
-.deadlinePanel{padding:24px 26px 28px;margin-top:0}.deadlineHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}.deadlineTitle{font-size:22px;font-weight:900;color:#c4ff3d}.deadlineSub{font-size:13px;color:#9299a5;margin-top:4px}.deadlineGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.deadlineStat{border:1px solid #2a2f38;border-radius:12px;background:#111419;padding:15px;cursor:pointer}.deadlineStat .icon{font-size:22px}.deadlineStat b{display:block;font-size:28px;margin-top:5px}.deadlineStat span{display:block;color:#a8adb9;font-size:12px;margin-top:3px}.deadlineList{margin-top:16px;display:grid;gap:8px}.deadlineRow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid #2a2f38;border-radius:10px;background:#0f1216}.deadlineName{font-weight:800}.deadlineType{font-size:11px;color:#9299a5;margin-top:3px;text-transform:uppercase}.deadlineDate{font-weight:800;text-align:right}.deadlineBadge{padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}.deadlineExpired{color:#ff8993;border-color:#5b252d;background:#211216}.deadlineSoon{color:#ffbf69;border-color:#59401f;background:#201a10}.deadlineOk{color:#c4ff3d;border-color:#3e5118;background:#151b0d}.deadlineEmpty{padding:16px;border:1px dashed #2a2f38;border-radius:10px;color:#9299a5;text-align:center}@media(max-width:700px){.deadlineAlert{align-items:flex-start;padding:14px}.deadlineAlertBtn{padding:8px 10px}.deadlineGrid{grid-template-columns:1fr}.deadlineRow{grid-template-columns:1fr auto}.deadlineDate{grid-column:2;grid-row:1}.deadlineBadge{grid-column:1/-1;text-align:center}}
-</style>
-<style>
 .dashboardHero{display:flex;flex-direction:column;gap:18px}
 .dashboardWelcome{padding:6px 0 0}
 .dashboardGreeting{font-size:44px;font-weight:800;letter-spacing:-1.5px;color:#fff}
@@ -54,19 +50,19 @@
 </style>
 <style>
 /* KLEOSFIT welcome screen */
-.welcome{position:fixed;inset:0;z-index:100;overflow:hidden;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;display:flex;align-items:center;justify-content:flex-end;padding:5vw;}
-.welcome:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.12) 0%,rgba(0,0,0,.18) 35%,rgba(0,0,0,.68) 68%,rgba(0,0,0,.88) 100%);}
-.welcomeContent{position:relative;z-index:1;width:min(470px,92vw);padding:34px;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(10,12,16,.72);backdrop-filter:blur(12px);box-shadow:0 25px 80px rgba(0,0,0,.45);text-align:left;}
-.welcomeBrand{font-size:42px;font-weight:950;letter-spacing:5px;margin-bottom:6px}.welcomeBrand span{color:var(--accent)}
+.welcome{position:fixed;inset:0;z-index:100;overflow:hidden;background:#080a0d url('kleosfit-home-bg.png') center top/cover no-repeat;display:flex;align-items:flex-end;justify-content:center;padding:0 5vw 7vh;}
+.welcome:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.18) 72%,rgba(0,0,0,.72) 100%);pointer-events:none;}
+.welcomeContent{position:relative;z-index:1;width:min(470px,92vw);padding:0;background:transparent;border:0;box-shadow:none;text-align:center;}
+.welcomeBrand,.welcomeTag,.welcomeTitle,.welcomeText,.welcomeQuote{display:none}.welcomeBrand span{color:var(--accent)}
 .welcomeTag{color:#e7e9ec;font-size:16px;letter-spacing:3px;text-transform:uppercase;margin-bottom:34px}
 .welcomeTitle{font-size:38px;line-height:1.04;font-weight:900;margin:0 0 14px}.welcomeText{color:#c7ccd4;font-size:16px;line-height:1.55;margin:0 0 28px;max-width:390px}
-.welcomeActions{display:grid;gap:11px}.welcomeBtn{width:100%;padding:16px 20px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;border:1px solid transparent}.welcomeBtn.primary{background:var(--accent);color:#10130a}.welcomeBtn.dark{background:rgba(10,12,16,.72);color:#fff;border-color:rgba(255,255,255,.2)}
+.welcomeActions{display:grid;gap:11px;width:min(470px,92vw);}.welcomeBtn{width:100%;padding:16px 20px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;border:1px solid transparent;box-shadow:0 8px 25px rgba(0,0,0,.22)}.welcomeBtn.primary{background:var(--accent);color:#10130a}.welcomeBtn.dark{background:rgba(10,12,16,.82);color:#fff;border-color:rgba(255,255,255,.35)}
 .welcomeQuote{margin-top:25px;color:#aeb5c0;font-size:13px;font-style:italic}
 .loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;position:relative;}
 .loginScreen:before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.64);}
 .loginScreen .loginbox{position:relative;z-index:1;background:rgba(15,17,21,.88);backdrop-filter:blur(10px);box-shadow:0 25px 80px rgba(0,0,0,.5)}
 .loginBack{margin-bottom:12px}
-@media(max-width:800px){.welcome{justify-content:center;padding:18px;background-position:center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}.welcomeContent{padding:26px}.welcomeTitle{font-size:32px}.welcomeBrand{font-size:32px}}
+@media(max-width:800px){.welcome{justify-content:center;align-items:flex-end;padding:0 18px 28px;background-position:left top}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,0) 48%,rgba(0,0,0,.18) 65%,rgba(0,0,0,.78) 100%)}.welcomeContent{padding:0}.welcomeActions{width:100%}.welcomeBtn{padding:15px 18px;font-size:17px}}
 </style><style>
 .clientBookingHeader h2{font-size:28px;font-weight:900;margin:0 0 8px}
 .clientBookingSubtitle{color:var(--muted);font-size:16px;margin-bottom:18px}
@@ -153,12 +149,13 @@
  .workoutExecActions button{min-height:54px;font-size:13px}
 }
 </style>
+
+<style>
+.deadlineAlert{display:none;align-items:center;gap:14px;margin:14px 0;padding:16px 18px;border:1px solid #ff5d6c;background:linear-gradient(90deg,rgba(255,93,108,.16),rgba(255,93,108,.07));border-radius:14px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.22)}
+.deadlineAlertIcon{font-size:30px}.deadlineAlertText{display:flex;flex-direction:column;gap:4px;flex:1}.deadlineAlertText b{font-size:15px;color:#fff}.deadlineAlertText span{font-size:13px;color:#cbd1da}.deadlineAlertBtn{white-space:nowrap;background:#ff5d6c!important;color:#fff!important;border:0!important}@media(max-width:700px){.deadlineAlert{align-items:flex-start}.deadlineAlertBtn{display:none}}
+</style>
 </head><body><div id="welcome" class="welcome"><div class="welcomeContent">
-<div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
-<h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
-<p class="welcomeText">Allenamenti personalizzati, piano nutrizionale e tutto ciò che serve per seguire il tuo percorso in una sola esperienza.</p>
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openLogin()">Inizia ora</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">Accedi</button></div>
-<div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
@@ -170,7 +167,7 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
-<div id="deadlineAlert" class="deadlineAlert" style="display:none" onclick="show('clients')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla mensilità, certificati e assicurazioni.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show('clients')">VEDI SCADENZE</button></div>
+<div id="deadlineAlert" class="deadlineAlert" onclick="show('clients')"><div class="deadlineAlertIcon">⚠️</div><div class="deadlineAlertText"><b>ATTENZIONE: CI SONO SCADENZE</b><span id="deadlineAlertText">Controlla mensilità, certificati e assicurazioni.</span></div><button class="btn deadlineAlertBtn" type="button" onclick="event.stopPropagation();show('clients')">VEDI SCADENZE</button></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -184,8 +181,7 @@ dashboard:`<div class="dashboardHero">
 <div class="dashboardProgressDelta" id="dashboardWeightDelta">Prima rilevazione</div>
 <div class="dashboardProgressCaption">Peso corporeo</div>
 </div>
-</div>
-
+</div>`,
 clients:`<div class="top"><div><div class="title">Utenti</div><div class="sub">Profili reali presenti in Supabase</div></div></div>
 <div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
 <div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
@@ -409,26 +405,36 @@ async function countTable(table){
  const r=await db.from(table).select('*',{count:'exact',head:true});
  return r.error?null:r.count;
 }
-async function loadDashboardDeadlines(){
- const alert=document.getElementById('deadlineAlert');if(!alert)return;
- const alertText=document.getElementById('deadlineAlertText');
- const s=document.getElementById('deadlineSubscriptions'),c=document.getElementById('deadlineCertificates'),i=document.getElementById('deadlineInsurance');
- try{
-  let rows=[];
-  if(isClientRole()&&currentUser?.id){const r=await db.from('profiles').select('*').eq('id',currentUser.id).limit(1).maybeSingle();if(r.error)throw r.error;rows=r.data?[r.data]:[];if(sub)sub.textContent='Le tue scadenze';}
-  else{const r=await db.from('profiles').select('*').limit(1000);if(r.error)throw r.error;rows=r.data||[];if(sub)sub.textContent='Scadenze clienti entro 30 giorni o già scadute';}
-  const today=new Date();today.setHours(0,0,0,0);const limit=new Date(today);limit.setDate(limit.getDate()+30);const items=[];
-  const add=(row,type,field,label)=>{const raw=row?.[field];if(!raw)return;const d=new Date(String(raw).slice(0,10)+'T00:00:00');if(Number.isNaN(d.getTime())||d>limit)return;const days=Math.ceil((d-today)/86400000);const name=row.full_name||row.name||[row.first_name,row.last_name].filter(Boolean).join(' ')||row.email||'Cliente';items.push({name,type,label,date:d,days});};
-  rows.forEach(r=>{add(r,'Mensilità','subscription_paid_to','Mensilità');add(r,'Certificato medico','medical_certificate_expiry_date','Certificato');add(r,'Assicurazione','insurance_expiry_date','Assicurazione');});
-  items.sort((a,b)=>a.date-b.date);const ct=t=>items.filter(x=>x.type===t).length;const ns=ct('Mensilità'),nc=ct('Certificato medico'),ni=ct('Assicurazione');
-  if(s)s.textContent=ns;if(c)c.textContent=nc;if(i)i.textContent=ni;
-  if(!items.length){alert.style.display='none';return;}
-  alert.style.display='flex';
-  if(alertText){const parts=[];if(ns)parts.push(ns+' mensilità');if(nc)parts.push(nc+' certificati');if(ni)parts.push(ni+' assicurazioni');alertText.textContent=parts.join(' · ')+' da controllare (scadute o entro 30 giorni).';}
- }catch(e){alert.style.display='none';if(s)s.textContent='—';if(c)c.textContent='—';if(i)i.textContent='—';}
+async function loadDeadlineAlert(){
+ const alertEl=document.getElementById('deadlineAlert');
+ const textEl=document.getElementById('deadlineAlertText');
+ if(!alertEl)return;
+ alertEl.style.display='none';
+ const today=new Date(); today.setHours(0,0,0,0);
+ const limit=new Date(today); limit.setDate(limit.getDate()+30);
+ let rows=[];
+ if(isSuperuserRole()){
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').limit(500);
+   if(r.error)return; rows=r.data||[];
+ }else if(isClientRole()&&currentUser?.id){
+   const r=await db.from('profiles').select('id,full_name,name,email,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').eq('id',currentUser.id).maybeSingle();
+   if(r.error||!r.data)return; rows=[r.data];
+ }else return;
+ let count=0, overdue=0;
+ const fields=[['subscription_paid_to','mensilità'],['medical_certificate_expiry_date','certificati'],['insurance_expiry_date','assicurazioni']];
+ rows.forEach(p=>fields.forEach(([field,label])=>{
+   const raw=p[field]; if(!raw)return;
+   const d=new Date(String(raw).slice(0,10)+'T00:00:00'); if(isNaN(d))return;
+   if(d<=limit){count++; if(d<today)overdue++;}
+ }));
+ if(count){
+   alertEl.style.display='flex';
+   textEl.textContent=overdue?`${count} scadenze da controllare, ${overdue} già scadute.`:`${count} scadenze entro i prossimi 30 giorni.`;
+ }
 }
 
 async function fillDashboard(){
+ await loadDeadlineAlert();
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
@@ -471,7 +477,6 @@ async function fillDashboard(){
    if(w) w.textContent='—';
    if(d) d.textContent='Prima rilevazione';
  }
- loadDashboardDeadlines();
 }
 
 
@@ -547,11 +552,48 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment"><div class="muted" style="margin-top:6px">Da cellulare puoi fotografare direttamente il certificato.</div><div id="cpCertStatus" class="muted" style="margin-top:8px">Controllo documento...</div><div id="cpCertActions" style="margin-top:8px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div id="cpMsg" class="error"></div>
   <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div>
  </div>`);
+}
+
+async function loadClientCertificate(id){
+ const status=document.getElementById('cpCertStatus'),actions=document.getElementById('cpCertActions');
+ if(!status||!actions)return;
+ status.textContent='Controllo documento...';actions.innerHTML='';
+ try{
+  const r=await db.storage.from('Certificati').list(String(id),{limit:20,sortBy:{column:'created_at',order:'desc'}});
+  if(r.error)throw r.error;
+  const files=(r.data||[]).filter(x=>x&&x.name);
+  if(!files.length){status.textContent='Nessun certificato caricato.';return;}
+  const f=files[0],path=String(id)+'/'+f.name;
+  const sr=await db.storage.from('Certificati').createSignedUrl(path,600);
+  if(sr.error)throw sr.error;
+  status.textContent='Certificato presente: '+f.name;
+  actions.innerHTML=`<a class="btn secondary mini" href="${esc(sr.data?.signedUrl||'#')}" target="_blank" rel="noopener">Apri certificato</a>`;
+ }catch(e){status.textContent='Certificato non disponibile: '+(e?.message||e);}
+}
+async function uploadClientCertificate(id){
+ const input=document.getElementById('cpMedFile'),status=document.getElementById('cpCertStatus');
+ const file=input?.files?.[0];if(!file)return;
+ if(status)status.textContent='Caricamento certificato...';
+ try{
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const ext=(safe.split('.').pop()||'jpg').toLowerCase();
+  const path=String(id)+'/'+Date.now()+'_certificato.'+ext;
+  const r=await db.storage.from('Certificati').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+  if(r.error)throw r.error;
+  input.value='';
+  await loadClientCertificate(id);
+ }catch(e){if(status)status.textContent='Errore caricamento certificato: '+(e?.message||e);}
+}
+function bindCertificateUpload(id){
+ const input=document.getElementById('cpMedFile');
+ if(input)input.addEventListener('change',()=>uploadClientCertificate(id));
+ loadClientCertificate(id);
+ bindCertificateUpload(id);
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
@@ -755,14 +797,79 @@ let workoutExecWakeLock=null;
 function workoutExecClearTimer(){
   if(workoutExecTimer){clearInterval(workoutExecTimer);workoutExecTimer=null;}
 }
+let workoutExecItalianVoice=null;
+function workoutExecPickVoice(){
+  try{
+    if(!('speechSynthesis' in window)) return null;
+    const voices=window.speechSynthesis.getVoices()||[];
+    if(!voices.length)return workoutExecItalianVoice;
+    const it=voices.filter(v=>/^it(?:-|_)/i.test(v.lang||''));
+    // Preferiamo voci naturali/locali: Google/Microsoft/Apple/Samsung, poi la prima italiana disponibile.
+    const preferred=it.find(v=>/Google|Microsoft|Apple|Siri|Samsung|Natural|Neural/i.test(v.name||''))||it[0]||voices.find(v=>/^it/i.test(v.lang||''));
+    if(preferred)workoutExecItalianVoice=preferred;
+    return workoutExecItalianVoice;
+  }catch(_e){return null;}
+}
+if('speechSynthesis' in window){
+  try{window.speechSynthesis.addEventListener('voiceschanged',workoutExecPickVoice);workoutExecPickVoice();}catch(_e){}
+}
+const KLEOS_AUDIO_BASE='https://dicfqbqdbqkyggjezpaz.supabase.co/storage/v1/object/public/Audio/';
+const KLEOS_AUDIO={inizio:'inizio.mp3',via:'via.mp3',uno:'uno.mp3',due:'due.mp3',tre:'tre.mp3',ultimi10:'ultimi-10.mp3',cambio:'cambio.mp3',fineCircuito:'fine-circuito.mp3',fineGiro:'fine-giro.mp3',pausa:'pausa.mp3',riprendi:'riprendi.mp3',stop:'stop.mp3',recupero:'recupero.mp3'};
+const workoutAudioCache={};
+function workoutExecAudioUrl(key){return KLEOS_AUDIO_BASE+encodeURIComponent(KLEOS_AUDIO[key]||'');}
+function workoutExecPlayAudio(key){
+  try{
+    if(!workoutExecState?.voice)return false;
+    const file=KLEOS_AUDIO[key]; if(!file)return false;
+    let a=workoutAudioCache[key];
+    if(!a){a=new Audio(workoutExecAudioUrl(key));a.preload='auto';workoutAudioCache[key]=a;}
+    a.currentTime=0; const pr=a.play(); if(pr&&typeof pr.catch==='function')pr.catch(()=>{});
+    return true;
+  }catch(_e){return false;}
+}
+function workoutExecPreloadAudio(){
+  try{Object.keys(KLEOS_AUDIO).forEach(k=>{const a=new Audio(workoutExecAudioUrl(k));a.preload='auto';workoutAudioCache[k]=a;});}catch(_e){}
+}
 function workoutExecSpeak(text){
   try{
-    if(!workoutExecState?.voice || !('speechSynthesis' in window)) return;
+    if(!workoutExecState?.voice)return;
+    const phrase=String(text||'').trim(); if(!phrase)return;
+    const low=phrase.toLowerCase(); let key=null;
+    if(low==='preparati'||low==='inizia')key='inizio';
+    else if(low.startsWith('via.'))key='via';
+    else if(/^\d+$/.test(low)){
+      const n=Math.round(Number(low));
+      if(n>=1&&n<=50){if(workoutExecPlayNumber(n))return;}
+    }
+    else if(low.startsWith('ripetizione ')){
+      const n=Math.round(Number(low.replace('ripetizione ','').trim()));
+      if(n>=1&&n<=50){if(workoutExecPlayNumber(n))return;}
+    }
+    else if(low==='ultimi 10')key='ultimi10';
+    else if(low.startsWith('serie completata'))key='cambio';
+    else if(low==='prossimo esercizio')key='cambio';
+    else if(low==='workout completato')key='fineCircuito';
+    else if(low.startsWith('recupera '))key='recupero';
+    else if(low.startsWith('serie '))key='inizio';
+    else if(low==='riprendi')key='riprendi';
+    if(key&&workoutExecPlayAudio(key))return;
+    if(!('speechSynthesis' in window))return;
     window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='it-IT'; u.rate=1.05; u.pitch=1;
-    window.speechSynthesis.speak(u);
+    const u=new SpeechSynthesisUtterance(phrase);u.lang='it-IT';u.rate=0.94;u.pitch=1.02;u.volume=1;
+    const v=workoutExecPickVoice();if(v)u.voice=v;window.speechSynthesis.speak(u);
   }catch(_e){}
+}
+function workoutExecPlayNumber(n){
+  const x=Math.round(Number(n)||0);
+  if(x<1||x>50)return false;
+  const key='numero'+x;
+  let a=workoutAudioCache[key];
+  if(!a){a=new Audio(KLEOS_AUDIO_BASE+'numero-'+x+'.mp3');a.preload='auto';workoutAudioCache[key]=a;}
+  try{a.currentTime=0;const pr=a.play();if(pr&&typeof pr.catch==='function')pr.catch(()=>{});return true;}catch(_e){return false;}
+}
+function workoutExecSpeakCountdown(n){
+  const x=Math.round(Number(n)||0);
+  if(x>=1&&x<=50){if(workoutExecPlayNumber(x))return;workoutExecSpeak(String(x));}
 }
 function workoutExecBeep(freq=880,duration=.08){
   try{
@@ -852,6 +959,7 @@ async function startWorkoutExecution(planId,exerciseId){
   workoutExecClearTimer();
   if('speechSynthesis' in window)window.speechSynthesis.cancel();
   workoutExecState={plan:p,exercises:exs,exerciseIndex:idx,exercise:exs[idx],setIndex:1,phase:'ready',remaining:0,elapsed:0,voice:true,completedSets:0,totalSets:exs.reduce((a,x)=>a+Math.max(1,workoutExecNum(x.sets,1)),0)};
+  workoutExecPreloadAudio();
   openModal('');
   workoutExecRender();
   await workoutExecKeepAwake();
@@ -918,6 +1026,7 @@ function workoutExecTick(){
   st.remaining-=dt;
   if(st.phase==='initial'){
     if(st.remaining<=0){workoutExecBeginWork();return;}
+    if(Math.ceil(st.remaining)<=3 && Math.ceil(st.remaining)>0 && Math.abs(st.remaining-Math.round(st.remaining))<0.08) workoutExecSpeakCountdown(Math.ceil(st.remaining));
     workoutExecUpdate();return;
   }
   if(st.phase==='work'){
@@ -932,7 +1041,7 @@ function workoutExecTick(){
         st.repIndex++;
         if(st.repIndex>reps){workoutExecFinishSet();return;}
         st.repRemaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));
-        workoutExecSpeak(String(st.repIndex));
+        if(st.repIndex<=50)workoutExecSpeakCountdown(st.repIndex);
       }
     }
     workoutExecUpdate();return;
@@ -947,7 +1056,8 @@ function workoutExecBeginWork(){
   if(workoutExecTimed(e)){st.remaining=Math.max(1,workoutExecNum(e.duration_seconds,30));}
   else{st.remaining=Math.max(.25,workoutExecNum(e.rep_seconds,2));st.repRemaining=st.remaining;}
   workoutExecBeep(1000,.1);
-  workoutExecSpeak(e.name||'Esercizio');
+  workoutExecSpeak('Via. '+(e.name||'Esercizio'));
+  if(!workoutExecTimed(e))setTimeout(()=>{if(workoutExecState===st&&st.phase==='work')workoutExecSpeakCountdown(1);},350);
   workoutExecUpdate();workoutExecStartTick();
 }
 function workoutExecBeginSet(){
@@ -978,7 +1088,7 @@ function workoutExecFinishSet(){
   workoutExecSpeak('Serie completata');
   if(st.setIndex<totalSets){
     const rest=Math.max(0,workoutExecNum(st.exercise.rest_seconds,60));
-    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecUpdate();workoutExecStartTick();}
+    if(rest>0){st.phase='rest';st.remaining=rest;workoutExecBeep(1200,.12);workoutExecSpeak('Serie completata. Recupera '+Math.round(rest)+' secondi.');workoutExecUpdate();workoutExecStartTick();}
     else workoutExecNextSetOrExercise();
   }else workoutExecNextSetOrExercise();
 }
@@ -1031,6 +1141,7 @@ function workoutExecToggleVoice(){
   st.voice=!st.voice;
   const b=document.getElementById('weVoiceBtn');if(b)b.textContent=st.voice?'🔊 Voce: ON':'🔇 Voce: OFF';
   if(!st.voice&&'speechSynthesis' in window)window.speechSynthesis.cancel();
+  if(!st.voice)Object.values(workoutAudioCache).forEach(a=>{try{a.pause();a.currentTime=0;}catch(_e){}});
 }
 async function closeWorkoutExecution(){
   workoutExecClearTimer();

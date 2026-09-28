@@ -63,7 +63,7 @@
 .loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#080a0d url('kleosfit-login-bg.jpeg') center center/cover no-repeat;position:relative;}
 .loginScreen:before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.64);}
 .loginScreen .loginbox{position:relative;z-index:1;background:rgba(15,17,21,.88);backdrop-filter:blur(10px);box-shadow:0 25px 80px rgba(0,0,0,.5)}
-.loginBack{margin-bottom:12px}
+.loginBack{margin-bottom:12px}.registerHint{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.45}
 @media(max-width:800px){.welcome{justify-content:center;padding:18px;background-position:center}.welcome:before{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}.welcomeContent{padding:26px}.welcomeTitle{font-size:32px}.welcomeBrand{font-size:32px}}
 </style><style>
 .clientBookingHeader h2{font-size:28px;font-weight:900;margin:0 0 8px}
@@ -113,10 +113,11 @@
 <div class="welcomeBrand">KLEOS<span>FIT</span></div><div class="welcomeTag">FITCOACH PRO</div>
 <h1 class="welcomeTitle">Il tuo coach.<br>Sempre con te.</h1>
 <p class="welcomeText">Allenamenti personalizzati, piano nutrizionale e tutto ciò che serve per seguire il tuo percorso in una sola esperienza.</p>
-<div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openLogin()">Inizia ora</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">Accedi</button></div>
+<div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">Registrati</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">Accedi</button></div>
 <div class="welcomeQuote">Train · Evolve · Belong</div>
 </div></div>
-<div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form></div></div><div id="app" class="app hide">
+<div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
+<div id="register" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeRegister()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Prima registrazione</h1><p>Crea il tuo account cliente per accedere a KleosFit Coach Pro.</p><form id="registerForm"><label>Nome e Cognome</label><input id="registerName" type="text" autocomplete="name" required><label>Email</label><input id="registerEmail" type="email" autocomplete="email" required><label>Password</label><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required><label>Conferma Password</label><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="6" required><button class="btn full" type="submit">Crea account</button><div id="registerError" class="error"></div><div id="registerSuccess" class="success" style="display:none"></div></form></div></div><div id="app" class="app hide">
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('qrcodes',this)">▣ <span>QR Code</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
@@ -1403,10 +1404,46 @@ async function saveNutritionMeal(id){
  const payload={meal_type:valOrNull('nmType'),name:valOrNull('nmName'),grams:valOrNull('nmGrams'),sort_order:valOrNull('nmSort'),description:valOrNull('nmDesc')};
  const r=await db.from('nutrition_meals').update(payload).eq('id',id);if(r.error){notice('nmMsg',r.error.message);return}closeModal();await loadNutrition()
 }
-function openLogin(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='flex';setTimeout(()=>document.getElementById('email')?.focus(),50)}
+function openLogin(){document.getElementById('welcome').style.display='none';document.getElementById('register').style.display='none';document.getElementById('login').style.display='flex';setTimeout(()=>document.getElementById('email')?.focus(),50)}
 function closeLogin(){document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='flex'}
+function openRegister(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('register').style.display='flex';setTimeout(()=>document.getElementById('registerName')?.focus(),50)}
+function closeRegister(){document.getElementById('register').style.display='none';document.getElementById('welcome').style.display='flex'}
+function registerMessage(text,isError=false){const er=document.getElementById('registerError'),ok=document.getElementById('registerSuccess');if(er){er.style.display=isError?'block':'none';er.textContent=isError?text:''}if(ok){ok.style.display=!isError&&text?'block':'none';ok.textContent=!isError?text:''}}
+async function register(e){
+ e.preventDefault();
+ registerMessage('');
+ const name=document.getElementById('registerName').value.trim();
+ const email=document.getElementById('registerEmail').value.trim().toLowerCase();
+ const password=document.getElementById('registerPassword').value;
+ const confirm=document.getElementById('registerPasswordConfirm').value;
+ if(!name){registerMessage('Inserisci nome e cognome.',true);return}
+ if(password.length<6){registerMessage('La password deve contenere almeno 6 caratteri.',true);return}
+ if(password!==confirm){registerMessage('Le password non coincidono.',true);return}
+ const btn=document.querySelector('#registerForm button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Creazione account...'}
+ try{
+   const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,name:name,role:'client',user_role:'client'}}});
+   if(error)throw error;
+   // Se la conferma email è disattivata, la sessione è disponibile subito.
+   // In questo caso creiamo/aggiorniamo anche il profilo applicativo come cliente.
+   if(data?.user && data?.session){
+     const pr=await db.from('profiles').upsert({id:data.user.id,full_name:name,email,role:'client',user_role:'client'},{onConflict:'id'}).select('*').maybeSingle();
+     if(pr.error)throw pr.error;
+     currentUser=data.user;profile=pr.data||{full_name:name,email,role:'client',user_role:'client'};
+     document.getElementById('register').style.display='none';
+     document.getElementById('app').classList.remove('hide');
+     await loadProfile();
+     return;
+   }
+   // Se Supabase richiede la conferma email, non tentiamo il login automatico.
+   registerMessage("Registrazione completata. Controlla la tua email per confermare l'account, poi accedi con le tue credenziali.");
+ }catch(err){
+   const msg=String(err?.message||err||'Errore durante la registrazione');
+   registerMessage(msg,true);
+ }finally{if(btn){btn.disabled=false;btn.textContent='Crea account'}}
+}
 async function login(e){e.preventDefault();const er=document.getElementById('error');er.style.display='none';const {data,error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){er.textContent=error.message;er.style.display='block';return}currentUser=data.user;document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
 async function logout(){await db.auth.signOut();location.reload()}
 document.getElementById('loginForm').addEventListener('submit',login);
+document.getElementById('registerForm').addEventListener('submit',register);
 (async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}})();
 </script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();</script></body></html>

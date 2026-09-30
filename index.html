@@ -306,7 +306,7 @@ async function loadNotifRecipients(){
  if(!box)return;
  const r=await db.from('profiles').select('*').limit(1000);
  if(r.error){box.innerHTML='<div class="error">Impossibile caricare i clienti: '+esc(r.error.message)+'</div>';return}
- notifRecipientUsers=(r.data||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
+ notifRecipientUsers=(r.data||[]).filter(u=>String(pick(u,['role'])||'client').toLowerCase()==='client');
  renderNotifRecipients();
 }
 function renderNotifRecipients(){
@@ -389,7 +389,7 @@ async function sendAdminNotification(){
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
  if(!r.error) profile=r.data;
- document.getElementById('role').textContent=(profile?.role||profile?.user_role||'Utente').toString();
+ document.getElementById('role').textContent=(profile?.role||'Utente').toString();
  document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
@@ -468,7 +468,7 @@ async function saveClientAnagrafica(){
  const payload={full_name:valOrNull('myFullName'),birth_date:valOrNull('myBirth'),fiscal_code:valOrNull('myFiscal'),email:valOrNull('myEmail'),phone:valOrNull('myPhone'),address:valOrNull('myAddress'),city:valOrNull('myCity')};
  const r=await db.from('profiles').update(payload).eq('id',currentUser.id).select('*').maybeSingle();
  if(r.error||!r.data){if(msg){msg.className='error';msg.textContent='Errore salvataggio: '+(r.error?.message||'modifica non autorizzata')};return}
- profile=Object.assign(profile||{},r.data); document.getElementById('role').textContent=(profile.role||profile.user_role||'Utente').toString();
+ profile=Object.assign(profile||{},r.data); document.getElementById('role').textContent=(profile.role||'Utente').toString();
  if(msg){msg.className='';msg.textContent='Dati salvati correttamente.';msg.style.display='block'}
 }
 async function loadAnagrafica(){
@@ -477,7 +477,7 @@ async function loadAnagrafica(){
  err.style.display='none';list.innerHTML='Caricamento...';
  const r=await db.from('profiles').select('*').limit(500);
  if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
- anagraficaData=(r.data||[]).filter(p=>['client','cliente'].includes(String(pick(p,['role','user_role'])||'client').toLowerCase()));
+ anagraficaData=(r.data||[]).filter(p=>['client','cliente'].includes(String(pick(p,['role'])||'client').toLowerCase()));
  renderAnagrafica(anagraficaData);
 }
 function renderAnagrafica(rows){
@@ -503,7 +503,7 @@ function renderClients(rows){
  count.textContent=rows.length+' profili';
  if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th>Ruolo</th><th></th></tr></thead><tbody>'+
- rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role','user_role']))}</span></td><td><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button></td></tr>`}).join('')+
+ rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button></td></tr>`}).join('')+
  '</tbody></table></div>';
 }
 function clientName(p){return profileDisplayName(p)||'Cliente'}
@@ -680,7 +680,7 @@ function profileEmail(u){return u?pick(u,['email','contact_email'])||'':''}
 function populateWorkoutUserFilter(rows){
  const s=document.getElementById('workoutUserFilter');if(!s)return;
  const current=s.value||'';
- const clients=(rows||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
+ const clients=(rows||[]).filter(u=>String(pick(u,['role'])||'client').toLowerCase()==='client');
  s.innerHTML='<option value="">Tutti gli utenti</option>'+clients.map(u=>`<option value="${esc(u.id)}">${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('');
  if(clients.some(u=>u.id===current))s.value=current;
 }
@@ -826,9 +826,9 @@ function renderAdminReservations(rows,slots){
  list.innerHTML=`<div class="card"><div class="bookingResultHead"><h2 style="margin:0">Prenotazioni</h2><span class="pill">${sorted.length} risultati</span></div><div class="tableWrap"><table class="table bookingAdminTable"><thead><tr><th>DATA</th><th>ORARIO</th><th>ATTIVITÀ</th><th>ATLETA</th><th>STATO</th></tr></thead><tbody>${sorted.map(b=>{const sl=slots.find(x=>String(x.id)===String(pick(b,['slot_id','lesson_slot_id']))),d=bookingDateForRow(b,sl);return `<tr><td><b>${esc(d?d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'—')}</b></td><td><b>${esc(bookingTimes(sl,b))}</b></td><td><span class="bookingActivity">${esc(bookingActivity(sl,b))}</span></td><td>${esc(bookingAthleteName(b))}</td><td><span class="pill">${esc(pick(b,['status','state','booking_status'])||'attiva')}</span></td></tr>`}).join('')}</tbody></table></div></div>`;
 }
 
-function isClientRole(){const r=String(profile?.role||profile?.user_role||'').toLowerCase();return r==='client'||r==='cliente';}
+function isClientRole(){const r=String(profile?.role||'').toLowerCase();return r==='client'||r==='cliente';}
 function isSuperuserRole(){
- const r=String(profile?.role||profile?.user_role||'').toLowerCase().trim();
+ const r=String(profile?.role||'').toLowerCase().trim();
  return ['admin','administrator','amministratore','superuser'].includes(r);
 }
 function canViewClientProgress(){return isClientRole()&&!!currentUser?.id;}
@@ -1279,7 +1279,7 @@ function renderAdmin(rows){
  const list=document.getElementById('adminList'),count=document.getElementById('adminCount');if(!list)return;
  count.textContent=rows.length+' profili';
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Tessera</th><th>Telefono</th><th>Creato</th></tr></thead><tbody>'+
- rows.map(p=>`<tr><td><b>${esc(pick(p,['full_name','name'])||[p.first_name,p.last_name].filter(Boolean).join(' ')||'—')}</b></td><td>${esc(pick(p,['email','contact_email']))}</td><td><span class="pill">${esc(pick(p,['role','user_role']))}</span></td><td>${esc(pick(p,['member_card','card_number','tessera','member_code']))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(fmtDate(p.created_at))}</td></tr>`).join('')+
+ rows.map(p=>`<tr><td><b>${esc(pick(p,['full_name','name'])||[p.first_name,p.last_name].filter(Boolean).join(' ')||'—')}</b></td><td>${esc(pick(p,['email','contact_email']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td>${esc(pick(p,['member_card','card_number','tessera','member_code']))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(fmtDate(p.created_at))}</td></tr>`).join('')+
  '</tbody></table></div>';
 }
 function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();renderAdmin(!q?adminData:adminData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
@@ -1289,7 +1289,7 @@ function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.tex
 async function editWorkoutPlan(id){
  if(!canEditWorkout()){alert('La scheda workout è in sola visualizzazione per il cliente.');return;}
  const p=workoutsData.find(x=>x.id===id);if(!p)return;
- const clients=(usersData||[]).filter(u=>String(pick(u,['role','user_role'])||'client').toLowerCase()==='client');
+ const clients=(usersData||[]).filter(u=>String(pick(u,['role'])||'client').toLowerCase()==='client');
  const opts='<option value="">— Nessun cliente —</option>'+clients.map(u=>`<option value="${esc(u.id)}" ${p.user_id===u.id?'selected':''}>${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('');
  openModal(`<div class="modalhead"><h2>Modifica scheda</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Cliente / Utente assegnato</label><select id="wpUser">${opts}</select></div><div class="wide"><label>Titolo</label><input id="wpTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="wpDesc" value="${esc(p.description||'')}"></div></div><div class="checkrow"><label><input id="wpActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attiva</label><label><input id="wpVisible" type="checkbox" ${p.is_visible!==false?'checked':''}> Visibile</label></div><div id="wpMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveWorkoutPlan('${id}')">Salva</button></div>`)
 }
@@ -1420,14 +1420,14 @@ async function register(e){
  if(password!==confirm){registerMessage('Le password non coincidono.',true);return}
  const btn=document.querySelector('#registerForm button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Creazione account...'}
  try{
-   const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,name:name,role:'client',user_role:'client'}}});
+   const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,name:name,role:'client'}}});
    if(error)throw error;
    // Se la conferma email è disattivata, la sessione è disponibile subito.
    // In questo caso creiamo/aggiorniamo anche il profilo applicativo come cliente.
    if(data?.user && data?.session){
-     const pr=await db.from('profiles').upsert({id:data.user.id,full_name:name,email,role:'client',user_role:'client'},{onConflict:'id'}).select('*').maybeSingle();
+     const pr=await db.from('profiles').upsert({id:data.user.id,full_name:name,email,role:'client'},{onConflict:'id'}).select('*').maybeSingle();
      if(pr.error)throw pr.error;
-     currentUser=data.user;profile=pr.data||{full_name:name,email,role:'client',user_role:'client'};
+     currentUser=data.user;profile=pr.data||{full_name:name,email,role:'client'};
      document.getElementById('register').style.display='none';
      document.getElementById('app').classList.remove('hide');
      await loadProfile();

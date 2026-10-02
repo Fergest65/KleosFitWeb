@@ -59,7 +59,12 @@
 .clientPriceDescription{font-size:14px;line-height:1.4;color:#d8dbe2;margin-top:8px}
 @media(max-width:900px){.clientPriceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.clientPriceGrid{grid-template-columns:1fr}.clientPriceCard{min-height:145px}}
-</style>
+<style>
+.qrManagementBox{display:grid;grid-template-columns:130px 1fr;gap:18px;align-items:center;border:1px solid #2b2f38;border-radius:14px;background:#0d0f13;padding:14px}
+.qrManagementBox .qrBox{background:#fff;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;min-height:116px}
+.qrTokenText{font-size:12px;color:#c4ff3d;word-break:break-all;margin-top:5px}
+@media(max-width:600px){.qrManagementBox{grid-template-columns:1fr}.qrManagementBox .qrBox{justify-self:center}}
+</style></style>
 </style>
 </style>
 </style>
@@ -529,7 +534,31 @@ function renderClients(rows){
 }
 function clientName(p){return profileDisplayName(p)||'Cliente'}
 function clientCardNumber(p){return pick(p,['member_card_number','member_card','card_number','tessera','member_code'])||''}
-function clientQrValue(p){const card=clientCardNumber(p);return card?`KLEOSFIT|TESSERA|${card}`:`KLEOSFIT|PROFILE|${p.id}`}
+function clientQrValue(p){
+ const token=String(p?.qr_token||'').trim();
+ if(token)return `KLEOSFIT|QR|${token}`;
+ const card=clientCardNumber(p);
+ return card?`KLEOSFIT|TESSERA|${card}`:`KLEOSFIT|PROFILE|${p.id}`;
+}
+function generateQrToken(){
+ const raw=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));
+ return raw.replace(/-/g,'').toUpperCase();
+}
+async function regenerateClientQr(id){
+ if(!isSuperuserRole())return;
+ const p=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
+ if(!p)return;
+ if(!confirm('Generare un nuovo QR Code? Il QR Code precedente non sarà più valido.'))return;
+ const token=generateQrToken();
+ const r=await db.from('profiles').update({qr_token:token}).eq('id',id).select('*').maybeSingle();
+ if(r.error){alert('Errore generazione QR: '+r.error.message);return;}
+ if(r.data){
+   Object.assign(p,r.data);
+   const c=(clientsData||[]).find(x=>String(x.id)===String(id)); if(c)Object.assign(c,r.data);
+   const a=(anagraficaData||[]).find(x=>String(x.id)===String(id)); if(a)Object.assign(a,r.data);
+ }
+ openClientSheet(id);
+}
 function dateInputValue(v){if(!v)return ''; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:''}
 function openClientSheet(id){
  const p=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
@@ -544,6 +573,20 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
+   <div class="qrManagementBox">
+    <div id="sheetQr_${String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')}" class="qrBox"></div>
+    <div>
+     <div class="small">QR attuale</div>
+     <div class="qrTokenText">${esc(clientQrValue(p))}</div>
+     <div class="qrActions">
+      <button class="btn secondary mini" type="button" onclick="regenerateClientQr('${p.id}')">Genera nuovo QR / Rigenera</button>
+      <button class="btn secondary mini" type="button" onclick="printQrCard('${p.id}')">Stampa QR</button>
+     </div>
+     <div class="muted" style="margin-top:8px">Rigenerando il QR, quello precedente non sarà più valido.</div>
+    </div>
+   </div>
+  </div>
   <div id="cpMsg" class="error"></div>
   <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div>
  </div>`);
@@ -564,6 +607,7 @@ function openClientSheet(id){
      if(info)info.textContent='Abbonamento personalizzato: il costo può essere inserito manualmente.';
    }
  });
+ setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
@@ -591,7 +635,7 @@ function openAdminQr(id){
    <div id="adminQr_${safeId}" class="qrBox"></div>
    <div class="clientCardInfo"><strong>${esc(name)}</strong><div class="member">${esc(card||'Tessera non assegnata')}</div><div class="small">${esc(profileEmail(p)||'')} ${p.phone?' · '+esc(p.phone):''}</div>
    <div class="small" style="margin-top:10px">Valore QR: <b>${esc(value)}</b></div>
-   <div class="qrActions"><button class="btn" onclick="printQrCard('${p.id}')">Stampa QR</button><button class="btn secondary" onclick="openClientSheet('${p.id}')">Scheda cliente</button></div></div></div>`;
+   <div class="qrActions"><button class="btn" onclick="printQrCard('${p.id}')">Stampa QR</button><button class="btn secondary" onclick="regenerateClientQr('${p.id}')">Rigenera QR</button><button class="btn secondary" onclick="openClientSheet('${p.id}')">Scheda cliente</button></div></div></div>`;
  modal.classList.add('open');
  setTimeout(()=>drawQrInto(document.getElementById('adminQr_'+safeId),p),20);
 }

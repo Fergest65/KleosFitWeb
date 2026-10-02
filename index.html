@@ -524,17 +524,28 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Prezzo abbonamento predefinito</label><select id="cpPreset" onchange="applySubscriptionPreset(this.value)"><option value="">— Seleziona un prezzo predefinito —</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Puoi anche lasciare vuoto e inserire un prezzo personalizzato.</div></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}"></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div id="cpMsg" class="error"></div>
   <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div>
  </div>`);
  ensureSubscriptionPricesLoaded().then(()=>{
-   const sel=document.getElementById('cpPreset');if(!sel)return;
+   const sel=document.getElementById('cpSubType');if(!sel)return;
    const match=findMatchingSubscriptionPreset(p);
-   sel.innerHTML='<option value="">— Seleziona un prezzo predefinito —</option>'+(subscriptionPricePresets||[]).filter(x=>x.active!==false).map(x=>subscriptionPresetOption(x,match?.id)).join('');
-   if(match){sel.value=String(match.id);const info=document.getElementById('cpPresetInfo');if(info)info.textContent=`Prezzo predefinito: € ${Number(match.price||0).toFixed(2).replace('.',',')} · ${match.duration_months||1} ${Number(match.duration_months)===1?'mese':'mesi'}`;}
+   const activePresets=(subscriptionPricePresets||[]).filter(x=>x.active!==false);
+   sel.innerHTML='<option value="">— Seleziona tipo abbonamento —</option>'+
+     activePresets.map(x=>`<option value="${esc(String(x.id))}">${esc(x.name||'Abbonamento')} — € ${Number(x.price||0).toFixed(2).replace('.',',')} / ${Number(x.duration_months||1)===1?'1 mese':String(x.duration_months)+' mesi'}</option>`).join('')+
+     '<option value="__custom__">Prezzo personalizzato</option>';
+   if(match){
+     sel.value=String(match.id);
+     const info=document.getElementById('cpPresetInfo');
+     if(info)info.textContent=`Prezzo predefinito: € ${Number(match.price||0).toFixed(2).replace('.',',')} · ${match.duration_months||1} ${Number(match.duration_months)===1?'mese':'mesi'}`;
+   }else if(p.subscription_type){
+     sel.value='__custom__';
+     const info=document.getElementById('cpPresetInfo');
+     if(info)info.textContent='Abbonamento personalizzato: il costo può essere inserito manualmente.';
+   }
  });
 }
 
@@ -1363,7 +1374,7 @@ async function ensureSubscriptionPricesLoaded(){
 function applySubscriptionPreset(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));if(!p)return;
  const type=document.getElementById('cpSubType'),cost=document.getElementById('cpCost');
- if(type)type.value=p.name||'';
+ if(type && String(type.value)!==String(id))type.value=String(id);
  if(cost)cost.value=Number(p.price||0).toFixed(2);
  const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
  if(from&&to&&p.duration_months){
@@ -1374,6 +1385,16 @@ function applySubscriptionPreset(id){
  }
  const info=document.getElementById('cpPresetInfo');
  if(info)info.textContent=`Prezzo predefinito: € ${Number(p.price||0).toFixed(2).replace('.',',')} · ${p.duration_months||1} ${Number(p.duration_months)===1?'mese':'mesi'}`;
+}
+
+function applySubscriptionType(id){
+ const sel=document.getElementById('cpSubType');
+ if(id==='__custom__'){
+   const info=document.getElementById('cpPresetInfo');
+   if(info)info.textContent='Prezzo personalizzato: inserisci manualmente il costo dell’abbonamento.';
+   return;
+ }
+ if(id) applySubscriptionPreset(id);
 }
 
 async function loadClientPayments(){

@@ -535,28 +535,17 @@ function renderClients(rows){
 function clientName(p){return profileDisplayName(p)||'Cliente'}
 function clientCardNumber(p){return pick(p,['member_card_number','member_card','card_number','tessera','member_code'])||''}
 function clientQrValue(p){
- const token=String(p?.qr_token||'').trim();
- if(token)return `KLEOSFIT|QR|${token}`;
- const card=clientCardNumber(p);
- return card?`KLEOSFIT|TESSERA|${card}`:`KLEOSFIT|PROFILE|${p.id}`;
-}
-function generateQrToken(){
- const raw=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));
- return raw.replace(/-/g,'').toUpperCase();
+ // Formato compatibile con il parser del tornello KLEOSFIT.
+ // Il tornello legge l'ID del profilo e poi recupera i dati aggiornati da Supabase.
+ return JSON.stringify({id:String(p.id),attivo:"SI"});
 }
 async function regenerateClientQr(id){
  if(!isSuperuserRole())return;
  const p=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(!p)return;
- if(!confirm('Generare un nuovo QR Code? Il QR Code precedente non sarà più valido.'))return;
- const token=generateQrToken();
- const r=await db.from('profiles').update({qr_token:token}).eq('id',id).select('*').maybeSingle();
- if(r.error){alert('Errore generazione QR: '+r.error.message);return;}
- if(r.data){
-   Object.assign(p,r.data);
-   const c=(clientsData||[]).find(x=>String(x.id)===String(id)); if(c)Object.assign(c,r.data);
-   const a=(anagraficaData||[]).find(x=>String(x.id)===String(id)); if(a)Object.assign(a,r.data);
- }
+ if(!confirm('Rigenerare il QR Code del cliente? Il QR sarà ricreato nel formato compatibile con il tornello.'))return;
+ // Non modifichiamo l'ID del profilo: è l'identificativo usato dal tornello per cercare il cliente in Supabase.
+ // La rigenerazione ricrea quindi il QR con il payload ufficiale del tornello.
  openClientSheet(id);
 }
 function dateInputValue(v){if(!v)return ''; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:''}

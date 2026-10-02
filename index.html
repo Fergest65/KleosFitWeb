@@ -56,6 +56,7 @@
 .clientPriceDuration{font-size:14px;color:#a8adb9;margin-top:5px}
 .clientPriceAmount{font-size:34px;font-weight:900;color:#c4ff3d;margin-top:15px}
 .clientPriceReadonly{font-size:11px;color:#747b88;margin-top:5px;text-transform:uppercase;letter-spacing:1px}
+.clientPriceDescription{font-size:14px;line-height:1.4;color:#d8dbe2;margin-top:8px}
 @media(max-width:900px){.clientPriceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.clientPriceGrid{grid-template-columns:1fr}.clientPriceCard{min-height:145px}}
 </style>
@@ -1420,7 +1421,7 @@ async function loadClientPriceList(){
  if(status)status.textContent='Caricamento listino...';
  box.innerHTML='';
  const r=await db.from('subscription_price_presets')
-   .select('id,name,plan_type,duration_months,price,sort_order,active')
+   .select('id,name,plan_type,duration_months,price,description,sort_order,active')
    .eq('active',true)
    .order('sort_order',{ascending:true})
    .order('duration_months',{ascending:true})
@@ -1441,6 +1442,7 @@ async function loadClientPriceList(){
      <div class="clientPriceName">${esc(x.name||'Abbonamento')}</div>
      <div class="clientPriceDuration">${esc(durata)}</div>
      <div class="clientPriceAmount">€ ${Number(x.price||0).toFixed(2).replace('.',',')}</div>
+     <div class="clientPriceDescription">${esc(x.description || (String(x.plan_type||'').toLowerCase()==='plus' ? 'Include l’abbonamento standard più un secondo corso a scelta.' : 'Abbonamento secondo listino KLEOSFIT.'))}</div>
      <div class="clientPriceReadonly">Prezzo di listino</div>
    </div>`;
  }).join('')+'</div>';

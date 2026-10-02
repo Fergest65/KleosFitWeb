@@ -121,6 +121,7 @@ const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[],bookingProfiles=[];
+let subscriptionPricePresets=[];
 const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
@@ -201,7 +202,7 @@ rampTimer:`<div class="top"><div><div class="title">Cronometro RAMP</div><div cl
 myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
- <button type="button">Prezzi abbonamenti</button>
+ <button type="button" onclick="show('subscriptionPrices')">Prezzi abbonamenti</button>
  <button type="button" onclick="show('slotAdmin')">Gestione slot</button>
  <button type="button">Prenotazioni</button>
  <button type="button">Progressi</button>
@@ -210,6 +211,8 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('anagrafica')">Anagrafica</button>
  <button type="button">Circuiti</button>
 </div>`,
+subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti</div><div class="sub">Gestisci i prezzi predefiniti che possono essere selezionati nella scheda anagrafica del cliente.</div></div><button class="btn" type="button" onclick="openSubscriptionPriceModal()">＋ Nuovo prezzo</button></div>
+<div class="card"><div id="subscriptionPricesError" class="error"></div><div id="subscriptionPricesStatus" class="muted">Caricamento prezzi...</div><div id="subscriptionPricesList" style="margin-top:14px">Caricamento...</div></div>`,
 };
 let rampSequence=[],rampIndex=0,rampRemaining=0,rampRunning=false,rampPaused=false,rampLast=0,rampFrame=0;
 function rampNum(id,min,max){const v=Number(document.getElementById(id)?.value);return Math.max(min,Math.min(max,Number.isFinite(v)?v:min));}
@@ -222,7 +225,7 @@ function rampStart(){if(!rampSequence.length)rampBuild();if(rampIndex>=rampSeque
 function rampPause(){if(rampRunning){rampRunning=false;rampPaused=true;document.getElementById('rampTimerStatus').textContent='In pausa';}else if(rampPaused){rampRunning=true;rampPaused=false;rampLast=0;rampFrame=requestAnimationFrame(rampTick);}}
 function rampTick(t){if(!rampRunning)return;if(!rampLast)rampLast=t;rampRemaining-=(t-rampLast)/1000;rampLast=t;if(rampRemaining<=0){rampIndex++;if(rampIndex>=rampSequence.length){rampRunning=false;rampRemaining=0;document.getElementById('rampTimerPhase').textContent='COMPLETO';document.getElementById('rampTimerStatus').textContent='Allenamento terminato';rampUpdate();return;}rampRemaining=rampSequence[rampIndex].d;}rampUpdate();rampFrame=requestAnimationFrame(rampTick);}
 function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices')&&!isSuperuserRole()) return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  document.getElementById('content').innerHTML=views[v];
@@ -243,6 +246,7 @@ function show(v,el){
  if(v==='progress')loadClientProgress();
  if(v==='admin')loadAdmin();
  if(v==='superuser'&&!isSuperuserRole()) return;
+ if(v==='subscriptionPrices')loadSubscriptionPrices();
 }
 const VAPID_PUBLIC_KEY='BF3sh9vV60FkOEH-lMcvI8Dl8vZsImpfm2WVwFBmSKx9uPcwythx0Mx-it4nTwobAs0JxNjyi5z0pElYegZorU4';
 function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
@@ -520,12 +524,18 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Prezzo abbonamento predefinito</label><select id="cpPreset" onchange="applySubscriptionPreset(this.value)"><option value="">— Seleziona un prezzo predefinito —</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Puoi anche lasciare vuoto e inserire un prezzo personalizzato.</div></div><div><label>Tipo abbonamento</label><input id="cpSubType" value="${esc(p.subscription_type||'')}"></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div id="cpMsg" class="error"></div>
   <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div>
  </div>`);
+ ensureSubscriptionPricesLoaded().then(()=>{
+   const sel=document.getElementById('cpPreset');if(!sel)return;
+   const match=findMatchingSubscriptionPreset(p);
+   sel.innerHTML='<option value="">— Seleziona un prezzo predefinito —</option>'+(subscriptionPricePresets||[]).filter(x=>x.active!==false).map(x=>subscriptionPresetOption(x,match?.id)).join('');
+   if(match){sel.value=String(match.id);const info=document.getElementById('cpPresetInfo');if(info)info.textContent=`Prezzo predefinito: € ${Number(match.price||0).toFixed(2).replace('.',',')} · ${match.duration_months||1} ${Number(match.duration_months)===1?'mese':'mesi'}`;}
+ });
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
@@ -1266,6 +1276,103 @@ async function loadClientProgress(){
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend">↗</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
  const cols=['Data',...progressDefs.map(x=>x[0]),'Note'];
  table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
+}
+
+function subscriptionPresetLabel(p){
+ const duration=p.duration_months?`${p.duration_months} ${p.duration_months===1?'mese':'mesi'}`:'';
+ return [p.name,p.plan_type,duration].filter(Boolean).join(' · ');
+}
+function subscriptionPresetOption(p,selectedId){
+ return `<option value="${esc(p.id)}" ${String(p.id)===String(selectedId||'')?'selected':''}>${esc(subscriptionPresetLabel(p))} — € ${Number(p.price||0).toFixed(2).replace('.',',')}</option>`;
+}
+async function loadSubscriptionPrices(){
+ if(!isSuperuserRole())return;
+ const list=document.getElementById('subscriptionPricesList'),status=document.getElementById('subscriptionPricesStatus'),err=document.getElementById('subscriptionPricesError');
+ if(!list)return;
+ if(err){err.style.display='none';err.textContent=''}
+ list.innerHTML='Caricamento...'; if(status)status.textContent='Caricamento prezzi predefiniti...';
+ const r=await db.from('subscription_price_presets').select('*').order('sort_order',{ascending:true}).order('duration_months',{ascending:true}).order('name',{ascending:true});
+ if(r.error){
+   subscriptionPricePresets=[];
+   if(err){err.textContent='Tabella prezzi non disponibile: '+r.error.message;err.style.display='block'}
+   if(status)status.textContent='Per attivare la funzione crea la tabella Supabase indicata nelle istruzioni.';
+   list.innerHTML='';
+   return;
+ }
+ subscriptionPricePresets=(r.data||[]);
+ renderSubscriptionPrices();
+}
+function renderSubscriptionPrices(){
+ const list=document.getElementById('subscriptionPricesList'),status=document.getElementById('subscriptionPricesStatus');if(!list)return;
+ const rows=subscriptionPricePresets||[];
+ if(status)status.textContent=rows.length+(rows.length===1?' prezzo predefinito':' prezzi predefiniti');
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun prezzo configurato. Premi “＋ Nuovo prezzo”.</div>';return}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Piano</th><th>Durata</th><th>Prezzo</th><th>Stato</th><th></th></tr></thead><tbody>'+
+ rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(p.duration_months||'—')} mesi</td><td><b>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div></td></tr>`).join('')+
+ '</tbody></table></div>';
+}
+function openSubscriptionPriceModal(id){
+ const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id))||{};
+ openModal(`<div class="modalhead"><h2>${id?'Modifica prezzo':'Nuovo prezzo abbonamento'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+ <div class="formgrid">
+  <div class="wide"><label>Nome abbonamento</label><input id="spName" placeholder="es. Funzionale, Trimestrale Standard..." value="${esc(p.name||'')}"></div>
+  <div><label>Tipo piano</label><select id="spPlan"><option value="Corso" ${p.plan_type==='Corso'?'selected':''}>Corso</option><option value="Standard" ${p.plan_type==='Standard'?'selected':''}>Standard</option><option value="Plus" ${p.plan_type==='Plus'?'selected':''}>Plus</option><option value="Personalizzato" ${p.plan_type==='Personalizzato'?'selected':''}>Personalizzato</option></select></div>
+  <div><label>Durata (mesi)</label><input id="spMonths" type="number" min="1" step="1" value="${esc(p.duration_months??1)}"></div>
+  <div><label>Prezzo (€)</label><input id="spPrice" type="number" min="0" step="0.01" value="${esc(p.price??60)}"></div>
+  <div><label>Ordine visualizzazione</label><input id="spSort" type="number" min="0" step="1" value="${esc(p.sort_order??0)}"></div>
+ </div>
+ <div class="checkrow"><label><input id="spActive" type="checkbox" ${p.active!==false?'checked':''}> Prezzo attivo e selezionabile</label></div>
+ <div id="spMsg" class="error"></div>
+ <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveSubscriptionPrice(${id?`'${id}'`:'null'})">Salva</button></div>`);
+}
+async function saveSubscriptionPrice(id){
+ const payload={
+  name:valOrNull('spName'),
+  plan_type:valOrNull('spPlan'),
+  duration_months:Math.max(1,Number(document.getElementById('spMonths')?.value||1)),
+  price:Math.max(0,Number(document.getElementById('spPrice')?.value||0)),
+  sort_order:Number(document.getElementById('spSort')?.value||0),
+  active:document.getElementById('spActive')?.checked!==false
+ };
+ if(!payload.name){notice('spMsg','Inserisci il nome dell’abbonamento.');return}
+ const r=id?await db.from('subscription_price_presets').update(payload).eq('id',id):await db.from('subscription_price_presets').insert(payload);
+ if(r.error){notice('spMsg','Errore salvataggio: '+r.error.message);return}
+ closeModal();await loadSubscriptionPrices();
+}
+async function deleteSubscriptionPrice(id){
+ if(!confirm('Eliminare questo prezzo predefinito?'))return;
+ const r=await db.from('subscription_price_presets').delete().eq('id',id);
+ if(r.error){alert('Errore eliminazione: '+r.error.message);return}
+ await loadSubscriptionPrices();
+}
+function findMatchingSubscriptionPreset(p){
+ const type=String(p?.subscription_type||'').trim().toLowerCase();
+ const cost=Number(p?.subscription_cost);
+ return (subscriptionPricePresets||[]).find(x=>{
+   const name=String(x.name||'').trim().toLowerCase();
+   const price=Number(x.price);
+   return type && name===type && Number.isFinite(cost) && Math.abs(price-cost)<0.01;
+ }) || (subscriptionPricePresets||[]).find(x=>type&&String(x.name||'').trim().toLowerCase()===type) || null;
+}
+async function ensureSubscriptionPricesLoaded(){
+ if(subscriptionPricePresets?.length)return;
+ const r=await db.from('subscription_price_presets').select('*').eq('active',true).order('sort_order',{ascending:true}).order('name',{ascending:true});
+ if(!r.error)subscriptionPricePresets=r.data||[];
+}
+function applySubscriptionPreset(id){
+ const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));if(!p)return;
+ const type=document.getElementById('cpSubType'),cost=document.getElementById('cpCost');
+ if(type)type.value=p.name||'';
+ if(cost)cost.value=Number(p.price||0).toFixed(2);
+ const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
+ if(from&&to&&p.duration_months){
+   const start=from.value?new Date(from.value+'T12:00:00'):new Date();
+   if(!from.value)from.value=start.toISOString().slice(0,10);
+   const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);
+   to.value=end.toISOString().slice(0,10);
+ }
+ const info=document.getElementById('cpPresetInfo');
+ if(info)info.textContent=`Prezzo predefinito: € ${Number(p.price||0).toFixed(2).replace('.',',')} · ${p.duration_months||1} ${Number(p.duration_months)===1?'mese':'mesi'}`;
 }
 
 async function loadClientPayments(){

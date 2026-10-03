@@ -436,15 +436,32 @@ async function checkSubscriptionExpiryNotice(){
  const expiry=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
  const today=new Date(); today.setHours(0,0,0,0);
  const diff=Math.round((expiry-today)/86400000);
- if(diff===10){
+ // Avvisa da 10 giorni prima fino al giorno precedente alla scadenza.
+ // In questo modo, se il cliente non apre l'app esattamente al giorno -10,
+ // riceve comunque l'avviso al successivo accesso.
+ if(diff>0 && diff<=10){
    const d=expiry.toLocaleDateString('it-IT');
-   text.textContent='Il tuo abbonamento scadrà tra 10 giorni ('+d+'). Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.';
+   const giorni=diff===1?'1 giorno':diff+' giorni';
+   text.textContent='Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.';
    box.style.display='block';
    if('Notification' in window && Notification.permission==='granted'){
-     const key='kleosfit-expiry-10-'+currentUser.id+'-'+raw;
+     const key='kleosfit-expiry-'+currentUser.id+'-'+raw;
      if(localStorage.getItem(key)!=='1'){
-       try{const reg=await navigator.serviceWorker?.ready;if(reg)await reg.showNotification('KLEOSFIT — Scadenza abbonamento',{body:'Il tuo abbonamento scadrà tra 10 giorni ('+d+'). Ricordati di rinnovarlo.',icon:'/icon-192.png',badge:'/icon-192.png',tag:'kleosfit-expiry-10'});else new Notification('KLEOSFIT — Scadenza abbonamento',{body:'Il tuo abbonamento scadrà tra 10 giorni ('+d+'). Ricordati di rinnovarlo.'});}catch(e){}
-       localStorage.setItem(key,'1');
+       let shown=false;
+       try{
+         if('serviceWorker' in navigator){
+           const reg=await navigator.serviceWorker.ready;
+           if(reg){
+             await reg.showNotification('KLEOSFIT — Scadenza abbonamento',{body:'Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Ricordati di rinnovarlo.',icon:'/icon-192.png',badge:'/icon-192.png',tag:'kleosfit-expiry'});
+             shown=true;
+           }
+         }
+         if(!shown){
+           new Notification('KLEOSFIT — Scadenza abbonamento',{body:'Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Ricordati di rinnovarlo.'});
+           shown=true;
+         }
+       }catch(e){}
+       if(shown)localStorage.setItem(key,'1');
      }
    }
  }else box.style.display='none';
@@ -501,6 +518,15 @@ async function loadProfile(){
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
+function fmtDateIT(v){
+ if(!v)return '—';
+ const s=String(v).trim();
+ const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+ if(m)return `${m[3]}/${m[2]}/${m[1]}`;
+ const d=new Date(s);
+ if(!Number.isNaN(d.getTime()))return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+ return s;
+}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
 let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
 
@@ -1726,8 +1752,8 @@ async function loadClientPayments(){
      currentBox.textContent='Impossibile leggere l’abbonamento attuale.';
    }else{
      const p=pr.data;
-     const from=p.subscription_paid_from?dateInputValue(p.subscription_paid_from):'—';
-     const to=p.subscription_paid_to?dateInputValue(p.subscription_paid_to):'—';
+     const from=p.subscription_paid_from?fmtDateIT(p.subscription_paid_from):'—';
+     const to=p.subscription_paid_to?fmtDateIT(p.subscription_paid_to):'—';
      const total=p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',');
      const active=p.subscription_active===false?'Non attivo':'Attivo';
      const plus=p.subscription_plus_course?` · ${esc(p.subscription_plus_course)} + € ${Number(p.subscription_plus_cost||0).toFixed(2).replace('.',',')}`:'';
@@ -1743,7 +1769,7 @@ async function loadClientPayments(){
  const toVal=x=>x.paid_to;
  const amountVal=x=>x.amount;
  const noteVal=x=>x.note;
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fromVal(x)||'—')} → ${esc(toVal(x)||'—')}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fmtDateIT(fromVal(x)))} → ${esc(fmtDateIT(toVal(x)))}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
 }
 
 async function loadAdmin(){

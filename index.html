@@ -1008,56 +1008,48 @@ function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));
 function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
 async function loadWorkouts(){
- const list=document.getElementById('workoutList'),err=document.getElementById('workoutError'),count=document.getElementById('workoutCount');if(!list)return;
- err.style.display='none';list.innerHTML='Caricamento schede...';count.textContent='Caricamento...';
+  const err=document.getElementById('workoutError');
+  const list=document.getElementById('workoutList');
+  const count=document.getElementById('workoutCount');
+  if(err)err.textContent='';
+  if(list)list.innerHTML='Caricamento schede...';
 
- const workoutSelect=`
-     id,user_id,title,description,is_active,is_visible,created_at,
-     workout_exercises (
-       id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,duration_seconds,
-       muscle_group,equipment,focus,image_url,rest_seconds,sort_order
-     )
-   `;
- let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
- // Il cliente può solo visualizzare la propria scheda: non deve vedere né modificare le schede degli altri.
- if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
- const [r,pr,lr]=await Promise.all([
-   workoutQuery,
-   db.from('profiles').select('*').limit(1000),
-   db.from('exercise_library').select('*').limit(1000)
- ]);
- if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
+  try{
+    // Carica le schede senza join Supabase: i join falliscono se la FK/schema
+    // della versione corrente non coincide.
+    const r=await db.from('workout_plans').select('*').order('created_at',{ascending:false});
+    if(r.error)throw r.error;
 
- usersData=pr.error?[]:(pr.data||[]);
- populateWorkoutUserFilter(usersData);
+    workoutsData=r.data||[];
 
- const byUser={};
- usersData.forEach(u=>{byUser[u.id]=u});
- const byExerciseName={};
- if(!lr.error){
-   (lr.data||[]).forEach(x=>{
-     const n=firstVal(x,['name','exercise_name','title','nome']);
-     if(n){ byExerciseName[String(n).trim().toLowerCase()]=x; byExerciseName[normalizeExerciseKey(n)]=x; }
-   });
- }
- const plans=r.data||[];
- workoutsData=plans.map(p=>({
-   ...p,
-   user_profile:byUser[p.user_id]||null,
-   workout_exercises:(Array.isArray(p.workout_exercises)?p.workout_exercises:[]).map(e=>{
-     const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||byExerciseName[normalizeExerciseKey(e.name)]||null;
-     const merged={...e, exercise_library:lib};
-     return {...merged, image_url:getExerciseImageUrl(merged)};
-   })
- }));
+    // Recupera i profili separatamente per mostrare il cliente.
+    const ids=[...new Set(workoutsData.map(x=>x.user_id).filter(Boolean))];
+    const users={};
+    if(ids.length){
+      const u=await db.from('profiles').select('*').in('id',ids);
+      if(!u.error)(u.data||[]).forEach(p=>{users[p.id]=p});
+    }
+    workoutUsers=users;
 
- // Gli esercizi vengono letti tramite la relazione Supabase workout_plans -> workout_exercises.
- // Non assumiamo il nome della colonna FK, perché nella tabella reale non si chiama workout_plan_id.
- if(r.data && r.data.some(p=>!Array.isArray(p.workout_exercises))){
-   err.textContent='Alcune schede non hanno restituito gli esercizi dalla relazione Supabase.';
-   err.style.display='block';
- }
- renderWorkouts(workoutsData);
+    // Aggiunge il profilo direttamente a ogni scheda: il renderer usa
+    // user_profile e non deve dipendere da una relazione Supabase.
+    workoutsData=workoutsData.map(p=>({...p,user_profile:users[p.user_id]||null}));
+
+    if(count)count.textContent=`${workoutsData.length} schede`;
+    populateWorkoutUserFilter(Object.values(users));
+    filterWorkouts();
+
+    // Carica gli esercizi in modo indipendente; un errore qui non deve
+    // bloccare la visualizzazione delle schede.
+    if(typeof loadWorkoutExercises==='function'){
+      try{await loadWorkoutExercises();}catch(e){console.warn('Esercizi:',e)}
+    }
+  }catch(e){
+    console.error('loadWorkouts',e);
+    if(err)err.textContent='Errore caricamento schede: '+(e.message||e);
+    if(count)count.textContent='0 schede';
+    if(list)list.innerHTML='';
+  }
 }
 
 // Immagini esercizi: comportamento allineato all'app Android.
@@ -1155,13 +1147,17 @@ function renderWorkouts(rows){
  }).join('');
 }
 function filterWorkouts(){
- const q=(document.getElementById('workoutSearch')?.value||'').toLowerCase().trim();
- const uid=document.getElementById('workoutUserFilter')?.value||'';
- const rows=workoutsData.filter(p=>{
-  const hay=[p.title,p.description,p.user_id,profileDisplayName(p.user_profile),profileEmail(p.user_profile),...(p.workout_exercises||[]).flatMap(e=>[e.name,e.muscle_group,e.equipment,e.exercise_type])].map(v=>String(v||'').toLowerCase()).join(' ');
-  return (!q||hay.includes(q))&&(!uid||p.user_id===uid);
- });
- renderWorkouts(rows);
+  const q=(document.getElementById('workoutSearch')?.value||'').toLowerCase().trim();
+  const uid=document.getElementById('workoutUserFilter')?.value||'';
+  const rows=(workoutsData||[]).filter(w=>{
+    const u=w.user_profile||workoutUsers?.[w.user_id]||{};
+    const hay=[
+      w.name,w.title,w.description,w.notes,w.goal,
+      u.first_name,u.last_name,u.email,u.nome,u.cognome
+    ].filter(Boolean).join(' ').toLowerCase();
+    return (!q||hay.includes(q))&&(!uid||String(w.user_id)===String(uid));
+  });
+  renderWorkouts(rows);
 }
 
 function showWorkoutDetail(id){
@@ -1377,18 +1373,9 @@ function bookingAthleteName(b){
  }
  return 'Atleta non trovato';
 }
-function bookingDateForRow(b,sl){
-  if(sl)return parseSlotDate(sl);
-  return parseAnySlotDate(pick(b,['booking_slot_date','date','booking_date','scheduled_date','starts_at','created_at']));
-}
-function bookingActivity(sl,b){
-  if(sl)return sl.lesson_name||sl.title||slotTitle(sl);
-  return pick(b,['booking_slot_lesson_name','lesson_name','lesson_type','activity','activity_name','category','title'])||'Lezione';
-}
-function bookingTimes(sl,b){
-  if(sl){const st=slotTimeText(sl),en=slotEndTimeText(sl);return st+(en&&en!==st?' - '+en:'')}
-  return pick(b,['booking_slot_time','time','starts_at','start_time','booking_time'])||'—';
-}
+function bookingDateForRow(b,sl){return sl?parseSlotDate(sl):parseAnySlotDate(pick(b,['date','booking_date','scheduled_date','starts_at','created_at']))}
+function bookingActivity(sl,b){return sl?slotTitle(sl):pick(b,['lesson_type','lesson_name','activity','activity_name','category','title'])||'Lezione'}
+function bookingTimes(sl,b){if(sl){const st=slotTimeText(sl),en=slotEndTimeText(sl);return st+(en&&en!==st?' - '+en:'')}return pick(b,['time','starts_at','start_time','booking_time'])||'—'}
 function bookingDateInputValue(d){return d&&Number.isFinite(d.getTime())?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:''}
 function clearBookingDateRange(){const a=document.getElementById('bookingDateFrom'),b=document.getElementById('bookingDateTo');if(a)a.value='';if(b)b.value='';filterBookings()}
 function renderAdminReservations(rows,slots){
@@ -1682,7 +1669,8 @@ function renderBookings(rows,slots=bookingSlots){
     const d=parseSlotDate(sl),st=slotTimeText(sl),en=slotEndTimeText(sl),booked=slotBooked(sl,rows),cap=slotCapacity(sl),coach=pick(sl,['coach','coach_name','trainer']);
     const time=en&&en!==st?st+'-'+en:(st||'--:--');
     return `<div class="slotAdminCard" data-slot-id="${esc(sl.id)}">
-      <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(adminDay(sl))}</span> <span>${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span> <strong style="color:#c6ff35;margin-left:10px">${esc(sl.lesson_name||sl.title||sl.lesson_type||"Lezione")}</strong> <span style="color:#aeb6c4">· ${esc(sl.lesson_type||'')}</span> <span class="slotAdminTime">${esc(time)}</span></div>
+      <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(adminDay(sl))}</span> <span>${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span> <span class="slotAdminTime">${esc(time)}</span></div>
+      <div style="font-size:20px;font-weight:900;color:#c6ff35;margin-top:5px">${esc(sl.lesson_name||sl.title||sl.lesson_type||'NOME LEZIONE DA DEFINIRE')}</div>
       <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} - max cliente ${esc(durationAdmin(sl))} - ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
       <div class="slotAdminActions"><button type="button" class="slotAdminBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp; ELIMINA</button></div>
     </div>`;
@@ -1797,58 +1785,6 @@ window.filterSlotDelete=filterSlotDelete;
 window.deleteSingleSlot=deleteSingleSlot;
 window.clearSlotDeleteFilters=clearSlotDeleteFilters;
 
-
-/* Pulizia automatica degli slot scaduti.
-   Le prenotazioni vengono conservate: prima si scollega lo slot dalla
-   prenotazione e solo dopo si elimina la riga dello slot. Se il database
-   non consente di scollegarla, lo slot viene lasciato intatto per non perdere
-   la prenotazione. */
-async function cleanupExpiredLessonSlots(){
-  try{
-    const today=isoLocal(new Date());
-    const r=await db.from('lesson_slots').select('*').lt('date',today).limit(2000);
-    if(r.error || !r.data?.length)return;
-
-    for(const sl of r.data){
-      const d=rawLessonDate(sl);
-      if(!d || d >= new Date(today+'T00:00:00'))continue;
-
-      // Prima salviamo nella prenotazione i dati dello slot.
-      const br=await db.from('lesson_bookings').select('id,slot_id').eq('slot_id',sl.id);
-      if(br.error)continue;
-
-      const bookings=br.data||[];
-      if(bookings.length){
-        const snapshot={
-          booking_slot_date:sl.date||null,
-          booking_slot_time:sl.time||null,
-          booking_slot_lesson_name:sl.lesson_name||sl.title||sl.lesson_type||null,
-          booking_slot_lesson_type:sl.lesson_type||null,
-          booking_slot_coach:sl.coach||null
-        };
-        const up=await db.from('lesson_bookings')
-          .update(snapshot)
-          .eq('slot_id',sl.id);
-        if(up.error){
-          console.warn('Impossibile salvare lo storico dello slot '+sl.id,up.error);
-          continue;
-        }
-
-        // slot_id viene reso NULL dal vincolo ON DELETE SET NULL.
-        // Non cancelliamo manualmente la prenotazione.
-      }
-
-      // Lo slot scaduto deve sparire sempre.
-      const del=await db.from('lesson_slots').delete().eq('id',sl.id);
-      if(del.error){
-        console.warn('Impossibile eliminare slot scaduto '+sl.id,del.error);
-      }
-    }
-  }catch(e){
-    console.warn('Pulizia slot scaduti:',e);
-  }
-}
-
 async function loadSlotAdmin(){
  await ensureFutureLessonSlots();
  const list=document.getElementById('slotAdminList'),err=document.getElementById('slotAdminError');
@@ -1885,8 +1821,6 @@ async function loadSlotAdmin(){
   if(typeof loadStandardSlots==='function') await loadStandardSlots();
 }
 setInterval(()=>ensureFutureLessonSlots(), 10*60*1000);
-setInterval(()=>cleanupExpiredLessonSlots(), 10*60*1000);
-
 function filterSlotAdmin(){
  const q=(document.getElementById('slotAdminSearch')?.value||'').toLowerCase().trim();
  const rows=!q?bookingSlots:bookingSlots.filter(sl=>JSON.stringify(sl).toLowerCase().includes(q));
@@ -1904,13 +1838,7 @@ function renderSlotAdmin(rows,slots){
    const k=[String(sl.date||'').slice(0,10),String(sl.time||'').trim(),
      String(sl.lesson_type||'').trim().toLowerCase(),String(sl.coach||'').trim().toLowerCase()].join('|');
    if(seenReal.has(k))return false;
-   seenReal.add(k);
-   if(!selected)return true;
-   const categories=[
-     sl?.lesson_type, sl?.category, sl?.lesson_name, sl?.title, sl?.description
-   ].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='')
-    .map(v=>String(v).trim().toLowerCase());
-   return categories.some(v=>v===selected || v.includes(selected) || selected.includes(v));
+   seenReal.add(k); return !selected||String(slotTitle(sl)||'').toLowerCase().includes(selected);
  }).sort((a,b)=>{
    const da=parseSlotDate(a)?.getTime()||0,dbv=parseSlotDate(b)?.getTime()||0;
    if(da!==dbv)return da-dbv;

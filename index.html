@@ -566,7 +566,7 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><input id="cpPlusCourse" value="${esc(p.subscription_plus_course||'')}" placeholder="Solo per Plus"></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><select id="cpPlusCourse">${plusCourseOptions(p.subscription_plus_course||'')}</select></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -602,8 +602,25 @@ function openClientSheet(id){
      const info=document.getElementById('cpPresetInfo');
      if(info)info.textContent='Abbonamento personalizzato: il costo può essere inserito manualmente.';
    }
+   setPlusCourseSelect('cpPlusCourse',p.subscription_plus_course||'');
+   toggleClientPlusFields();
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
+ // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
+ setTimeout(()=>{
+   const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
+   if(!from || !to)return;
+   const syncDates=()=>{
+     if(from.value){
+       to.min=from.value;
+       if(to.value && to.value<from.value) to.value=from.value;
+     }else{ to.removeAttribute('min'); }
+     if(to.value) from.max=to.value; else from.removeAttribute('max');
+   };
+   from.addEventListener('change',syncDates);
+   to.addEventListener('change',syncDates);
+   syncDates();
+ },30);
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
@@ -1380,6 +1397,24 @@ function renderSubscriptionPrices(){
  rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(p.duration_months||'—')} mesi</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div></td></tr>`).join('')+
  '</tbody></table></div>';
 }
+const PLUS_COURSES=['Calistenico','Funzionale','HIIT','Circuito'];
+function plusCourseOptions(selected=''){
+ const value=String(selected||'');
+ return '<option value="">— Seleziona corso aggiuntivo —</option>'+PLUS_COURSES.map(c=>`<option value="${esc(c)}" ${c===value?'selected':''}>${esc(c)}</option>`).join('')+'<option value="__custom__" '+(value && !PLUS_COURSES.includes(value)?'selected':'')+'>Altro</option>';
+}
+function toggleClientPlusFields(){
+ const sel=document.getElementById('cpSubType');
+ const preset=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(sel?.value));
+ const isPlus=String(preset?.plan_type||'').toLowerCase()==='plus' || String(sel?.value||'').toLowerCase()==='plus';
+ const course=document.getElementById('cpPlusCourse');
+ const extra=document.getElementById('cpPlusCost');
+ [course,extra].forEach(e=>{if(e){e.disabled=!isPlus;e.parentElement.style.opacity=isPlus?'1':'.55';}});
+}
+function setPlusCourseSelect(id,value){
+ const el=document.getElementById(id); if(!el)return;
+ el.innerHTML=plusCourseOptions(value);
+ if(value && !PLUS_COURSES.includes(value)){el.value='__custom__';}
+}
 function subscriptionPresetTotal(p){const base=Number(p?.price||0),extra=String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;return Math.max(0,base+extra);}
 function subscriptionPresetExtra(p){return String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;}
 function openSubscriptionPriceModal(id){
@@ -1390,7 +1425,7 @@ function openSubscriptionPriceModal(id){
   <div><label>Tipo piano</label><select id="spPlan" onchange="togglePlusPriceFields()"><option value="Corso" ${p.plan_type==='Corso'?'selected':''}>Corso</option><option value="Standard" ${p.plan_type==='Standard'?'selected':''}>Standard</option><option value="Plus" ${p.plan_type==='Plus'?'selected':''}>Plus</option><option value="Personalizzato" ${p.plan_type==='Personalizzato'?'selected':''}>Personalizzato</option></select></div>
   <div><label>Durata (mesi)</label><input id="spMonths" type="number" min="1" step="1" value="${esc(p.duration_months??1)}"></div>
   <div><label>Prezzo base (€)</label><input id="spPrice" type="number" min="0" step="0.01" value="${esc(p.price??60)}"></div>
-  <div id="spPlusCourseWrap" class="wide" style="${p.plan_type==='Plus'?'':'display:none'}"><label>Corso aggiuntivo Plus</label><input id="spPlusCourse" placeholder="es. Calistenico, HIIT..." value="${esc(p.plus_course_name||'')}"></div>
+  <div id="spPlusCourseWrap" class="wide" style="${p.plan_type==='Plus'?'':'display:none'}"><label>Corso aggiuntivo Plus</label><select id="spPlusCourse">${plusCourseOptions(p.plus_course_name||'')}</select></div>
   <div id="spPlusExtraWrap" style="${p.plan_type==='Plus'?'':'display:none'}"><label>Supplemento Plus (€)</label><input id="spPlusExtra" type="number" min="0" step="0.01" value="${esc(p.plus_extra_price??0)}"></div>
   <div><label>Ordine visualizzazione</label><input id="spSort" type="number" min="0" step="1" value="${esc(p.sort_order??0)}"></div>
  </div>

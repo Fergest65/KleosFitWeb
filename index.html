@@ -449,6 +449,45 @@ async function checkSubscriptionExpiryNotice(){
  }else box.style.display='none';
 }
 
+let clientProfileSyncChannel=null;
+let clientProfileSyncTimer=null;
+let clientProfileSyncBound=false;
+
+async function refreshCurrentClientProfile(){
+ if(!currentUser?.id || !isClientRole())return;
+ const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+ if(r.error||!r.data)return;
+ profile=r.data;
+ const nameEl=document.getElementById('dashboardUserName');
+ if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
+ await checkSubscriptionExpiryNotice();
+ if(typeof fillDashboard==='function')await fillDashboard();
+}
+
+function setupClientProfileSync(){
+ if(!currentUser?.id || !isClientRole() || clientProfileSyncBound)return;
+ clientProfileSyncBound=true;
+ // Aggiornamento in tempo reale quando il Superuser modifica il profilo.
+ try{
+   clientProfileSyncChannel=db.channel('kleosfit-profile-'+String(currentUser.id))
+     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles',filter:'id=eq.'+String(currentUser.id)},payload=>{
+       if(payload?.new){
+         profile=payload.new;
+         const nameEl=document.getElementById('dashboardUserName');
+         if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
+         checkSubscriptionExpiryNotice();
+         if(typeof fillDashboard==='function')fillDashboard();
+       }
+     })
+     .subscribe();
+ }catch(e){}
+ // Fallback: aggiorna periodicamente anche se Realtime non è abilitato sulla tabella profiles.
+ const refresh=()=>{if(document.visibilityState==='visible')refreshCurrentClientProfile();};
+ document.addEventListener('visibilitychange',refresh);
+ window.addEventListener('pageshow',refresh);
+ clientProfileSyncTimer=setInterval(refresh,30000);
+}
+
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
  if(!r.error) profile=r.data;
@@ -456,7 +495,8 @@ async function loadProfile(){
  document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
- checkSubscriptionExpiryNotice();
+ await checkSubscriptionExpiryNotice();
+ setupClientProfileSync();
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}

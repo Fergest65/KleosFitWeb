@@ -46,6 +46,10 @@
 .superuserMenuGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
 .superuserMenuGrid button{min-height:82px;border:1px solid #2b2f38;border-radius:18px;background:#111318;color:#fff;font-size:25px;font-weight:900;cursor:pointer}
 .superuserMenuGrid button:hover{border-color:#c4ff3d}
+.plusCourseOption{box-sizing:border-box}
+.plusCourseOption input{flex:0 0 auto;width:18px;height:18px;margin:0}
+.plusCourseOption span{display:block;text-align:left;line-height:1.35}
+
 @media(max-width:700px){.superuserMenuGrid{grid-template-columns:1fr}.superuserMenuGrid button{min-height:68px;font-size:21px}}
 .side{padding-bottom:calc(8px + env(safe-area-inset-bottom));height:calc(78px + env(safe-area-inset-bottom))}.main{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
 <style>
@@ -146,6 +150,7 @@ const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null,profile=null,usersData=[],exerciseLibraryData=[],bookingProfiles=[];
 let subscriptionPricePresets=[];
+let courseCatalog=[];
 const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
@@ -229,6 +234,7 @@ myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div cl
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
  <button type="button" onclick="show('subscriptionPrices')">Prezzi abbonamenti</button>
+ <button type="button" onclick="show('courseCatalog')">Gestione corsi</button>
  <button type="button" onclick="show('slotAdmin')">Gestione slot</button>
  <button type="button">Prenotazioni</button>
  <button type="button">Progressi</button>
@@ -239,6 +245,8 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
 </div>`,
 subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti</div><div class="sub">Gestisci i prezzi predefiniti che possono essere selezionati nella scheda anagrafica del cliente.</div></div><button class="btn" type="button" onclick="openSubscriptionPriceModal()">＋ Nuovo prezzo</button></div>
 <div class="card"><div id="subscriptionPricesError" class="error"></div><div id="subscriptionPricesStatus" class="muted">Caricamento prezzi...</div><div id="subscriptionPricesList" style="margin-top:14px">Caricamento...</div></div>`,
+courseCatalog:`<div class="top"><div><div class="title">Gestione corsi</div><div class="sub">Gestisci i corsi disponibili come abbonamento base o come corso aggiuntivo Plus.</div></div><button class="btn" type="button" onclick="openCourseCatalogModal()">＋ Nuovo corso</button></div>
+<div class="card"><div id="courseCatalogError" class="error"></div><div id="courseCatalogStatus" class="muted">Caricamento corsi...</div><div id="courseCatalogList" style="margin-top:14px">Caricamento...</div></div>`,
 };
 let rampSequence=[],rampIndex=0,rampRemaining=0,rampRunning=false,rampPaused=false,rampLast=0,rampFrame=0;
 function rampNum(id,min,max){const v=Number(document.getElementById(id)?.value);return Math.max(min,Math.min(max,Number.isFinite(v)?v:min));}
@@ -251,7 +259,7 @@ function rampStart(){if(!rampSequence.length)rampBuild();if(rampIndex>=rampSeque
 function rampPause(){if(rampRunning){rampRunning=false;rampPaused=true;document.getElementById('rampTimerStatus').textContent='In pausa';}else if(rampPaused){rampRunning=true;rampPaused=false;rampLast=0;rampFrame=requestAnimationFrame(rampTick);}}
 function rampTick(t){if(!rampRunning)return;if(!rampLast)rampLast=t;rampRemaining-=(t-rampLast)/1000;rampLast=t;if(rampRemaining<=0){rampIndex++;if(rampIndex>=rampSequence.length){rampRunning=false;rampRemaining=0;document.getElementById('rampTimerPhase').textContent='COMPLETO';document.getElementById('rampTimerStatus').textContent='Allenamento terminato';rampUpdate();return;}rampRemaining=rampSequence[rampIndex].d;}rampUpdate();rampFrame=requestAnimationFrame(rampTick);}
 function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
@@ -276,6 +284,7 @@ function show(v,el){
  if(v==='admin')loadAdmin();
  if(v==='superuser'&&!isSuperuserRole()) return;
  if(v==='subscriptionPrices')loadSubscriptionPrices();
+ if(v==='courseCatalog')loadCourseCatalog();
 }
 const VAPID_PUBLIC_KEY='BF3sh9vV60FkOEH-lMcvI8Dl8vZsImpfm2WVwFBmSKx9uPcwythx0Mx-it4nTwobAs0JxNjyi5z0pElYegZorU4';
 function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
@@ -628,7 +637,7 @@ function openClientSheet(id){
   <div id="cpMsg" class="error"></div>
   <div class="actions" style="justify-content:space-between;align-items:center"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
  </div>`);
- ensureSubscriptionPricesLoaded().then(()=>{
+ Promise.all([ensureSubscriptionPricesLoaded(),ensureCourseCatalogLoaded()]).then(()=>{
    const sel=document.getElementById('cpSubType');if(!sel)return;
    const match=findMatchingSubscriptionPreset(p);
    const activePresets=(subscriptionPricePresets||[]).filter(x=>x.active!==false && String(x.plan_type||'').toLowerCase()!=='plus');
@@ -1451,28 +1460,84 @@ function parsePlusCourses(p){
  return [{id:null,name:String(raw),cost:Number(p?.subscription_plus_cost||0)}];
 }
 function selectedPlusCourseIds(p){
- const rows=plusCoursePresets();
+ const rows=courseCatalog||[];
  return parsePlusCourses(p).map(x=>{
    if(x.id)return String(x.id);
-   const hit=rows.find(r=>String(r.plus_course_name||r.name||'').trim().toLowerCase()===String(x.name||'').trim().toLowerCase());
+   const hit=rows.find(r=>String(r.name||'').trim().toLowerCase()===String(x.name||'').trim().toLowerCase());
    return hit?String(hit.id):'';
  }).filter(Boolean);
 }
 function plusCoursePresets(){
- return (subscriptionPricePresets||[]).filter(x=>x.active!==false && String(x.plan_type||'').toLowerCase()==='plus');
+ return (courseCatalog||[]).filter(x=>x.active!==false);
 }
 function plusCourseOptionsHtml(p){
  const selected=selectedPlusCourseIds(p||{}), ids=new Set(selected.map(String));
  const rows=plusCoursePresets();
- const legacy=parsePlusCourses(p||{}).filter(x=>!selected.includes(String(x.id||'')) && !rows.some(r=>String(r.plus_course_name||r.name||'').trim().toLowerCase()===String(x.name||'').trim().toLowerCase()));
+ const legacy=parsePlusCourses(p||{}).filter(x=>!selected.includes(String(x.id||'')) && !rows.some(r=>String(r.name||'').trim().toLowerCase()===String(x.name||'').trim().toLowerCase()));
  let html=rows.map(x=>{
    const id=String(x.id), checked=ids.has(id);
-   const name=x.plus_course_name||x.name||'Corso Plus', extra=subscriptionPresetExtra(x);
-   return `<label class="plusCourseOption" style="display:flex;align-items:center;justify-content:flex-start;width:100%;gap:10px;margin:4px 0;padding:6px 8px;cursor:pointer;text-align:left"><input type="checkbox" class="cpPlusCourseCheck" value="${esc(id)}" data-name="${esc(name)}" data-cost="${extra}" ${checked?'checked':''} onchange="updateClientSubscriptionTotal()"><span>${esc(name)} <b>+ € ${extra.toFixed(2).replace('.',',')}</b></span></label>`;
+   const name=x.name||'Corso', extra=Math.max(0,Number(x.plus_extra_price||0));
+   return `<label class="plusCourseOption" style="display:flex;align-items:center;justify-content:flex-start;width:100%;gap:10px;margin:4px 0;padding:6px 8px;cursor:pointer;text-align:left"><input type="checkbox" class="cpPlusCourseCheck" value="${esc(id)}" data-name="${esc(name)}" data-cost="${extra}" ${checked?'checked':''} onchange="updateClientSubscriptionTotal()"><span style="flex:1">${esc(name)} <b>+ € ${extra.toFixed(2).replace('.',',')}</b></span></label>`;
  }).join('');
- html+=legacy.map(x=>{const name=String(x.name||'Corso Plus'),extra=Math.max(0,Number(x.cost||0));return `<label class="plusCourseOption" style="display:flex;align-items:center;justify-content:flex-start;width:100%;gap:10px;margin:4px 0;padding:6px 8px;cursor:pointer;text-align:left"><input type="checkbox" class="cpPlusCourseCheck" value="legacy:${esc(name)}" data-name="${esc(name)}" data-cost="${extra}" checked onchange="updateClientSubscriptionTotal()"><span>${esc(name)} <b>+ € ${extra.toFixed(2).replace('.',',')}</b> <small>(storico)</small></span></label>`}).join('');
- if(!html)html='<div class="muted">Nessun corso Plus configurato nel listino. Crea un prezzo di tipo Plus nel Superuser.</div>';
+ html+=legacy.map(x=>{const name=String(x.name||'Corso Plus'),extra=Math.max(0,Number(x.cost||0));return `<label class="plusCourseOption" style="display:flex;align-items:center;justify-content:flex-start;width:100%;gap:10px;margin:4px 0;padding:6px 8px;cursor:pointer;text-align:left"><input type="checkbox" class="cpPlusCourseCheck" value="legacy:${esc(name)}" data-name="${esc(name)}" data-cost="${extra}" checked onchange="updateClientSubscriptionTotal()"><span style="flex:1">${esc(name)} <b>+ € ${extra.toFixed(2).replace('.',',')}</b> <small>(storico)</small></span></label>`}).join('');
+ if(!html)html='<div class="muted">Nessun corso aggiuntivo configurato. Vai in Superuser → Gestione corsi.</div>';
  return html;
+}
+async function ensureCourseCatalogLoaded(){
+ if(courseCatalog?.length)return courseCatalog;
+ const r=await db.from('course_catalog').select('*').order('sort_order',{ascending:true}).order('name',{ascending:true});
+ if(!r.error)courseCatalog=r.data||[]; else courseCatalog=[];
+ return courseCatalog;
+}
+async function loadCourseCatalog(){
+ if(!isSuperuserRole())return;
+ const list=document.getElementById('courseCatalogList'),status=document.getElementById('courseCatalogStatus'),err=document.getElementById('courseCatalogError');
+ if(!list)return;
+ if(err){err.style.display='none';err.textContent='';}
+ list.innerHTML='Caricamento...'; if(status)status.textContent='Caricamento corsi...';
+ const r=await db.from('course_catalog').select('*').order('sort_order',{ascending:true}).order('name',{ascending:true});
+ if(r.error){courseCatalog=[];if(err){err.textContent='Tabella corsi non disponibile: '+r.error.message+' — esegui lo SQL fornito per creare course_catalog.';err.style.display='block';}if(status)status.textContent='';list.innerHTML='';return;}
+ courseCatalog=r.data||[];renderCourseCatalog();
+}
+function renderCourseCatalog(){
+ const list=document.getElementById('courseCatalogList'),status=document.getElementById('courseCatalogStatus');if(!list)return;
+ const rows=courseCatalog||[]; if(status)status.textContent=rows.length+(rows.length===1?' corso':' corsi');
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun corso configurato. Premi “＋ Nuovo corso”.</div>';return;}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Corso</th><th>Supplemento Plus</th><th>Ordine</th><th>Stato</th><th></th></tr></thead><tbody>'+rows.map(x=>`<tr><td><b>${esc(x.name||'—')}</b></td><td>€ ${Number(x.plus_extra_price||0).toFixed(2).replace('.',',')}</td><td>${esc(x.sort_order??0)}</td><td><span class="pill">${x.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openCourseCatalogModal('${x.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteCourseCatalog('${x.id}')">Elimina</button></div></td></tr>`).join('')+'</tbody></table></div>';
+}
+function openCourseCatalogModal(id){
+ const c=(courseCatalog||[]).find(x=>String(x.id)===String(id))||{};
+ openModal(`<div class="modalhead"><h2>${id?'Modifica corso':'Nuovo corso'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Nome corso</label><input id="ccName" value="${esc(c.name||'')}" placeholder="es. Calistenico"></div><div><label>Supplemento Plus (€)</label><input id="ccPlus" type="number" min="0" step="0.01" value="${esc(c.plus_extra_price??0)}"></div><div><label>Ordine visualizzazione</label><input id="ccSort" type="number" min="0" step="1" value="${esc(c.sort_order??0)}"></div></div><div class="checkrow"><label><input id="ccActive" type="checkbox" ${c.active!==false?'checked':''}> Corso attivo e selezionabile</label></div><div id="ccMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCourseCatalog(${id?`'${id}'`:'null'})">Salva</button></div>`);
+}
+async function saveCourseCatalog(id){
+ const name=valOrNull('ccName'); if(!name){notice('ccMsg','Inserisci il nome del corso.');return;}
+ const payload={name,plus_extra_price:Math.max(0,Number(document.getElementById('ccPlus')?.value||0)),sort_order:Number(document.getElementById('ccSort')?.value||0),active:document.getElementById('ccActive')?.checked!==false};
+ const r=id?await db.from('course_catalog').update(payload).eq('id',id):await db.from('course_catalog').insert(payload);
+ if(r.error){notice('ccMsg','Errore salvataggio: '+r.error.message);return;}
+ closeModal(); courseCatalog=[]; await loadCourseCatalog();
+}
+async function deleteCourseCatalog(id){
+ const c=(courseCatalog||[]).find(x=>String(x.id)===String(id)); if(!c)return;
+ if(!confirm('Eliminare il corso "'+String(c.name||'')+'" dal catalogo? I clienti che lo hanno già nello storico manterranno il riferimento salvato.'))return;
+ const r=await db.from('course_catalog').delete().eq('id',id);
+ if(r.error){alert('Errore eliminazione: '+r.error.message);return;}
+ courseCatalog=[]; await loadCourseCatalog();
+}
+function updateClientSubscriptionTotal(){
+ const cost=document.getElementById('cpCost');if(!cost)return;
+ let base=Number(cost.dataset.baseCost);
+ if(!Number.isFinite(base)){base=Number(cost.value||0);cost.dataset.baseCost=String(base);}
+ let extra=0;
+ document.querySelectorAll('.cpPlusCourseCheck:checked').forEach(x=>{extra+=Math.max(0,Number(x.dataset.cost||0));});
+ const plusCost=document.getElementById('cpPlusCost');if(plusCost)plusCost.value=extra.toFixed(2);
+ cost.value=(Math.max(0,base)+extra).toFixed(2);
+ const info=document.getElementById('cpPresetInfo');
+ if(info){const baseLabel=base.toFixed(2).replace('.',','), total=(base+extra).toFixed(2).replace('.',',');info.innerHTML=`Base € ${baseLabel} + Plus € ${extra.toFixed(2).replace('.',',')} = <b>Totale € ${total}</b>`;}
+}
+function renderPlusCourseSelection(p){
+ const box=document.getElementById('cpPlusCourses');if(!box)return;
+ box.innerHTML=plusCourseOptionsHtml(p);
+ updateClientSubscriptionTotal();
 }
 function updateClientSubscriptionTotal(){
  const cost=document.getElementById('cpCost');if(!cost)return;
@@ -1550,10 +1615,6 @@ function applySubscriptionPreset(id){
  const isPlus=String(p.plan_type||'').toLowerCase()==='plus';
  if(type)type.value=String(id);
  if(cost){cost.dataset.baseCost=String(Number(p.price||0));cost.value=Number(p.price||0).toFixed(2);}
- if(isPlus){
-   const checks=document.querySelectorAll('.cpPlusCourseCheck');
-   checks.forEach(x=>{x.checked=String(x.value)===String(p.id);});
- }
  updateClientSubscriptionTotal();
  const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
  if(from&&to&&p.duration_months){const start=from.value?new Date(from.value+'T12:00:00'):new Date();if(!from.value)from.value=start.toISOString().slice(0,10);const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);to.value=end.toISOString().slice(0,10);}

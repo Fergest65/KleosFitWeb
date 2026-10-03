@@ -489,6 +489,26 @@ async function checkSubscriptionRenewalNotice(){
  showSubscriptionRenewalPopup(row);
 }
 
+// Il rinnovo viene scritto nello storico subito dopo l'aggiornamento del profilo.
+// Realtime può quindi notificare il cliente qualche istante prima che la nuova
+// riga di subscription_payment_history sia disponibile. Eseguiamo alcuni controlli
+// ravvicinati per evitare che il popup compaia solo dopo una chiusura/riapertura completa.
+let subscriptionRenewalWatchTimer=null;
+function scheduleSubscriptionRenewalChecks(){
+ if(!currentUser?.id||!isClientRole())return;
+ [500,1500,3000,6000].forEach(ms=>{
+   setTimeout(()=>{
+     if(document.visibilityState==='visible')checkSubscriptionRenewalNotice();
+   },ms);
+ });
+ // Controllo continuo leggero: se il Superuser modifica/rinnova l'abbonamento
+ // mentre il cliente ha già l'app aperta, il popup viene rilevato senza logout.
+ if(subscriptionRenewalWatchTimer)clearInterval(subscriptionRenewalWatchTimer);
+ subscriptionRenewalWatchTimer=setInterval(()=>{
+   if(document.visibilityState==='visible'&&currentUser?.id&&isClientRole())checkSubscriptionRenewalNotice();
+ },10000);
+}
+
 async function checkSubscriptionExpiryNotice(){
  const box=document.getElementById('subscriptionExpiryNotice');
  const text=document.getElementById('subscriptionExpiryNoticeText');
@@ -546,6 +566,7 @@ async function refreshCurrentClientProfile(){
  if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
  await checkSubscriptionExpiryNotice();
  await checkSubscriptionRenewalNotice();
+ scheduleSubscriptionRenewalChecks();
  if(typeof fillDashboard==='function')await fillDashboard();
 }
 
@@ -562,6 +583,7 @@ function setupClientProfileSync(){
          if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
          checkSubscriptionExpiryNotice();
          checkSubscriptionRenewalNotice();
+         scheduleSubscriptionRenewalChecks();
          if(typeof fillDashboard==='function')fillDashboard();
        }
      })
@@ -583,6 +605,7 @@ async function loadProfile(){
  show('dashboard',document.querySelector('.nav button'));
  await checkSubscriptionExpiryNotice();
  await checkSubscriptionRenewalNotice();
+ scheduleSubscriptionRenewalChecks();
  setupClientProfileSync();
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -870,11 +893,9 @@ async function saveClientSheet(id){
      const oldAmount=oldSub.cost;
      const match=rows.find(x=>same(x.paid_from,oldSub.from)&&same(x.paid_to,oldSub.to)&&((oldAmount==null&&x.amount==null)||(oldAmount!=null&&Number(x.amount)===Number(oldAmount))));
      const historyPayload={profile_id:id,paid_from:newSub.from||null,paid_to:newSub.to||null,amount:newSub.cost==null?null:Number(newSub.cost),note:newSub.type||'Abbonamento'};
-     if(match){
-       const ur=await db.from('subscription_payment_history').update(historyPayload).eq('id',match.id).select('id').maybeSingle();
-       if(ur.error)throw ur.error;
-       historyId=match.id;
-     }else if(newSub.type||newSub.from||newSub.to||newSub.cost!=null){
+     // Ogni rinnovo/modifica dell'abbonamento crea una nuova riga con un nuovo UUID.
+     // In questo modo il cliente può riconoscere senza ambiguità un nuovo rinnovo.
+     if(newSub.type||newSub.from||newSub.to||newSub.cost!=null){
        const ir=await db.from('subscription_payment_history').insert(historyPayload).select('id').maybeSingle();
        if(ir.error)throw ir.error;
        historyId=ir.data?.id||null;

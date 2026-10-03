@@ -730,26 +730,51 @@ function renderClients(rows){
  count.textContent=rows.length+' profili';
  if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th>Ruolo</th><th></th></tr></thead><tbody>'+
- rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button><button class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina</button></div></td></tr>`}).join('')+
+ rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina</button></div></td></tr>`}).join('')+
  '</tbody></table></div>';
 }
 async function deleteClientCompletely(id){
- if(!isSuperuserRole()){alert('Operazione riservata al Superuser.');return;}
  const p=(clientsData||[]).find(x=>String(x.id)===String(id));
- if(!p)return;
+ if(!p){alert('Cliente non trovato nella lista.');return;}
+ if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser. Ruolo rilevato: '+String(profile?.role||'nessuno'));return;}
  const name=profileDisplayName(p)||p.email||'questo cliente';
- const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo e i dati collegati e, tramite la funzione database dedicata, anche l’account di autenticazione.\n\nQuesta operazione non è reversibile.\n\nContinuare?');
+ const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo, i dati collegati e l’account di autenticazione.\n\nQUESTA OPERAZIONE NON È REVERSIBILE.\n\nContinuare?');
  if(!ok)return;
  const msg=document.getElementById('clientError');
  if(msg){msg.textContent='Eliminazione definitiva in corso...';msg.className='muted';msg.style.display='block'}
  try{
-   const r=await db.rpc('delete_user_completely',{p_user_id:id});
-   if(r.error)throw new Error(r.error.message);
+   if(!db || typeof db.rpc!=='function') throw new Error('Connessione Supabase non disponibile.');
+
+   // Recuperiamo prima i percorsi dei documenti: i file Storage NON possono essere
+   // cancellati con SQL da storage.objects. Devono essere rimossi tramite Storage API.
+   const docs=await db.from('client_documents').select('file_path').eq('profile_id',String(id));
+   if(docs.error) throw new Error('Impossibile leggere i documenti del cliente: '+(docs.error.message||JSON.stringify(docs.error)));
+   const paths=(docs.data||[]).map(x=>String(x.file_path||'').trim()).filter(Boolean);
+
+   // Prima eliminiamo profilo/dati/Auth tramite RPC. La funzione SQL non tocca piu
+   // storage.objects. Poi rimuoviamo i file fisici tramite Storage API.
+   const r=await db.rpc('delete_user_completely',{p_user_id:String(id)});
+   if(r.error) throw new Error(r.error.message||JSON.stringify(r.error));
+
+   if(paths.length){
+     const sr=await db.storage.from('client-documents').remove(paths);
+     if(sr.error){
+       // L'account e i dati DB sono gia stati eliminati: segnaliamo solo l'eventuale
+       // residuo Storage, che puo essere rimosso riprovando l'operazione.
+       console.warn('File Storage non eliminati:',sr.error);
+       alert('Cliente eliminato dal database e da Auth.\n\nATTENZIONE: alcuni file del certificato sono rimasti nello Storage e devono essere rimossi manualmente o con un nuovo tentativo.\n\n'+(sr.error.message||JSON.stringify(sr.error)));
+     }
+   }
+
    clientsData=(clientsData||[]).filter(x=>String(x.id)!==String(id));
    renderClients(clientsData);
    if(msg){msg.textContent='Cliente eliminato definitivamente.';msg.className='success';msg.style.display='block'}
+   alert('Cliente eliminato definitivamente.');
  }catch(e){
-   if(msg){msg.textContent='Eliminazione non eseguita: '+e.message+'\n\nVerifica che la funzione database delete_user_completely sia stata creata in Supabase.';msg.className='error';msg.style.display='block'}
+   const detail=e?.message||String(e);
+   if(msg){msg.textContent='ELIMINAZIONE NON ESEGUITA: '+detail;msg.className='error';msg.style.display='block'}
+   alert('ELIMINAZIONE NON ESEGUITA\n\n'+detail+'\n\nSe la funzione delete_user_completely non è stata creata nel Supabase SQL Editor, esegui il file SQL fornito.');
+   console.error('delete_user_completely:',e);
  }
 }
 function clientName(p){return profileDisplayName(p)||'Cliente'}

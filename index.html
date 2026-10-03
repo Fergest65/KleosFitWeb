@@ -1039,7 +1039,7 @@ async function generateClientCardNumber(){
  }catch(e){alert(e.message||'Errore nella generazione del numero tessera');}
 }
 function openClientSheet(id){
- const p=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
+ const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
  const full=p.full_name||p.name||[p.first_name,p.last_name].filter(Boolean).join(' ');
  const card=clientCardNumber(p);
  const subscriptionFrom=pick(p,['subscription_paid_from']);
@@ -1172,6 +1172,7 @@ async function saveClientSheet(id){
  const updated=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(updated)Object.assign(updated,r.data);
  closeModal();
+ if(document.getElementById('activeSubList')){ try{ await loadActiveSubscriptions(); }catch(e){} }
  if(typeof renderAnagrafica==='function' && Array.isArray(anagraficaData) && anagraficaData.some(x=>String(x.id)===String(id))) renderAnagrafica(anagraficaData); else renderClients(clientsData||[]);
 }
 function openAdminQr(id){

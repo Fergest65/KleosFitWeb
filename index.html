@@ -70,10 +70,6 @@
 .qrManagementBox .qrBox{background:#fff;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;min-height:116px}
 .qrTokenText{font-size:12px;color:#c4ff3d;word-break:break-all;margin-top:5px}
 @media(max-width:600px){.qrManagementBox{grid-template-columns:1fr}.qrManagementBox .qrBox{justify-self:center}}
-</style>
-<style>
-#cpFrom,#cpTo{cursor:pointer;color-scheme:dark;}
-#cpFrom::-webkit-calendar-picker-indicator,#cpTo::-webkit-calendar-picker-indicator{cursor:pointer;opacity:1;}
 </style></style>
 </style>
 </style>
@@ -154,7 +150,6 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
-<div id="subscriptionExpiryNotice" style="display:none;margin:12px 0" class="card"><div style="font-weight:800">Scadenza abbonamento</div><div id="subscriptionExpiryNoticeText" style="margin-top:6px"></div></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -195,8 +190,7 @@ progress:`<div class="top"><div><div class="title">Progressi</div><div class="su
 <div class="section"><div class="card"><h2>Storico misurazioni</h2><div id="progressTable" class="progressTableWrap">Caricamento...</div></div></div>`,
 priceList:`<div class="top"><div><div class="title">Listino prezzi</div><div class="sub">Visualizza gli abbonamenti disponibili e i relativi prezzi.</div></div><button class="btn" type="button" onclick="loadClientPriceList()">Aggiorna</button></div>
 <div class="card"><div id="clientPriceListError" class="error"></div><div id="clientPriceListStatus" class="muted">Caricamento listino...</div><div id="clientPriceList" style="margin-top:14px"></div></div>`,
-payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza il tuo abbonamento attuale e lo storico dei pagamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
-<div class="card" id="currentSubscriptionCard" style="margin-bottom:14px"><div style="font-weight:800;font-size:18px">Abbonamento attuale</div><div id="currentSubscriptionInfo" class="muted" style="margin-top:10px">Caricamento...</div></div>
+payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza i tuoi pagamenti e lo stato degli abbonamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
 <div class="card"><div id="clientPaymentError" class="error"></div><div id="clientPaymentCount" class="muted">Caricamento...</div><div id="clientPaymentList" style="margin-top:14px">Caricamento storico...</div></div>`,
 admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
@@ -240,6 +234,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button">Progressi</button>
  <button type="button" onclick="show('notifications')">Notifiche</button>
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
+ <button type="button" onclick="show('anagrafica',this)">Anagrafica</button>
  <button type="button">Circuiti</button>
 </div>`,
 subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti</div><div class="sub">Gestisci i prezzi predefiniti che possono essere selezionati nella scheda anagrafica del cliente.</div></div><button class="btn" type="button" onclick="openSubscriptionPriceModal()">＋ Nuovo prezzo</button></div>
@@ -424,182 +419,6 @@ async function sendAdminNotification(){
   const b=document.getElementById('notifBody');if(b)b.value='';await loadNotifications();
  }catch(e){if(err){err.textContent='Invio non riuscito: '+e.message;err.style.display='block'}}
 }
-function showSubscriptionExpiryPopup(giorni,d,raw){
- const key='kleosfit-expiry-popup-'+String(currentUser?.id||'')+'-'+raw;
- // Mostra il popup una sola volta per sessione e per quella specifica scadenza.
- // Il banner resta comunque visibile nella Dashboard.
- try{if(sessionStorage.getItem(key)==='1')return;sessionStorage.setItem(key,'1');}catch(e){}
- const isOne=giorni==='1 giorno';
- openModal(`
-   <div style="text-align:center;padding:10px 4px 4px">
-     <div style="font-size:54px;line-height:1;margin-bottom:14px">⚠️</div>
-     <div style="font-size:26px;font-weight:900;color:var(--lime,#c8ff00);letter-spacing:.2px">ABBONAMENTO IN SCADENZA</div>
-     <div style="margin-top:14px;font-size:19px;font-weight:800">Il tuo abbonamento scadrà tra <b>${esc(giorni)}</b></div>
-     <div style="margin-top:8px;font-size:22px;font-weight:900">${esc(d)}</div>
-     <div style="margin-top:14px;font-size:15px;line-height:1.5;opacity:.9">Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.</div>
-     <button class="btn" type="button" style="width:100%;margin-top:22px;font-size:16px;padding:13px 18px" onclick="closeModal()">HO CAPITO</button>
-   </div>`);
-}
-
-function showSubscriptionRenewalPopup(row){
- const paidFrom=row?.paid_from||profile?.subscription_paid_from||'';
- const paidTo=row?.paid_to||profile?.subscription_paid_to||'';
- const type=row?.note||profile?.subscription_type||'Abbonamento';
- const amount=row?.amount;
- const fmtDay=v=>{
-   if(!v)return '—';
-   const m=String(v).slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-   return m?`${m[3]}/${m[2]}/${m[1]}`:esc(v);
- };
- const amountText=amount===null||amount===undefined||amount===''?'':`<div style="margin-top:8px;font-size:18px;font-weight:800">Importo: € ${Number(amount).toFixed(2).replace('.',',')}</div>`;
- openModal(`
-   <div style="text-align:center;padding:10px 4px 4px">
-     <div style="font-size:52px;line-height:1;margin-bottom:14px">✓</div>
-     <div style="font-size:27px;font-weight:900;color:var(--lime,#c8ff00);letter-spacing:.2px">ABBONAMENTO RINNOVATO</div>
-     <div style="margin-top:14px;font-size:18px;font-weight:800">Il tuo abbonamento è stato rinnovato.</div>
-     <div style="margin-top:18px;text-align:left;background:#11151b;border:1px solid #2c323c;border-radius:12px;padding:14px">
-       <div><b>Tipo:</b> ${esc(type)}</div>
-       <div style="margin-top:7px"><b>Dal:</b> ${fmtDay(paidFrom)}</div>
-       <div style="margin-top:7px"><b>Al:</b> ${fmtDay(paidTo)}</div>
-       ${amountText}
-     </div>
-     <button class="btn" type="button" style="width:100%;margin-top:22px;font-size:16px;padding:13px 18px" onclick="closeModal()">HO CAPITO</button>
-   </div>`);
-}
-
-async function checkSubscriptionRenewalNotice(){
- if(!currentUser?.id||!isClientRole())return;
- const key='kleosfit-last-seen-renewal-'+String(currentUser.id);
- const r=await db.from('subscription_payment_history')
-   .select('id,paid_from,paid_to,amount,note,created_at')
-   .eq('profile_id',currentUser.id)
-   .order('created_at',{ascending:false})
-   .limit(1)
-   .maybeSingle();
- if(r.error||!r.data)return;
- const row=r.data;
- const fingerprint=[row.id,row.paid_from||'',row.paid_to||'',row.amount??'',row.note||'',row.created_at||''].join('|');
- let last=null;
- try{last=localStorage.getItem(key)}catch(e){}
- // Prima attivazione sul dispositivo: memorizza lo stato corrente senza mostrare
- // un falso "rinnovo" per un abbonamento già esistente.
- if(last===null){try{localStorage.setItem(key,fingerprint)}catch(e){}return;}
- if(last===fingerprint)return;
- try{localStorage.setItem(key,fingerprint)}catch(e){}
- showSubscriptionRenewalPopup(row);
-}
-
-// Il rinnovo viene scritto nello storico subito dopo l'aggiornamento del profilo.
-// Realtime può quindi notificare il cliente qualche istante prima che la nuova
-// riga di subscription_payment_history sia disponibile. Eseguiamo alcuni controlli
-// ravvicinati per evitare che il popup compaia solo dopo una chiusura/riapertura completa.
-let subscriptionRenewalWatchTimer=null;
-function scheduleSubscriptionRenewalChecks(){
- if(!currentUser?.id||!isClientRole())return;
- [500,1500,3000,6000].forEach(ms=>{
-   setTimeout(()=>{
-     if(document.visibilityState==='visible')checkSubscriptionRenewalNotice();
-   },ms);
- });
- // Controllo continuo leggero: se il Superuser modifica/rinnova l'abbonamento
- // mentre il cliente ha già l'app aperta, il popup viene rilevato senza logout.
- if(subscriptionRenewalWatchTimer)clearInterval(subscriptionRenewalWatchTimer);
- subscriptionRenewalWatchTimer=setInterval(()=>{
-   if(document.visibilityState==='visible'&&currentUser?.id&&isClientRole())checkSubscriptionRenewalNotice();
- },10000);
-}
-
-async function checkSubscriptionExpiryNotice(){
- const box=document.getElementById('subscriptionExpiryNotice');
- const text=document.getElementById('subscriptionExpiryNoticeText');
- if(!box||!text||!isClientRole()||!currentUser?.id)return;
- const r=await db.from('profiles').select('subscription_paid_to').eq('id',currentUser.id).maybeSingle();
- if(r.error||!r.data?.subscription_paid_to){box.style.display='none';return;}
- const raw=String(r.data.subscription_paid_to).slice(0,10);
- const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
- if(!m){box.style.display='none';return;}
- const expiry=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
- const today=new Date(); today.setHours(0,0,0,0);
- const diff=Math.round((expiry-today)/86400000);
- // Avvisa da 10 giorni prima fino al giorno precedente alla scadenza.
- // In questo modo, se il cliente non apre l'app esattamente al giorno -10,
- // riceve comunque l'avviso al successivo accesso.
- if(diff>0 && diff<=10){
-   const d=expiry.toLocaleDateString('it-IT');
-   const giorni=diff===1?'1 giorno':diff+' giorni';
-   text.textContent='Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.';
-   box.style.display='block';
-   box.style.background='linear-gradient(135deg,#8b0000,#c40000)';
-   box.style.border='2px solid #ff3b3b';
-   box.style.color='#ffffff';
-   box.style.boxShadow='0 0 18px rgba(255,0,0,.45)';
-   showSubscriptionExpiryPopup(giorni,d,raw);
-   if('Notification' in window && Notification.permission==='granted'){
-     const key='kleosfit-expiry-'+currentUser.id+'-'+raw;
-     if(localStorage.getItem(key)!=='1'){
-       let shown=false;
-       try{
-         if('serviceWorker' in navigator){
-           const reg=await navigator.serviceWorker.ready;
-           if(reg){
-             await reg.showNotification('KLEOSFIT — Scadenza abbonamento',{body:'Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Ricordati di rinnovarlo.',icon:'/icon-192.png',badge:'/icon-192.png',tag:'kleosfit-expiry'});
-             shown=true;
-           }
-         }
-         if(!shown){
-           new Notification('KLEOSFIT — Scadenza abbonamento',{body:'Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Ricordati di rinnovarlo.'});
-           shown=true;
-         }
-       }catch(e){}
-       if(shown)localStorage.setItem(key,'1');
-     }
-   }
- }else box.style.display='none';
-}
-
-let clientProfileSyncChannel=null;
-let clientProfileSyncTimer=null;
-let clientProfileSyncBound=false;
-
-async function refreshCurrentClientProfile(){
- if(!currentUser?.id || !isClientRole())return;
- const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
- if(r.error||!r.data)return;
- profile=r.data;
- const nameEl=document.getElementById('dashboardUserName');
- if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
- await checkSubscriptionExpiryNotice();
- await checkSubscriptionRenewalNotice();
- scheduleSubscriptionRenewalChecks();
- if(typeof fillDashboard==='function')await fillDashboard();
-}
-
-function setupClientProfileSync(){
- if(!currentUser?.id || !isClientRole() || clientProfileSyncBound)return;
- clientProfileSyncBound=true;
- // Aggiornamento in tempo reale quando il Superuser modifica il profilo.
- try{
-   clientProfileSyncChannel=db.channel('kleosfit-profile-'+String(currentUser.id))
-     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles',filter:'id=eq.'+String(currentUser.id)},payload=>{
-       if(payload?.new){
-         profile=payload.new;
-         const nameEl=document.getElementById('dashboardUserName');
-         if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
-         checkSubscriptionExpiryNotice();
-         checkSubscriptionRenewalNotice();
-         scheduleSubscriptionRenewalChecks();
-         if(typeof fillDashboard==='function')fillDashboard();
-       }
-     })
-     .subscribe();
- }catch(e){}
- // Fallback: aggiorna periodicamente anche se Realtime non è abilitato sulla tabella profiles.
- const refresh=()=>{if(document.visibilityState==='visible')refreshCurrentClientProfile();};
- document.addEventListener('visibilitychange',refresh);
- window.addEventListener('pageshow',refresh);
- clientProfileSyncTimer=setInterval(refresh,30000);
-}
-
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
  if(!r.error) profile=r.data;
@@ -607,22 +426,9 @@ async function loadProfile(){
  document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
- await checkSubscriptionExpiryNotice();
- await checkSubscriptionRenewalNotice();
- scheduleSubscriptionRenewalChecks();
- setupClientProfileSync();
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
-function fmtDateIT(v){
- if(!v)return '—';
- const s=String(v).trim();
- const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
- if(m)return `${m[3]}/${m[2]}/${m[1]}`;
- const d=new Date(s);
- if(!Number.isNaN(d.getTime()))return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
- return s;
-}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
 let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
 
@@ -686,7 +492,7 @@ async function loadClientAnagrafica(){
  box.innerHTML=`<div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="myFullName" value="${esc(p.full_name||p.name||'')}"></div><div><label>Data di nascita</label><input id="myBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="myFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="myEmail" type="email" value="${esc(p.email||currentUser.email||'')}"></div><div><label>Telefono</label><input id="myPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="myAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="myCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Corso aggiuntivo Plus</label><input value="${esc(p.subscription_plus_course||'—')}" disabled></div><div><label>Supplemento Plus</label><input value="${p.subscription_plus_course?'€ '+Number(p.subscription_plus_cost||0).toFixed(2).replace('.',','):'—'}" disabled></div><div><label>Totale pagato</label><input value="${p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Corso aggiuntivo Plus</label><input value="${esc(parsePlusCourses(p).map(x=>x.name).join(', ')||'—')}" disabled></div><div><label>Supplemento Plus</label><input value="${p.subscription_plus_course?'€ '+Number(p.subscription_plus_cost||0).toFixed(2).replace('.',','):'—'}" disabled></div><div><label>Totale pagato</label><input value="${p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
   <div id="myAnaMsg" class="error"></div><div class="actions"><button class="btn" onclick="saveClientAnagrafica()">Salva modifiche</button></div></div>`;
 }
 async function saveClientAnagrafica(){
@@ -730,59 +536,22 @@ function renderClients(rows){
  count.textContent=rows.length+' profili';
  if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th>Ruolo</th><th></th></tr></thead><tbody>'+
- rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina</button></div></td></tr>`}).join('')+
+ rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button></div></td></tr>`}).join('')+
  '</tbody></table></div>';
-}
-async function deleteClientCompletely(id){
- const p=(clientsData||[]).find(x=>String(x.id)===String(id));
- if(!p){alert('Cliente non trovato nella lista.');return;}
- if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser. Ruolo rilevato: '+String(profile?.role||'nessuno'));return;}
- const name=profileDisplayName(p)||p.email||'questo cliente';
- const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo, i dati collegati e l’account di autenticazione.\n\nQUESTA OPERAZIONE NON È REVERSIBILE.\n\nContinuare?');
- if(!ok)return;
- const msg=document.getElementById('clientError');
- if(msg){msg.textContent='Eliminazione definitiva in corso...';msg.className='muted';msg.style.display='block'}
- try{
-   if(!db || typeof db.rpc!=='function') throw new Error('Connessione Supabase non disponibile.');
-
-   // Recuperiamo prima i percorsi dei documenti: i file Storage NON possono essere
-   // cancellati con SQL da storage.objects. Devono essere rimossi tramite Storage API.
-   const docs=await db.from('client_documents').select('file_path').eq('profile_id',String(id));
-   if(docs.error) throw new Error('Impossibile leggere i documenti del cliente: '+(docs.error.message||JSON.stringify(docs.error)));
-   const paths=(docs.data||[]).map(x=>String(x.file_path||'').trim()).filter(Boolean);
-
-   // Prima eliminiamo profilo/dati/Auth tramite RPC. La funzione SQL non tocca piu
-   // storage.objects. Poi rimuoviamo i file fisici tramite Storage API.
-   const r=await db.rpc('delete_user_completely',{p_user_id:String(id)});
-   if(r.error) throw new Error(r.error.message||JSON.stringify(r.error));
-
-   if(paths.length){
-     const sr=await db.storage.from('client-documents').remove(paths);
-     if(sr.error){
-       // L'account e i dati DB sono gia stati eliminati: segnaliamo solo l'eventuale
-       // residuo Storage, che puo essere rimosso riprovando l'operazione.
-       console.warn('File Storage non eliminati:',sr.error);
-       alert('Cliente eliminato dal database e da Auth.\n\nATTENZIONE: alcuni file del certificato sono rimasti nello Storage e devono essere rimossi manualmente o con un nuovo tentativo.\n\n'+(sr.error.message||JSON.stringify(sr.error)));
-     }
-   }
-
-   clientsData=(clientsData||[]).filter(x=>String(x.id)!==String(id));
-   renderClients(clientsData);
-   if(msg){msg.textContent='Cliente eliminato definitivamente.';msg.className='success';msg.style.display='block'}
-   alert('Cliente eliminato definitivamente.');
- }catch(e){
-   const detail=e?.message||String(e);
-   if(msg){msg.textContent='ELIMINAZIONE NON ESEGUITA: '+detail;msg.className='error';msg.style.display='block'}
-   alert('ELIMINAZIONE NON ESEGUITA\n\n'+detail+'\n\nSe la funzione delete_user_completely non è stata creata nel Supabase SQL Editor, esegui il file SQL fornito.');
-   console.error('delete_user_completely:',e);
- }
 }
 function clientName(p){return profileDisplayName(p)||'Cliente'}
 function clientCardNumber(p){return pick(p,['member_card_number','member_card','card_number','tessera','member_code'])||''}
+function computeSubscriptionActive(from,to){
+ const f=String(from||'').slice(0,10), t=String(to||'').slice(0,10);
+ if(!f || !t) return false;
+ const d=new Date();
+ const today=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ return f<=today && today<=t;
+}
 function clientQrValue(p){
- // Formato compatibile con il parser del tornello KLEOSFIT.
- // Il tornello legge l'ID del profilo e poi recupera i dati aggiornati da Supabase.
- return JSON.stringify({id:String(p.id),attivo:"SI"});
+ // subscription_active viene calcolato dall'app in base al periodo dell'abbonamento.
+ const active=computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
+ return JSON.stringify({id:String(p.id),attivo:active?"SI":"NO",subscription_active:active});
 }
 async function regenerateClientQr(id){
  if(!isSuperuserRole())return;
@@ -804,15 +573,9 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div><div class="muted" style="margin-top:6px">Numero tessera univoco.</div></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><select id="cpPlusCourse" onchange="updateClientSubscriptionTotal()">${plusCourseOptions(p.subscription_plus_course||'')}</select></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" min="0" step="0.01" value="${esc(p.subscription_plus_cost??0)}" oninput="updateClientSubscriptionTotal()" onchange="updateClientSubscriptionTotal()"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Storico pagamenti abbonamento</h3>
-   <div class="muted" style="margin-bottom:10px">Elenco dei pagamenti e dei periodi di abbonamento registrati per questo cliente.</div>
-   <div id="cpPaymentHistoryError" class="error"></div>
-   <div id="cpPaymentHistoryCount" class="muted" style="margin-bottom:8px">Caricamento storico...</div>
-   <div id="cpPaymentHistoryList" style="margin-top:8px">Caricamento storico...</div>
-  </div>
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'Responsabilità')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
    <div class="qrManagementBox">
     <div id="sheetQr_${String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')}" class="qrBox"></div>
@@ -833,10 +596,10 @@ function openClientSheet(id){
  ensureSubscriptionPricesLoaded().then(()=>{
    const sel=document.getElementById('cpSubType');if(!sel)return;
    const match=findMatchingSubscriptionPreset(p);
-   const activePresets=(subscriptionPricePresets||[]).filter(x=>x.active!==false);
-   sel.innerHTML='<option value="">— Seleziona tipo abbonamento —</option>'+
+   const activePresets=(subscriptionPricePresets||[]).filter(x=>x.active!==false && String(x.plan_type||'').toLowerCase()!=='plus');
+   sel.innerHTML='<option value="">— Seleziona abbonamento base —</option>'+
      activePresets.map(x=>`<option value="${esc(String(x.id))}">${esc(x.name||'Abbonamento')} — € ${Number(x.price||0).toFixed(2).replace('.',',')} / ${Number(x.duration_months||1)===1?'1 mese':String(x.duration_months)+' mesi'}</option>`).join('')+
-     '<option value="__custom__">Prezzo personalizzato</option>';
+     '<option value="__custom__">Prezzo base personalizzato</option>';
    if(match){
      sel.value=String(match.id);
      const info=document.getElementById('cpPresetInfo');
@@ -846,185 +609,38 @@ function openClientSheet(id){
      const info=document.getElementById('cpPresetInfo');
      if(info)info.textContent='Abbonamento personalizzato: il costo può essere inserito manualmente.';
    }
-   setPlusCourseSelect('cpPlusCourse',p.subscription_plus_course||'');
-   toggleClientPlusFields();
+   const costEl=document.getElementById('cpCost');
+   if(costEl){const legacyExtra=Number(p.subscription_plus_cost||0);const total=Number(p.subscription_cost||0);costEl.dataset.baseCost=String(Math.max(0,total-legacyExtra));}
+   renderPlusCourseSelection(p);
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
- setTimeout(()=>loadMedicalCertificateMeta(p.id),40);
- setTimeout(()=>loadAdminClientPaymentHistory(p.id),50);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
- setTimeout(()=>syncClientSubscriptionDates(),30);
+ setTimeout(()=>{
+   const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
+   if(!from || !to)return;
+   const syncDates=()=>{
+     if(from.value){
+       to.min=from.value;
+       if(to.value && to.value<from.value) to.value=from.value;
+     }else{ to.removeAttribute('min'); }
+     if(to.value) from.max=to.value; else from.removeAttribute('max');
+   };
+   from.addEventListener('change',syncDates);
+   to.addEventListener('change',syncDates);
+   syncDates();
+ },30);
 }
 
-async function loadAdminClientPaymentHistory(profileId){
- const list=document.getElementById('cpPaymentHistoryList');
- const err=document.getElementById('cpPaymentHistoryError');
- const count=document.getElementById('cpPaymentHistoryCount');
- if(!list||!profileId)return;
- if(err){err.style.display='none';err.textContent='';}
- list.innerHTML='Caricamento storico...';
- if(count)count.textContent='Caricamento storico...';
- const r=await db.from('subscription_payment_history')
-   .select('id,paid_from,paid_to,amount,note,created_at')
-   .eq('profile_id',profileId)
-   .order('created_at',{ascending:false})
-   .limit(100);
- if(r.error){
-   if(err){err.textContent='Storico pagamenti non leggibile: '+r.error.message;err.style.display='block';}
-   list.innerHTML='';
-   if(count)count.textContent='';
-   return;
- }
- const rows=r.data||[];
- if(count)count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
- if(!rows.length){
-   list.innerHTML='<div class="muted">Nessun pagamento presente nello storico.</div>';
-   return;
- }
- const money=v=>v==null||v===''?'—':'€ '+Number(v).toFixed(2).replace('.',',');
- const date=v=>v?fmtDateIT(v):'—';
- list.innerHTML=`<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Periodo</th><th>Importo</th><th>Tipo / Note</th><th>ID</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(date(x.created_at))}</td><td>${esc(date(x.paid_from))} → ${esc(date(x.paid_to))}</td><td><b>${esc(money(x.amount))}</b></td><td>${esc(x.note||'Pagamento')}</td><td><span class="small" title="Identificativo univoco del pagamento">${esc(x.id||'—')}</span></td></tr>`).join('')}</tbody></table></div>`;
-}
-
-async function generateUniqueMemberCardNumber(){
- // Numerazione progressiva: prima recuperiamo tutti i numeri già presenti
- // e utilizziamo il primo numero mancante (buco).
- const r=await db.from('profiles').select('member_card_number').not('member_card_number','is',null).limit(5000);
- if(r.error)throw r.error;
- const used=new Set();
- for(const row of (r.data||[])){
-   const raw=String(row.member_card_number??'').trim();
-   if(!/^\d+$/.test(raw))continue;
-   const n=Number(raw);
-   if(Number.isSafeInteger(n)&&n>0)used.add(n);
- }
- let candidate=1;
- while(used.has(candidate))candidate++;
- return String(candidate);
-}
-async function generateClientCardNumber(){
- const input=document.getElementById('cpCard');
- if(!input)return;
- try{
-   input.value=await generateUniqueMemberCardNumber();
-   input.focus();
- }catch(e){alert(e.message||'Errore nella generazione del numero tessera');}
-}
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
-function syncClientSubscriptionDates(){
- const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
- if(!from || !to)return;
- // Mantiene coerente l'intervallo Dal/Al senza impedire la selezione manuale.
- if(from.value){
-   to.min=from.value;
-   if(to.value && to.value<from.value) to.value=from.value;
- }else{
-   to.removeAttribute('min');
- }
- if(to.value){
-   from.max=to.value;
-   if(from.value && from.value>to.value) from.value=to.value;
- }else{
-   from.removeAttribute('max');
- }
-}
-function previewMedicalCertificate(input){
- const file=input?.files?.[0],info=document.getElementById('cpMedFileInfo'),preview=document.getElementById('cpMedPreview');
- if(!file)return;
- if(info)info.textContent=`File selezionato: ${file.name} (${Math.round(file.size/1024)} KB)`;
- if(preview){preview.innerHTML='';if(file.type.startsWith('image/')){const img=document.createElement('img');img.alt='Anteprima certificato';img.style.cssText='max-width:260px;max-height:180px;border-radius:8px;border:1px solid #333;display:block;';const fr=new FileReader();fr.onload=()=>img.src=fr.result;fr.readAsDataURL(file);preview.appendChild(img);}else if(file.type==='application/pdf')preview.innerHTML='<div class="muted">PDF selezionato. Verrà caricato al salvataggio.</div>';}
-}
-async function getLatestMedicalCertificate(profileId){
- const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',profileId).eq('document_type','medical_certificate').order('created_at',{ascending:false}).limit(1).maybeSingle();
- if(r.error)throw r.error;
- return r.data||null;
-}
-async function loadMedicalCertificateMeta(profileId){
- const box=document.getElementById('cpMedExisting');
- if(!box)return;
- box.innerHTML='<div class="muted">Verifica documento...</div>';
- try{
-   const doc=await getLatestMedicalCertificate(profileId);
-   if(!doc){box.innerHTML='<div class="muted">Nessun certificato caricato.</div>';return;}
-   const date=doc.created_at?fmtDate(doc.created_at):'';
-   box.innerHTML=`<div class="card" style="padding:10px;margin:0"><div><b>Certificato presente</b> — ${esc(doc.file_name||'Documento')}</div><div class="muted" style="margin-top:4px">${esc(doc.mime_type||'')} ${date?'· '+esc(date):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openMedicalCertificate('${esc(doc.file_path)}')">Visualizza certificato</button></div></div>`;
- }catch(e){box.innerHTML='<div class="muted">Documento non disponibile: '+esc(e?.message||e)+'</div>';}
-}
-async function uploadMedicalCertificate(profileId){
- const file=document.getElementById('cpMedFile')?.files?.[0];if(!file)return null;
- if(file.size>10*1024*1024)throw new Error('Il certificato supera il limite di 10 MB.');
- if(!(file.type.startsWith('image/')||file.type==='application/pdf'))throw new Error('Formato non supportato. Usa una foto JPG/PNG/WebP oppure un PDF.');
- const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin';
- const safeName=(file.name||'certificato').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120);
- const path=`${String(profileId)}/medical_certificate/${Date.now()}-${crypto.randomUUID()}.${ext}`;
- const up=await db.storage.from('client-documents').upload(path,file,{contentType:file.type,upsert:false});
- if(up.error)throw up.error;
- const ins=await db.from('client_documents').insert({profile_id:profileId,document_type:'medical_certificate',file_path:path,file_name:safeName,mime_type:file.type}).select('*').maybeSingle();
- if(ins.error)throw ins.error;
- return ins.data||{file_path:path,file_name:safeName,mime_type:file.type};
-}
-async function openMedicalCertificate(path){
- if(!path)return;
- const r=await db.storage.from('client-documents').createSignedUrl(path,300);
- if(r.error){alert('Impossibile aprire il certificato: '+r.error.message);return;}
- window.open(r.data.signedUrl,'_blank','noopener');
-}
-
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- syncClientSubscriptionDates();
- updateClientSubscriptionTotal();
- // Il select contiene l'ID del listino, mentre profiles.subscription_type salva il NOME del tipo.
- const subSel=document.getElementById('cpSubType');
- const subId=subSel?.value||'';
- const subPreset=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(subId));
- const subTypeValue=subId==='__custom__'?'Prezzo personalizzato':(subPreset?.name||'');
- const cardValue=valOrNull('cpCard');
- if(cardValue){
-   const dup=await db.from('profiles').select('id').eq('member_card_number',cardValue).neq('id',id).limit(1);
-   if(dup.error){if(msg){msg.textContent='Errore verifica numero tessera: '+dup.error.message;msg.className='error';msg.style.display='block'}return;}
-   if((dup.data||[]).length){if(msg){msg.textContent='Numero tessera già utilizzato. Generane uno nuovo.';msg.className='error';msg.style.display='block'}return;}
- }
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:cardValue,subscription_type:subTypeValue||null,subscription_plus_course:valOrNull('cpPlusCourse'),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
- const existingProfile=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id)) || {};
- const oldSub={type:existingProfile.subscription_type||null,from:existingProfile.subscription_paid_from||null,to:existingProfile.subscription_paid_to||null,cost:existingProfile.subscription_cost==null?null:Number(existingProfile.subscription_cost),plusCourse:existingProfile.subscription_plus_course||null,plusCost:existingProfile.subscription_plus_cost==null?null:Number(existingProfile.subscription_plus_cost)};
- const newSub={type:payload.subscription_type,from:payload.subscription_paid_from,to:payload.subscription_paid_to,cost:payload.subscription_cost==null?null:Number(payload.subscription_cost),plusCourse:payload.subscription_plus_course,plusCost:payload.subscription_plus_cost==null?null:Number(payload.subscription_plus_cost)};
- const subscriptionChanged=JSON.stringify(oldSub)!==JSON.stringify(newSub);
- // profiles resta la fonte dell'abbonamento corrente. Quando l'abbonamento cambia,
- // sincronizziamo anche la relativa riga in subscription_payment_history: il campo id
- // UUID di quella riga diventa l'identificativo univoco di quel singolo abbonamento/rinnovo.
- // Non usiamo SELECT dopo UPDATE: con alcune policy RLS Supabase l'UPDATE riesce ma il SELECT restituisce nessuna riga.
- const r=await db.from('profiles').update(payload).eq('id',id);
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:computeSubscriptionActive(document.getElementById('cpFrom')?.value,document.getElementById('cpTo')?.value),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
- let historyId=null;
- if(subscriptionChanged){
-   try{
-     let q=db.from('subscription_payment_history').select('id,paid_from,paid_to,amount,note,created_at').eq('profile_id',id).order('created_at',{ascending:false}).limit(100);
-     const hr=await q;
-     if(hr.error)throw hr.error;
-     const rows=hr.data||[];
-     const same=(a,b)=>String(a||'')===String(b||'');
-     const oldAmount=oldSub.cost;
-     const match=rows.find(x=>same(x.paid_from,oldSub.from)&&same(x.paid_to,oldSub.to)&&((oldAmount==null&&x.amount==null)||(oldAmount!=null&&Number(x.amount)===Number(oldAmount))));
-     const historyPayload={profile_id:id,paid_from:newSub.from||null,paid_to:newSub.to||null,amount:newSub.cost==null?null:Number(newSub.cost),note:newSub.type||'Abbonamento'};
-     // Ogni rinnovo/modifica dell'abbonamento crea una nuova riga con un nuovo UUID.
-     // In questo modo il cliente può riconoscere senza ambiguità un nuovo rinnovo.
-     if(newSub.type||newSub.from||newSub.to||newSub.cost!=null){
-       const ir=await db.from('subscription_payment_history').insert(historyPayload).select('id').maybeSingle();
-       if(ir.error)throw ir.error;
-       historyId=ir.data?.id||null;
-     }
-   }catch(e){
-     if(msg){msg.textContent="Impossibile sincronizzare lo storico dell’abbonamento: "+(e?.message||e);msg.className='error';msg.style.display='block'}
-     return;
-   }
- }
- if(document.getElementById('cpMedFile')?.files?.[0]){
-   try{await uploadMedicalCertificate(id);}catch(e){if(msg){msg.textContent='Dati cliente salvati, ma caricamento certificato non riuscito: '+(e?.message||e);msg.className='error';msg.style.display='block'}return}
- }
+ if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
  const updated=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
- if(updated){Object.assign(updated,payload);if(historyId)updated.subscription_history_id=historyId;}
+ if(updated)Object.assign(updated,r.data);
  closeModal();
  if(typeof renderAnagrafica==='function' && Array.isArray(anagraficaData) && anagraficaData.some(x=>String(x.id)===String(id))) renderAnagrafica(anagraficaData); else renderClients(clientsData||[]);
 }
@@ -1789,48 +1405,58 @@ function renderSubscriptionPrices(){
  rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(p.duration_months||'—')} mesi</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div></td></tr>`).join('')+
  '</tbody></table></div>';
 }
-const PLUS_COURSES=['Calistenico','Funzionale','HIIT','Circuito'];
-function plusCourseOptions(selected=''){
- const value=String(selected||'');
- return '<option value="">— Seleziona corso aggiuntivo —</option>'+PLUS_COURSES.map(c=>`<option value="${esc(c)}" ${c===value?'selected':''}>${esc(c)}</option>`).join('')+'<option value="__custom__" '+(value && !PLUS_COURSES.includes(value)?'selected':'')+'>Altro</option>';
+function parsePlusCourses(p){
+ const raw=p?.subscription_plus_course;
+ if(!raw)return [];
+ try{
+   const parsed=JSON.parse(String(raw));
+   if(Array.isArray(parsed))return parsed.filter(x=>x&&x.name);
+   if(parsed&&Array.isArray(parsed.courses))return parsed.courses.filter(x=>x&&x.name);
+ }catch(e){}
+ return [{id:null,name:String(raw),cost:Number(p?.subscription_plus_cost||0)}];
 }
-function toggleClientPlusFields(){
- const course=document.getElementById('cpPlusCourse');
- const extra=document.getElementById('cpPlusCost');
- // Entrambi i campi Plus devono essere sempre sbloccati e modificabili manualmente.
- // La selezione del piano Plus continua comunque a valorizzarli automaticamente dal listino.
- if(course){course.disabled=false;course.readOnly=false;course.parentElement.style.opacity='1';}
- if(extra){extra.disabled=false;extra.readOnly=false;extra.parentElement.style.opacity='1';}
+function selectedPlusCourseIds(p){
+ const rows=plusCoursePresets();
+ return parsePlusCourses(p).map(x=>{
+   if(x.id)return String(x.id);
+   const hit=rows.find(r=>String(r.plus_course_name||r.name||'').trim().toLowerCase()===String(x.name||'').trim().toLowerCase());
+   return hit?String(hit.id):'';
+ }).filter(Boolean);
 }
-function setPlusCourseSelect(id,value){
- const el=document.getElementById(id); if(!el)return;
- el.innerHTML=plusCourseOptions(value);
- if(value && !PLUS_COURSES.includes(value)){el.value='__custom__';}
+function plusCoursePresets(){
+ return (subscriptionPricePresets||[]).filter(x=>x.active!==false && String(x.plan_type||'').toLowerCase()==='plus');
+}
+function plusCourseOptionsHtml(p){
+ const selected=selectedPlusCourseIds(p||{}), ids=new Set(selected.map(String));
+ const rows=plusCoursePresets();
+ const legacy=parsePlusCourses(p||{}).filter(x=>!selected.includes(String(x.id||'')) && !rows.some(r=>String(r.plus_course_name||r.name||'').trim().toLowerCase()===String(x.name||'').trim().toLowerCase()));
+ let html=rows.map(x=>{
+   const id=String(x.id), checked=ids.has(id);
+   const name=x.plus_course_name||x.name||'Corso Plus', extra=subscriptionPresetExtra(x);
+   return `<label class="plusCourseOption" style="display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer"><input type="checkbox" class="cpPlusCourseCheck" value="${esc(id)}" data-name="${esc(name)}" data-cost="${extra}" ${checked?'checked':''} onchange="updateClientSubscriptionTotal()"><span>${esc(name)} <b>+ € ${extra.toFixed(2).replace('.',',')}</b></span></label>`;
+ }).join('');
+ html+=legacy.map(x=>{const name=String(x.name||'Corso Plus'),extra=Math.max(0,Number(x.cost||0));return `<label class="plusCourseOption" style="display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer"><input type="checkbox" class="cpPlusCourseCheck" value="legacy:${esc(name)}" data-name="${esc(name)}" data-cost="${extra}" checked onchange="updateClientSubscriptionTotal()"><span>${esc(name)} <b>+ € ${extra.toFixed(2).replace('.',',')}</b> <small>(storico)</small></span></label>`}).join('');
+ if(!html)html='<div class="muted">Nessun corso Plus configurato nel listino. Crea un prezzo di tipo Plus nel Superuser.</div>';
+ return html;
+}
+function updateClientSubscriptionTotal(){
+ const cost=document.getElementById('cpCost');if(!cost)return;
+ let base=Number(cost.dataset.baseCost);
+ if(!Number.isFinite(base)){base=Number(cost.value||0);cost.dataset.baseCost=String(base);}
+ let extra=0;
+ document.querySelectorAll('.cpPlusCourseCheck:checked').forEach(x=>{extra+=Math.max(0,Number(x.dataset.cost||0));});
+ const plusCost=document.getElementById('cpPlusCost');if(plusCost)plusCost.value=extra.toFixed(2);
+ cost.value=(Math.max(0,base)+extra).toFixed(2);
+ const info=document.getElementById('cpPresetInfo');
+ if(info){const baseLabel=base.toFixed(2).replace('.',','), total=(base+extra).toFixed(2).replace('.',',');info.innerHTML=`Base € ${baseLabel} + Plus € ${extra.toFixed(2).replace('.',',')} = <b>Totale € ${total}</b>`;}
+}
+function renderPlusCourseSelection(p){
+ const box=document.getElementById('cpPlusCourses');if(!box)return;
+ box.innerHTML=plusCourseOptionsHtml(p);
+ updateClientSubscriptionTotal();
 }
 function subscriptionPresetTotal(p){const base=Number(p?.price||0),extra=String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;return Math.max(0,base+extra);}
 function subscriptionPresetExtra(p){return String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;}
-function updateClientSubscriptionTotal(){
- const cost=document.getElementById('cpCost');
- const plusCost=document.getElementById('cpPlusCost');
- const sel=document.getElementById('cpSubType');
- if(!cost || !sel)return;
- const id=String(sel.value||'');
- if(!id || id==='__custom__')return;
- const preset=(subscriptionPricePresets||[]).find(x=>String(x.id)===id);
- if(!preset)return;
- const base=Number(preset.price||0);
- // Il supplemento inserito nella scheda cliente va sempre sommato al prezzo base,
- // anche se il tipo di listino è classificato come "Corso".
- const extra=Math.max(0,Number(plusCost?.value||0));
- const total=base+extra;
- cost.value=total.toFixed(2);
- const info=document.getElementById('cpPresetInfo');
- if(info){
-   info.innerHTML=extra>0
-     ? `Base € ${base.toFixed(2).replace('.',',')} + supplemento € ${extra.toFixed(2).replace('.',',')} = <b>Totale € ${total.toFixed(2).replace('.',',')}</b>`
-     : `Totale abbonamento: <b>€ ${base.toFixed(2).replace('.',',')}</b>`;
- }
-}
 function openSubscriptionPriceModal(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id))||{};
  openModal(`<div class="modalhead"><h2>${id?'Modifica prezzo':'Nuovo prezzo abbonamento'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
@@ -1885,16 +1511,18 @@ async function ensureSubscriptionPricesLoaded(){
 }
 function applySubscriptionPreset(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));if(!p)return;
- const type=document.getElementById('cpSubType'),cost=document.getElementById('cpCost'),plusCourse=document.getElementById('cpPlusCourse'),plusCost=document.getElementById('cpPlusCost');
- const total=subscriptionPresetTotal(p),extra=subscriptionPresetExtra(p),isPlus=String(p.plan_type||'').toLowerCase()==='plus';
- if(type)type.value=String(id);if(cost)cost.value=total.toFixed(2);
- if(plusCourse)plusCourse.value=isPlus?(p.plus_course_name||''):'';
- if(plusCost)plusCost.value=isPlus?extra.toFixed(2):'0.00';
+ const type=document.getElementById('cpSubType'),cost=document.getElementById('cpCost');
+ const isPlus=String(p.plan_type||'').toLowerCase()==='plus';
+ if(type)type.value=String(id);
+ if(cost){cost.dataset.baseCost=String(Number(p.price||0));cost.value=Number(p.price||0).toFixed(2);}
+ if(isPlus){
+   const checks=document.querySelectorAll('.cpPlusCourseCheck');
+   checks.forEach(x=>{x.checked=String(x.value)===String(p.id);});
+ }
  updateClientSubscriptionTotal();
  const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
  if(from&&to&&p.duration_months){const start=from.value?new Date(from.value+'T12:00:00'):new Date();if(!from.value)from.value=start.toISOString().slice(0,10);const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);to.value=end.toISOString().slice(0,10);}
- const info=document.getElementById('cpPresetInfo');if(info)info.innerHTML=isPlus?`Base € ${Number(p.price||0).toFixed(2).replace('.',',')} + ${esc(p.plus_course_name||'corso aggiuntivo')} € ${extra.toFixed(2).replace('.',',')} = <b>Totale € ${total.toFixed(2).replace('.',',')}</b>`:`Totale abbonamento: <b>€ ${total.toFixed(2).replace('.',',')}</b>`;
- toggleClientPlusFields();
+ const info=document.getElementById('cpPresetInfo');if(info&&!isPlus)info.innerHTML=`Totale abbonamento: <b>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</b>`;
 }
 
 function applySubscriptionType(id){
@@ -1902,7 +1530,6 @@ function applySubscriptionType(id){
  if(id==='__custom__'){
    const info=document.getElementById('cpPresetInfo');
    if(info)info.textContent='Prezzo personalizzato: inserisci manualmente il costo dell’abbonamento.';
-   toggleClientPlusFields();
    return;
  }
  if(id) applySubscriptionPreset(id);
@@ -1944,27 +1571,10 @@ async function loadClientPriceList(){
 }
 
 async function loadClientPayments(){
- const list=document.getElementById('clientPaymentList'),err=document.getElementById('clientPaymentError'),count=document.getElementById('clientPaymentCount'),currentBox=document.getElementById('currentSubscriptionInfo');
+ const list=document.getElementById('clientPaymentList'),err=document.getElementById('clientPaymentError'),count=document.getElementById('clientPaymentCount');
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento storico...';count.textContent='Caricamento...';
- if(currentBox)currentBox.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
- // Il riepilogo attuale viene letto sempre da profiles, così riflette immediatamente
- // le modifiche fatte dal Superuser. Lo storico dei pagamenti resta invece invariato.
- const pr=await db.from('profiles').select('subscription_type,subscription_paid_from,subscription_paid_to,subscription_cost,subscription_active,subscription_plus_course,subscription_plus_cost').eq('id',currentUser.id).maybeSingle();
- if(currentBox){
-   if(pr.error||!pr.data){
-     currentBox.textContent='Impossibile leggere l’abbonamento attuale.';
-   }else{
-     const p=pr.data;
-     const from=p.subscription_paid_from?fmtDateIT(p.subscription_paid_from):'—';
-     const to=p.subscription_paid_to?fmtDateIT(p.subscription_paid_to):'—';
-     const total=p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',');
-     const active=p.subscription_active===false?'Non attivo':'Attivo';
-     const plus=p.subscription_plus_course?` · ${esc(p.subscription_plus_course)} + € ${Number(p.subscription_plus_cost||0).toFixed(2).replace('.',',')}`:'';
-     currentBox.innerHTML=`<div class="clientCurrentSubGrid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px"><div><div class="muted">Tipo</div><b>${esc(p.subscription_type||'—')}</b></div><div><div class="muted">Stato</div><b>${esc(active)}</b></div><div><div class="muted">Dal</div><b>${esc(from)}</b></div><div><div class="muted">Al</div><b>${esc(to)}</b></div><div><div class="muted">Costo totale</div><b>${esc(total)}</b></div><div><div class="muted">Corso aggiuntivo</div><b>${p.subscription_plus_course?esc(p.subscription_plus_course)+' + € '+Number(p.subscription_plus_cost||0).toFixed(2).replace('.',','):'—'}</b></div></div>`;
-   }
- }
  const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
  if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
  const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
@@ -1974,7 +1584,7 @@ async function loadClientPayments(){
  const toVal=x=>x.paid_to;
  const amountVal=x=>x.amount;
  const noteVal=x=>x.note;
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fmtDateIT(fromVal(x)))} → ${esc(fmtDateIT(toVal(x)))}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fromVal(x)||'—')} → ${esc(toVal(x)||'—')}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
 }
 
 async function loadAdmin(){
@@ -2149,7 +1759,7 @@ async function register(e){
    registerMessage(msg,true);
  }finally{if(btn){btn.disabled=false;btn.textContent='Crea account'}}
 }
-async function login(e){e.preventDefault();const er=document.getElementById('error');er.style.display='none';const {data,error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){er.textContent=error.message;er.style.display='block';return}currentUser=data.user;/* Nuova sessione di accesso: il popup scadenza deve poter ricomparire. */try{Object.keys(sessionStorage).filter(k=>k.startsWith('kleosfit-expiry-popup-'+String(currentUser.id)+'-')).forEach(k=>sessionStorage.removeItem(k))}catch(e){}document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
+async function login(e){e.preventDefault();const er=document.getElementById('error');er.style.display='none';const {data,error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){er.textContent=error.message;er.style.display='block';return}currentUser=data.user;document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
 async function logout(){await db.auth.signOut();location.reload()}
 document.getElementById('loginForm').addEventListener('submit',login);
 document.getElementById('registerForm').addEventListener('submit',register);

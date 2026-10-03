@@ -170,7 +170,7 @@
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
 <div id="register" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeRegister()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Prima registrazione</h1><p>Crea il tuo account cliente per accedere a KleosFit Coach Pro.</p><form id="registerForm"><label>Nome e Cognome</label><input id="registerName" type="text" autocomplete="name" required><label>Email</label><input id="registerEmail" type="email" autocomplete="email" required><label>Password</label><div class="passwordWrap"><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPassword',this)">MOSTRA</button></div><label>Conferma Password</label><div class="passwordWrap"><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPasswordConfirm',this)">MOSTRA</button></div><button class="btn full" type="submit">Crea account</button><div id="registerError" class="error"></div><div id="registerSuccess" class="success" style="display:none"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button onclick="show('slotDelete',this)">🗑 <span>Elimina slot</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -223,6 +223,20 @@ priceList:`<div class="top"><div><div class="title">Listino prezzi</div><div cla
 <div class="card"><div id="clientPriceListError" class="error"></div><div id="clientPriceListStatus" class="muted">Caricamento listino...</div><div id="clientPriceList" style="margin-top:14px"></div></div>`,
 payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza i tuoi pagamenti e lo stato degli abbonamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
 <div class="card"><div id="clientPaymentError" class="error"></div><div id="clientPaymentCount" class="muted">Caricamento...</div><div id="clientPaymentList" style="margin-top:14px">Caricamento storico...</div></div>`,
+slotDelete:`<div class="top"><div><div class="title">Elimina slot</div><div class="sub">Elimina le singole date di programmazione. Gli slot standard non vengono mostrati qui.</div></div><button class="btn" type="button" onclick="loadSlotDelete()">Aggiorna</button></div>
+<div class="card">
+  <div class="inputrow">
+    <input id="slotDeleteSearch" placeholder="Cerca data, coach o categoria" oninput="filterSlotDelete()">
+  </div>
+  <div class="bookingDateFilters" style="margin-top:12px">
+    <div><label>DAL</label><input id="slotDeleteFrom" type="date" onchange="filterSlotDelete()"></div>
+    <div><label>AL</label><input id="slotDeleteTo" type="date" onchange="filterSlotDelete()"></div>
+    <button type="button" class="btn secondary" onclick="clearSlotDeleteFilters()">Tutte le date</button>
+  </div>
+  <div id="slotDeleteError" class="error"></div>
+  <div id="slotDeleteCount" class="muted">Caricamento...</div>
+  <div id="slotDeleteList" style="margin-top:14px">Caricamento...</div>
+</div>`,
 admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
@@ -704,6 +718,8 @@ function show(v,el){
  if(v==='subscriptionPrices') loadSubscriptionPrices();
  if(v==='courseCatalog') loadCourseCatalog();
  if(v==='circuits') loadCircuits();
+
+  if(name==='slotDelete') setTimeout(loadSlotDelete,100);
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
@@ -1654,7 +1670,7 @@ function renderBookings(rows,slots=bookingSlots){
     const d=parseSlotDate(sl),st=slotTimeText(sl),en=slotEndTimeText(sl),booked=slotBooked(sl,rows),cap=slotCapacity(sl),coach=pick(sl,['coach','coach_name','trainer']);
     const time=en&&en!==st?st+'-'+en:(st||'--:--');
     return `<div class="slotAdminCard" data-slot-id="${esc(sl.id)}">
-      <div class="slotAdminMainLine">${esc(adminDay(sl))} <span class="slotAdminTime">${esc(time)}</span> <span class="slotAdminDash">-</span> <span class="slotAdminDate">${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span></div>
+      <div class="slotAdminMainLine">${esc(sl.lesson_type||slotTitle(sl)||"Lezione")} · ${esc(adminDay(sl))} <span class="slotAdminTime">${esc(time)}</span> <span class="slotAdminDash">-</span> <span class="slotAdminDate">${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span></div>
       <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} - max cliente ${esc(durationAdmin(sl))} - ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
       <div class="slotAdminActions"><button type="button" class="slotAdminBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp; ELIMINA</button></div>
     </div>`;
@@ -1684,6 +1700,89 @@ async function editAdminSlot(id){
  if(r.error){alert('Impossibile modificare lo slot: '+r.error.message);return}
  if(document.getElementById('slotAdminList')) await loadSlotAdmin(); else await loadBookings();
 }
+
+let slotDeleteData=[];
+
+async function loadSlotDelete(){
+  const list=document.getElementById('slotDeleteList');
+  if(!list)return;
+  list.innerHTML='Caricamento...';
+  const r=await db.from('lesson_slots')
+    .select('*')
+    .eq('is_standard',false)
+    .order('date',{ascending:true})
+    .order('time',{ascending:true});
+  if(r.error){
+    document.getElementById('slotDeleteError').textContent=r.error.message;
+    return;
+  }
+  slotDeleteData=r.data||[];
+  renderSlotDelete(slotDeleteData);
+}
+
+function filterSlotDelete(){
+  const q=(document.getElementById('slotDeleteSearch')?.value||'').toLowerCase().trim();
+  const from=document.getElementById('slotDeleteFrom')?.value||'';
+  const to=document.getElementById('slotDeleteTo')?.value||'';
+  const rows=slotDeleteData.filter(s=>{
+    const hay=[s.date,s.day,s.time,s.coach,s.lesson_type].join(' ').toLowerCase();
+    const d=String(s.date||'').slice(0,10);
+    return (!q||hay.includes(q)) && (!from||d>=from) && (!to||d<=to);
+  });
+  renderSlotDelete(rows);
+}
+
+function renderSlotDelete(rows){
+  const list=document.getElementById('slotDeleteList');
+  const count=document.getElementById('slotDeleteCount');
+  if(count)count.textContent=`${rows.length} slot`;
+  if(!rows.length){
+    list.innerHTML='<div class="muted">Nessuno slot trovato.</div>';
+    return;
+  }
+  list.innerHTML=rows.map(s=>{
+    const booked=Number(s.booked_count||0);
+    const disabled=booked>0;
+    return `<div class="slotAdminCard" style="margin-bottom:10px">
+      <div>
+        <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(s.day||'')}</span> ${esc(s.date||'')} <span class="slotAdminTime">${esc(s.time||'')}</span></div>
+        <div class="slotAdminMeta">${esc(s.lesson_type||'')} · Coach ${esc(s.coach||'')} · ${booked}/${Number(s.max_participants||0)} prenotati</div>
+      </div>
+      <div class="slotAdminActions" style="display:flex;justify-content:flex-end">
+        <button class="slotAdminBtn slotDeleteBtn" type="button" ${disabled?'disabled style="opacity:.45;cursor:not-allowed"':''} onclick="deleteSingleSlot('${esc(s.id)}')">ELIMINA</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteSingleSlot(id){
+  const s=slotDeleteData.find(x=>String(x.id)===String(id));
+  if(!s)return;
+  const booked=Number(s.booked_count||0);
+  if(booked>0){
+    alert(`Impossibile eliminare questo slot: ci sono ${booked} prenotazioni. Gestisci prima le prenotazioni.`);
+    return;
+  }
+  if(!confirm(`Eliminare lo slot ${s.date||''} ${s.time||''} - ${s.lesson_type||''}?`))return;
+  const r=await db.from('lesson_slots').delete().eq('id',id).eq('is_standard',false);
+  if(r.error){
+    document.getElementById('slotDeleteError').textContent=r.error.message;
+    return;
+  }
+  await loadSlotDelete();
+  if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
+}
+
+function clearSlotDeleteFilters(){
+  ['slotDeleteSearch','slotDeleteFrom','slotDeleteTo'].forEach(id=>{
+    const e=document.getElementById(id);if(e)e.value='';
+  });
+  filterSlotDelete();
+}
+window.loadSlotDelete=loadSlotDelete;
+window.filterSlotDelete=filterSlotDelete;
+window.deleteSingleSlot=deleteSingleSlot;
+window.clearSlotDeleteFilters=clearSlotDeleteFilters;
 
 async function loadSlotAdmin(){
  await ensureFutureLessonSlots();
@@ -1731,7 +1830,15 @@ function renderSlotAdmin(rows,slots){
  if(!window.slotCategoryFilter)window.slotCategoryFilter='';
  const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
  const selected=String(window.slotCategoryFilter||'').toLowerCase();
- const todayAdmin=new Date(); todayAdmin.setHours(0,0,0,0); const visible=(slots||[]).filter(sl=>{const d=rawLessonDate(sl); return d && d>=todayAdmin;}).filter(sl=>!selected||String(slotTitle(sl)||'').toLowerCase().includes(selected)).sort((a,b)=>{
+ const todayAdmin=new Date(); todayAdmin.setHours(0,0,0,0); const seenReal=new Set();
+ const visible=(slots||[]).filter(sl=>{
+   const d=rawLessonDate(sl); return d && d>=todayAdmin;
+ }).filter(sl=>{
+   const k=[String(sl.date||'').slice(0,10),String(sl.time||'').trim(),
+     String(sl.lesson_type||'').trim().toLowerCase(),String(sl.coach||'').trim().toLowerCase()].join('|');
+   if(seenReal.has(k))return false;
+   seenReal.add(k); return !selected||String(slotTitle(sl)||'').toLowerCase().includes(selected);
+ }).sort((a,b)=>{
    const da=parseSlotDate(a)?.getTime()||0,dbv=parseSlotDate(b)?.getTime()||0;
    if(da!==dbv)return da-dbv;
    return String(slotTimeText(a)||'').localeCompare(String(slotTimeText(b)||''));
@@ -2474,32 +2581,82 @@ async function generateStandardFutureSlots(){
   const rs=await db.from('lesson_slots').select('*')
     .eq('is_standard',true).eq('recurrence_active',true);
   if(rs.error||!rs.data?.length)return;
-  const today=new Date();today.setHours(12,0,0,0);
-  const horizon=new Date(today);horizon.setDate(horizon.getDate()+28);
-  const existing=await db.from('lesson_slots').select('*')
-    .gte('date',isoLocal(today)).limit(3000);
-  if(existing.error)return;
 
-  const rows=existing.data||[];
-  const inserts=[];
+  // Deduplica anche gli standard già presenti nel DB.
+  const standardMap=new Map();
   for(const s of rs.data){
+    const tm=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    const st=tm?.[1]||String(s.time||'').slice(0,5);
+    const en=tm?.[2]||'';
+    const key=[
+      Number(s.recurrence_weekday),
+      String(s.lesson_type||'').trim().toLowerCase(),
+      st,en,
+      String(s.coach||'').trim().toLowerCase(),
+      Number(s.max_participants||20)
+    ].join('|');
+    if(!standardMap.has(key)) standardMap.set(key,s);
+    else{
+      // Disattiva il duplicato standard, lasciando attivo il primo.
+      await db.from('lesson_slots').update({recurrence_active:false}).eq('id',s.id);
+    }
+  }
+  const standards=[...standardMap.values()];
+
+  const today=new Date();today.setHours(12,0,0,0);
+  const existingQ=await db.from('lesson_slots').select('*')
+    .eq('is_standard',false)
+    .gte('date',isoLocal(today)).limit(5000);
+  if(existingQ.error)return;
+  const rows=existingQ.data||[];
+
+  // Chiave di uno slot effettivo: stessa data + orario + attività + coach.
+  const realMap=new Map();
+  for(const x of rows){
+    const key=[
+      String(x.date||'').slice(0,10),
+      String(x.time||'').trim(),
+      String(x.lesson_type||'').trim().toLowerCase(),
+      String(x.coach||'').trim().toLowerCase()
+    ].join('|');
+    const prev=realMap.get(key);
+    if(!prev || Number(x.booked_count||0)>Number(prev.booked_count||0)) realMap.set(key,x);
+  }
+
+  const inserts=[];
+  for(const stnd of standards){
     for(let i=0;i<=28;i++){
       const d=new Date(today);d.setDate(today.getDate()+i);
-      if(d.getDay()!==Number(s.recurrence_weekday))continue;
+      if(d.getDay()!==Number(stnd.recurrence_weekday))continue;
+
       const iso=isoLocal(d);
-      if(iso===String(s.date).slice(0,10))continue;
-      const duplicate=rows.some(x=>String(x.standard_id||'')===String(s.id)&&String(x.date||'').slice(0,10)===iso);
-      if(duplicate)continue;
-      const mm=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
-      const st=mm?.[1]||String(s.time||'').slice(0,5);
+      const tm=String(stnd.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+      const st=tm?.[1]||String(stnd.time||'').slice(0,5);
+      const realKey=[
+        iso,
+        String(stnd.time||'').trim(),
+        String(stnd.lesson_type||'').trim().toLowerCase(),
+        String(stnd.coach||'').trim().toLowerCase()
+      ].join('|');
+
+      if(realMap.has(realKey))continue;
+      if(inserts.some(x=>[
+        String(x.date),String(x.time||'').trim(),
+        String(x.lesson_type||'').trim().toLowerCase(),
+        String(x.coach||'').trim().toLowerCase()
+      ].join('|')===realKey))continue;
+
       inserts.push({
-        starts_at:localStartsAt(d,st),day:standardDayLabel(s.recurrence_weekday),
-        date:iso,time:s.time,coach:s.coach||'KleosFit',
-        lesson_type:s.lesson_type||'Lezione',duration_minutes:Number(s.duration_minutes)||60,
-        is_available:true,max_participants:Number(s.max_participants)||20,
+        starts_at:localStartsAt(d,st),
+        day:standardDayLabel(stnd.recurrence_weekday),
+        date:iso,time:stnd.time,coach:stnd.coach||'KleosFit',
+        lesson_type:stnd.lesson_type||'Lezione',
+        duration_minutes:Number(stnd.duration_minutes)||60,
+        is_available:true,max_participants:Number(stnd.max_participants)||20,
         booked_count:0,is_standard:false,recurrence_active:false,
-        recurrence_weekday:s.recurrence_weekday,recurrence_group:s.recurrence_group,
-        standard_id:s.id
+        recurrence_weekday:stnd.recurrence_weekday,
+        recurrence_group:stnd.recurrence_group,
+        standard_id:stnd.id
       });
     }
   }
@@ -2508,7 +2665,6 @@ async function generateStandardFutureSlots(){
     if(ins.error)console.warn('Generazione slot standard:',ins.error.message);
   }
 }
-
 
 
 async function refreshStandardSlots(){

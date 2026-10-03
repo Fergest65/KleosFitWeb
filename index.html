@@ -636,7 +636,13 @@ async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
  syncClientSubscriptionDates();
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_plus_course:valOrNull('cpPlusCourse'),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ // Il select contiene l'ID del listino, mentre profiles.subscription_type salva il NOME del tipo.
+ // Prima veniva salvato l'ID UUID e alla riapertura il tipo risultava perso/non riconosciuto.
+ const subSel=document.getElementById('cpSubType');
+ const subId=subSel?.value||'';
+ const subPreset=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(subId));
+ const subTypeValue=subId==='__custom__'?'Prezzo personalizzato':(subPreset?.name||'');
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:subTypeValue||null,subscription_plus_course:valOrNull('cpPlusCourse'),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  // Non usiamo SELECT dopo UPDATE: con alcune policy RLS Supabase l'UPDATE riesce ma il SELECT restituisce nessuna riga.
  // In quel caso i dati venivano erroneamente segnalati come non salvati.
  const r=await db.from('profiles').update(payload).eq('id',id);
@@ -1497,6 +1503,7 @@ function applySubscriptionType(id){
  if(id==='__custom__'){
    const info=document.getElementById('cpPresetInfo');
    if(info)info.textContent='Prezzo personalizzato: inserisci manualmente il costo dell’abbonamento.';
+   toggleClientPlusFields();
    return;
  }
  if(id) applySubscriptionPreset(id);

@@ -895,7 +895,7 @@ async function regenerateClientQr(id){
  openClientSheet(id);
 }
 function dateInputValue(v){if(!v)return ''; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:''}
-function generateClientCardNumber(){
+async function generateClientCardNumber(){
  const input=document.getElementById('cpCard');
  if(!input)return;
  try{

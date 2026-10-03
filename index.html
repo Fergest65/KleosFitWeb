@@ -895,6 +895,27 @@ async function regenerateClientQr(id){
  openClientSheet(id);
 }
 function dateInputValue(v){if(!v)return ''; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:''}
+async function generateUniqueMemberCardNumber(){
+  // Numero tessera progressivo: usa il primo numero libero.
+  const r=await db.from('profiles')
+    .select('member_card_number')
+    .not('member_card_number','is',null)
+    .limit(5000);
+  if(r.error)throw r.error;
+
+  const used=new Set();
+  for(const row of (r.data||[])){
+    const raw=String(row.member_card_number??'').trim();
+    if(!/^\d+$/.test(raw))continue;
+    const n=Number(raw);
+    if(Number.isSafeInteger(n)&&n>0)used.add(n);
+  }
+
+  let candidate=1;
+  while(used.has(candidate))candidate++;
+  return String(candidate);
+}
+
 async function generateClientCardNumber(){
  const input=document.getElementById('cpCard');
  if(!input)return;

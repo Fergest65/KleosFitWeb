@@ -424,6 +424,23 @@ async function sendAdminNotification(){
   const b=document.getElementById('notifBody');if(b)b.value='';await loadNotifications();
  }catch(e){if(err){err.textContent='Invio non riuscito: '+e.message;err.style.display='block'}}
 }
+function showSubscriptionExpiryPopup(giorni,d,raw){
+ const key='kleosfit-expiry-popup-'+String(currentUser?.id||'')+'-'+raw;
+ // Mostra il popup una sola volta per sessione e per quella specifica scadenza.
+ // Il banner resta comunque visibile nella Dashboard.
+ try{if(sessionStorage.getItem(key)==='1')return;sessionStorage.setItem(key,'1');}catch(e){}
+ const isOne=giorni==='1 giorno';
+ openModal(`
+   <div style="text-align:center;padding:10px 4px 4px">
+     <div style="font-size:54px;line-height:1;margin-bottom:14px">⚠️</div>
+     <div style="font-size:26px;font-weight:900;color:var(--lime,#c8ff00);letter-spacing:.2px">ABBONAMENTO IN SCADENZA</div>
+     <div style="margin-top:14px;font-size:19px;font-weight:800">Il tuo abbonamento scadrà tra <b>${esc(giorni)}</b></div>
+     <div style="margin-top:8px;font-size:22px;font-weight:900">${esc(d)}</div>
+     <div style="margin-top:14px;font-size:15px;line-height:1.5;opacity:.9">Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.</div>
+     <button class="btn" type="button" style="width:100%;margin-top:22px;font-size:16px;padding:13px 18px" onclick="closeModal()">HO CAPITO</button>
+   </div>`);
+}
+
 async function checkSubscriptionExpiryNotice(){
  const box=document.getElementById('subscriptionExpiryNotice');
  const text=document.getElementById('subscriptionExpiryNoticeText');
@@ -444,6 +461,7 @@ async function checkSubscriptionExpiryNotice(){
    const giorni=diff===1?'1 giorno':diff+' giorni';
    text.textContent='Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.';
    box.style.display='block';
+   showSubscriptionExpiryPopup(giorni,d,raw);
    if('Notification' in window && Notification.permission==='granted'){
      const key='kleosfit-expiry-'+currentUser.id+'-'+raw;
      if(localStorage.getItem(key)!=='1'){

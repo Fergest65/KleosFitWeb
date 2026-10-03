@@ -730,8 +730,27 @@ function renderClients(rows){
  count.textContent=rows.length+' profili';
  if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th>Ruolo</th><th></th></tr></thead><tbody>'+
- rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button></div></td></tr>`}).join('')+
+ rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button><button class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina</button></div></td></tr>`}).join('')+
  '</tbody></table></div>';
+}
+async function deleteClientCompletely(id){
+ if(!isSuperuserRole()){alert('Operazione riservata al Superuser.');return;}
+ const p=(clientsData||[]).find(x=>String(x.id)===String(id));
+ if(!p)return;
+ const name=profileDisplayName(p)||p.email||'questo cliente';
+ const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo e i dati collegati e, tramite la funzione database dedicata, anche l’account di autenticazione.\n\nQuesta operazione non è reversibile.\n\nContinuare?');
+ if(!ok)return;
+ const msg=document.getElementById('clientError');
+ if(msg){msg.textContent='Eliminazione definitiva in corso...';msg.className='muted';msg.style.display='block'}
+ try{
+   const r=await db.rpc('delete_user_completely',{p_user_id:id});
+   if(r.error)throw new Error(r.error.message);
+   clientsData=(clientsData||[]).filter(x=>String(x.id)!==String(id));
+   renderClients(clientsData);
+   if(msg){msg.textContent='Cliente eliminato definitivamente.';msg.className='success';msg.style.display='block'}
+ }catch(e){
+   if(msg){msg.textContent='Eliminazione non eseguita: '+e.message+'\n\nVerifica che la funzione database delete_user_completely sia stata creata in Supabase.';msg.className='error';msg.style.display='block'}
+ }
 }
 function clientName(p){return profileDisplayName(p)||'Cliente'}
 function clientCardNumber(p){return pick(p,['member_card_number','member_card','card_number','tessera','member_code'])||''}

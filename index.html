@@ -529,6 +529,10 @@ async function checkSubscriptionExpiryNotice(){
    const giorni=diff===1?'1 giorno':diff+' giorni';
    text.textContent='Il tuo abbonamento scadrà tra '+giorni+' ('+d+'). Per continuare ad allenarti senza interruzioni, ricordati di rinnovarlo.';
    box.style.display='block';
+   box.style.background='linear-gradient(135deg,#8b0000,#c40000)';
+   box.style.border='2px solid #ff3b3b';
+   box.style.color='#ffffff';
+   box.style.boxShadow='0 0 18px rgba(255,0,0,.45)';
    showSubscriptionExpiryPopup(giorni,d,raw);
    if('Notification' in window && Notification.permission==='granted'){
      const key='kleosfit-expiry-'+currentUser.id+'-'+raw;
@@ -2034,7 +2038,7 @@ async function register(e){
    registerMessage(msg,true);
  }finally{if(btn){btn.disabled=false;btn.textContent='Crea account'}}
 }
-async function login(e){e.preventDefault();const er=document.getElementById('error');er.style.display='none';const {data,error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){er.textContent=error.message;er.style.display='block';return}currentUser=data.user;document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
+async function login(e){e.preventDefault();const er=document.getElementById('error');er.style.display='none';const {data,error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){er.textContent=error.message;er.style.display='block';return}currentUser=data.user;/* Nuova sessione di accesso: il popup scadenza deve poter ricomparire. */try{Object.keys(sessionStorage).filter(k=>k.startsWith('kleosfit-expiry-popup-'+String(currentUser.id)+'-')).forEach(k=>sessionStorage.removeItem(k))}catch(e){}document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
 async function logout(){await db.auth.signOut();location.reload()}
 document.getElementById('loginForm').addEventListener('submit',login);
 document.getElementById('registerForm').addEventListener('submit',register);

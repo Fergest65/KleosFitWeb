@@ -1716,6 +1716,9 @@ async function loadSlotAdmin(){
    err.style.display='block';
    list.innerHTML='<div class="bookingNotice">Impossibile caricare gli slot. Premi Aggiorna per riprovare.</div>';
  }
+
+  // loadSlotAdmin ricrea il pannello: ricarica quindi la programmazione standard.
+  if(typeof loadStandardSlots==='function') await loadStandardSlots();
 }
 setInterval(()=>ensureFutureLessonSlots(), 10*60*1000);
 function filterSlotAdmin(){
@@ -2540,8 +2543,8 @@ async function createStandardsFromCurrentProgramming(){
 }
 async function refreshStandardSlots(){
   await generateStandardFutureSlots();
-  await loadStandardSlots();
-  if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
+  if(typeof loadSlotAdmin==='function') await loadSlotAdmin();
+  else await loadStandardSlots();
 }
 window.refreshStandardSlots=refreshStandardSlots;
 

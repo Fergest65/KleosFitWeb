@@ -1673,8 +1673,7 @@ function renderBookings(rows,slots=bookingSlots){
     const d=parseSlotDate(sl),st=slotTimeText(sl),en=slotEndTimeText(sl),booked=slotBooked(sl,rows),cap=slotCapacity(sl),coach=pick(sl,['coach','coach_name','trainer']);
     const time=en&&en!==st?st+'-'+en:(st||'--:--');
     return `<div class="slotAdminCard" data-slot-id="${esc(sl.id)}">
-      <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(adminDay(sl))}</span> <span>${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span> <span class="slotAdminTime">${esc(time)}</span></div>
-      <div style="font-size:20px;font-weight:900;color:#c6ff35;margin-top:5px">${esc(sl.lesson_name||sl.title||sl.lesson_type||'NOME LEZIONE DA DEFINIRE')}</div>
+      <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(adminDay(sl))}</span> <span>${esc(d?String(d.getDate()).padStart(2,'0')+' '+['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]: '—')}</span> <strong style="color:#c6ff35;margin-left:10px">${esc(sl.lesson_name||sl.title||sl.lesson_type||"Lezione")}</strong> <span style="color:#aeb6c4">· ${esc(sl.lesson_type||'')}</span> <span class="slotAdminTime">${esc(time)}</span></div>
       <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} - max cliente ${esc(durationAdmin(sl))} - ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
       <div class="slotAdminActions"><button type="button" class="slotAdminBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp; ELIMINA</button></div>
     </div>`;

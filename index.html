@@ -788,6 +788,7 @@ async function loadClientAnagrafica(){
  const p=r.data;
  box.innerHTML=`<div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="myFullName" value="${esc(p.full_name||p.name||'')}"></div><div><label>Data di nascita</label><input id="myBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="myFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Stato cliente</h3><div class="clientSheetGrid"><div><label>Cliente attivo</label><select id="cpClientActive"><option value="true" ${p.is_active!==false?'selected':''}>SÌ</option><option value="false" ${p.is_active===false?'selected':''}>NO</option></select></div><div><label>Stato</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${p.is_active===false?'NON ATTIVO':'ATTIVO'}</div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="myEmail" type="email" value="${esc(p.email||currentUser.email||'')}"></div><div><label>Telefono</label><input id="myPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="myAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="myCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Corso aggiuntivo Plus</label><input value="${esc(parsePlusCourses(p).map(x=>x.name).join(', ')||'—')}" disabled></div><div><label>Supplemento Plus</label><input value="${p.subscription_plus_course?'€ '+Number(p.subscription_plus_cost||0).toFixed(2).replace('.',','):'—'}" disabled></div><div><label>Totale pagato</label><input value="${p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
   <div id="myAnaMsg" class="error"></div><div class="actions"><button class="btn" onclick="saveClientAnagrafica()">Salva modifiche</button></div></div>`;
@@ -935,7 +936,7 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
    <div class="qrManagementBox">
@@ -954,6 +955,11 @@ function openClientSheet(id){
   <div id="cpMsg" class="error"></div>
   <div class="actions" style="justify-content:space-between;align-items:center"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
  </div>`);
+ const activeSelect=document.getElementById('cpClientActive');
+ if(activeSelect)activeSelect.addEventListener('change',()=>{
+   const out=document.getElementById('cpClientActiveStatus');
+   if(out)out.textContent=activeSelect.value==='true'?'ATTIVO':'NON ATTIVO';
+ });
  Promise.all([ensureSubscriptionPricesLoaded(),ensureCourseCatalogLoaded()]).then(()=>{
    const sel=document.getElementById('cpSubType');if(!sel)return;
    const match=findMatchingSubscriptionPreset(p);
@@ -993,12 +999,55 @@ function openClientSheet(id){
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
+
+async function getLatestMedicalCertificate(profileId){
+ const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',profileId).eq('document_type','medical_certificate').order('created_at',{ascending:false}).limit(1).maybeSingle();
+ if(r.error)throw r.error;
+ return r.data||null;
+}
+async function loadMedicalCertificateMeta(profileId){
+ const box=document.getElementById('cpMedExisting');
+ if(!box)return;
+ box.innerHTML='<div class="muted">Verifica documento...</div>';
+ try{
+   const doc=await getLatestMedicalCertificate(profileId);
+   if(!doc){box.innerHTML='<div class="muted">Nessun certificato caricato.</div>';return;}
+   const date=doc.created_at?fmtDate(doc.created_at):'';
+   box.innerHTML=`<div class="card" style="padding:10px;margin:0"><div><b>Certificato presente</b> — ${esc(doc.file_name||'Documento')}</div><div class="muted" style="margin-top:4px">${esc(doc.mime_type||'')} ${date?'· '+esc(date):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openMedicalCertificate('${esc(doc.file_path)}')">Visualizza certificato</button></div></div>`;
+ }catch(e){box.innerHTML='<div class="muted">Documento non disponibile: '+esc(e?.message||e)+'</div>';}
+}
+async function uploadMedicalCertificate(profileId){
+ const file=document.getElementById('cpMedFile')?.files?.[0];if(!file)return null;
+ if(file.size>10*1024*1024)throw new Error('Il certificato supera il limite di 10 MB.');
+ if(!(file.type.startsWith('image/')||file.type==='application/pdf'))throw new Error('Formato non supportato. Usa una foto JPG/PNG/WebP oppure un PDF.');
+ const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin';
+ const safeName=(file.name||'certificato').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120);
+ const path=`${String(profileId)}/medical_certificate/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+ const up=await db.storage.from('client-documents').upload(path,file,{contentType:file.type,upsert:false});
+ if(up.error)throw up.error;
+ const ins=await db.from('client_documents').insert({profile_id:profileId,document_type:'medical_certificate',file_path:path,file_name:safeName,mime_type:file.type}).select('*').maybeSingle();
+ if(ins.error)throw ins.error;
+ return ins.data||{file_path:path,file_name:safeName,mime_type:file.type};
+}
+async function openMedicalCertificate(path){
+ if(!path)return;
+ const r=await db.storage.from('client-documents').createSignedUrl(path,300);
+ if(r.error){alert('Impossibile aprire il certificato: '+r.error.message);return;}
+ window.open(r.data.signedUrl,'_blank','noopener');
+}
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:computeSubscriptionActive(document.getElementById('cpFrom')?.value,document.getElementById('cpTo')?.value),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),is_active:document.getElementById('cpClientActive')?.value!=='false',subscription_type:valOrNull('cpSubType'),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:computeSubscriptionActive(document.getElementById('cpFrom')?.value,document.getElementById('cpTo')?.value),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
+ if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
+ try{
+   await uploadMedicalCertificate(id);
+ }catch(e){
+   if(msg){msg.textContent='Cliente salvato, ma certificato non caricato: '+(e?.message||e);msg.className='error';msg.style.display='block'}
+   return;
+ }
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
  const updated=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(updated)Object.assign(updated,r.data);

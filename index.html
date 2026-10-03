@@ -235,7 +235,7 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
     <div>
       <h2 style="margin:0">Slot standard</h2>
       <div style="color:#9aa3ad;font-size:13px;margin-top:4px">
-        Configura un turno ricorrente. Puoi creare più turni nello stesso giorno con orari diversi.
+        Configurazione separata degli slot ricorrenti. Gli slot standard non sono le singole prenotazioni/date.
       </div>
     </div>
     <button type="button" class="btn" id="addStandardSlotBtn">＋ NUOVO SLOT STANDARD</button>
@@ -287,7 +287,9 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
     </div>
   </div>
 
-  <div id="standardSlotsList" style="margin-top:12px"></div>
+  <div id="standardSlotsList" style="margin-top:12px"></div><div style="margin-top:10px;color:#8f969f;font-size:12px">
+          Gli slot standard sono modelli ricorrenti separati dagli slot effettivi. Le date future vengono generate automaticamente e possono essere gestite singolarmente nella sezione sottostante.
+        </div>
 </div>
 <div id="slotAdminList">Caricamento...</div></div>`,
 notifications:`<div class="top"><div><div class="title">Gestione notifiche</div><div class="sub">Invia comunicazioni ai clienti e gestisci le notifiche dell'app.</div></div><button class="btn" type="button" onclick="loadNotifications()">Aggiorna</button></div>
@@ -1691,7 +1693,7 @@ async function loadSlotAdmin(){
  try{
    // Carichiamo prima gli slot: la gestione deve funzionare anche se la tabella
    // prenotazioni ha un problema di RLS o una risposta lenta.
-   const slotPromise=db.from('lesson_slots').select('*').limit(500);
+   const slotPromise=db.from('lesson_slots').select('*').eq('is_standard',false).limit(500);
    const timeout=new Promise(resolve=>setTimeout(()=>resolve({data:null,error:{message:'Timeout caricamento slot'}}),10000));
    const s=await Promise.race([slotPromise,timeout]);
    if(s.error){
@@ -1739,7 +1741,7 @@ function renderSlotAdmin(rows,slots){
    return `<div class="slotAdminCard">
      <div class="slotAdminMainLine"><span class="slotAdminDay">${esc(day)}</span> <span>${esc(date)}</span> <span class="slotAdminTime">${esc(time)}</span></div>
      <div class="slotAdminMeta">Coach ${esc(coach==='—'?'KleosFit':coach)} · max utilizzo ${esc(durationAdmin(sl))} · ${cap===null?booked+'/'+booked:booked+'/'+cap} prenotati</div>
-     <div class="slotAdminActions"><button type="button" class="slotAdminBtn slotEditBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="btn secondary" onclick="makeStandardFromSlot('${esc(sl.id)}')">★ CREA STANDARD</button><button type="button" class="slotAdminBtn slotDeleteBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp;ELIMINA</button></div>
+     <div class="slotAdminActions"><button type="button" class="slotAdminBtn slotEditBtn" data-edit-slot="${esc(sl.id)}">✎ &nbsp;MODIFICA</button><button type="button" class="slotAdminBtn slotDeleteBtn" data-delete-slot="${esc(sl.id)}">▣ &nbsp;ELIMINA</button></div>
    </div>`;
  }).join('');
  list.innerHTML=`<div class="slotAdminWrap"><h1 class="slotAdminTitle">Slot per categoria</h1><div class="slotAdminTabs">${cats.map(([label,key])=>`<button type="button" class="slotAdminTab ${selected===key?'active':''}" data-slot-cat="${esc(key)}">${label}</button>`).join('')}</div><div class="slotAdminCategory">${selected?esc(cats.find(x=>x[1]===selected)?.[0]||'Slot'):'TUTTE'}</div><div class="slotAdminCards">${cards||'<div class="bookingNotice">Nessuno slot disponibile.</div>'}</div></div>`;
@@ -2509,41 +2511,7 @@ async function generateStandardFutureSlots(){
     if(ins.error)console.warn('Generazione slot standard:',ins.error.message);
   }
 }
-async function makeStandardFromSlot(id){
-  const q=await db.from('lesson_slots').select('*').eq('id',id).maybeSingle();
-  if(q.error||!q.data){alert('Slot non trovato.');return;}
-  const s=q.data;
-  if(s.is_standard===true && s.recurrence_active===true){
-    alert('Questo slot è già uno standard.');
-    return;
-  }
 
-  const date=String(s.date||'').slice(0,10);
-  const d=date ? new Date(date+'T12:00:00') : new Date();
-  const weekday=d.getDay();
-  const group='std_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-
-  // Lo slot scelto diventa il modello standard e resta visibile nella data.
-  const upd=await db.from('lesson_slots').update({
-    is_standard:true,
-    recurrence_active:true,
-    recurrence_weekday:weekday,
-    recurrence_group:group,
-    standard_id:null
-  }).eq('id',id);
-
-  if(upd.error){
-    alert('Impossibile creare lo standard: '+upd.error.message);
-    return;
-  }
-
-  // Genera subito le prossime 4 settimane.
-  await generateStandardFutureSlots();
-  await loadStandardSlots();
-  if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
-
-  alert('Slot standard creato. Le prossime 4 settimane verranno generate automaticamente.');
-}
 window.makeStandardFromSlot=makeStandardFromSlot;
 
 async function refreshStandardSlots(){

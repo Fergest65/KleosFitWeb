@@ -1377,9 +1377,18 @@ function bookingAthleteName(b){
  }
  return 'Atleta non trovato';
 }
-function bookingDateForRow(b,sl){return sl?parseSlotDate(sl):parseAnySlotDate(pick(b,['date','booking_date','scheduled_date','starts_at','created_at']))}
-function bookingActivity(sl,b){return sl?slotTitle(sl):pick(b,['lesson_type','lesson_name','activity','activity_name','category','title'])||'Lezione'}
-function bookingTimes(sl,b){if(sl){const st=slotTimeText(sl),en=slotEndTimeText(sl);return st+(en&&en!==st?' - '+en:'')}return pick(b,['time','starts_at','start_time','booking_time'])||'—'}
+function bookingDateForRow(b,sl){
+  if(sl)return parseSlotDate(sl);
+  return parseAnySlotDate(pick(b,['booking_slot_date','date','booking_date','scheduled_date','starts_at','created_at']));
+}
+function bookingActivity(sl,b){
+  if(sl)return sl.lesson_name||sl.title||slotTitle(sl);
+  return pick(b,['booking_slot_lesson_name','lesson_name','lesson_type','activity','activity_name','category','title'])||'Lezione';
+}
+function bookingTimes(sl,b){
+  if(sl){const st=slotTimeText(sl),en=slotEndTimeText(sl);return st+(en&&en!==st?' - '+en:'')}
+  return pick(b,['booking_slot_time','time','starts_at','start_time','booking_time'])||'—';
+}
 function bookingDateInputValue(d){return d&&Number.isFinite(d.getTime())?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:''}
 function clearBookingDateRange(){const a=document.getElementById('bookingDateFrom'),b=document.getElementById('bookingDateTo');if(a)a.value='';if(b)b.value='';filterBookings()}
 function renderAdminReservations(rows,slots){
@@ -1788,6 +1797,58 @@ window.filterSlotDelete=filterSlotDelete;
 window.deleteSingleSlot=deleteSingleSlot;
 window.clearSlotDeleteFilters=clearSlotDeleteFilters;
 
+
+/* Pulizia automatica degli slot scaduti.
+   Le prenotazioni vengono conservate: prima si scollega lo slot dalla
+   prenotazione e solo dopo si elimina la riga dello slot. Se il database
+   non consente di scollegarla, lo slot viene lasciato intatto per non perdere
+   la prenotazione. */
+async function cleanupExpiredLessonSlots(){
+  try{
+    const today=isoLocal(new Date());
+    const r=await db.from('lesson_slots').select('*').lt('date',today).limit(2000);
+    if(r.error || !r.data?.length)return;
+
+    for(const sl of r.data){
+      const d=rawLessonDate(sl);
+      if(!d || d >= new Date(today+'T00:00:00'))continue;
+
+      // Prima salviamo nella prenotazione i dati dello slot.
+      const br=await db.from('lesson_bookings').select('id,slot_id').eq('slot_id',sl.id);
+      if(br.error)continue;
+
+      const bookings=br.data||[];
+      if(bookings.length){
+        const snapshot={
+          booking_slot_date:sl.date||null,
+          booking_slot_time:sl.time||null,
+          booking_slot_lesson_name:sl.lesson_name||sl.title||sl.lesson_type||null,
+          booking_slot_lesson_type:sl.lesson_type||null,
+          booking_slot_coach:sl.coach||null
+        };
+        const up=await db.from('lesson_bookings')
+          .update(snapshot)
+          .eq('slot_id',sl.id);
+        if(up.error){
+          console.warn('Impossibile salvare lo storico dello slot '+sl.id,up.error);
+          continue;
+        }
+
+        // slot_id viene reso NULL dal vincolo ON DELETE SET NULL.
+        // Non cancelliamo manualmente la prenotazione.
+      }
+
+      // Lo slot scaduto deve sparire sempre.
+      const del=await db.from('lesson_slots').delete().eq('id',sl.id);
+      if(del.error){
+        console.warn('Impossibile eliminare slot scaduto '+sl.id,del.error);
+      }
+    }
+  }catch(e){
+    console.warn('Pulizia slot scaduti:',e);
+  }
+}
+
 async function loadSlotAdmin(){
  await ensureFutureLessonSlots();
  const list=document.getElementById('slotAdminList'),err=document.getElementById('slotAdminError');
@@ -1824,6 +1885,8 @@ async function loadSlotAdmin(){
   if(typeof loadStandardSlots==='function') await loadStandardSlots();
 }
 setInterval(()=>ensureFutureLessonSlots(), 10*60*1000);
+setInterval(()=>cleanupExpiredLessonSlots(), 10*60*1000);
+
 function filterSlotAdmin(){
  const q=(document.getElementById('slotAdminSearch')?.value||'').toLowerCase().trim();
  const rows=!q?bookingSlots:bookingSlots.filter(sl=>JSON.stringify(sl).toLowerCase().includes(q));
@@ -1841,7 +1904,13 @@ function renderSlotAdmin(rows,slots){
    const k=[String(sl.date||'').slice(0,10),String(sl.time||'').trim(),
      String(sl.lesson_type||'').trim().toLowerCase(),String(sl.coach||'').trim().toLowerCase()].join('|');
    if(seenReal.has(k))return false;
-   seenReal.add(k); return !selected||String(slotTitle(sl)||'').toLowerCase().includes(selected);
+   seenReal.add(k);
+   if(!selected)return true;
+   const categories=[
+     sl?.lesson_type, sl?.category, sl?.lesson_name, sl?.title, sl?.description
+   ].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='')
+    .map(v=>String(v).trim().toLowerCase());
+   return categories.some(v=>v===selected || v.includes(selected) || selected.includes(v));
  }).sort((a,b)=>{
    const da=parseSlotDate(a)?.getTime()||0,dbv=parseSlotDate(b)?.getTime()||0;
    if(da!==dbv)return da-dbv;

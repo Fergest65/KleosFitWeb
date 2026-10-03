@@ -238,7 +238,7 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
         Configurazione separata degli slot ricorrenti. Gli slot standard non sono le singole prenotazioni/date.
       </div>
     </div>
-    <button type="button" class="btn" id="addStandardSlotBtn" onclick="openStandardForm()">＋ NUOVO SLOT STANDARD </button><button type="button" class="btn secondary" onclick="createStandardsFromCurrentProgramming()">IMPORTA PROGRAMMAZIONE ATTUALE</button>
+    <button type="button" class="btn" id="addStandardSlotBtn" onclick="openStandardForm()">＋ NUOVO SLOT STANDARD </button>
   </div>
 
   <div id="standardSlotForm" style="display:none;margin-top:14px;padding:14px;border:1px solid #303640;border-radius:10px;background:#101318">
@@ -2309,23 +2309,20 @@ function closeStandardForm(){
   document.getElementById('standardSlotForm').style.display='none';
 }
 function groupStandardRows(rows){
-  return (rows||[]).map(s=>{
+  // Un turno standard = una sola combinazione giorno/attività/orario/coach/posti.
+  // Eventuali duplicati già presenti nel DB vengono mostrati una sola volta.
+  const seen=new Set();
+  const out=[];
+  (rows||[]).forEach(s=>{
     const tm=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
-    return {
-      group:s.recurrence_group||s.id,
-      rows:[s],
-      id:s.id,
-      day:Number(s.recurrence_weekday),
-      category:s.lesson_type||'Lezione',
-      coach:s.coach||'KleosFit',
-      start:tm?.[1]||String(s.time||'').slice(0,5)||'',
-      end:tm?.[2]||'',
-      capacity:Number(s.max_participants||20)
-    };
-  }).sort((a,b)=>{
-    const da=a.day===0?7:a.day, db=b.day===0?7:b.day;
-    return da-db || a.start.localeCompare(b.start);
+    const start=tm?.[1]||String(s.time||'').slice(0,5)||'';
+    const end=tm?.[2]||'';
+    const key=[Number(s.recurrence_weekday),String(s.lesson_type||'').trim().toLowerCase(),start,end,String(s.coach||'').trim().toLowerCase(),Number(s.max_participants||20)].join('|');
+    if(seen.has(key))return;
+    seen.add(key);
+    out.push({group:s.recurrence_group||s.id,rows:[s],id:s.id,day:Number(s.recurrence_weekday),category:s.lesson_type||'Lezione',coach:s.coach||'KleosFit',start,end,capacity:Number(s.max_participants||20)});
   });
+  return out.sort((a,b)=>{const da=a.day===0?7:a.day,db=b.day===0?7:b.day;return da-db||a.start.localeCompare(b.start);});
 }
 async function loadStandardSlots(){
   const box=document.getElementById('standardSlotsList');
@@ -2410,6 +2407,10 @@ async function saveStandardForm(){
       }).eq('id',old.id);
       if(up.error){alert('Errore modifica: '+up.error.message);return;}
     }else{
+      const dup=await db.from('lesson_slots').select('id').eq('is_standard',true).eq('recurrence_active',true)
+        .eq('recurrence_weekday',Number(day)).eq('lesson_type',category).eq('coach',coach).eq('time',time).eq('max_participants',capacity).limit(1);
+      if(dup.error){alert('Errore controllo duplicato: '+dup.error.message);return;}
+      if(dup.data?.length)continue;
       const ins=await db.from('lesson_slots').insert({
         starts_at:localStartsAt(new Date(date+'T12:00:00'),start),
         day:standardDayLabel(day),date,time,coach,lesson_type:category,
@@ -2417,7 +2418,14 @@ async function saveStandardForm(){
         booked_count:0,is_standard:true,recurrence_active:true,
         recurrence_weekday:day,recurrence_group:group,standard_id:null
       }).select('*').single();
-      if(ins.error){alert('Errore creazione standard: '+ins.error.message);return;}
+      if(ins.error){
+        if(ins.error.code==='23505'){
+          alert('Questo turno standard esiste già per lo stesso giorno, orario, attività, coach e numero di posti.');
+        }else{
+          alert('Errore creazione standard: '+ins.error.message);
+        }
+        return;
+      }
     }
   }
 
@@ -2502,45 +2510,7 @@ async function generateStandardFutureSlots(){
 }
 
 
-async function createStandardsFromCurrentProgramming(){
-  if(!confirm('Creo una programmazione standard separata dagli slot con date, usando le combinazioni giorno/orario/attività/coach/posti già presenti. Le date esistenti non vengono modificate.'))return;
-  const q=await db.from('lesson_slots').select('*').eq('is_standard',false).limit(3000);
-  if(q.error){alert('Errore lettura slot: '+q.error.message);return;}
-  const existingStd=await db.from('lesson_slots').select('*').eq('is_standard',true).eq('recurrence_active',true);
-  if(existingStd.error){alert('Errore lettura standard: '+existingStd.error.message);return;}
-  const known=new Set((existingStd.data||[]).map(s=>[
-    Number(s.recurrence_weekday),String(s.lesson_type||'').trim().toLowerCase(),
-    String(s.time||'').trim().toLowerCase(),String(s.coach||'').trim().toLowerCase(),
-    Number(s.max_participants||0)
-  ].join('|')));
-  const groups=new Map();
-  for(const s of (q.data||[])){
-    const d=new Date(String(s.date||'').slice(0,10)+'T12:00:00');
-    if(isNaN(d))continue;
-    const day=d.getDay();
-    const key=[day,String(s.lesson_type||'').trim().toLowerCase(),String(s.time||'').trim().toLowerCase(),String(s.coach||'').trim().toLowerCase(),Number(s.max_participants||0)].join('|');
-    if(known.has(key)||groups.has(key))continue;
-    if(!groups.has(key))groups.set(key,s);
-  }
-  let created=0;
-  for(const s of groups.values()){
-    const d=new Date(String(s.date).slice(0,10)+'T12:00:00');
-    const ins=await db.from('lesson_slots').insert({
-      starts_at:s.starts_at, day:standardDayLabel(d.getDay()), date:String(s.date).slice(0,10),
-      time:s.time, coach:s.coach, lesson_type:s.lesson_type,
-      duration_minutes:Number(s.duration_minutes)||60, is_available:true,
-      max_participants:Number(s.max_participants)||20, booked_count:0,
-      is_standard:true, recurrence_active:true, recurrence_weekday:d.getDay(),
-      recurrence_group:'std_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-      standard_id:null
-    });
-    if(!ins.error)created++;
-  }
-  await generateStandardFutureSlots();
-  await loadStandardSlots();
-  if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
-  alert(`Programmazione standard creata: ${created} turni.`);
-}
+
 async function refreshStandardSlots(){
   await generateStandardFutureSlots();
   if(typeof loadSlotAdmin==='function') await loadSlotAdmin();

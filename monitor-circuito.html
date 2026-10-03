@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KLEOSFIT — Monitor Circuito</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#090b0d;color:#fff;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+body{display:flex;align-items:stretch;justify-content:center}
+#app{width:100%;height:100%;display:flex;flex-direction:column;padding:2.5vh 3vw}
+.header{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.brand{font-size:clamp(20px,2vw,34px);font-weight:900;letter-spacing:2px}.brand span{color:#d7ff3f}
+.status{font-size:clamp(12px,1.1vw,18px);color:#8f969f}
+.main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.title{font-size:clamp(26px,4vw,68px);font-weight:900;margin-bottom:1vh}
+.round{font-size:clamp(18px,2vw,34px);color:#d7ff3f;font-weight:800;margin-bottom:1vh}
+.phase{font-size:clamp(16px,1.8vw,30px);text-transform:uppercase;letter-spacing:3px;color:#aab0b7;font-weight:800}
+.timer{font-size:clamp(110px,18vw,300px);font-weight:900;line-height:.9;letter-spacing:-7px;margin:2vh 0}
+.exercise{font-size:clamp(30px,5vw,86px);font-weight:900;max-width:90%;margin:1vh auto}
+.details{font-size:clamp(16px,1.8vw,28px);color:#c3c8ce;min-height:2.5em}
+.next{font-size:clamp(14px,1.4vw,24px);color:#8f969f;margin-top:2vh}
+.progress{width:min(1100px,88%);height:12px;background:#22262b;border-radius:20px;overflow:hidden;margin-top:2vh}
+.progress i{display:block;height:100%;width:0;background:#d7ff3f;transition:width .1s linear}
+.controls{display:flex;justify-content:center;gap:12px;margin-top:2vh;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:13px 24px;font-size:16px;font-weight:900;cursor:pointer;background:#d7ff3f;color:#080a0b}
+button.secondary{background:#20252b;color:#fff;border:1px solid #343a42}
+.overlay{position:fixed;inset:0;background:rgba(5,7,8,.96);display:flex;align-items:center;justify-content:center;text-align:center;z-index:20;padding:30px}
+.overlay .box{max-width:900px}.overlay h1{font-size:clamp(34px,6vw,90px);margin:0 0 20px}.overlay p{font-size:clamp(18px,2vw,30px);color:#b8bec5;line-height:1.5}
+.hidden{display:none!important}
+.error{color:#ff7676}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="brand">KLEOS<span>FIT</span></div>
+    <div id="status" class="status">Connessione...</div>
+  </div>
+  <div class="main">
+    <div id="title" class="title">Caricamento circuito</div>
+    <div id="round" class="round"></div>
+    <div id="phase" class="phase"></div>
+    <div id="timer" class="timer">--:--</div>
+    <div id="exercise" class="exercise">—</div>
+    <div id="details" class="details"></div>
+    <div id="next" class="next"></div>
+    <div class="progress"><i id="progress"></i></div>
+    <div class="controls">
+      <button id="startBtn" onclick="toggleRun()">▶ AVVIA</button>
+      <button class="secondary" onclick="resetRun()">RESET</button>
+      <button class="secondary" onclick="skip()">SALTA</button>
+      <button class="secondary" onclick="toggleFullscreen()">⛶ SCHERMO INTERO</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay" class="overlay hidden">
+  <div class="box">
+    <h1 id="overlayTitle">Circuito completato</h1>
+    <p id="overlayText">Allenamento terminato.</p>
+    <button onclick="resetRun()">NUOVO GIRO</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://dicfqbqdbqkyggjezpaz.supabase.co";
+const SUPABASE_KEY="sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const params=new URLSearchParams(location.search);
+const circuitId=params.get("id")||params.get("circuit_id");
+
+let circuit=null,stations=[];
+let state={round:1,index:0,phase:"prep",remaining:5,total:5,rep:0,running:false};
+let raf=0,lastTs=0;
+
+const $=id=>document.getElementById(id);
+function fmt(sec){
+  sec=Math.max(0,Math.ceil(sec));
+  return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");
+}
+function phaseName(){
+  return state.phase==="prep"?"PREPARAZIONE":
+         state.phase==="work"?"LAVORO":
+         state.phase==="reps"?"RIPETIZIONI":
+         state.phase==="rest"?"RECUPERO":
+         "COMPLETO";
+}
+function current(){return stations[state.index]||null}
+function workTotal(st){
+  if(!st)return 1;
+  if(st.work_mode==="reps") return Math.max(1,Number(st.reps||1)*Math.max(1,Number(st.rep_interval_seconds||1)));
+  return Math.max(1,Number(st.work_seconds||1));
+}
+function render(){
+  const st=current();
+  $("title").textContent=circuit?.title||"Circuito";
+  $("round").textContent=state.phase==="done"?"":`GIRO ${state.round} / ${Number(circuit?.rounds||1)}`;
+  $("phase").textContent=phaseName();
+  $("timer").textContent=state.phase==="reps" ? `${state.rep}/${Number(st?.reps||0)}` : fmt(state.remaining);
+  $("exercise").textContent=state.phase==="done"?"CIRCUITO COMPLETATO":(st?.exercise_name||"Preparati");
+  let d=[];
+  if(st?.muscle_group)d.push(st.muscle_group);
+  if(st?.equipment)d.push(st.equipment);
+  if(st?.load_text)d.push("Carico: "+st.load_text);
+  $("details").textContent=d.join(" · ");
+  const next=stations[state.index+1]?.exercise_name || (state.round < Number(circuit?.rounds||1) ? stations[0]?.exercise_name : "");
+  $("next").textContent=next?`Prossima stazione: ${next}`:"";
+  const total=Math.max(1,state.total||1);
+  $("progress").style.width=Math.max(0,Math.min(100,(1-state.remaining/total)*100))+"%";
+  $("startBtn").textContent=state.running?"⏸ PAUSA":"▶ AVVIA";
+}
+function setPhase(phase,total){
+  state.phase=phase;state.total=Math.max(.1,Number(total)||.1);state.remaining=state.total;state.rep=0;
+}
+function resetRun(){
+  cancelAnimationFrame(raf);
+  state.running=false;state.round=1;state.index=0;state.rep=0;
+  setPhase("prep",5);
+  $("overlay").classList.add("hidden");
+  render();
+}
+function advance(){
+  const st=current();
+  if(state.phase==="work" || state.phase==="reps"){
+    const rest=Math.max(0,Number(st?.recovery_seconds||0));
+    if(rest>0){setPhase("rest",rest);return;}
+  }
+  if(state.phase==="rest"){
+    // proceed below
+  }
+  if(state.index < stations.length-1){
+    state.index++;
+    const n=stations[state.index];
+    setPhase("prep",5);
+    return;
+  }
+  const rounds=Number(circuit?.rounds||1);
+  if(state.round < rounds){
+    state.round++;
+    state.index=0;
+    const rest=Math.max(0,Number(circuit?.rest_between_rounds_seconds||0));
+    if(rest>0){setPhase("rest",rest);return;}
+    setPhase("prep",5);
+    return;
+  }
+  state.running=false;state.phase="done";state.remaining=0;state.total=1;
+  $("overlayTitle").textContent="Circuito completato";
+  $("overlayText").textContent=`${circuit?.title||"Circuito"} — tutti i giri completati.`;
+  $("overlay").classList.remove("hidden");
+}
+function tick(ts){
+  if(!state.running)return;
+  if(!lastTs)lastTs=ts;
+  const dt=(ts-lastTs)/1000;lastTs=ts;
+  const st=current();
+  if(state.phase==="prep" || state.phase==="work" || state.phase==="rest"){
+    state.remaining-=dt;
+    if(state.remaining<=0){
+      if(state.phase==="prep"){
+        if(st?.work_mode==="reps"){
+          setPhase("reps",Math.max(1,Number(st.rep_interval_seconds||1)));
+          state.rep=0;
+        }else{
+          setPhase("work",Math.max(1,Number(st.work_seconds||1)));
+        }
+      }else if(state.phase==="work"){
+        advance();
+      }else{
+        // If rest was between rounds, advance() will move to the first station.
+        if(state.index===0 && state.round>1 && state.phase==="rest"){
+          setPhase("prep",5);
+        }else{
+          advance();
+        }
+      }
+    }
+  }else if(state.phase==="reps"){
+    state.remaining-=dt;
+    if(state.remaining<=0){
+      state.rep++;
+      if(state.rep>=Number(st?.reps||1)) advance();
+      else state.remaining=Math.max(1,Number(st?.rep_interval_seconds||1));
+    }
+  }
+  render();
+  raf=requestAnimationFrame(tick);
+}
+function toggleRun(){
+  if(state.phase==="done")return;
+  state.running=!state.running;
+  if(state.running){lastTs=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(tick)}
+  else cancelAnimationFrame(raf);
+  render();
+}
+function skip(){
+  if(state.phase==="done")return;
+  advance();render();
+}
+async function load(){
+  if(!circuitId){
+    $("status").innerHTML='<span class="error">Manca l\'ID del circuito nell\'URL.</span>';
+    return;
+  }
+  $("status").textContent="Caricamento...";
+  const cr=await db.from("functional_circuits").select("*").eq("id",circuitId).maybeSingle();
+  if(cr.error){$("status").innerHTML='<span class="error">'+cr.error.message+'</span>';return}
+  if(!cr.data){$("status").innerHTML='<span class="error">Circuito non trovato.</span>';return}
+  circuit=cr.data;
+  const sr=await db.from("functional_circuit_stations").select("*").eq("circuit_id",circuitId).order("sort_order",{ascending:true});
+  if(sr.error){$("status").innerHTML='<span class="error">'+sr.error.message+'</span>';return}
+  stations=sr.data||[];
+  if(!stations.length){$("status").innerHTML='<span class="error">Il circuito non contiene stazioni.</span>';return}
+  $("status").textContent=`${stations.length} stazioni`;
+  resetRun();
+}
+function toggleFullscreen(){
+  if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();toggleRun()}
+  if(e.key==="ArrowRight"){skip()}
+  if(e.key==="f"||e.key==="F"){toggleFullscreen()}
+});
+load();
+</script>
+</body>
+</html>

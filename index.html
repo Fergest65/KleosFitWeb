@@ -57,6 +57,12 @@
 .clientPriceAmount{font-size:34px;font-weight:900;color:#c4ff3d;margin-top:15px}
 .clientPriceReadonly{font-size:11px;color:#747b88;margin-top:5px;text-transform:uppercase;letter-spacing:1px}
 .clientPriceDescription{font-size:14px;line-height:1.4;color:#d8dbe2;margin-top:8px}
+.clientPriceBreakdown{margin-top:10px;padding:9px 10px;border:1px solid #2b2f38;border-radius:10px;background:#0d1014;color:#cfd5dd;font-size:12px;line-height:1.45}
+.clientPriceBreakdown b{color:#c4ff3d}
+.subscriptionBreakdown{margin-top:12px;padding:12px;border:1px solid #2b2f38;border-radius:10px;background:#0d1014}
+.subscriptionBreakdown .sbRow{display:flex;justify-content:space-between;gap:12px;padding:4px 0;color:#cfd5dd}
+.subscriptionBreakdown .sbTotal{border-top:1px solid #2b2f38;margin-top:7px;padding-top:8px;font-size:17px;font-weight:900;color:#fff}
+.subscriptionBreakdown .sbTotal b{color:#c4ff3d}
 @media(max-width:900px){.clientPriceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.clientPriceGrid{grid-template-columns:1fr}.clientPriceCard{min-height:145px}}
 <style>
@@ -486,7 +492,7 @@ async function loadClientAnagrafica(){
  box.innerHTML=`<div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="myFullName" value="${esc(p.full_name||p.name||'')}"></div><div><label>Data di nascita</label><input id="myBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="myFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="myEmail" type="email" value="${esc(p.email||currentUser.email||'')}"></div><div><label>Telefono</label><input id="myPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="myAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="myCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Dati tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input value="${esc(clientCardNumber(p))}" disabled></div><div><label>Tipo abbonamento</label><input value="${esc(p.subscription_type||'')}" disabled></div><div><label>Corso aggiuntivo Plus</label><input value="${esc(p.subscription_plus_course||'—')}" disabled></div><div><label>Supplemento Plus</label><input value="${p.subscription_plus_course?'€ '+Number(p.subscription_plus_cost||0).toFixed(2).replace('.',','):'—'}" disabled></div><div><label>Totale pagato</label><input value="${p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',')}" disabled></div><div><label>Dal</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_from))}" disabled></div><div><label>Al</label><input type="date" value="${esc(dateInputValue(p.subscription_paid_to))}" disabled></div></div></div>
   <div id="myAnaMsg" class="error"></div><div class="actions"><button class="btn" onclick="saveClientAnagrafica()">Salva modifiche</button></div></div>`;
 }
 async function saveClientAnagrafica(){
@@ -560,7 +566,7 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Costo abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><input id="cpPlusCourse" value="${esc(p.subscription_plus_course||'')}" placeholder="Solo per Plus"></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -604,7 +610,7 @@ function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();r
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_plus_course:valOrNull('cpPlusCourse'),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
@@ -1370,23 +1376,31 @@ function renderSubscriptionPrices(){
  const rows=subscriptionPricePresets||[];
  if(status)status.textContent=rows.length+(rows.length===1?' prezzo predefinito':' prezzi predefiniti');
  if(!rows.length){list.innerHTML='<div class="muted">Nessun prezzo configurato. Premi “＋ Nuovo prezzo”.</div>';return}
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Piano</th><th>Durata</th><th>Prezzo</th><th>Stato</th><th></th></tr></thead><tbody>'+
- rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(p.duration_months||'—')} mesi</td><td><b>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div></td></tr>`).join('')+
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Piano</th><th>Durata</th><th>Prezzo base</th><th>Supplemento Plus</th><th>Totale</th><th>Stato</th><th></th></tr></thead><tbody>'+
+ rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(p.duration_months||'—')} mesi</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div></td></tr>`).join('')+
  '</tbody></table></div>';
 }
+function subscriptionPresetTotal(p){const base=Number(p?.price||0),extra=String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;return Math.max(0,base+extra);}
+function subscriptionPresetExtra(p){return String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;}
 function openSubscriptionPriceModal(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id))||{};
  openModal(`<div class="modalhead"><h2>${id?'Modifica prezzo':'Nuovo prezzo abbonamento'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="formgrid">
   <div class="wide"><label>Nome abbonamento</label><input id="spName" placeholder="es. Funzionale, Trimestrale Standard..." value="${esc(p.name||'')}"></div>
-  <div><label>Tipo piano</label><select id="spPlan"><option value="Corso" ${p.plan_type==='Corso'?'selected':''}>Corso</option><option value="Standard" ${p.plan_type==='Standard'?'selected':''}>Standard</option><option value="Plus" ${p.plan_type==='Plus'?'selected':''}>Plus</option><option value="Personalizzato" ${p.plan_type==='Personalizzato'?'selected':''}>Personalizzato</option></select></div>
+  <div><label>Tipo piano</label><select id="spPlan" onchange="togglePlusPriceFields()"><option value="Corso" ${p.plan_type==='Corso'?'selected':''}>Corso</option><option value="Standard" ${p.plan_type==='Standard'?'selected':''}>Standard</option><option value="Plus" ${p.plan_type==='Plus'?'selected':''}>Plus</option><option value="Personalizzato" ${p.plan_type==='Personalizzato'?'selected':''}>Personalizzato</option></select></div>
   <div><label>Durata (mesi)</label><input id="spMonths" type="number" min="1" step="1" value="${esc(p.duration_months??1)}"></div>
-  <div><label>Prezzo (€)</label><input id="spPrice" type="number" min="0" step="0.01" value="${esc(p.price??60)}"></div>
+  <div><label>Prezzo base (€)</label><input id="spPrice" type="number" min="0" step="0.01" value="${esc(p.price??60)}"></div>
+  <div id="spPlusCourseWrap" class="wide" style="${p.plan_type==='Plus'?'':'display:none'}"><label>Corso aggiuntivo Plus</label><input id="spPlusCourse" placeholder="es. Calistenico, HIIT..." value="${esc(p.plus_course_name||'')}"></div>
+  <div id="spPlusExtraWrap" style="${p.plan_type==='Plus'?'':'display:none'}"><label>Supplemento Plus (€)</label><input id="spPlusExtra" type="number" min="0" step="0.01" value="${esc(p.plus_extra_price??0)}"></div>
   <div><label>Ordine visualizzazione</label><input id="spSort" type="number" min="0" step="1" value="${esc(p.sort_order??0)}"></div>
  </div>
  <div class="checkrow"><label><input id="spActive" type="checkbox" ${p.active!==false?'checked':''}> Prezzo attivo e selezionabile</label></div>
  <div id="spMsg" class="error"></div>
  <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveSubscriptionPrice(${id?`'${id}'`:'null'})">Salva</button></div>`);
+}
+function togglePlusPriceFields(){
+ const show=String(document.getElementById('spPlan')?.value||'').toLowerCase()==='plus';
+ ['spPlusCourseWrap','spPlusExtraWrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=show?'':'none';});
 }
 async function saveSubscriptionPrice(id){
  const payload={
@@ -1394,6 +1408,8 @@ async function saveSubscriptionPrice(id){
   plan_type:valOrNull('spPlan'),
   duration_months:Math.max(1,Number(document.getElementById('spMonths')?.value||1)),
   price:Math.max(0,Number(document.getElementById('spPrice')?.value||0)),
+  plus_course_name:String(document.getElementById('spPlan')?.value||'').toLowerCase()==='plus'?valOrNull('spPlusCourse'):null,
+  plus_extra_price:String(document.getElementById('spPlan')?.value||'').toLowerCase()==='plus'?Math.max(0,Number(document.getElementById('spPlusExtra')?.value||0)):0,
   sort_order:Number(document.getElementById('spSort')?.value||0),
   active:document.getElementById('spActive')?.checked!==false
  };
@@ -1409,13 +1425,9 @@ async function deleteSubscriptionPrice(id){
  await loadSubscriptionPrices();
 }
 function findMatchingSubscriptionPreset(p){
- const type=String(p?.subscription_type||'').trim().toLowerCase();
- const cost=Number(p?.subscription_cost);
- return (subscriptionPricePresets||[]).find(x=>{
-   const name=String(x.name||'').trim().toLowerCase();
-   const price=Number(x.price);
-   return type && name===type && Number.isFinite(cost) && Math.abs(price-cost)<0.01;
- }) || (subscriptionPricePresets||[]).find(x=>type&&String(x.name||'').trim().toLowerCase()===type) || null;
+ const type=String(p?.subscription_type||'').trim().toLowerCase(),cost=Number(p?.subscription_cost);
+ return (subscriptionPricePresets||[]).find(x=>type&&String(x.name||'').trim().toLowerCase()===type&&Number.isFinite(cost)&&Math.abs(subscriptionPresetTotal(x)-cost)<0.01)
+ || (subscriptionPricePresets||[]).find(x=>type&&String(x.name||'').trim().toLowerCase()===type)||null;
 }
 async function ensureSubscriptionPricesLoaded(){
  if(subscriptionPricePresets?.length)return;
@@ -1424,18 +1436,15 @@ async function ensureSubscriptionPricesLoaded(){
 }
 function applySubscriptionPreset(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));if(!p)return;
- const type=document.getElementById('cpSubType'),cost=document.getElementById('cpCost');
- if(type && String(type.value)!==String(id))type.value=String(id);
- if(cost)cost.value=Number(p.price||0).toFixed(2);
+ const type=document.getElementById('cpSubType'),cost=document.getElementById('cpCost'),plusCourse=document.getElementById('cpPlusCourse'),plusCost=document.getElementById('cpPlusCost');
+ const total=subscriptionPresetTotal(p),extra=subscriptionPresetExtra(p),isPlus=String(p.plan_type||'').toLowerCase()==='plus';
+ if(type)type.value=String(id);if(cost)cost.value=total.toFixed(2);
+ if(plusCourse)plusCourse.value=isPlus?(p.plus_course_name||''):'';
+ if(plusCost)plusCost.value=isPlus?extra.toFixed(2):'0.00';
  const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
- if(from&&to&&p.duration_months){
-   const start=from.value?new Date(from.value+'T12:00:00'):new Date();
-   if(!from.value)from.value=start.toISOString().slice(0,10);
-   const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);
-   to.value=end.toISOString().slice(0,10);
- }
- const info=document.getElementById('cpPresetInfo');
- if(info)info.textContent=`Prezzo predefinito: € ${Number(p.price||0).toFixed(2).replace('.',',')} · ${p.duration_months||1} ${Number(p.duration_months)===1?'mese':'mesi'}`;
+ if(from&&to&&p.duration_months){const start=from.value?new Date(from.value+'T12:00:00'):new Date();if(!from.value)from.value=start.toISOString().slice(0,10);const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);to.value=end.toISOString().slice(0,10);}
+ const info=document.getElementById('cpPresetInfo');if(info)info.innerHTML=isPlus?`Base € ${Number(p.price||0).toFixed(2).replace('.',',')} + ${esc(p.plus_course_name||'corso aggiuntivo')} € ${extra.toFixed(2).replace('.',',')} = <b>Totale € ${total.toFixed(2).replace('.',',')}</b>`:`Totale abbonamento: <b>€ ${total.toFixed(2).replace('.',',')}</b>`;
+ toggleClientPlusFields();
 }
 
 function applySubscriptionType(id){
@@ -1455,7 +1464,7 @@ async function loadClientPriceList(){
  if(status)status.textContent='Caricamento listino...';
  box.innerHTML='';
  const r=await db.from('subscription_price_presets')
-   .select('id,name,plan_type,duration_months,price,description,sort_order,active')
+   .select('id,name,plan_type,duration_months,price,plus_course_name,plus_extra_price,description,sort_order,active')
    .eq('active',true)
    .order('sort_order',{ascending:true})
    .order('duration_months',{ascending:true})
@@ -1475,8 +1484,9 @@ async function loadClientPriceList(){
      <div class="clientPriceType">${esc(x.plan_type||'Abbonamento')}</div>
      <div class="clientPriceName">${esc(x.name||'Abbonamento')}</div>
      <div class="clientPriceDuration">${esc(durata)}</div>
-     <div class="clientPriceAmount">€ ${Number(x.price||0).toFixed(2).replace('.',',')}</div>
+     <div class="clientPriceAmount">€ ${subscriptionPresetTotal(x).toFixed(2).replace('.',',')}</div>
      <div class="clientPriceDescription">${esc(x.description || (String(x.plan_type||'').toLowerCase()==='plus' ? 'Include l’abbonamento standard più un secondo corso a scelta.' : 'Abbonamento secondo listino KLEOSFIT.'))}</div>
+     ${String(x.plan_type||'').toLowerCase()==='plus'?`<div class="clientPriceBreakdown">Base: € ${Number(x.price||0).toFixed(2).replace('.',',')}<br>Corso: <b>${esc(x.plus_course_name||'—')}</b> + € ${subscriptionPresetExtra(x).toFixed(2).replace('.',',')}<br><strong>Totale: € ${subscriptionPresetTotal(x).toFixed(2).replace('.',',')}</strong></div>`:`<div class="clientPriceBreakdown">Totale: <b>€ ${subscriptionPresetTotal(x).toFixed(2).replace('.',',')}</b></div>`}
      <div class="clientPriceReadonly">Prezzo di listino</div>
    </div>`;
  }).join('')+'</div>';

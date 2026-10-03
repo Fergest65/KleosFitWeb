@@ -734,6 +734,7 @@ function show(v,el){
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
+function fmtDateIT(v){if(!v)return '—';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return String(v);return m[3]+'/'+m[2]+'/'+m[1];}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
 let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
 
@@ -838,12 +839,7 @@ function activeSubscriptionDate(p,key){
   return v?String(v).slice(0,10):'';
 }
 function isSubscriptionCurrentlyActive(p){
-  const from=activeSubscriptionDate(p,'subscription_paid_from');
-  const to=activeSubscriptionDate(p,'subscription_paid_to');
-  if(!from||!to)return false;
-  const today=new Date();
-  const t=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-  return from<=t && t<=to;
+  return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
 }
 function subscriptionAccountingStatus(p,payments){
   const from=activeSubscriptionDate(p,'subscription_paid_from');

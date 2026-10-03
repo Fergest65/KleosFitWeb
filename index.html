@@ -238,7 +238,7 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
         Configurazione separata degli slot ricorrenti. Gli slot standard non sono le singole prenotazioni/date.
       </div>
     </div>
-    <button type="button" class="btn" id="addStandardSlotBtn">＋ NUOVO SLOT STANDARD</button>
+    <button type="button" class="btn" id="addStandardSlotBtn" onclick="openStandardForm()">＋ NUOVO SLOT STANDARD </button><button type="button" class="btn secondary" onclick="createStandardsFromCurrentProgramming()">IMPORTA PROGRAMMAZIONE ATTUALE</button>
   </div>
 
   <div id="standardSlotForm" style="display:none;margin-top:14px;padding:14px;border:1px solid #303640;border-radius:10px;background:#101318">
@@ -282,12 +282,12 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
     </div>
 
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
-      <button type="button" class="btn secondary" id="stdCancelBtn">ANNULLA</button>
-      <button type="button" class="btn" id="stdSaveBtn">SALVA SLOT STANDARD</button>
+      <button type="button" class="btn secondary" id="stdCancelBtn" onclick="closeStandardForm()">ANNULLA</button>
+      <button type="button" class="btn" id="stdSaveBtn" onclick="saveStandardForm()">SALVA SLOT STANDARD</button>
     </div>
   </div>
 
-  <div id="standardSlotsList" style="margin-top:12px"></div><div style="margin-top:10px;color:#8f969f;font-size:12px">
+  <div id="standardSlotsList" style="margin-top:12px"></div><div id="standardSlotsStatus" style="margin-top:8px;color:#8f969f;font-size:12px"></div><div style="margin-top:10px;color:#8f969f;font-size:12px">
           Gli slot standard sono modelli ricorrenti separati dagli slot effettivi. Le date future vengono generate automaticamente e possono essere gestite singolarmente nella sezione sottostante.
         </div>
 </div>
@@ -2306,80 +2306,66 @@ function closeStandardForm(){
   document.getElementById('standardSlotForm').style.display='none';
 }
 function groupStandardRows(rows){
-  // Ogni giorno è uno slot standard autonomo.
-  // Evita solo i duplicati identici dello stesso giorno.
-  const map=new Map();
-  rows.forEach(s=>{
-    const times=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
-    const start=times?.[1]||String(s.time||'').slice(0,5);
-    const end=times?.[2]||'';
-    const day=Number(s.recurrence_weekday);
-    const key=[
-      day,
-      String(s.lesson_type||'').trim().toLowerCase(),
-      String(s.coach||'').trim().toLowerCase(),
-      start,end,
-      Number(s.max_participants||20)
-    ].join('|');
-    if(!map.has(key))map.set(key,{
-      group:s.recurrence_group||`day_${day}_${s.id}`,
+  return (rows||[]).map(s=>{
+    const tm=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    return {
+      group:s.recurrence_group||s.id,
       rows:[s],
+      id:s.id,
+      day:Number(s.recurrence_weekday),
       category:s.lesson_type||'Lezione',
       coach:s.coach||'KleosFit',
-      start:start||'19:00',
-      end:end||'20:00',
-      capacity:Number(s.max_participants||20),
-      days:[day]
-    });
-  });
-  return [...map.values()].sort((a,b)=>{
-    const da=Number(a.days[0]), db=Number(b.days[0]);
-    const oa=da===0?7:da, ob=db===0?7:db;
-    return oa-ob || a.start.localeCompare(b.start);
+      start:tm?.[1]||String(s.time||'').slice(0,5)||'',
+      end:tm?.[2]||'',
+      capacity:Number(s.max_participants||20)
+    };
+  }).sort((a,b)=>{
+    const da=a.day===0?7:a.day, db=b.day===0?7:b.day;
+    return da-db || a.start.localeCompare(b.start);
   });
 }
-
 async function loadStandardSlots(){
   const box=document.getElementById('standardSlotsList');
   if(!box)return [];
-  box.innerHTML='<div style="padding:12px;color:#9aa3ad">Caricamento slot standard...</div>';
+  box.innerHTML='<div style="padding:12px;color:#9aa3ad">Caricamento programmazione standard...</div>';
   const r=await db.from('lesson_slots').select('*')
     .eq('is_standard',true).eq('recurrence_active',true)
     .order('recurrence_weekday',{ascending:true}).order('time',{ascending:true});
   if(r.error){
-    box.innerHTML='<div style="padding:12px;color:#ff9b9b">Esegui una sola volta SQL_SLOT_STANDARD_COMPLETO.sql.</div>';
+    box.innerHTML='<div style="padding:12px;border:1px solid #6b3434;border-radius:8px;color:#ff9b9b"><b>Impossibile caricare la programmazione standard.</b><br>'+esc(r.error.message)+'</div>';
     return [];
   }
   const groups=groupStandardRows(r.data||[]);
+  const st=document.getElementById('standardSlotsStatus');
+  if(st)st.textContent=`${groups.length} turni standard`;
   if(!groups.length){
-    box.innerHTML='<div style="padding:12px;border:1px solid #303640;border-radius:10px;color:#9aa3ad">Nessuno slot standard configurato.</div>';
+    box.innerHTML='<div style="padding:12px;border:1px solid #303640;border-radius:10px;color:#9aa3ad">Nessuna programmazione standard. Premi «NUOVO SLOT STANDARD» per inserirne una.</div>';
     return [];
   }
-
   box.innerHTML=groups.map(g=>`
-    <div style="padding:12px;border:1px solid #303640;border-radius:10px;margin-bottom:8px;background:#0b0d10">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
-        <div>
-          <div style="font-weight:900;color:#d7ff3f;font-size:16px">${esc(standardDayLabel(g.days[0]))}</div>
-          <div style="margin-top:4px"><b>${esc(g.category)}</b> &nbsp; ${esc(g.start)} - ${esc(g.end)}</div>
-          <div style="font-size:12px;color:#9aa3ad;margin-top:4px">Coach ${esc(g.coach)} · ${g.capacity} partecipanti</div>
-        </div>
-        <div style="display:flex;gap:7px">
-          <button type="button" class="btn secondary" data-std-edit="${esc(g.rows[0].id)}">MODIFICA</button>
-          <button type="button" class="btn secondary" data-std-delete="${esc(g.rows[0].id)}">DISATTIVA</button>
-        </div>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr 1.3fr 1fr .8fr auto auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #2a2f36">
+      <b style="color:#d7ff3f">${esc(standardDayLabel(g.day))}</b>
+      <b>${esc(g.category)}</b>
+      <b>${esc(g.start)} - ${esc(g.end)}</b>
+      <span>${esc(g.coach)}</span>
+      <span>${g.capacity} posti</span>
+      <button type="button" class="btn secondary" data-std-edit="${esc(g.id)}">MODIFICA</button>
+      <button type="button" class="btn secondary" data-std-delete="${esc(g.id)}">DISATTIVA</button>
     </div>`).join('');
-
   box.querySelectorAll('[data-std-edit]').forEach(b=>{
-    const g=groups.find(x=>String(x.rows[0].id)===String(b.dataset.stdEdit));
-    b.onclick=()=>openStandardForm(g);
+    const s=(r.data||[]).find(x=>String(x.id)===String(b.dataset.stdEdit));
+    b.onclick=()=>openStandardForm(s?{
+      group:s.recurrence_group||s.id, rows:[s], days:[Number(s.recurrence_weekday)],
+      category:s.lesson_type||'Lezione',coach:s.coach||'KleosFit',
+      start:String(s.time||'').match(/\d{1,2}:\d{2}/)?.[0]||'19:00',
+      end:String(s.time||'').match(/-\s*(\d{1,2}:\d{2})/)?.[1]||'20:00',
+      capacity:Number(s.max_participants||20)
+    }:null);
   });
-  box.querySelectorAll('[data-std-delete]').forEach(b=>{
-    b.onclick=()=>disableStandardDay(b.dataset.stdDelete);
-  });
+  box.querySelectorAll('[data-std-delete]').forEach(b=>b.onclick=()=>disableStandardDay(b.dataset.stdDelete));
   return r.data||[];
 }
+
 async function saveStandardForm(){
   const category=document.getElementById('stdCategory').value.trim();
   const coach=document.getElementById('stdCoach').value.trim()||'KleosFit';
@@ -2512,8 +2498,46 @@ async function generateStandardFutureSlots(){
   }
 }
 
-window.makeStandardFromSlot=makeStandardFromSlot;
 
+async function createStandardsFromCurrentProgramming(){
+  if(!confirm('Creo una programmazione standard separata dagli slot con date, usando le combinazioni giorno/orario/attività/coach/posti già presenti. Le date esistenti non vengono modificate.'))return;
+  const q=await db.from('lesson_slots').select('*').eq('is_standard',false).limit(3000);
+  if(q.error){alert('Errore lettura slot: '+q.error.message);return;}
+  const existingStd=await db.from('lesson_slots').select('*').eq('is_standard',true).eq('recurrence_active',true);
+  if(existingStd.error){alert('Errore lettura standard: '+existingStd.error.message);return;}
+  const known=new Set((existingStd.data||[]).map(s=>[
+    Number(s.recurrence_weekday),String(s.lesson_type||'').trim().toLowerCase(),
+    String(s.time||'').trim().toLowerCase(),String(s.coach||'').trim().toLowerCase(),
+    Number(s.max_participants||0)
+  ].join('|')));
+  const groups=new Map();
+  for(const s of (q.data||[])){
+    const d=new Date(String(s.date||'').slice(0,10)+'T12:00:00');
+    if(isNaN(d))continue;
+    const day=d.getDay();
+    const key=[day,String(s.lesson_type||'').trim().toLowerCase(),String(s.time||'').trim().toLowerCase(),String(s.coach||'').trim().toLowerCase(),Number(s.max_participants||0)].join('|');
+    if(known.has(key)||groups.has(key))continue;
+    if(!groups.has(key))groups.set(key,s);
+  }
+  let created=0;
+  for(const s of groups.values()){
+    const d=new Date(String(s.date).slice(0,10)+'T12:00:00');
+    const ins=await db.from('lesson_slots').insert({
+      starts_at:s.starts_at, day:standardDayLabel(d.getDay()), date:String(s.date).slice(0,10),
+      time:s.time, coach:s.coach, lesson_type:s.lesson_type,
+      duration_minutes:Number(s.duration_minutes)||60, is_available:true,
+      max_participants:Number(s.max_participants)||20, booked_count:0,
+      is_standard:true, recurrence_active:true, recurrence_weekday:d.getDay(),
+      recurrence_group:'std_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      standard_id:null
+    });
+    if(!ins.error)created++;
+  }
+  await generateStandardFutureSlots();
+  await loadStandardSlots();
+  if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
+  alert(`Programmazione standard creata: ${created} turni.`);
+}
 async function refreshStandardSlots(){
   await generateStandardFutureSlots();
   await loadStandardSlots();
@@ -2522,9 +2546,6 @@ async function refreshStandardSlots(){
 window.refreshStandardSlots=refreshStandardSlots;
 
 document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('addStandardSlotBtn')?.addEventListener('click',()=>openStandardForm());
-  document.getElementById('stdCancelBtn')?.addEventListener('click',closeStandardForm);
-  document.getElementById('stdSaveBtn')?.addEventListener('click',saveStandardForm);
   setTimeout(refreshStandardSlots,700);
 });
 

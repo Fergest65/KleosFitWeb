@@ -1144,11 +1144,27 @@ function filterNutrition(){const q=(document.getElementById('nutritionSearch')?.
 
 
 /* ===== SLOT AUTOMATICI: mantiene 4 settimane future ===== */
+function rawLessonDate(sl){
+  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date','starts_at','start_at','slot_start','start_datetime','date_time','scheduled_at'];
+  for(const k of keys){
+    const d=parseAnySlotDate(sl?.[k]);
+    if(d && Number.isFinite(d.getTime())) return d;
+  }
+  return null;
+}
+function recurringWeekday(sl){
+  const raw=String(pick(sl,['day','weekday','week_day'])||'').trim().toLowerCase().replace(/\./g,'');
+  const map={'lun':1,'lunedi':1,'lunedì':1,'mar':2,'martedi':2,'martedì':2,'mer':3,'mercoledi':3,'mercoledì':3,'gio':4,'giovedi':4,'giovedì':4,'ven':5,'venerdi':5,'venerdì':5,'sab':6,'sabato':6,'dom':0,'domenica':0};
+  if(raw in map) return map[raw];
+  const d=rawLessonDate(sl);
+  return d ? d.getDay() : null;
+}
 function slotSeriesKey(sl){
   const norm=v=>String(v??'').trim().toLowerCase();
   return [
-    norm(pick(sl,['day','weekday','week_day'])),
+    recurringWeekday(sl),
     norm(slotTimeText(sl)),
+    norm(slotEndTimeText(sl)),
     norm(slotTitle(sl)),
     norm(pick(sl,['coach','coach_name','trainer'])),
     norm(pick(sl,['lesson_type','lesson_name','category']))
@@ -1174,37 +1190,30 @@ async function ensureFutureLessonSlots(){
     const horizon=addDaysLocal(today,28);
     const bySeries=new Map();
 
-    all.forEach(sl=>{
-      const d=parseSlotDate(sl);
-      if(!d) return;
+    for(const sl of all){
+      const d=rawLessonDate(sl);
+      if(!d) continue;
       const key=slotSeriesKey(sl);
       if(!bySeries.has(key)) bySeries.set(key,[]);
       bySeries.get(key).push({sl,d});
-    });
+    }
 
     const inserts=[];
     for(const [,items] of bySeries){
-      // La ricorrenza automatica viene applicata alle righe che hanno
-      // esplicitamente un giorno della settimana.
-      const sample=items.find(x=>String(pick(x.sl,['day','weekday','week_day']))!=='—')?.sl;
-      if(!sample) continue;
-
-      const dateCol=slotDateColumn(sample);
+      if(!items.length) continue;
+      const sourceItem=items.reduce((a,b)=>b.d>a.d?b:a,items[0]);
+      const source=sourceItem.sl;
+      const dateCol=slotDateColumn(source);
       if(!dateCol) continue;
 
-      const existingDates=new Set(
-        items.map(x=>isoDateLocal(x.d))
-      );
+      const existingDates=new Set(items.map(x=>isoDateLocal(x.d)));
+      let next=sourceItem.d;
 
-      // Usa come base la data più recente già presente e genera le
-      // ricorrenze settimanali successive fino a 4 settimane.
-      let latest=items.reduce((m,x)=>x.d>m?x.d:m,items[0].d);
-      while(latest < horizon){
-        latest=addDaysLocal(latest,7);
-        const keyDate=isoDateLocal(latest);
-        if(existingDates.has(keyDate)) continue;
+      while(next < horizon){
+        next=addDaysLocal(next,7);
+        const dateKey=isoDateLocal(next);
+        if(existingDates.has(dateKey)) continue;
 
-        const source=items[items.length-1].sl;
         const clone={...source};
         delete clone.id;
         delete clone.created_at;
@@ -1212,11 +1221,12 @@ async function ensureFutureLessonSlots(){
         delete clone.booked_count;
         delete clone.bookings_count;
         delete clone.reserved_count;
+        delete clone.is_booked;
 
-        clone[dateCol]=keyDate;
+        clone[dateCol]=dateKey;
         if(Object.prototype.hasOwnProperty.call(clone,'is_available')) clone.is_available=true;
         inserts.push(clone);
-        existingDates.add(keyDate);
+        existingDates.add(dateKey);
       }
     }
 
@@ -1641,7 +1651,7 @@ function renderSlotAdmin(rows,slots){
  if(!window.slotCategoryFilter)window.slotCategoryFilter='';
  const cats=[['Tutte',''],['Sala pesi','sala pesi'],['Calisthenics','calisthenics'],['Funzionale','funzionale']];
  const selected=String(window.slotCategoryFilter||'').toLowerCase();
- const visible=(slots||[]).filter(sl=>parseSlotDate(sl)).filter(sl=>!selected||String(slotTitle(sl)||'').toLowerCase().includes(selected)).sort((a,b)=>{
+ const todayAdmin=new Date(); todayAdmin.setHours(0,0,0,0); const visible=(slots||[]).filter(sl=>{const d=rawLessonDate(sl); return d && d>=todayAdmin;}).filter(sl=>!selected||String(slotTitle(sl)||'').toLowerCase().includes(selected)).sort((a,b)=>{
    const da=parseSlotDate(a)?.getTime()||0,dbv=parseSlotDate(b)?.getTime()||0;
    if(da!==dbv)return da-dbv;
    return String(slotTimeText(a)||'').localeCompare(String(slotTimeText(b)||''));

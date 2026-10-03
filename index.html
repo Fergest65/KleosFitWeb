@@ -805,6 +805,12 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div><div class="muted" style="margin-top:6px">Numero tessera univoco.</div></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><select id="cpPlusCourse" onchange="updateClientSubscriptionTotal()">${plusCourseOptions(p.subscription_plus_course||'')}</select></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" min="0" step="0.01" value="${esc(p.subscription_plus_cost??0)}" oninput="updateClientSubscriptionTotal()" onchange="updateClientSubscriptionTotal()"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Storico pagamenti abbonamento</h3>
+   <div class="muted" style="margin-bottom:10px">Elenco dei pagamenti e dei periodi di abbonamento registrati per questo cliente.</div>
+   <div id="cpPaymentHistoryError" class="error"></div>
+   <div id="cpPaymentHistoryCount" class="muted" style="margin-bottom:8px">Caricamento storico...</div>
+   <div id="cpPaymentHistoryList" style="margin-top:8px">Caricamento storico...</div>
+  </div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'Responsabilità')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -845,8 +851,39 @@ function openClientSheet(id){
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
  setTimeout(()=>loadMedicalCertificateMeta(p.id),40);
+ setTimeout(()=>loadAdminClientPaymentHistory(p.id),50);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
  setTimeout(()=>syncClientSubscriptionDates(),30);
+}
+
+async function loadAdminClientPaymentHistory(profileId){
+ const list=document.getElementById('cpPaymentHistoryList');
+ const err=document.getElementById('cpPaymentHistoryError');
+ const count=document.getElementById('cpPaymentHistoryCount');
+ if(!list||!profileId)return;
+ if(err){err.style.display='none';err.textContent='';}
+ list.innerHTML='Caricamento storico...';
+ if(count)count.textContent='Caricamento storico...';
+ const r=await db.from('subscription_payment_history')
+   .select('id,paid_from,paid_to,amount,note,created_at')
+   .eq('profile_id',profileId)
+   .order('created_at',{ascending:false})
+   .limit(100);
+ if(r.error){
+   if(err){err.textContent='Storico pagamenti non leggibile: '+r.error.message;err.style.display='block';}
+   list.innerHTML='';
+   if(count)count.textContent='';
+   return;
+ }
+ const rows=r.data||[];
+ if(count)count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
+ if(!rows.length){
+   list.innerHTML='<div class="muted">Nessun pagamento presente nello storico.</div>';
+   return;
+ }
+ const money=v=>v==null||v===''?'—':'€ '+Number(v).toFixed(2).replace('.',',');
+ const date=v=>v?fmtDateIT(v):'—';
+ list.innerHTML=`<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Periodo</th><th>Importo</th><th>Tipo / Note</th><th>ID</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(date(x.created_at))}</td><td>${esc(date(x.paid_from))} → ${esc(date(x.paid_to))}</td><td><b>${esc(money(x.amount))}</b></td><td>${esc(x.note||'Pagamento')}</td><td><span class="small" title="Identificativo univoco del pagamento">${esc(x.id||'—')}</span></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 async function generateUniqueMemberCardNumber(){

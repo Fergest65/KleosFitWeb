@@ -603,6 +603,36 @@ async function loadProfile(){
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
 }
+function show(v,el){
+ if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog'||v==='circuits')&&!isSuperuserRole()) return;
+ if(v==='myNotifications'&&!isClientRole()) return;
+ if(v==='anagraficaClient'&&!isClientRole()) return;
+ if(v==='qrcodes'&&!isClientRole()) return;
+ if(v==='priceList'&&!isClientRole()) return;
+ const content=document.getElementById('content');
+ if(!content||!views[v]) return;
+ content.innerHTML=views[v];
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+ if(el) el.classList.add('active');
+ if(v==='dashboard') fillDashboard();
+ if(v==='clients') loadClients();
+ if(v==='anagrafica') loadAnagrafica();
+ if(v==='anagraficaClient') loadClientAnagrafica();
+ if(v==='slotAdmin') loadSlotAdmin();
+ if(v==='notifications'){loadNotifications();notifRecipientUsers=[];notifSelectedRecipientIds.clear();}
+ if(v==='myNotifications') loadMyNotifications();
+ if(v==='qrcodes') loadQrCodes();
+ if(v==='workout') loadWorkouts();
+ if(v==='nutrition') loadNutrition();
+ if(v==='booking') loadBookings();
+ if(v==='priceList') loadClientPriceList();
+ if(v==='payments') loadClientPayments();
+ if(v==='progress') loadClientProgress();
+ if(v==='admin') loadAdmin();
+ if(v==='subscriptionPrices') loadSubscriptionPrices();
+ if(v==='courseCatalog') loadCourseCatalog();
+ if(v==='circuits') loadCircuits();
+}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}

@@ -1016,48 +1016,67 @@ function printQrCard(id){const p=clientsData.find(x=>String(x.id)===String(id));
 function filterClients(){const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();renderClients(!q?clientsData:clientsData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
 async function loadWorkouts(){
-  const err=document.getElementById('workoutError');
-  const list=document.getElementById('workoutList');
-  const count=document.getElementById('workoutCount');
-  if(err)err.textContent='';
-  if(list)list.innerHTML='Caricamento schede...';
+ const list=document.getElementById('workoutList'),err=document.getElementById('workoutError'),count=document.getElementById('workoutCount');
+ if(!list)return;
+ if(err){err.style.display='none';err.textContent='';}
+ list.innerHTML='Caricamento schede...'; if(count)count.textContent='Caricamento...';
 
-  try{
-    // Carica le schede senza join Supabase: i join falliscono se la FK/schema
-    // della versione corrente non coincide.
-    const r=await db.from('workout_plans').select('*').order('created_at',{ascending:false});
-    if(r.error)throw r.error;
+ // Usiamo la relazione reale workout_plans -> workout_exercises già presente
+ // nell'app, invece di SELECT *: in questo modo vengono recuperate anche
+ // le schede che hanno esercizi collegati.
+ const workoutSelect=`
+   id,user_id,title,description,is_active,is_visible,created_at,
+   workout_exercises (
+     id,name,sets,reps,weight,work_type,initial_seconds,rep_seconds,duration_seconds,
+     muscle_group,equipment,focus,image_url,rest_seconds,sort_order
+   )
+ `;
+ let workoutQuery=db.from('workout_plans').select(workoutSelect).order('created_at',{ascending:false}).limit(500);
+ if(isClientRole() && currentUser?.id) workoutQuery=workoutQuery.eq('user_id',currentUser.id);
 
-    workoutsData=r.data||[];
+ const [r,pr,lr]=await Promise.all([
+   workoutQuery,
+   db.from('profiles').select('*').limit(1000),
+   db.from('exercise_library').select('*').limit(1000)
+ ]);
 
-    // Recupera i profili separatamente per mostrare il cliente.
-    const ids=[...new Set(workoutsData.map(x=>x.user_id).filter(Boolean))];
-    const users={};
-    if(ids.length){
-      const u=await db.from('profiles').select('*').in('id',ids);
-      if(!u.error)(u.data||[]).forEach(p=>{users[p.id]=p});
-    }
-    workoutUsers=users;
+ if(r.error){
+   console.error('Workout:',r.error);
+   if(err){err.textContent='Errore caricamento schede: '+r.error.message;err.style.display='block';}
+   if(count)count.textContent='Errore';
+   list.innerHTML='';
+   return;
+ }
 
-    // Aggiunge il profilo direttamente a ogni scheda: il renderer usa
-    // user_profile e non deve dipendere da una relazione Supabase.
-    workoutsData=workoutsData.map(p=>({...p,user_profile:users[p.user_id]||null}));
+ usersData=pr.error?[]:(pr.data||[]);
+ if(typeof populateWorkoutUserFilter==='function') populateWorkoutUserFilter(usersData);
 
-    if(count)count.textContent=`${workoutsData.length} schede`;
-    populateWorkoutUserFilter(Object.values(users));
-    filterWorkouts();
+ const byUser={}; usersData.forEach(u=>{byUser[u.id]=u});
+ const byExerciseName={};
+ if(!lr.error){
+   (lr.data||[]).forEach(x=>{
+     const n=firstVal(x,['name','exercise_name','title','nome']);
+     if(n){
+       byExerciseName[String(n).trim().toLowerCase()]=x;
+       byExerciseName[normalizeExerciseKey(n)]=x;
+     }
+   });
+ }
 
-    // Carica gli esercizi in modo indipendente; un errore qui non deve
-    // bloccare la visualizzazione delle schede.
-    if(typeof loadWorkoutExercises==='function'){
-      try{await loadWorkoutExercises();}catch(e){console.warn('Esercizi:',e)}
-    }
-  }catch(e){
-    console.error('loadWorkouts',e);
-    if(err)err.textContent='Errore caricamento schede: '+(e.message||e);
-    if(count)count.textContent='0 schede';
-    if(list)list.innerHTML='';
-  }
+ const plans=r.data||[];
+ workoutsData=plans.map(p=>({
+   ...p,
+   user_profile:byUser[p.user_id]||null,
+   workout_exercises:(Array.isArray(p.workout_exercises)?p.workout_exercises:[]).map(e=>{
+     const lib=byExerciseName[String(e.name||'').trim().toLowerCase()]||
+               byExerciseName[normalizeExerciseKey(e.name)]||null;
+     const merged={...e,exercise_library:lib};
+     return {...merged,image_url:getExerciseImageUrl(merged)};
+   })
+ }));
+
+ if(count)count.textContent=`${workoutsData.length} schede`;
+ renderWorkouts(workoutsData);
 }
 
 // Immagini esercizi: comportamento allineato all'app Android.

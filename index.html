@@ -235,7 +235,7 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
     <div>
       <h2 style="margin:0">Slot standard</h2>
       <div style="color:#9aa3ad;font-size:13px;margin-top:4px">
-        Configura gli slot ricorrenti. Le nuove settimane vengono generate automaticamente.
+        Gli slot ricorrenti già presenti vengono riconosciuti automaticamente. Le nuove settimane vengono generate automaticamente.
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary" onclick="refreshStandardSlots()">↻ AGGIORNA</button><button type="button" class="btn" id="addStandardSlotBtn">＋ AGGIUNGI SLOT STANDARD</button></div>
@@ -2254,27 +2254,108 @@ function standardFormData(existing){
     max_participants:Number(cap)||20
   };
 }
+async function importExistingRecurringStandards(){
+  // Usa gli slot già presenti in lesson_slots per costruire automaticamente
+  // gli standard, senza creare una nuova tabella.
+  const r=await db.from('lesson_slots').select('*').limit(3000);
+  if(r.error || !r.data?.length)return;
+
+  const rows=r.data;
+  const groups=new Map();
+
+  for(const x of rows){
+    if(x.is_standard===true)continue;
+    const rawDate=String(x.date||'').slice(0,10);
+    const d=rawDate ? new Date(rawDate+'T12:00:00') : null;
+    if(!d || isNaN(d))continue;
+    const weekday=d.getDay();
+    const category=String(x.lesson_type||'').trim();
+    const time=String(x.time||'').trim();
+    const coach=String(x.coach||'').trim();
+    if(!category || !time)continue;
+
+    const key=[
+      weekday,
+      category.toLowerCase(),
+      time.toLowerCase(),
+      coach.toLowerCase(),
+      Number(x.duration_minutes||0),
+      Number(x.max_participants||0)
+    ].join('|');
+
+    if(!groups.has(key))groups.set(key,{weekday,category,time,coach,
+      duration:Number(x.duration_minutes||60)||60,
+      max:Number(x.max_participants||20)||20,
+      rows:[]});
+    groups.get(key).rows.push(x);
+  }
+
+  for(const g of groups.values()){
+    // Almeno due occorrenze dello stesso schema = probabile ricorrenza.
+    if(g.rows.length<2)continue;
+
+    // Se esiste già uno standard, non fare nulla.
+    if(g.rows.some(x=>x.is_standard===true))continue;
+
+    // Preferisce una data futura come modello.
+    const today=new Date(); today.setHours(0,0,0,0);
+    const future=g.rows.filter(x=>String(x.date||'')>=localIsoDate(today))
+      .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    const model=future[0]||g.rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+    if(!model)continue;
+
+    const upd=await db.from('lesson_slots').update({
+      is_standard:true,
+      recurrence_active:true,
+      recurrence_weekday:g.weekday,
+      standard_id:null
+    }).eq('id',model.id);
+
+    if(upd.error)continue;
+
+    // Gli altri slot dello stesso schema diventano date generate dal modello.
+    const others=g.rows.filter(x=>x.id!==model.id);
+    if(others.length){
+      await db.from('lesson_slots')
+        .update({
+          is_standard:false,
+          recurrence_active:false,
+          recurrence_weekday:g.weekday,
+          standard_id:model.id
+        })
+        .in('id',others.map(x=>x.id));
+    }
+  }
+}
+
 async function loadStandardSlots(){
   const box=document.getElementById('standardSlotsList');
   if(!box)return [];
   box.innerHTML='<div style="padding:12px;color:#9aa3ad">Caricamento slot standard...</div>';
-  const r=await db.from('lesson_slots').select('*').eq('is_standard',true).order('recurrence_weekday',{ascending:true}).order('time',{ascending:true});
+
+  const r=await db.from('lesson_slots').select('*')
+    .eq('is_standard',true)
+    .eq('recurrence_active',true)
+    .order('recurrence_weekday',{ascending:true})
+    .order('time',{ascending:true});
+
   if(r.error){
     box.innerHTML=`<div style="padding:12px;border:1px solid #613838;border-radius:10px;color:#ff9b9b">
-      Gli slot standard richiedono i nuovi campi in <b>lesson_slots</b>.<br>
-      Esegui una sola volta <b>SQL_SLOT_STANDARD_USA_LESSON_SLOTS.sql</b>.
+      Per gli slot standard esegui una sola volta <b>SQL_SLOT_STANDARD_USA_LESSON_SLOTS.sql</b>.
     </div>`;
     return [];
   }
-  const rows=(r.data||[]).filter(x=>x.recurrence_active!==false);
+
+  const rows=r.data||[];
   if(!rows.length){
     box.innerHTML='<div style="padding:12px;border:1px solid #303640;border-radius:10px;color:#9aa3ad">Nessuno slot standard configurato.</div>';
     return rows;
   }
+
   box.innerHTML=rows.map(s=>`
     <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr 1fr .8fr .7fr auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #2a2f36;font-size:13px">
       <b>${esc(standardDayLabel(s.recurrence_weekday))}</b>
-      <span>${esc(s.lesson_type||s.category||'Lezione')}</span>
+      <span>${esc(s.lesson_type||'Lezione')}</span>
       <span>${esc(s.time||'')}</span>
       <span>${esc(s.coach||'KleosFit')}</span>
       <span>${Number(s.duration_minutes)||60} min</span>
@@ -2284,6 +2365,7 @@ async function loadStandardSlots(){
     </div>`).join('');
   return rows;
 }
+
 async function addStandardSlot(){
   const data=standardFormData();
   if(!data)return;
@@ -2412,6 +2494,7 @@ async function generateStandardFutureSlots(){
   }
 }
 async function refreshStandardSlots(){
+  await importExistingRecurringStandards();
   await generateStandardFutureSlots();
   await loadStandardSlots();
   if(typeof loadSlotAdmin==='function')await loadSlotAdmin();

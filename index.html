@@ -235,11 +235,58 @@ slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div clas
     <div>
       <h2 style="margin:0">Slot standard</h2>
       <div style="color:#9aa3ad;font-size:13px;margin-top:4px">
-        Gli slot ricorrenti già presenti vengono riconosciuti automaticamente. Le nuove settimane vengono generate automaticamente.
+        Configura un turno ricorrente. Puoi creare più turni nello stesso giorno con orari diversi.
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary" onclick="refreshStandardSlots()">↻ AGGIORNA</button><button type="button" class="btn" id="addStandardSlotBtn">＋ AGGIUNGI SLOT STANDARD</button></div>
+    <button type="button" class="btn" id="addStandardSlotBtn">＋ NUOVO SLOT STANDARD</button>
   </div>
+
+  <div id="standardSlotForm" style="display:none;margin-top:14px;padding:14px;border:1px solid #303640;border-radius:10px;background:#101318">
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px">
+      <label>Attività / categoria
+        <select id="stdCategory" style="width:100%;margin-top:5px">
+          <option value="Calisthenics">Calisthenics</option>
+          <option value="Funzionale">Funzionale</option>
+          <option value="Sala pesi">Sala pesi</option>
+          <option value="HIIT">HIIT</option>
+        </select>
+      </label>
+      <label>Coach
+        <input id="stdCoach" value="KleosFit" style="width:100%;margin-top:5px">
+      </label>
+    </div>
+
+    <div style="margin-top:12px">
+      <div style="font-weight:800;margin-bottom:7px">Giorno</div>
+      <select id="stdDay" style="width:100%">
+        <option value="1">Lunedì</option>
+        <option value="2">Martedì</option>
+        <option value="3">Mercoledì</option>
+        <option value="4">Giovedì</option>
+        <option value="5">Venerdì</option>
+        <option value="6">Sabato</option>
+        <option value="0">Domenica</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+      <label>Ora inizio
+        <input id="stdStart" type="time" value="19:00" style="width:100%;margin-top:5px">
+      </label>
+      <label>Ora fine
+        <input id="stdEnd" type="time" value="20:00" style="width:100%;margin-top:5px">
+      </label>
+      <label>Partecipanti massimi
+        <input id="stdCapacity" type="number" min="1" max="200" value="20" style="width:100%;margin-top:5px">
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button type="button" class="btn secondary" id="stdCancelBtn">ANNULLA</button>
+      <button type="button" class="btn" id="stdSaveBtn">SALVA SLOT STANDARD</button>
+    </div>
+  </div>
+
   <div id="standardSlotsList" style="margin-top:12px"></div>
 </div>
 <div id="slotAdminList">Caricamento...</div></div>`,
@@ -2196,294 +2243,263 @@ document.getElementById('loginForm').addEventListener('submit',login);
 document.getElementById('registerForm').addEventListener('submit',register);
 (async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}})();
 </script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();
-/* ===== SLOT STANDARD — USA SOLO lesson_slots =====
-   Nessuna tabella nuova.
-   Una riga di lesson_slots con is_standard=true è il modello ricorrente.
-   Le date generate hanno standard_id che punta al modello.
-*/
-const STANDARD_TABLE='lesson_slots';
+/* ===== SLOT STANDARD — GESTIONE RICORRENTE ===== */
+let editingStandardGroup=null;
+
+const WEEKDAYS=[
+  {n:1,label:'Lun'},{n:2,label:'Mar'},{n:3,label:'Mer'},
+  {n:4,label:'Gio'},{n:5,label:'Ven'},{n:6,label:'Sab'},{n:0,label:'Dom'}
+];
 
 function standardDayLabel(d){
-  return ({1:'Lunedì',2:'Martedì',3:'Mercoledì',4:'Giovedì',5:'Venerdì',6:'Sabato',0:'Domenica'})[Number(d)]||'Lunedì';
+  return ({1:'Lunedì',2:'Martedì',3:'Mercoledì',4:'Giovedì',5:'Venerdì',6:'Sabato',0:'Domenica'})[Number(d)]||'';
 }
-function standardTimeStart(v){
-  const m=String(v||'').match(/\d{1,2}:\d{2}/);
-  return m?m[0]:'';
-}
-function nextWeekdayDate(weekday){
-  const now=new Date(); now.setHours(12,0,0,0);
-  const target=Number(weekday);
-  let add=(target-now.getDay()+7)%7;
-  if(add===0) add=7;
-  now.setDate(now.getDate()+add);
-  return now;
-}
-function localIsoDate(d){
+function isoLocal(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-function localStartsAt(date,time){
-  const m=String(time||'').match(/(\d{1,2}):(\d{2})/);
+function timeMinutes(v){
+  const m=String(v||'').match(/^(\d{1,2}):(\d{2})$/);
+  return m?Number(m[1])*60+Number(m[2]):null;
+}
+function durationFromTimes(a,b){
+  const x=timeMinutes(a),y=timeMinutes(b);
+  if(x===null||y===null)return 60;
+  let d=y-x;if(d<=0)d+=1440;
+  return d;
+}
+function nextDateForWeekday(weekday){
+  const d=new Date(); d.setHours(12,0,0,0);
+  let add=(Number(weekday)-d.getDay()+7)%7;
+  if(add===0)add=7;
+  d.setDate(d.getDate()+add);
+  return d;
+}
+function localStartsAt(d,time){
+  const m=String(time||'').match(/^(\d{1,2}):(\d{2})$/);
   if(!m)return null;
-  const d=new Date(date);
-  d.setHours(Number(m[1]),Number(m[2]),0,0);
-  return d.toISOString();
+  const x=new Date(d); x.setHours(Number(m[1]),Number(m[2]),0,0);
+  return x.toISOString();
 }
-function standardFormData(existing){
-  const s=existing||{};
-  const day=prompt('Giorno della settimana (1=Lun, 2=Mar, 3=Mer, 4=Gio, 5=Ven, 6=Sab, 0=Dom):',
-    String(s.recurrence_weekday ?? (s.day ? ({lun:1,lunedì:1,lunedi:1,mar:2,martedì:2,martedi:2,mer:3,mercoledì:3,mercoledi:3,gio:4,giovedì:4,giovedi:4,ven:5,venerdì:5,venerdi:5,sab:6,sabato:6,dom:0,domenica:0}[String(s.day).toLowerCase()] ?? 1) : 1)));
-  if(day===null)return null;
-  const weekday=Number(day);
-  if(![0,1,2,3,4,5,6].includes(weekday)){alert('Giorno non valido.');return null;}
-  const category=prompt('Attività/categoria:',String(s.lesson_type||s.category||'Funzionale'));
-  if(category===null)return null;
-  const time=prompt('Orario (es. 19:00-20:00):',String(s.time||'19:00-20:00'));
-  if(time===null)return null;
-  const coach=prompt('Coach:',String(s.coach||'KleosFit'));
-  if(coach===null)return null;
-  const duration=prompt('Durata massima utilizzo in minuti:',String(s.duration_minutes||60));
-  if(duration===null)return null;
-  const cap=prompt('Numero massimo partecipanti:',String(s.max_participants||20));
-  if(cap===null)return null;
-  return {
-    weekday,
-    category:category.trim(),
-    time:time.trim(),
-    coach:coach.trim(),
-    duration_minutes:Number(duration)||60,
-    max_participants:Number(cap)||20
-  };
+function selectedStdDays(){
+  const el=document.getElementById('stdDay');
+  return el ? [Number(el.value)] : [];
 }
-async function importExistingRecurringStandards(){
-  // Usa gli slot già presenti in lesson_slots per costruire automaticamente
-  // gli standard, senza creare una nuova tabella.
-  const r=await db.from('lesson_slots').select('*').limit(3000);
-  if(r.error || !r.data?.length)return;
-
-  const rows=r.data;
-  const groups=new Map();
-
-  for(const x of rows){
-    if(x.is_standard===true)continue;
-    const rawDate=String(x.date||'').slice(0,10);
-    const d=rawDate ? new Date(rawDate+'T12:00:00') : null;
-    if(!d || isNaN(d))continue;
-    const weekday=d.getDay();
-    const category=String(x.lesson_type||'').trim();
-    const time=String(x.time||'').trim();
-    const coach=String(x.coach||'').trim();
-    if(!category || !time)continue;
-
+function setStdDays(days){
+  const el=document.getElementById('stdDay');
+  if(el && days?.length) el.value=String(days[0]);
+}
+function openStandardForm(group=null){
+  editingStandardGroup=group;
+  document.getElementById('standardSlotForm').style.display='block';
+  document.getElementById('stdCategory').value=group?.category||'Calisthenics';
+  document.getElementById('stdCoach').value=group?.coach||'KleosFit';
+  document.getElementById('stdStart').value=group?.start||'19:00';
+  document.getElementById('stdEnd').value=group?.end||'20:00';
+  document.getElementById('stdCapacity').value=group?.capacity||20;
+  setStdDays(editingStandardGroup ? [Number(group?.days?.[0])] : []);
+  document.getElementById('stdCategory').focus();
+}
+function closeStandardForm(){
+  editingStandardGroup=null;
+  document.getElementById('standardSlotForm').style.display='none';
+}
+function groupStandardRows(rows){
+  // Ogni giorno è uno slot standard autonomo.
+  // Evita solo i duplicati identici dello stesso giorno.
+  const map=new Map();
+  rows.forEach(s=>{
+    const times=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    const start=times?.[1]||String(s.time||'').slice(0,5);
+    const end=times?.[2]||'';
+    const day=Number(s.recurrence_weekday);
     const key=[
-      weekday,
-      category.toLowerCase(),
-      time.toLowerCase(),
-      coach.toLowerCase(),
-      Number(x.duration_minutes||0),
-      Number(x.max_participants||0)
+      day,
+      String(s.lesson_type||'').trim().toLowerCase(),
+      String(s.coach||'').trim().toLowerCase(),
+      start,end,
+      Number(s.max_participants||20)
     ].join('|');
-
-    if(!groups.has(key))groups.set(key,{weekday,category,time,coach,
-      duration:Number(x.duration_minutes||60)||60,
-      max:Number(x.max_participants||20)||20,
-      rows:[]});
-    groups.get(key).rows.push(x);
-  }
-
-  for(const g of groups.values()){
-    // Almeno due occorrenze dello stesso schema = probabile ricorrenza.
-    if(g.rows.length<2)continue;
-
-    // Se esiste già uno standard, non fare nulla.
-    if(g.rows.some(x=>x.is_standard===true))continue;
-
-    // Preferisce una data futura come modello.
-    const today=new Date(); today.setHours(0,0,0,0);
-    const future=g.rows.filter(x=>String(x.date||'')>=localIsoDate(today))
-      .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-    const model=future[0]||g.rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
-    if(!model)continue;
-
-    const upd=await db.from('lesson_slots').update({
-      is_standard:true,
-      recurrence_active:true,
-      recurrence_weekday:g.weekday,
-      standard_id:null
-    }).eq('id',model.id);
-
-    if(upd.error)continue;
-
-    // Gli altri slot dello stesso schema diventano date generate dal modello.
-    const others=g.rows.filter(x=>x.id!==model.id);
-    if(others.length){
-      await db.from('lesson_slots')
-        .update({
-          is_standard:false,
-          recurrence_active:false,
-          recurrence_weekday:g.weekday,
-          standard_id:model.id
-        })
-        .in('id',others.map(x=>x.id));
-    }
-  }
+    if(!map.has(key))map.set(key,{
+      group:s.recurrence_group||`day_${day}_${s.id}`,
+      rows:[s],
+      category:s.lesson_type||'Lezione',
+      coach:s.coach||'KleosFit',
+      start:start||'19:00',
+      end:end||'20:00',
+      capacity:Number(s.max_participants||20),
+      days:[day]
+    });
+  });
+  return [...map.values()].sort((a,b)=>{
+    const da=Number(a.days[0]), db=Number(b.days[0]);
+    const oa=da===0?7:da, ob=db===0?7:db;
+    return oa-ob || a.start.localeCompare(b.start);
+  });
 }
 
 async function loadStandardSlots(){
   const box=document.getElementById('standardSlotsList');
   if(!box)return [];
   box.innerHTML='<div style="padding:12px;color:#9aa3ad">Caricamento slot standard...</div>';
-
   const r=await db.from('lesson_slots').select('*')
-    .eq('is_standard',true)
-    .eq('recurrence_active',true)
-    .order('recurrence_weekday',{ascending:true})
-    .order('time',{ascending:true});
-
+    .eq('is_standard',true).eq('recurrence_active',true)
+    .order('recurrence_weekday',{ascending:true}).order('time',{ascending:true});
   if(r.error){
-    box.innerHTML=`<div style="padding:12px;border:1px solid #613838;border-radius:10px;color:#ff9b9b">
-      Per gli slot standard esegui una sola volta <b>SQL_SLOT_STANDARD_USA_LESSON_SLOTS.sql</b>.
-    </div>`;
+    box.innerHTML='<div style="padding:12px;color:#ff9b9b">Esegui una sola volta SQL_SLOT_STANDARD_COMPLETO.sql.</div>';
+    return [];
+  }
+  const groups=groupStandardRows(r.data||[]);
+  if(!groups.length){
+    box.innerHTML='<div style="padding:12px;border:1px solid #303640;border-radius:10px;color:#9aa3ad">Nessuno slot standard configurato.</div>';
     return [];
   }
 
-  const rows=r.data||[];
-  if(!rows.length){
-    box.innerHTML='<div style="padding:12px;border:1px solid #303640;border-radius:10px;color:#9aa3ad">Nessuno slot standard configurato.</div>';
-    return rows;
+  box.innerHTML=groups.map(g=>`
+    <div style="padding:12px;border:1px solid #303640;border-radius:10px;margin-bottom:8px;background:#0b0d10">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:900;color:#d7ff3f;font-size:16px">${esc(standardDayLabel(g.days[0]))}</div>
+          <div style="margin-top:4px"><b>${esc(g.category)}</b> &nbsp; ${esc(g.start)} - ${esc(g.end)}</div>
+          <div style="font-size:12px;color:#9aa3ad;margin-top:4px">Coach ${esc(g.coach)} · ${g.capacity} partecipanti</div>
+        </div>
+        <div style="display:flex;gap:7px">
+          <button type="button" class="btn secondary" data-std-edit="${esc(g.rows[0].id)}">MODIFICA</button>
+          <button type="button" class="btn secondary" data-std-delete="${esc(g.rows[0].id)}">DISATTIVA</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  box.querySelectorAll('[data-std-edit]').forEach(b=>{
+    const g=groups.find(x=>String(x.rows[0].id)===String(b.dataset.stdEdit));
+    b.onclick=()=>openStandardForm(g);
+  });
+  box.querySelectorAll('[data-std-delete]').forEach(b=>{
+    b.onclick=()=>disableStandardDay(b.dataset.stdDelete);
+  });
+  return r.data||[];
+}
+async function saveStandardForm(){
+  const category=document.getElementById('stdCategory').value.trim();
+  const coach=document.getElementById('stdCoach').value.trim()||'KleosFit';
+  const start=document.getElementById('stdStart').value;
+  const end=document.getElementById('stdEnd').value;
+  const capacity=Math.max(1,Number(document.getElementById('stdCapacity').value)||20);
+  const days=selectedStdDays();
+
+  if(!category||!start||!end||!days.length){
+    alert('Seleziona attività, almeno un giorno, ora di inizio e ora di fine.');
+    return;
+  }
+  if(timeMinutes(start)===timeMinutes(end)){
+    alert('L’ora di fine deve essere diversa dall’ora di inizio.');
+    return;
   }
 
-  box.innerHTML=rows.map(s=>`
-    <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr 1fr .8fr .7fr auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #2a2f36;font-size:13px">
-      <b>${esc(standardDayLabel(s.recurrence_weekday))}</b>
-      <span>${esc(s.lesson_type||'Lezione')}</span>
-      <span>${esc(s.time||'')}</span>
-      <span>${esc(s.coach||'KleosFit')}</span>
-      <span>${Number(s.duration_minutes)||60} min</span>
-      <span>${Number(s.max_participants)||20} posti</span>
-      <button type="button" class="btn secondary" onclick="editStandardSlot('${esc(s.id)}')">MODIFICA</button>
-      <button type="button" class="btn secondary" onclick="deleteStandardSlot('${esc(s.id)}')">ELIMINA</button>
-    </div>`).join('');
-  return rows;
-}
+  const group='std_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  const existing=editingStandardGroup?.rows||[];
+  const current=existing[0]||null;
 
-async function addStandardSlot(){
-  const data=standardFormData();
-  if(!data)return;
-  const d=nextWeekdayDate(data.weekday);
-  const iso=localIsoDate(d);
-  const r=await db.from('lesson_slots').insert({
-    starts_at:localStartsAt(d,data.time),
-    day:standardDayLabel(data.weekday),
-    date:iso,
-    time:data.time,
-    coach:data.coach,
-    lesson_type:data.category,
-    duration_minutes:data.duration_minutes,
-    is_available:true,
-    max_participants:data.max_participants,
-    booked_count:0,
-    is_standard:true,
-    recurrence_active:true,
-    recurrence_weekday:data.weekday,
-    standard_id:null
-  }).select('*').single();
-  if(r.error){alert('Impossibile creare lo slot standard: '+r.error.message);return;}
-  await generateStandardFutureSlots();
-  await loadStandardSlots();
-  await loadSlotAdmin();
-}
-async function editStandardSlot(id){
-  const q=await db.from('lesson_slots').select('*').eq('id',id).eq('is_standard',true).maybeSingle();
-  if(q.error||!q.data){alert('Slot standard non trovato.');return;}
-  const data=standardFormData(q.data);
-  if(!data)return;
-  const d=nextWeekdayDate(data.weekday);
-  const iso=localIsoDate(d);
-  const upd={
-    starts_at:localStartsAt(d,data.time),
-    day:standardDayLabel(data.weekday),
-    date:iso,
-    time:data.time,
-    coach:data.coach,
-    lesson_type:data.category,
-    duration_minutes:data.duration_minutes,
-    max_participants:data.max_participants,
-    recurrence_weekday:data.weekday,
-    recurrence_active:true,
-    is_standard:true
-  };
-  const r=await db.from('lesson_slots').update(upd).eq('id',id);
-  if(r.error){alert('Impossibile modificare lo slot standard: '+r.error.message);return;}
+  // La modifica riguarda esclusivamente questo giorno.
+  if(current){
+    await db.from('lesson_slots').update({recurrence_active:false}).eq('id',current.id);
+  }
 
-  // Aggiorna le date future generate da questo standard solo se non hanno prenotazioni.
-  const today=localIsoDate(new Date());
-  const fut=await db.from('lesson_slots').select('*').eq('standard_id',id).gte('date',today);
-  if(!fut.error && fut.data?.length){
-    for(const row of fut.data){
-      if(Number(row.booked_count||0)>0)continue;
-      const rd=new Date(`${String(row.date).slice(0,10)}T12:00:00`);
-      const patch={
-        day:standardDayLabel(data.weekday),
-        time:data.time,
-        coach:data.coach,
-        lesson_type:data.category,
-        duration_minutes:data.duration_minutes,
-        max_participants:data.max_participants,
-        starts_at:localStartsAt(rd,data.time),
-        is_available:true,
-        recurrence_weekday:data.weekday
-      };
-      await db.from('lesson_slots').update(patch).eq('id',row.id);
+  for(const day of days){
+    const old=existing.find(x=>Number(x.recurrence_weekday)===Number(day));
+    const date=old ? String(old.date).slice(0,10) : isoLocal(nextDateForWeekday(day));
+    const time=`${start}-${end}`;
+    const duration=durationFromTimes(start,end);
+
+    if(old){
+      const up=await db.from('lesson_slots').update({
+        day:standardDayLabel(day),date,time,coach,lesson_type:category,
+        duration_minutes:duration,max_participants:capacity,
+        is_standard:true,recurrence_active:true,recurrence_weekday:day,
+        recurrence_group:group
+      }).eq('id',old.id);
+      if(up.error){alert('Errore modifica: '+up.error.message);return;}
+    }else{
+      const ins=await db.from('lesson_slots').insert({
+        starts_at:localStartsAt(new Date(date+'T12:00:00'),start),
+        day:standardDayLabel(day),date,time,coach,lesson_type:category,
+        duration_minutes:duration,is_available:true,max_participants:capacity,
+        booked_count:0,is_standard:true,recurrence_active:true,
+        recurrence_weekday:day,recurrence_group:group,standard_id:null
+      }).select('*').single();
+      if(ins.error){alert('Errore creazione standard: '+ins.error.message);return;}
     }
   }
+
+  // I giorni rimossi restano come storico, ma non sono più standard.
+  const removed=existing.filter(x=>!days.includes(Number(x.recurrence_weekday)));
+  if(removed.length){
+    await db.from('lesson_slots').update({recurrence_active:false}).in('id',removed.map(x=>x.id));
+  }
+
+  // Aggiorna le date future non prenotate col nuovo standard.
+  const fut=await db.from('lesson_slots').select('*')
+    .eq('standard_id',existing[0]?.id||'00000000-0000-0000-0000-000000000000')
+    .gte('date',isoLocal(new Date()));
+  if(!fut.error){
+    for(const row of fut.data||[]){
+      if(Number(row.booked_count||0)>0)continue;
+      const wd=Number(row.recurrence_weekday);
+      if(!days.includes(wd))continue;
+      await db.from('lesson_slots').update({
+        time:`${start}-${end}`,coach,lesson_type:category,
+        duration_minutes:duration,max_participants:capacity
+      }).eq('id',row.id);
+    }
+  }
+
+  closeStandardForm();
   await generateStandardFutureSlots();
   await loadStandardSlots();
-  await loadSlotAdmin();
+  if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
 }
-async function deleteStandardSlot(id){
-  if(!confirm('Disattivare questo slot standard? Le prenotazioni già esistenti non verranno cancellate.'))return;
-  const r=await db.from('lesson_slots').update({recurrence_active:false}).eq('id',id);
-  if(r.error){alert('Impossibile disattivare lo slot standard: '+r.error.message);return;}
+async function disableStandardDay(id){
+  if(!confirm('Disattivare questo slot standard per questo giorno? Le prenotazioni già effettuate non vengono cancellate.'))return;
+  const r=await db.from('lesson_slots').update({recurrence_active:false}).eq('id',id).eq('is_standard',true);
+  if(r.error){alert('Errore: '+r.error.message);return;}
+  await loadStandardSlots();
+}
+
+async function disableStandardGroup(group){
+  if(!confirm('Disattivare questo slot standard? Le prenotazioni già effettuate non vengono cancellate.'))return;
+  const r=await db.from('lesson_slots').update({recurrence_active:false})
+    .eq('is_standard',true).eq('recurrence_group',group);
+  if(r.error){alert('Errore: '+r.error.message);return;}
   await loadStandardSlots();
 }
 async function generateStandardFutureSlots(){
-  const rs=await db.from('lesson_slots').select('*').eq('is_standard',true).eq('recurrence_active',true);
+  const rs=await db.from('lesson_slots').select('*')
+    .eq('is_standard',true).eq('recurrence_active',true);
   if(rs.error||!rs.data?.length)return;
-  const standards=rs.data;
-  const today=new Date(); today.setHours(12,0,0,0);
-  const horizon=new Date(today); horizon.setDate(horizon.getDate()+28);
-  const todayIso=localIsoDate(today);
-  const r=await db.from('lesson_slots').select('*').gte('date',todayIso).limit(2000);
-  if(r.error)return;
-  const existing=r.data||[];
+  const today=new Date();today.setHours(12,0,0,0);
+  const horizon=new Date(today);horizon.setDate(horizon.getDate()+28);
+  const existing=await db.from('lesson_slots').select('*')
+    .gte('date',isoLocal(today)).limit(3000);
+  if(existing.error)return;
+
+  const rows=existing.data||[];
   const inserts=[];
-  for(const s of standards){
+  for(const s of rs.data){
     for(let i=0;i<=28;i++){
-      const d=new Date(today); d.setDate(today.getDate()+i);
+      const d=new Date(today);d.setDate(today.getDate()+i);
       if(d.getDay()!==Number(s.recurrence_weekday))continue;
-      const iso=localIsoDate(d);
+      const iso=isoLocal(d);
       if(iso===String(s.date).slice(0,10))continue;
-
-      const found=existing.some(x=>
-        String(x.standard_id||'')===String(s.id) &&
-        String(x.date||'').slice(0,10)===iso
-      );
-      if(found)continue;
-
+      const duplicate=rows.some(x=>String(x.standard_id||'')===String(s.id)&&String(x.date||'').slice(0,10)===iso);
+      if(duplicate)continue;
+      const mm=String(s.time||'').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+      const st=mm?.[1]||String(s.time||'').slice(0,5);
       inserts.push({
-        starts_at:localStartsAt(d,s.time),
-        day:standardDayLabel(s.recurrence_weekday),
-        date:iso,
-        time:s.time,
-        coach:s.coach||'KleosFit',
-        lesson_type:s.lesson_type||s.category||'Lezione',
-        duration_minutes:Number(s.duration_minutes)||60,
-        is_available:true,
-        max_participants:Number(s.max_participants)||20,
-        booked_count:0,
-        is_standard:false,
-        recurrence_active:false,
-        recurrence_weekday:s.recurrence_weekday,
+        starts_at:localStartsAt(d,st),day:standardDayLabel(s.recurrence_weekday),
+        date:iso,time:s.time,coach:s.coach||'KleosFit',
+        lesson_type:s.lesson_type||'Lezione',duration_minutes:Number(s.duration_minutes)||60,
+        is_available:true,max_participants:Number(s.max_participants)||20,
+        booked_count:0,is_standard:false,recurrence_active:false,
+        recurrence_weekday:s.recurrence_weekday,recurrence_group:s.recurrence_group,
         standard_id:s.id
       });
     }
@@ -2494,20 +2510,17 @@ async function generateStandardFutureSlots(){
   }
 }
 async function refreshStandardSlots(){
-  await importExistingRecurringStandards();
   await generateStandardFutureSlots();
   await loadStandardSlots();
   if(typeof loadSlotAdmin==='function')await loadSlotAdmin();
 }
-window.generateStandardFutureSlots=generateStandardFutureSlots;
-window.editStandardSlot=editStandardSlot;
-window.deleteStandardSlot=deleteStandardSlot;
 window.refreshStandardSlots=refreshStandardSlots;
 
 document.addEventListener('DOMContentLoaded',()=>{
-  const b=document.getElementById('addStandardSlotBtn');
-  if(b)b.addEventListener('click',addStandardSlot);
-  setTimeout(refreshStandardSlots,800);
+  document.getElementById('addStandardSlotBtn')?.addEventListener('click',()=>openStandardForm());
+  document.getElementById('stdCancelBtn')?.addEventListener('click',closeStandardForm);
+  document.getElementById('stdSaveBtn')?.addEventListener('click',saveStandardForm);
+  setTimeout(refreshStandardSlots,700);
 });
 
 </script></body></html>

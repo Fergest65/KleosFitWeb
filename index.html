@@ -1408,8 +1408,10 @@ function toggleClientPlusFields(){
  const isPlus=String(preset?.plan_type||'').toLowerCase()==='plus' || String(sel?.value||'').toLowerCase()==='plus';
  const course=document.getElementById('cpPlusCourse');
  const extra=document.getElementById('cpPlusCost');
- if(course){course.disabled=false;course.parentElement.style.opacity='1';}
- if(extra){extra.disabled=!isPlus;extra.parentElement.style.opacity=isPlus?'1':'.55';}
+ // Il supplemento deve essere sempre modificabile: quando il piano è Plus
+ // viene valorizzato dal predefinito, ma l'amministratore può correggerlo manualmente.
+ if(course){course.disabled=!isPlus;course.parentElement.style.opacity=isPlus?'1':'.55';}
+ if(extra){extra.disabled=false;extra.readOnly=false;extra.parentElement.style.opacity='1';}
 }
 function setPlusCourseSelect(id,value){
  const el=document.getElementById(id); if(!el)return;
@@ -1433,16 +1435,10 @@ function openSubscriptionPriceModal(id){
  <div class="checkrow"><label><input id="spActive" type="checkbox" ${p.active!==false?'checked':''}> Prezzo attivo e selezionabile</label></div>
  <div id="spMsg" class="error"></div>
  <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveSubscriptionPrice(${id?`'${id}'`:'null'})">Salva</button></div>`);
- togglePlusPriceFields();
 }
 function togglePlusPriceFields(){
- const plan=document.getElementById('spPlan');
- const show=String(plan?.value||'').toLowerCase()==='plus';
+ const show=String(document.getElementById('spPlan')?.value||'').toLowerCase()==='plus';
  ['spPlusCourseWrap','spPlusExtraWrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=show?'':'none';});
- const course=document.getElementById('spPlusCourse');
- const extra=document.getElementById('spPlusExtra');
- if(course)course.disabled=false;
- if(extra)extra.disabled=!show;
 }
 async function saveSubscriptionPrice(id){
  const payload={

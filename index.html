@@ -74,6 +74,8 @@
 .qrManagementBox .qrBox{background:#fff;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;min-height:116px}
 .qrTokenText{font-size:12px;color:#c4ff3d;word-break:break-all;margin-top:5px}
 @media(max-width:600px){.qrManagementBox{grid-template-columns:1fr}.qrManagementBox .qrBox{justify-self:center}}
+
+.circuitRunnerPage{max-width:900px;margin:20px auto 0;background:#0d1014;border:1px solid var(--line);border-radius:18px;padding:28px;min-height:520px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.circuitRunnerPage .circuitRunnerTitle{font-size:clamp(28px,5vw,52px);font-weight:950}.circuitRunnerPage .circuitRunnerRound{color:var(--muted);font-weight:800;margin-top:8px}.circuitRunnerPage .circuitRunnerPhase{color:var(--accent);font-weight:900;text-transform:uppercase;margin-top:18px}.circuitRunnerPage .circuitRunnerDisplay{font-size:clamp(72px,14vw,150px);font-weight:950;line-height:1;margin:18px 0}.circuitRunnerPage .circuitRunnerExercise{font-size:clamp(20px,3vw,30px);font-weight:900}.circuitRunnerPage .circuitRunnerNext{color:var(--muted);min-height:26px;margin-top:12px}.circuitRunnerPage .circuitRunnerActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}.circuitRunnerPage .circuitRunnerActions .btn{min-width:130px;min-height:52px}@media(max-width:600px){.circuitRunnerPage{padding:20px;min-height:calc(100vh - 180px)}.circuitRunnerPage .circuitRunnerActions{width:100%;display:grid;grid-template-columns:1fr 1fr}.circuitRunnerPage .circuitRunnerActions .btn:first-child{grid-column:1/-1}}
 </style></style>
 </style>
 </style>
@@ -168,7 +170,7 @@
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
 <div id="register" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeRegister()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Prima registrazione</h1><p>Crea il tuo account cliente per accedere a KleosFit Coach Pro.</p><form id="registerForm"><label>Nome e Cognome</label><input id="registerName" type="text" autocomplete="name" required><label>Email</label><input id="registerEmail" type="email" autocomplete="email" required><label>Password</label><div class="passwordWrap"><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPassword',this)">MOSTRA</button></div><label>Conferma Password</label><div class="passwordWrap"><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPasswordConfirm',this)">MOSTRA</button></div><button class="btn full" type="submit">Crea account</button><div id="registerError" class="error"></div><div id="registerSuccess" class="success" style="display:none"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -285,7 +287,7 @@ async function loadCircuits(){
  const status=document.getElementById('circuitsStatus'),list=document.getElementById('circuitsList');if(!list)return;
  if(status)status.textContent='Caricamento circuiti...';
  const r=await db.from('functional_circuits').select('*').order('title',{ascending:true});
- if(r.error){if(status)status.textContent='Circuiti non disponibili: '+r.error.message;list.innerHTML='<div class="error" style="display:block">Esegui lo SQL per creare le tabelle dei circuiti.</div>';return;}
+ if(r.error){if(status)status.textContent='Circuiti non disponibili: '+r.error.message;list.innerHTML='<div class="error" style="display:block">Errore lettura circuiti: '+esc(r.error.message)+'</div>';return;}
  circuitsData=r.data||[];
  for(const c of circuitsData){
    const q=await db.from('functional_circuit_stations').select('id',{count:'exact',head:true}).eq('circuit_id',c.id);
@@ -297,9 +299,10 @@ async function loadCircuits(){
 function renderCircuits(){
  const list=document.getElementById('circuitsList');if(!list)return;
  const q=(document.getElementById('circuitSearch')?.value||'').toLowerCase().trim();
- const rows=circuitsData.filter(c=>!q||[c.title,c.description].map(x=>String(x||'').toLowerCase()).join(' ').includes(q));
- if(!rows.length){list.innerHTML='<div class="muted">Nessun circuito configurato. Premi “＋ Nuovo circuito”.</div>';return;}
- list.innerHTML=rows.map(c=>`<div class="circuitCard"><div class="circuitCardHead"><div><h3 style="margin:0">${esc(c.title||'Circuito')}</h3><div class="muted" style="margin-top:5px">${esc(c.description||'Circuito a tempo/ripetizioni e recuperi.')}</div></div><div class="circuitActions"><button class="btn mini" type="button" onclick="openCircuitRunner('${c.id}')">▶ AVVIA</button><button class="btn secondary mini" type="button" onclick="openCircuitBuilder('${c.id}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteCircuit('${c.id}')">Elimina</button></div></div><div class="circuitMeta"><span class="pill">${c.rounds||1} giri</span><span class="pill">${c.station_count||0} stazioni</span><span class="pill">Recupero ${c.rest_between_rounds_seconds||0}s</span><span class="pill">${c.client_authorized===false?'Non autorizzato':'Autorizzato'}</span><span class="pill">${String(c.status||'').toLowerCase()!=='active'?'Disattivo':'Attivo'}</span></div></div>`).join('');
+ let rows=circuitsData.filter(c=>!q||[c.title,c.description].map(x=>String(x||'').toLowerCase()).join(' ').includes(q));
+ if(isClientRole()) rows=rows.filter(c=>String(c.status||'active').toLowerCase()==='active' && c.client_authorized===true);
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun circuito disponibile.</div>';return;}
+ list.innerHTML=rows.map(c=>`<div class="circuitCard"><div class="circuitCardHead"><div><h3 style="margin:0">${esc(c.title||'Circuito')}</h3><div class="muted" style="margin-top:5px">${esc(c.description||'Circuito a tempo/ripetizioni e recuperi.')}</div></div><div class="circuitActions"><button class="btn mini" type="button" onclick="openCircuitRunner('${c.id}')">▶ AVVIA</button>${isSuperuserRole()?`<button class="btn secondary mini" type="button" onclick="openCircuitBuilder('${c.id}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteCircuit('${c.id}')">Elimina</button>`:''}</div></div><div class="circuitMeta"><span class="pill">${c.rounds||1} giri</span><span class="pill">${c.station_count||0} stazioni</span><span class="pill">Recupero ${c.rest_between_rounds_seconds||0}s</span>${isSuperuserRole()?`<span class="pill">${c.client_authorized===false?'Non autorizzato':'Autorizzato'}</span><span class="pill">${String(c.status||'').toLowerCase()!=='active'?'Disattivo':'Attivo'}</span>`:''}</div></div>`).join('');
 }
 async function openCircuitBuilder(id=null){
  await loadExerciseLibrary();
@@ -388,11 +391,18 @@ async function saveCircuit(id){
 async function deleteCircuit(id){if(!confirm('Eliminare definitivamente questo circuito?'))return;const d=await db.from('functional_circuit_stations').delete().eq('circuit_id',id);if(d.error){alert('Errore eliminazione stazioni: '+d.error.message);return;}const r=await db.from('functional_circuits').delete().eq('id',id);if(r.error){alert('Errore eliminazione circuito: '+r.error.message);return;}await loadCircuits();}
 async function openCircuitRunner(id){
  const c=circuitsData.find(x=>String(x.id)===String(id));if(!c)return;
+ if(isClientRole() && !(c.client_authorized===true && String(c.status||'active').toLowerCase()==='active')){alert('Questo circuito non è disponibile per il cliente.');return;}
  const r=await db.from('functional_circuit_stations').select('*').eq('circuit_id',id).order('sort_order',{ascending:true});if(r.error){alert('Impossibile aprire il circuito: '+r.error.message);return;}
  if(!(r.data||[]).length){alert('Il circuito non contiene stazioni.');return;}
  circuitRunnerState={c,stations:r.data||[],round:1,index:0,phase:(r.data||[])[0]?.work_mode==='reps'?'reps':'work',remaining:(r.data||[])[0]?.work_mode==='reps'?Number((r.data||[])[0]?.rep_interval_seconds||1):Number((r.data||[])[0]?.work_seconds||1),rep:0,running:false};
- openModal(`<div class="modalhead"><h2>▶ ${esc(c.title)}</h2><button class="close" onclick="stopCircuitRunner();closeModal()">Chiudi</button></div><div class="circuitRunner"><div class="circuitRunnerTitle" id="crExercise">Preparati</div><div class="circuitRunnerRound" id="crRound"></div><div class="circuitRunnerPhase" id="crPhase">Countdown iniziale</div><div class="circuitRunnerDisplay" id="crDisplay">00</div><div class="circuitRunnerExercise" id="crStation">—</div><div class="circuitRunnerNext" id="crNext"></div><div class="circuitRunnerActions"><button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button><button class="btn secondary" onclick="resetCircuitRunner()">RESET</button><button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button></div></div>`);renderCircuitRunner();
+ renderCircuitRunnerPage();
+ renderCircuitRunner();
 }
+function renderCircuitRunnerPage(){
+ const content=document.getElementById('content');if(!content)return;
+ content.innerHTML=`<div class="top"><div><div class="title">${esc(circuitRunnerState?.c?.title||'Circuito')}</div><div class="sub">Esecuzione circuito</div></div><button class="btn secondary" type="button" onclick="stopCircuitRunner();show('circuits',document.querySelector('.nav button[onclick*=\"circuits\"]'))">← Circuiti</button></div><div class="circuitRunnerPage"><div class="circuitRunnerTitle" id="crExercise">Preparati</div><div class="circuitRunnerRound" id="crRound"></div><div class="circuitRunnerPhase" id="crPhase">Pronto</div><div class="circuitRunnerDisplay" id="crDisplay">00:00</div><div class="circuitRunnerExercise" id="crStation">—</div><div class="circuitRunnerNext" id="crNext"></div><div class="circuitRunnerActions"><button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button><button class="btn secondary" onclick="resetCircuitRunner()">RESET</button><button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button></div></div>`;
+}
+
 function circuitFmt(sec){sec=Math.max(0,Math.ceil(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
 function renderCircuitRunner(){
  const s=circuitRunnerState;if(!s)return;
@@ -604,7 +614,7 @@ async function loadProfile(){
  show('dashboard',document.querySelector('.nav button'));
 }
 function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog'||v==='circuits')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
@@ -1132,7 +1142,95 @@ function renderNutrition(rows){
 }
 function filterNutrition(){const q=(document.getElementById('nutritionSearch')?.value||'').toLowerCase().trim();renderNutrition(!q?nutritionData:nutritionData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 
+
+/* ===== SLOT AUTOMATICI: mantiene 4 settimane future ===== */
+function slotSeriesKey(sl){
+  const norm=v=>String(v??'').trim().toLowerCase();
+  return [
+    norm(pick(sl,['day','weekday','week_day'])),
+    norm(slotTimeText(sl)),
+    norm(slotTitle(sl)),
+    norm(pick(sl,['coach','coach_name','trainer'])),
+    norm(pick(sl,['lesson_type','lesson_name','category']))
+  ].join('|');
+}
+function slotDateColumn(sl){
+  const keys=['date','slot_date','lesson_date','scheduled_date','day_date','p_date'];
+  return keys.find(k=>Object.prototype.hasOwnProperty.call(sl,k))||null;
+}
+function isoDateLocal(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDaysLocal(d,n){
+  const x=new Date(d); x.setHours(12,0,0,0); x.setDate(x.getDate()+n); return x;
+}
+async function ensureFutureLessonSlots(){
+  try{
+    const r=await db.from('lesson_slots').select('*').limit(1000);
+    if(r.error || !Array.isArray(r.data) || !r.data.length) return;
+
+    const all=r.data;
+    const today=new Date(); today.setHours(12,0,0,0);
+    const horizon=addDaysLocal(today,28);
+    const bySeries=new Map();
+
+    all.forEach(sl=>{
+      const d=parseSlotDate(sl);
+      if(!d) return;
+      const key=slotSeriesKey(sl);
+      if(!bySeries.has(key)) bySeries.set(key,[]);
+      bySeries.get(key).push({sl,d});
+    });
+
+    const inserts=[];
+    for(const [,items] of bySeries){
+      // La ricorrenza automatica viene applicata alle righe che hanno
+      // esplicitamente un giorno della settimana.
+      const sample=items.find(x=>String(pick(x.sl,['day','weekday','week_day']))!=='—')?.sl;
+      if(!sample) continue;
+
+      const dateCol=slotDateColumn(sample);
+      if(!dateCol) continue;
+
+      const existingDates=new Set(
+        items.map(x=>isoDateLocal(x.d))
+      );
+
+      // Usa come base la data più recente già presente e genera le
+      // ricorrenze settimanali successive fino a 4 settimane.
+      let latest=items.reduce((m,x)=>x.d>m?x.d:m,items[0].d);
+      while(latest < horizon){
+        latest=addDaysLocal(latest,7);
+        const keyDate=isoDateLocal(latest);
+        if(existingDates.has(keyDate)) continue;
+
+        const source=items[items.length-1].sl;
+        const clone={...source};
+        delete clone.id;
+        delete clone.created_at;
+        delete clone.updated_at;
+        delete clone.booked_count;
+        delete clone.bookings_count;
+        delete clone.reserved_count;
+
+        clone[dateCol]=keyDate;
+        if(Object.prototype.hasOwnProperty.call(clone,'is_available')) clone.is_available=true;
+        inserts.push(clone);
+        existingDates.add(keyDate);
+      }
+    }
+
+    if(inserts.length){
+      const ins=await db.from('lesson_slots').insert(inserts);
+      if(ins.error) console.warn('Creazione automatica slot:',ins.error.message);
+    }
+  }catch(e){
+    console.warn('Aggiornamento automatico slot:',e);
+  }
+}
+
 async function loadBookings(){
+ await ensureFutureLessonSlots();
  const list=document.getElementById('bookingList'),err=document.getElementById('bookingError');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento prenotazioni...';
  const queries=[db.from('lesson_bookings').select('*').order('created_at',{ascending:false}).limit(500),db.from('lesson_slots').select('*').limit(500)];
@@ -1501,6 +1599,7 @@ async function editAdminSlot(id){
 }
 
 async function loadSlotAdmin(){
+ await ensureFutureLessonSlots();
  const list=document.getElementById('slotAdminList'),err=document.getElementById('slotAdminError');
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento slot...';
@@ -1531,6 +1630,7 @@ async function loadSlotAdmin(){
    list.innerHTML='<div class="bookingNotice">Impossibile caricare gli slot. Premi Aggiorna per riprovare.</div>';
  }
 }
+setInterval(()=>ensureFutureLessonSlots(), 10*60*1000);
 function filterSlotAdmin(){
  const q=(document.getElementById('slotAdminSearch')?.value||'').toLowerCase().trim();
  const rows=!q?bookingSlots:bookingSlots.filter(sl=>JSON.stringify(sl).toLowerCase().includes(q));

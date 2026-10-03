@@ -241,6 +241,13 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
 <div id="adminError" class="error"></div><div id="adminCount" class="muted">Caricamento...</div><div id="adminList" style="margin-top:12px">Caricamento utenti...</div></div>
 `,
+activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
+<div class="card">
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:220px"><option value="all">Tutti gli attivi</option><option value="paid">Contabilità regolare</option><option value="check">Da verificare</option></select></div>
+ <div id="activeSubError" class="error"></div>
+ <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
+ <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
+</div>`,
 anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione completa dei dati cliente — area amministratori. Tutti i campi della scheda sono modificabili.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
 anagraficaClient:`<div class="top"><div><div class="title">La mia anagrafica</div><div class="sub">Visualizza e modifica i tuoi dati personali e di contatto.</div></div><button class="btn" onclick="loadClientAnagrafica()">Aggiorna</button></div><div class="card"><div id="myAnaError" class="error"></div><div id="myAnaBox">Caricamento...</div></div>`,
 slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div class="sub">Gestione degli slot disponibili per categoria.</div></div><button class="btn" type="button" onclick="loadSlotAdmin()">Aggiorna</button></div><div class="card"><div class="inputrow"><input id="slotAdminSearch" placeholder="Cerca data, coach o categoria" oninput="filterSlotAdmin()"></div><div id="slotAdminError" class="error"></div>
@@ -345,7 +352,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button">Progressi</button>
  <button type="button" onclick="show('notifications')">Notifiche</button>
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
- <button type="button" onclick="show('anagrafica',this)">Anagrafica</button>
+ <button type="button" onclick="show('activeSubscriptions',this)">Elenco abbonamenti</button>
  <button type="button" onclick="show('circuits')">Circuiti</button>
 </div>`,
 subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti</div><div class="sub">Gestisci i prezzi predefiniti che possono essere selezionati nella scheda anagrafica del cliente.</div></div><button class="btn" type="button" onclick="openSubscriptionPriceModal()">＋ Nuovo prezzo</button></div>
@@ -693,7 +700,7 @@ async function loadProfile(){
  show('dashboard',document.querySelector('.nav button'));
 }
 function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
@@ -706,6 +713,7 @@ function show(v,el){
  if(v==='dashboard') fillDashboard();
  if(v==='clients') loadClients();
  if(v==='anagrafica') loadAnagrafica();
+ if(v==='activeSubscriptions') loadActiveSubscriptions();
  if(v==='anagraficaClient') loadClientAnagrafica();
  if(v==='slotAdmin') loadSlotAdmin();
  if(v==='notifications'){loadNotifications();notifRecipientUsers=[];notifSelectedRecipientIds.clear();}
@@ -822,6 +830,115 @@ function filterAnagrafica(){
  const rows=(anagraficaData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),p.phone,p.phone_number,p.mobile,p.member_card_number,p.member_card,p.card_number,p.tessera,p.member_code,p.fiscal_code,p.city,p.address].some(v=>String(v||'').toLowerCase().includes(q)));
  renderAnagrafica(rows);
 }
+
+let activeSubscriptionsData=[];
+
+function activeSubscriptionDate(p,key){
+  const v=p?.[key];
+  return v?String(v).slice(0,10):'';
+}
+function isSubscriptionCurrentlyActive(p){
+  const from=activeSubscriptionDate(p,'subscription_paid_from');
+  const to=activeSubscriptionDate(p,'subscription_paid_to');
+  if(!from||!to)return false;
+  const today=new Date();
+  const t=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  return from<=t && t<=to;
+}
+function subscriptionAccountingStatus(p,payments){
+  const from=activeSubscriptionDate(p,'subscription_paid_from');
+  const to=activeSubscriptionDate(p,'subscription_paid_to');
+  const cost=p.subscription_cost==null?null:Number(p.subscription_cost);
+  const matches=(payments||[]).filter(x=>{
+    const pf=String(x.paid_from||'').slice(0,10), pt=String(x.paid_to||'').slice(0,10);
+    if(from&&pf!==from)return false;
+    if(to&&pt!==to)return false;
+    if(cost!=null && Number.isFinite(cost) && x.amount!=null && Math.abs(Number(x.amount)-cost)>0.01)return false;
+    return true;
+  });
+  return matches.length?'paid':'check';
+}
+async function loadActiveSubscriptions(){
+  const list=document.getElementById('activeSubList'),err=document.getElementById('activeSubError'),count=document.getElementById('activeSubCount');
+  if(!list)return;
+  if(err){err.style.display='none';err.textContent=''}
+  list.innerHTML='Caricamento...'; if(count)count.textContent='Caricamento...';
+
+  const pr=await db.from('profiles').select('*').limit(2000);
+  if(pr.error){
+    if(err){err.textContent='Errore lettura clienti: '+pr.error.message;err.style.display='block'}
+    list.innerHTML=''; if(count)count.textContent='Errore'; return;
+  }
+
+  const profiles=(pr.data||[]).filter(p=>isSubscriptionCurrentlyActive(p));
+  const ids=profiles.map(p=>p.id).filter(Boolean);
+  let payments=[];
+  if(ids.length){
+    const pay=await db.from('subscription_payment_history').select('*').in('profile_id',ids).order('created_at',{ascending:false}).limit(5000);
+    if(!pay.error)payments=pay.data||[];
+  }
+
+  activeSubscriptionsData=profiles.map(p=>{
+    const ph=payments.filter(x=>String(x.profile_id)===String(p.id));
+    return {...p,_payments:ph,_accounting:subscriptionAccountingStatus(p,ph)};
+  });
+  renderActiveSubscriptions();
+}
+function renderActiveSubscriptions(){
+  const list=document.getElementById('activeSubList'),count=document.getElementById('activeSubCount');
+  if(!list)return;
+  const q=(document.getElementById('activeSubSearch')?.value||'').toLowerCase().trim();
+  const st=document.getElementById('activeSubStatus')?.value||'all';
+  let rows=activeSubscriptionsData.filter(p=>{
+    if(st!=='all' && p._accounting!==st)return false;
+    const name=profileDisplayName(p)||p.full_name||p.name||'';
+    const hay=[name,p.email,p.member_card_number,p.subscription_type,p.subscription_plus_course]
+      .filter(Boolean).join(' ').toLowerCase();
+    return !q||hay.includes(q);
+  });
+
+  rows.sort((a,b)=>{
+    const an=String(profileDisplayName(a)||a.full_name||a.name||'').localeCompare(String(profileDisplayName(b)||b.full_name||b.name||''),'it');
+    return an;
+  });
+
+  if(count)count.textContent=rows.length+(rows.length===1?' cliente attivo':' clienti attivi');
+  if(!rows.length){
+    list.innerHTML='<div class="muted">Nessun cliente con abbonamento attivo.</div>';
+    return;
+  }
+
+  list.innerHTML=`<div style="overflow:auto"><table class="table">
+    <thead><tr>
+      <th>Cliente</th><th>Tessera</th><th>Abbonamento</th><th>Periodo</th>
+      <th>Importo</th><th>Ultimo pagamento</th><th>Situazione contabile</th><th></th>
+    </tr></thead>
+    <tbody>${rows.map(p=>{
+      const name=profileDisplayName(p)||p.full_name||p.name||'Cliente';
+      const from=activeSubscriptionDate(p,'subscription_paid_from');
+      const to=activeSubscriptionDate(p,'subscription_paid_to');
+      const cost=p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',');
+      const last=p._payments?.[0];
+      const lastPay=last?fmtDate(last.created_at):'Nessun pagamento registrato';
+      const ok=p._accounting==='paid';
+      const badge=ok
+        ?'<span class="pill" style="background:#c6ff35;color:#111">REGOLARE</span>'
+        :'<span class="pill" style="background:#ffb020;color:#111">DA VERIFICARE</span>';
+      const type=p.subscription_type||'Abbonamento';
+      return `<tr>
+        <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>
+        <td>${esc(p.member_card_number||'—')}</td>
+        <td>${esc(type)}${p.subscription_plus_cost?`<div class="muted">Plus € ${Number(p.subscription_plus_cost||0).toFixed(2).replace('.',',')}</div>`:''}</td>
+        <td>${esc(fmtDateIT(from))} → ${esc(fmtDateIT(to))}</td>
+        <td><b>${esc(cost)}</b></td>
+        <td>${esc(lastPay)}</td>
+        <td>${badge}</td>
+        <td><button class="btn secondary mini" type="button" onclick="openClientSheet('${p.id}')">Scheda</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
 async function loadClients(){
  const list=document.getElementById('clientList'),err=document.getElementById('clientError'),count=document.getElementById('clientCount');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento clienti...';

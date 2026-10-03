@@ -441,6 +441,54 @@ function showSubscriptionExpiryPopup(giorni,d,raw){
    </div>`);
 }
 
+function showSubscriptionRenewalPopup(row){
+ const paidFrom=row?.paid_from||profile?.subscription_paid_from||'';
+ const paidTo=row?.paid_to||profile?.subscription_paid_to||'';
+ const type=row?.note||profile?.subscription_type||'Abbonamento';
+ const amount=row?.amount;
+ const fmtDay=v=>{
+   if(!v)return '—';
+   const m=String(v).slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+   return m?`${m[3]}/${m[2]}/${m[1]}`:esc(v);
+ };
+ const amountText=amount===null||amount===undefined||amount===''?'':`<div style="margin-top:8px;font-size:18px;font-weight:800">Importo: € ${Number(amount).toFixed(2).replace('.',',')}</div>`;
+ openModal(`
+   <div style="text-align:center;padding:10px 4px 4px">
+     <div style="font-size:52px;line-height:1;margin-bottom:14px">✓</div>
+     <div style="font-size:27px;font-weight:900;color:var(--lime,#c8ff00);letter-spacing:.2px">ABBONAMENTO RINNOVATO</div>
+     <div style="margin-top:14px;font-size:18px;font-weight:800">Il tuo abbonamento è stato rinnovato.</div>
+     <div style="margin-top:18px;text-align:left;background:#11151b;border:1px solid #2c323c;border-radius:12px;padding:14px">
+       <div><b>Tipo:</b> ${esc(type)}</div>
+       <div style="margin-top:7px"><b>Dal:</b> ${fmtDay(paidFrom)}</div>
+       <div style="margin-top:7px"><b>Al:</b> ${fmtDay(paidTo)}</div>
+       ${amountText}
+     </div>
+     <button class="btn" type="button" style="width:100%;margin-top:22px;font-size:16px;padding:13px 18px" onclick="closeModal()">HO CAPITO</button>
+   </div>`);
+}
+
+async function checkSubscriptionRenewalNotice(){
+ if(!currentUser?.id||!isClientRole())return;
+ const key='kleosfit-last-seen-renewal-'+String(currentUser.id);
+ const r=await db.from('subscription_payment_history')
+   .select('id,paid_from,paid_to,amount,note,created_at')
+   .eq('profile_id',currentUser.id)
+   .order('created_at',{ascending:false})
+   .limit(1)
+   .maybeSingle();
+ if(r.error||!r.data)return;
+ const row=r.data;
+ const fingerprint=[row.id,row.paid_from||'',row.paid_to||'',row.amount??'',row.note||'',row.created_at||''].join('|');
+ let last=null;
+ try{last=localStorage.getItem(key)}catch(e){}
+ // Prima attivazione sul dispositivo: memorizza lo stato corrente senza mostrare
+ // un falso "rinnovo" per un abbonamento già esistente.
+ if(last===null){try{localStorage.setItem(key,fingerprint)}catch(e){}return;}
+ if(last===fingerprint)return;
+ try{localStorage.setItem(key,fingerprint)}catch(e){}
+ showSubscriptionRenewalPopup(row);
+}
+
 async function checkSubscriptionExpiryNotice(){
  const box=document.getElementById('subscriptionExpiryNotice');
  const text=document.getElementById('subscriptionExpiryNoticeText');
@@ -497,6 +545,7 @@ async function refreshCurrentClientProfile(){
  const nameEl=document.getElementById('dashboardUserName');
  if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
  await checkSubscriptionExpiryNotice();
+ await checkSubscriptionRenewalNotice();
  if(typeof fillDashboard==='function')await fillDashboard();
 }
 
@@ -512,6 +561,7 @@ function setupClientProfileSync(){
          const nameEl=document.getElementById('dashboardUserName');
          if(nameEl)nameEl.textContent=(profile.full_name||profile.name||currentUser.email||'Utente').toString();
          checkSubscriptionExpiryNotice();
+         checkSubscriptionRenewalNotice();
          if(typeof fillDashboard==='function')fillDashboard();
        }
      })
@@ -532,6 +582,7 @@ async function loadProfile(){
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
  await checkSubscriptionExpiryNotice();
+ await checkSubscriptionRenewalNotice();
  setupClientProfileSync();
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

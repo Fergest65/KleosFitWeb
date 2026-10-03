@@ -806,12 +806,20 @@ function openClientSheet(id){
 }
 
 async function generateUniqueMemberCardNumber(){
- for(let i=0;i<20;i++){
-   const n=String(Math.floor(10000000+Math.random()*90000000));
-   const r=await db.from('profiles').select('id').eq('member_card_number',n).limit(1);
-   if(!r.error && !(r.data||[]).length)return n;
+ // Numerazione progressiva: prima recuperiamo tutti i numeri già presenti
+ // e utilizziamo il primo numero mancante (buco).
+ const r=await db.from('profiles').select('member_card_number').not('member_card_number','is',null).limit(5000);
+ if(r.error)throw r.error;
+ const used=new Set();
+ for(const row of (r.data||[])){
+   const raw=String(row.member_card_number??'').trim();
+   if(!/^\d+$/.test(raw))continue;
+   const n=Number(raw);
+   if(Number.isSafeInteger(n)&&n>0)used.add(n);
  }
- throw new Error('Impossibile generare un numero tessera disponibile.');
+ let candidate=1;
+ while(used.has(candidate))candidate++;
+ return String(candidate);
 }
 async function generateClientCardNumber(){
  const input=document.getElementById('cpCard');

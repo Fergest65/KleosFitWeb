@@ -195,7 +195,8 @@ progress:`<div class="top"><div><div class="title">Progressi</div><div class="su
 <div class="section"><div class="card"><h2>Storico misurazioni</h2><div id="progressTable" class="progressTableWrap">Caricamento...</div></div></div>`,
 priceList:`<div class="top"><div><div class="title">Listino prezzi</div><div class="sub">Visualizza gli abbonamenti disponibili e i relativi prezzi.</div></div><button class="btn" type="button" onclick="loadClientPriceList()">Aggiorna</button></div>
 <div class="card"><div id="clientPriceListError" class="error"></div><div id="clientPriceListStatus" class="muted">Caricamento listino...</div><div id="clientPriceList" style="margin-top:14px"></div></div>`,
-payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza i tuoi pagamenti e lo stato degli abbonamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
+payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza il tuo abbonamento attuale e lo storico dei pagamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
+<div class="card" id="currentSubscriptionCard" style="margin-bottom:14px"><div style="font-weight:800;font-size:18px">Abbonamento attuale</div><div id="currentSubscriptionInfo" class="muted" style="margin-top:10px">Caricamento...</div></div>
 <div class="card"><div id="clientPaymentError" class="error"></div><div id="clientPaymentCount" class="muted">Caricamento...</div><div id="clientPaymentList" style="margin-top:14px">Caricamento storico...</div></div>`,
 admin:`<div class="top"><div><div class="title">Amministrazione</div><div class="sub">Dati operativi e configurazione</div></div></div>
 <div class="card"><div class="inputrow"><input id="adminSearch" placeholder="Cerca utente per nome, email, telefono o ruolo" oninput="filterAdmin()"><button class="btn" onclick="loadAdmin()">Aggiorna</button></div>
@@ -748,21 +749,51 @@ async function saveClientSheet(id){
  syncClientSubscriptionDates();
  updateClientSubscriptionTotal();
  // Il select contiene l'ID del listino, mentre profiles.subscription_type salva il NOME del tipo.
- // Prima veniva salvato l'ID UUID e alla riapertura il tipo risultava perso/non riconosciuto.
  const subSel=document.getElementById('cpSubType');
  const subId=subSel?.value||'';
  const subPreset=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(subId));
  const subTypeValue=subId==='__custom__'?'Prezzo personalizzato':(subPreset?.name||'');
  const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:subTypeValue||null,subscription_plus_course:valOrNull('cpPlusCourse'),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const existingProfile=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id)) || {};
+ const oldSub={type:existingProfile.subscription_type||null,from:existingProfile.subscription_paid_from||null,to:existingProfile.subscription_paid_to||null,cost:existingProfile.subscription_cost==null?null:Number(existingProfile.subscription_cost),plusCourse:existingProfile.subscription_plus_course||null,plusCost:existingProfile.subscription_plus_cost==null?null:Number(existingProfile.subscription_plus_cost)};
+ const newSub={type:payload.subscription_type,from:payload.subscription_paid_from,to:payload.subscription_paid_to,cost:payload.subscription_cost==null?null:Number(payload.subscription_cost),plusCourse:payload.subscription_plus_course,plusCost:payload.subscription_plus_cost==null?null:Number(payload.subscription_plus_cost)};
+ const subscriptionChanged=JSON.stringify(oldSub)!==JSON.stringify(newSub);
+ // profiles resta la fonte dell'abbonamento corrente. Quando l'abbonamento cambia,
+ // sincronizziamo anche la relativa riga in subscription_payment_history: il campo id
+ // UUID di quella riga diventa l'identificativo univoco di quel singolo abbonamento/rinnovo.
  // Non usiamo SELECT dopo UPDATE: con alcune policy RLS Supabase l'UPDATE riesce ma il SELECT restituisce nessuna riga.
- // In quel caso i dati venivano erroneamente segnalati come non salvati.
  const r=await db.from('profiles').update(payload).eq('id',id);
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
+ let historyId=null;
+ if(subscriptionChanged){
+   try{
+     let q=db.from('subscription_payment_history').select('id,paid_from,paid_to,amount,note,created_at').eq('profile_id',id).order('created_at',{ascending:false}).limit(100);
+     const hr=await q;
+     if(hr.error)throw hr.error;
+     const rows=hr.data||[];
+     const same=(a,b)=>String(a||'')===String(b||'');
+     const oldAmount=oldSub.cost;
+     const match=rows.find(x=>same(x.paid_from,oldSub.from)&&same(x.paid_to,oldSub.to)&&((oldAmount==null&&x.amount==null)||(oldAmount!=null&&Number(x.amount)===Number(oldAmount))));
+     const historyPayload={profile_id:id,paid_from:newSub.from||null,paid_to:newSub.to||null,amount:newSub.cost==null?null:Number(newSub.cost),note:newSub.type||'Abbonamento'};
+     if(match){
+       const ur=await db.from('subscription_payment_history').update(historyPayload).eq('id',match.id).select('id').maybeSingle();
+       if(ur.error)throw ur.error;
+       historyId=match.id;
+     }else if(newSub.type||newSub.from||newSub.to||newSub.cost!=null){
+       const ir=await db.from('subscription_payment_history').insert(historyPayload).select('id').maybeSingle();
+       if(ir.error)throw ir.error;
+       historyId=ir.data?.id||null;
+     }
+   }catch(e){
+     if(msg){msg.textContent="Impossibile sincronizzare lo storico dell’abbonamento: "+(e?.message||e);msg.className='error';msg.style.display='block'}
+     return;
+   }
+ }
  if(document.getElementById('cpMedFile')?.files?.[0]){
    try{await uploadMedicalCertificate(id);}catch(e){if(msg){msg.textContent='Dati cliente salvati, ma caricamento certificato non riuscito: '+(e?.message||e);msg.className='error';msg.style.display='block'}return}
  }
  const updated=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
- if(updated)Object.assign(updated,payload);
+ if(updated){Object.assign(updated,payload);if(historyId)updated.subscription_history_id=historyId;}
  closeModal();
  if(typeof renderAnagrafica==='function' && Array.isArray(anagraficaData) && anagraficaData.some(x=>String(x.id)===String(id))) renderAnagrafica(anagraficaData); else renderClients(clientsData||[]);
 }
@@ -1682,10 +1713,27 @@ async function loadClientPriceList(){
 }
 
 async function loadClientPayments(){
- const list=document.getElementById('clientPaymentList'),err=document.getElementById('clientPaymentError'),count=document.getElementById('clientPaymentCount');
+ const list=document.getElementById('clientPaymentList'),err=document.getElementById('clientPaymentError'),count=document.getElementById('clientPaymentCount'),currentBox=document.getElementById('currentSubscriptionInfo');
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento storico...';count.textContent='Caricamento...';
+ if(currentBox)currentBox.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
+ // Il riepilogo attuale viene letto sempre da profiles, così riflette immediatamente
+ // le modifiche fatte dal Superuser. Lo storico dei pagamenti resta invece invariato.
+ const pr=await db.from('profiles').select('subscription_type,subscription_paid_from,subscription_paid_to,subscription_cost,subscription_active,subscription_plus_course,subscription_plus_cost').eq('id',currentUser.id).maybeSingle();
+ if(currentBox){
+   if(pr.error||!pr.data){
+     currentBox.textContent='Impossibile leggere l’abbonamento attuale.';
+   }else{
+     const p=pr.data;
+     const from=p.subscription_paid_from?dateInputValue(p.subscription_paid_from):'—';
+     const to=p.subscription_paid_to?dateInputValue(p.subscription_paid_to):'—';
+     const total=p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',');
+     const active=p.subscription_active===false?'Non attivo':'Attivo';
+     const plus=p.subscription_plus_course?` · ${esc(p.subscription_plus_course)} + € ${Number(p.subscription_plus_cost||0).toFixed(2).replace('.',',')}`:'';
+     currentBox.innerHTML=`<div class="clientCurrentSubGrid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px"><div><div class="muted">Tipo</div><b>${esc(p.subscription_type||'—')}</b></div><div><div class="muted">Stato</div><b>${esc(active)}</b></div><div><div class="muted">Dal</div><b>${esc(from)}</b></div><div><div class="muted">Al</div><b>${esc(to)}</b></div><div><div class="muted">Costo totale</div><b>${esc(total)}</b></div><div><div class="muted">Corso aggiuntivo</div><b>${p.subscription_plus_course?esc(p.subscription_plus_course)+' + € '+Number(p.subscription_plus_cost||0).toFixed(2).replace('.',','):'—'}</b></div></div>`;
+   }
+ }
  const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
  if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
  const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');

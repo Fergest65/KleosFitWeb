@@ -349,7 +349,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('courseCatalog')">Gestione corsi</button>
  <button type="button" onclick="show('slotAdmin')">Gestione slot</button>
  <button type="button">Prenotazioni</button>
- <button type="button">Progressi</button>
+ <button type="button" onclick="show('progressAdmin',this)">Progressi</button>
  <button type="button" onclick="show('notifications')">Notifiche</button>
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
  <button type="button" onclick="show('activeSubscriptions',this)">Elenco abbonamenti</button>
@@ -361,6 +361,9 @@ courseCatalog:`<div class="top"><div><div class="title">Gestione corsi</div><div
 <div class="card"><div id="courseCatalogError" class="error"></div><div id="courseCatalogStatus" class="muted">Caricamento corsi...</div><div id="courseCatalogList" style="margin-top:14px">Caricamento...</div></div>`,
 circuits:`<div class="top"><div><div class="title">Circuiti</div><div class="sub">Circuiti funzionali a tempo, ripetizioni e recupero.</div></div><button class="btn" type="button" onclick="openCircuitBuilder()">＋ Nuovo circuito</button></div>
 <div class="card"><div class="inputrow"><input id="circuitSearch" placeholder="Cerca circuito..." oninput="renderCircuits()"><button class="btn secondary" type="button" onclick="loadCircuits()">Aggiorna</button></div><div id="circuitsStatus" class="muted" style="margin-top:10px">Caricamento...</div><div id="circuitsList" class="circuitList" style="margin-top:14px"></div></div>`,
+progressAdmin:`<div class="top"><div><div class="title">Progressi clienti</div><div class="sub">Consultazione delle misurazioni corporee registrate dal coach.</div></div><button class="btn" type="button" onclick="loadProgressAdmin()">Aggiorna</button></div>
+<div class="card"><div class="inputrow"><input id="progressAdminSearch" placeholder="Cerca cliente per nome, email o tessera" oninput="filterProgressAdminClients()"></div><div id="progressAdminStatus" class="muted">Caricamento clienti...</div><div id="progressAdminClients" style="margin-top:14px"></div></div>
+<div id="progressAdminDetail" class="section"></div>`,
 };
 
 let circuitsData=[];
@@ -2161,6 +2164,46 @@ const progressDefs=[
  ['Avambraccio',['forearm','avambraccio'],' cm'],
  ['Polso',['wrist','polso'],' cm']
 ];
+async function loadProgressAdmin(){
+ if(!isSuperuserRole())return;
+ const status=document.getElementById('progressAdminStatus'),list=document.getElementById('progressAdminClients');
+ if(!list)return;
+ status.textContent='Caricamento clienti...'; list.innerHTML='';
+ const r=await db.from('profiles').select('*').limit(500);
+ if(r.error){status.textContent='Errore caricamento clienti: '+r.error.message;return;}
+ progressAdminClientsData=(r.data||[]).filter(p=>['client','cliente'].includes(String(p.role||'client').toLowerCase()));
+ status.textContent=progressAdminClientsData.length+(progressAdminClientsData.length===1?' cliente':' clienti');
+ renderProgressAdminClients(progressAdminClientsData);
+}
+let progressAdminClientsData=[];
+function renderProgressAdminClients(rows){
+ const list=document.getElementById('progressAdminClients'); if(!list)return;
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun cliente trovato.</div>';return;}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Cliente</th><th>Tessera</th><th>Email</th><th></th></tr></thead><tbody>'+rows.map(p=>`<tr><td><b>${esc(profileDisplayName(p)||'Cliente')}</b></td><td>${esc(clientCardNumber(p)||'—')}</td><td>${esc(profileEmail(p)||'—')}</td><td><button class="btn mini" type="button" onclick="openProgressAdminClient('${p.id}')">Apri progressi</button></td></tr>`).join('')+'</tbody></table></div>';
+}
+function filterProgressAdminClients(){
+ const q=(document.getElementById('progressAdminSearch')?.value||'').toLowerCase().trim();
+ const rows=(progressAdminClientsData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),clientCardNumber(p),p.phone].some(v=>String(v||'').toLowerCase().includes(q)));
+ renderProgressAdminClients(rows);
+}
+async function openProgressAdminClient(id){
+ if(!isSuperuserRole())return;
+ const p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(id));
+ const box=document.getElementById('progressAdminDetail'); if(!box||!p)return;
+ box.innerHTML=`<div class="card"><div class="top" style="margin-bottom:16px"><div><div class="title" style="font-size:22px">${esc(profileDisplayName(p)||'Cliente')}</div><div class="sub">Storico misurazioni corporee</div></div></div><div id="progressAdminError" class="error"></div><div id="progressAdminCount" class="muted">Caricamento...</div><div id="progressAdminCards" class="progressGrid" style="margin-top:14px"></div><div style="margin-top:18px"><h2>Storico misurazioni</h2><div id="progressAdminTable" class="progressTableWrap">Caricamento...</div></div></div>`;
+ box.scrollIntoView({behavior:'smooth',block:'start'});
+ const err=document.getElementById('progressAdminError'),count=document.getElementById('progressAdminCount'),cards=document.getElementById('progressAdminCards'),table=document.getElementById('progressAdminTable');
+ const r=await db.from('progress_entries').select('*').eq('user_id',String(id)).limit(200);
+ if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return;}
+ const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(b)||0)-new Date(progressDate(a)||0));
+ count.textContent=rows.length+(rows.length===1?' rilevazione':' rilevazioni');
+ if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata per questo cliente.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return;}
+ const latest=rows[0],previous=rows[1]||null;
+ cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend">↗</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
+ const cols=['Data',...progressDefs.map(x=>x[0]),'Note'];
+ table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
+}
+
 async function loadClientProgress(){
  if(!canViewClientProgress())return;
  const err=document.getElementById('progressError'),count=document.getElementById('progressCount'),cards=document.getElementById('progressCards'),table=document.getElementById('progressTable');

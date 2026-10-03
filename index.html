@@ -284,7 +284,7 @@ let circuitRunnerLast=0;
 async function loadCircuits(){
  const status=document.getElementById('circuitsStatus'),list=document.getElementById('circuitsList');if(!list)return;
  if(status)status.textContent='Caricamento circuiti...';
- const r=await db.from('functional_circuits').select('*').order('sort_order',{ascending:true}).order('name',{ascending:true});
+ const r=await db.from('functional_circuits').select('*').order('name',{ascending:true});
  if(r.error){if(status)status.textContent='Circuiti non disponibili: '+r.error.message;list.innerHTML='<div class="error" style="display:block">Esegui lo SQL per creare le tabelle dei circuiti.</div>';return;}
  circuitsData=r.data||[];
  for(const c of circuitsData){
@@ -316,7 +316,6 @@ async function openCircuitBuilder(id=null){
  <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c?.rounds??4)}"></div>
  <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c?.rest_between_rounds??60)}"></div>
  <div><label>Countdown iniziale (sec)</label><input id="cInitial" type="number" min="0" max="60" value="${esc(c?.initial_seconds??5)}"></div>
- <div><label>Ordine</label><input id="cSort" type="number" min="0" value="${esc(c?.sort_order??0)}"></div>
  </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${c?.active!==false?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c?.authorized!==false?'checked':''}> Autorizzato ai clienti</label></div>
  <div class="circuitStationBuilder"><div class="circuitStationBuilderHead"><div><b>Stazioni</b><div class="muted">Completa gli esercizi e gestisci i recuperi.</div></div><button class="btn secondary mini" type="button" onclick="addCircuitStation()">＋ Nuova stazione</button></div><div id="circuitStationsDraft"></div></div>
  <div id="cMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCircuit('${id||''}')">Salva circuito</button></div>`);
@@ -346,7 +345,7 @@ function updateCircuitStation(i,key,value){if(!circuitStationsDraft[i])return;if
 function updateCircuitStationName(i,id){const e=exerciseLibraryData.find(x=>String(x.id)===String(id));if(e)circuitStationsDraft[i].exercise_name=e.name||'';}
 async function saveCircuit(id){
  const name=document.getElementById('cName')?.value.trim();if(!name){notice('cMsg','Inserisci il nome del circuito.');return;}
- const payload={name,description:document.getElementById('cDesc')?.value.trim()||null,rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),rest_between_rounds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),initial_seconds:Math.max(0,Number(document.getElementById('cInitial')?.value||0)),sort_order:Number(document.getElementById('cSort')?.value||0),active:document.getElementById('cActive')?.checked!==false,authorized:document.getElementById('cAuthorized')?.checked!==false};
+ const payload={name,description:document.getElementById('cDesc')?.value.trim()||null,rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),rest_between_rounds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),initial_seconds:Math.max(0,Number(document.getElementById('cInitial')?.value||0)),active:document.getElementById('cActive')?.checked!==false,authorized:document.getElementById('cAuthorized')?.checked!==false};
  let r=id?await db.from('functional_circuits').update(payload).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
  if(r.error){notice('cMsg','Errore salvataggio circuito: '+r.error.message);return;}
  const circuitId=r.data.id;
@@ -1610,7 +1609,7 @@ function plusCourseOptionsHtml(p){
 }
 async function ensureCourseCatalogLoaded(){
  if(courseCatalog?.length)return courseCatalog;
- const r=await db.from('course_catalog').select('*').order('sort_order',{ascending:true}).order('name',{ascending:true});
+ const r=await db.from('course_catalog').select('*').order('name',{ascending:true});
  if(!r.error)courseCatalog=r.data||[]; else courseCatalog=[];
  return courseCatalog;
 }
@@ -1620,7 +1619,7 @@ async function loadCourseCatalog(){
  if(!list)return;
  if(err){err.style.display='none';err.textContent='';}
  list.innerHTML='Caricamento...'; if(status)status.textContent='Caricamento corsi...';
- const r=await db.from('course_catalog').select('*').order('sort_order',{ascending:true}).order('name',{ascending:true});
+ const r=await db.from('course_catalog').select('*').order('name',{ascending:true});
  if(r.error){courseCatalog=[];if(err){err.textContent='Tabella corsi non disponibile: '+r.error.message+' — esegui lo SQL fornito per creare course_catalog.';err.style.display='block';}if(status)status.textContent='';list.innerHTML='';return;}
  courseCatalog=r.data||[];renderCourseCatalog();
 }

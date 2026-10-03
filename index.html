@@ -571,7 +571,7 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><select id="cpPlusCourse" onchange="updateClientSubscriptionTotal()">${plusCourseOptions(p.subscription_plus_course||'')}</select></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" min="0" step="0.01" value="${esc(p.subscription_plus_cost??0)}" oninput="updateClientSubscriptionTotal()" onchange="updateClientSubscriptionTotal()"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
    <div class="qrManagementBox">
@@ -610,6 +610,7 @@ function openClientSheet(id){
    toggleClientPlusFields();
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
+ setTimeout(()=>loadMedicalCertificateMeta(p.id),40);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
  setTimeout(()=>syncClientSubscriptionDates(),30);
 }
@@ -632,6 +633,48 @@ function syncClientSubscriptionDates(){
    from.removeAttribute('max');
  }
 }
+function previewMedicalCertificate(input){
+ const file=input?.files?.[0],info=document.getElementById('cpMedFileInfo'),preview=document.getElementById('cpMedPreview');
+ if(!file)return;
+ if(info)info.textContent=`File selezionato: ${file.name} (${Math.round(file.size/1024)} KB)`;
+ if(preview){preview.innerHTML='';if(file.type.startsWith('image/')){const img=document.createElement('img');img.alt='Anteprima certificato';img.style.cssText='max-width:260px;max-height:180px;border-radius:8px;border:1px solid #333;display:block;';const fr=new FileReader();fr.onload=()=>img.src=fr.result;fr.readAsDataURL(file);preview.appendChild(img);}else if(file.type==='application/pdf')preview.innerHTML='<div class="muted">PDF selezionato. Verrà caricato al salvataggio.</div>';}
+}
+async function getLatestMedicalCertificate(profileId){
+ const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',profileId).eq('document_type','medical_certificate').order('created_at',{ascending:false}).limit(1).maybeSingle();
+ if(r.error)throw r.error;
+ return r.data||null;
+}
+async function loadMedicalCertificateMeta(profileId){
+ const box=document.getElementById('cpMedExisting');
+ if(!box)return;
+ box.innerHTML='<div class="muted">Verifica documento...</div>';
+ try{
+   const doc=await getLatestMedicalCertificate(profileId);
+   if(!doc){box.innerHTML='<div class="muted">Nessun certificato caricato.</div>';return;}
+   const date=doc.created_at?fmtDate(doc.created_at):'';
+   box.innerHTML=`<div class="card" style="padding:10px;margin:0"><div><b>Certificato presente</b> — ${esc(doc.file_name||'Documento')}</div><div class="muted" style="margin-top:4px">${esc(doc.mime_type||'')} ${date?'· '+esc(date):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openMedicalCertificate('${esc(doc.file_path)}')">Visualizza certificato</button></div></div>`;
+ }catch(e){box.innerHTML='<div class="muted">Documento non disponibile: '+esc(e?.message||e)+'</div>';}
+}
+async function uploadMedicalCertificate(profileId){
+ const file=document.getElementById('cpMedFile')?.files?.[0];if(!file)return null;
+ if(file.size>10*1024*1024)throw new Error('Il certificato supera il limite di 10 MB.');
+ if(!(file.type.startsWith('image/')||file.type==='application/pdf'))throw new Error('Formato non supportato. Usa una foto JPG/PNG/WebP oppure un PDF.');
+ const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin';
+ const safeName=(file.name||'certificato').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120);
+ const path=`${String(profileId)}/medical_certificate/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+ const up=await db.storage.from('client-documents').upload(path,file,{contentType:file.type,upsert:false});
+ if(up.error)throw up.error;
+ const ins=await db.from('client_documents').insert({profile_id:profileId,document_type:'medical_certificate',file_path:path,file_name:safeName,mime_type:file.type}).select('*').maybeSingle();
+ if(ins.error)throw ins.error;
+ return ins.data||{file_path:path,file_name:safeName,mime_type:file.type};
+}
+async function openMedicalCertificate(path){
+ if(!path)return;
+ const r=await db.storage.from('client-documents').createSignedUrl(path,300);
+ if(r.error){alert('Impossibile aprire il certificato: '+r.error.message);return;}
+ window.open(r.data.signedUrl,'_blank','noopener');
+}
+
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
@@ -648,6 +691,9 @@ async function saveClientSheet(id){
  // In quel caso i dati venivano erroneamente segnalati come non salvati.
  const r=await db.from('profiles').update(payload).eq('id',id);
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
+ if(document.getElementById('cpMedFile')?.files?.[0]){
+   try{await uploadMedicalCertificate(id);}catch(e){if(msg){msg.textContent='Dati cliente salvati, ma caricamento certificato non riuscito: '+(e?.message||e);msg.className='error';msg.style.display='block'}return}
+ }
  const updated=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(updated)Object.assign(updated,payload);
  closeModal();

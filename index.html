@@ -1403,14 +1403,11 @@ function plusCourseOptions(selected=''){
  return '<option value="">— Seleziona corso aggiuntivo —</option>'+PLUS_COURSES.map(c=>`<option value="${esc(c)}" ${c===value?'selected':''}>${esc(c)}</option>`).join('')+'<option value="__custom__" '+(value && !PLUS_COURSES.includes(value)?'selected':'')+'>Altro</option>';
 }
 function toggleClientPlusFields(){
- const sel=document.getElementById('cpSubType');
- const preset=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(sel?.value));
- const isPlus=String(preset?.plan_type||'').toLowerCase()==='plus' || String(sel?.value||'').toLowerCase()==='plus';
  const course=document.getElementById('cpPlusCourse');
  const extra=document.getElementById('cpPlusCost');
- // Il supplemento deve essere sempre modificabile: quando il piano è Plus
- // viene valorizzato dal predefinito, ma l'amministratore può correggerlo manualmente.
- if(course){course.disabled=!isPlus;course.parentElement.style.opacity=isPlus?'1':'.55';}
+ // Entrambi i campi Plus devono essere sempre sbloccati e modificabili manualmente.
+ // La selezione del piano Plus continua comunque a valorizzarli automaticamente dal listino.
+ if(course){course.disabled=false;course.readOnly=false;course.parentElement.style.opacity='1';}
  if(extra){extra.disabled=false;extra.readOnly=false;extra.parentElement.style.opacity='1';}
 }
 function setPlusCourseSelect(id,value){

@@ -70,6 +70,10 @@
 .qrManagementBox .qrBox{background:#fff;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;min-height:116px}
 .qrTokenText{font-size:12px;color:#c4ff3d;word-break:break-all;margin-top:5px}
 @media(max-width:600px){.qrManagementBox{grid-template-columns:1fr}.qrManagementBox .qrBox{justify-self:center}}
+</style>
+<style>
+#cpFrom,#cpTo{cursor:pointer;color-scheme:dark;}
+#cpFrom::-webkit-calendar-picker-indicator,#cpTo::-webkit-calendar-picker-indicator{cursor:pointer;opacity:1;}
 </style></style>
 </style>
 </style>
@@ -566,7 +570,7 @@ function openClientSheet(id){
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><select id="cpPlusCourse">${plusCourseOptions(p.subscription_plus_course||'')}</select></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><input id="cpCard" value="${esc(card)}"></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div><label>Corso aggiuntivo Plus</label><select id="cpPlusCourse">${plusCourseOptions(p.subscription_plus_course||'')}</select></div><div><label>Supplemento Plus (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}"></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento" onclick="if(this.showPicker)this.showPicker()" onchange="syncClientSubscriptionDates()"></div><div><label>Abbonamento attivo</label><select id="cpActive"><option value="true" ${p.subscription_active!==false?'selected':''}>Attivo</option><option value="false" ${p.subscription_active===false?'selected':''}>Non attivo</option></select></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -607,32 +611,38 @@ function openClientSheet(id){
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
- setTimeout(()=>{
-   const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
-   if(!from || !to)return;
-   const syncDates=()=>{
-     if(from.value){
-       to.min=from.value;
-       if(to.value && to.value<from.value) to.value=from.value;
-     }else{ to.removeAttribute('min'); }
-     if(to.value) from.max=to.value; else from.removeAttribute('max');
-   };
-   from.addEventListener('change',syncDates);
-   to.addEventListener('change',syncDates);
-   syncDates();
- },30);
+ setTimeout(()=>syncClientSubscriptionDates(),30);
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
+function syncClientSubscriptionDates(){
+ const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
+ if(!from || !to)return;
+ // Mantiene coerente l'intervallo Dal/Al senza impedire la selezione manuale.
+ if(from.value){
+   to.min=from.value;
+   if(to.value && to.value<from.value) to.value=from.value;
+ }else{
+   to.removeAttribute('min');
+ }
+ if(to.value){
+   from.max=to.value;
+   if(from.value && from.value>to.value) from.value=to.value;
+ }else{
+   from.removeAttribute('max');
+ }
+}
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
+ syncClientSubscriptionDates();
  const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_plus_course:valOrNull('cpPlusCourse'),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:valOrNull('cpFrom'),subscription_paid_to:valOrNull('cpTo'),subscription_cost:nullableNumber('cpCost'),subscription_active:document.getElementById('cpActive')?.value==='true',subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
- const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
+ // Non usiamo SELECT dopo UPDATE: con alcune policy RLS Supabase l'UPDATE riesce ma il SELECT restituisce nessuna riga.
+ // In quel caso i dati venivano erroneamente segnalati come non salvati.
+ const r=await db.from('profiles').update(payload).eq('id',id);
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
- if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
  const updated=(clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
- if(updated)Object.assign(updated,r.data);
+ if(updated)Object.assign(updated,payload);
  closeModal();
  if(typeof renderAnagrafica==='function' && Array.isArray(anagraficaData) && anagraficaData.some(x=>String(x.id)===String(id))) renderAnagrafica(anagraficaData); else renderClients(clientsData||[]);
 }

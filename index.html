@@ -284,7 +284,7 @@ let circuitRunnerLast=0;
 async function loadCircuits(){
  const status=document.getElementById('circuitsStatus'),list=document.getElementById('circuitsList');if(!list)return;
  if(status)status.textContent='Caricamento circuiti...';
- const r=await db.from('functional_circuits').select('*').order('name',{ascending:true});
+ const r=await db.from('functional_circuits').select('*').order('title',{ascending:true});
  if(r.error){if(status)status.textContent='Circuiti non disponibili: '+r.error.message;list.innerHTML='<div class="error" style="display:block">Esegui lo SQL per creare le tabelle dei circuiti.</div>';return;}
  circuitsData=r.data||[];
  for(const c of circuitsData){
@@ -297,9 +297,9 @@ async function loadCircuits(){
 function renderCircuits(){
  const list=document.getElementById('circuitsList');if(!list)return;
  const q=(document.getElementById('circuitSearch')?.value||'').toLowerCase().trim();
- const rows=circuitsData.filter(c=>!q||[c.name,c.description].map(x=>String(x||'').toLowerCase()).join(' ').includes(q));
+ const rows=circuitsData.filter(c=>!q||[c.title,c.description].map(x=>String(x||'').toLowerCase()).join(' ').includes(q));
  if(!rows.length){list.innerHTML='<div class="muted">Nessun circuito configurato. Premi “＋ Nuovo circuito”.</div>';return;}
- list.innerHTML=rows.map(c=>`<div class="circuitCard"><div class="circuitCardHead"><div><h3 style="margin:0">${esc(c.name||'Circuito')}</h3><div class="muted" style="margin-top:5px">${esc(c.description||'Circuito a tempo/ripetizioni e recuperi.')}</div></div><div class="circuitActions"><button class="btn mini" type="button" onclick="openCircuitRunner('${c.id}')">▶ AVVIA</button><button class="btn secondary mini" type="button" onclick="openCircuitBuilder('${c.id}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteCircuit('${c.id}')">Elimina</button></div></div><div class="circuitMeta"><span class="pill">${c.rounds||1} giri</span><span class="pill">${c.station_count||0} stazioni</span><span class="pill">Recupero ${c.rest_between_rounds||0}s</span><span class="pill">${c.authorized===false?'Non autorizzato':'Autorizzato'}</span><span class="pill">${c.active===false?'Disattivo':'Attivo'}</span></div></div>`).join('');
+ list.innerHTML=rows.map(c=>`<div class="circuitCard"><div class="circuitCardHead"><div><h3 style="margin:0">${esc(c.title||'Circuito')}</h3><div class="muted" style="margin-top:5px">${esc(c.description||'Circuito a tempo/ripetizioni e recuperi.')}</div></div><div class="circuitActions"><button class="btn mini" type="button" onclick="openCircuitRunner('${c.id}')">▶ AVVIA</button><button class="btn secondary mini" type="button" onclick="openCircuitBuilder('${c.id}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteCircuit('${c.id}')">Elimina</button></div></div><div class="circuitMeta"><span class="pill">${c.rounds||1} giri</span><span class="pill">${c.station_count||0} stazioni</span><span class="pill">Recupero ${c.rest_between_rounds_seconds||0}s</span><span class="pill">${c.client_authorized===false?'Non autorizzato':'Autorizzato'}</span><span class="pill">${String(c.status||'').toLowerCase()!=='active'?'Disattivo':'Attivo'}</span></div></div>`).join('');
 }
 async function openCircuitBuilder(id=null){
  await loadExerciseLibrary();
@@ -309,14 +309,24 @@ async function openCircuitBuilder(id=null){
   const r=await db.from('functional_circuit_stations').select('*').eq('circuit_id',id).order('sort_order',{ascending:true});
   if(r.error){alert('Impossibile caricare il circuito: '+r.error.message);return;}stations=r.data||[];
  }
- circuitStationsDraft=stations.map(s=>({...s}));
+ circuitStationsDraft=stations.map(s=>({
+  ...s,
+  exercise_id:'',
+  exercise_name:s.exercise_name||'',
+  mode:(s.work_mode==='reps'?'reps':'time'),
+  work_seconds:s.work_seconds??60,
+  repetitions:s.reps??1,
+  seconds_between_reps:s.rep_interval_seconds??0,
+  rest_seconds:s.recovery_seconds??0,
+  load_value:s.load_text??0,
+  prep_seconds:0
+}));
  openModal(`<div class="modalhead"><h2>${id?'Modifica circuito':'Nuovo circuito'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="circuitBuilderGrid">
- <div class="circuitBuilderWide"><label>Nome circuito</label><input id="cName" value="${esc(c?.name||'')}" placeholder="es. Circuito Full Body 01"></div>
+ <div class="circuitBuilderWide"><label>Nome circuito</label><input id="cName" value="${esc(c?.title||'')}" placeholder="es. Circuito Full Body 01"></div>
  <div class="circuitBuilderWide"><label>Descrizione</label><input id="cDesc" value="${esc(c?.description||'')}" placeholder="Circuito a tempo/ripetizioni e recuperi"></div>
  <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c?.rounds??4)}"></div>
- <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c?.rest_between_rounds??60)}"></div>
- <div><label>Countdown iniziale (sec)</label><input id="cInitial" type="number" min="0" max="60" value="${esc(c?.initial_seconds??5)}"></div>
- </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${c?.active!==false?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c?.authorized!==false?'checked':''}> Autorizzato ai clienti</label></div>
+ <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c?.rest_between_rounds_seconds??60)}"></div>
+ </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${String(c?.status||'active').toLowerCase()==='active'?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c?.client_authorized===true?'checked':''}> Autorizzato ai clienti</label></div>
  <div class="circuitStationBuilder"><div class="circuitStationBuilderHead"><div><b>Stazioni</b><div class="muted">Completa gli esercizi e gestisci i recuperi.</div></div><button class="btn secondary mini" type="button" onclick="addCircuitStation()">＋ Nuova stazione</button></div><div id="circuitStationsDraft"></div></div>
  <div id="cMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCircuit('${id||''}')">Salva circuito</button></div>`);
  renderCircuitStationsDraft();
@@ -325,32 +335,53 @@ function addCircuitStation(){circuitStationsDraft.push({exercise_id:'',exercise_
 function removeCircuitStation(i){circuitStationsDraft.splice(i,1);renderCircuitStationsDraft();}
 function renderCircuitStationsDraft(){
  const box=document.getElementById('circuitStationsDraft');if(!box)return;
- const opts='<option value="">— Seleziona dalla libreria esercizi —</option>'+exerciseLibraryData.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('');
+ const opts='<option value="">— Seleziona dalla libreria esercizi —</option>'+exerciseLibraryData.map(e=>`<option value="${esc(e.name)}">${esc(e.name)}</option>`).join('');
  if(!circuitStationsDraft.length){box.innerHTML='<div class="circuitStationEmpty">Nessuna stazione. Premi “＋ Nuova stazione”.</div>';return;}
  box.innerHTML=circuitStationsDraft.map((s,i)=>`<div class="circuitStationRow">
   <div class="circuitStationTop"><div class="circuitStationNum">STAZIONE ${i+1}</div><div class="circuitMode"><button type="button" class="btn ${s.mode!=='reps'?'':'secondary'} mini" onclick="updateCircuitStation(${i},'mode','time');renderCircuitStationsDraft()">Tempo</button><button type="button" class="btn ${s.mode==='reps'?'':'secondary'} mini" onclick="updateCircuitStation(${i},'mode','reps');renderCircuitStationsDraft()">Ripetizioni</button></div><button class="btn secondary mini circuitStationRemove" type="button" onclick="removeCircuitStation(${i})">×</button></div>
   <div class="circuitStationGrid">
    <div class="circuitStationField"><label>Gruppo muscolare</label><input value="${esc(s.muscle_group??'')}" placeholder="es. Full body" onchange="updateCircuitStation(${i},'muscle_group',this.value)"></div>
    <div class="circuitStationField"><label>Nome esercizio</label><input value="${esc(s.exercise_name??'')}" placeholder="es. Jumping jack" onchange="updateCircuitStation(${i},'exercise_name',this.value)"></div>
-   <div class="circuitStationField wide"><label>Libreria esercizi</label><select onchange="updateCircuitStation(${i},'exercise_id',this.value);updateCircuitStationName(${i},this.value);renderCircuitStationsDraft()">${opts}</select></div>
+   <div class="circuitStationField wide"><label>Libreria esercizi</label><select onchange="updateCircuitStation(${i},'exercise_name',this.value);renderCircuitStationsDraft()">${opts}</select></div>
    <div class="circuitStationField wide"><label>Attrezzo</label><input value="${esc(s.equipment??'Corpo libero')}" placeholder="es. Corpo libero, Kettlebell, Manubri" onchange="updateCircuitStation(${i},'equipment',this.value)"></div>
    ${s.mode!=='reps'?`<div class="circuitStationField"><label>Secondi lavoro</label><input type="number" min="1" value="${esc(s.work_seconds??60)}" onchange="updateCircuitStation(${i},'work_seconds',this.value)"></div>`:`<div class="circuitStationField"><label>Ripetizioni max 50</label><input type="number" min="1" max="50" value="${esc(Math.min(50,s.repetitions??1))}" onchange="updateCircuitStation(${i},'repetitions',Math.min(50,this.value))"></div><div class="circuitStationField"><label>Secondi tra ripetizioni</label><input type="number" min="0" value="${esc(s.seconds_between_reps??s.rep_seconds??0)}" onchange="updateCircuitStation(${i},'seconds_between_reps',this.value)"></div>`}
    <div class="circuitStationField"><label>Recupero dopo stazione (sec)</label><input type="number" min="0" value="${esc(s.rest_seconds??20)}" onchange="updateCircuitStation(${i},'rest_seconds',this.value)"></div>
    <div class="circuitStationField"><label>Carico</label><input type="number" min="0" step="0.5" value="${esc(s.load_value??0)}" onchange="updateCircuitStation(${i},'load_value',this.value)"></div>
   </div>
  </div>`).join('');
- circuitStationsDraft.forEach((s,i)=>{const selects=box.querySelectorAll('select');const el=selects[i*1];if(el)el.value=s.exercise_id||'';});
+ circuitStationsDraft.forEach((s,i)=>{const selects=box.querySelectorAll('select');const el=selects[i*1];if(el)el.value=s.exercise_name||'';});
 }
 function updateCircuitStation(i,key,value){if(!circuitStationsDraft[i])return;if(['work_seconds','repetitions','rep_seconds','seconds_between_reps','rest_seconds','prep_seconds','load_value'].includes(key))value=Math.max(0,Number(value||0));if(key==='repetitions')value=Math.min(50,value);circuitStationsDraft[i][key]=value;}
 function updateCircuitStationName(i,id){const e=exerciseLibraryData.find(x=>String(x.id)===String(id));if(e)circuitStationsDraft[i].exercise_name=e.name||'';}
 async function saveCircuit(id){
- const name=document.getElementById('cName')?.value.trim();if(!name){notice('cMsg','Inserisci il nome del circuito.');return;}
- const payload={name,description:document.getElementById('cDesc')?.value.trim()||null,rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),rest_between_rounds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),initial_seconds:Math.max(0,Number(document.getElementById('cInitial')?.value||0)),active:document.getElementById('cActive')?.checked!==false,authorized:document.getElementById('cAuthorized')?.checked!==false};
+ const title=document.getElementById('cName')?.value.trim();if(!title){notice('cMsg','Inserisci il nome del circuito.');return;}
+ const payload={
+   title,
+   description:document.getElementById('cDesc')?.value.trim()||null,
+   rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),
+   rest_between_rounds_seconds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),
+   status:document.getElementById('cActive')?.checked===false?'inactive':'active',
+   client_authorized:document.getElementById('cAuthorized')?.checked===true
+ };
  let r=id?await db.from('functional_circuits').update(payload).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
  if(r.error){notice('cMsg','Errore salvataggio circuito: '+r.error.message);return;}
  const circuitId=r.data.id;
  if(id){const d=await db.from('functional_circuit_stations').delete().eq('circuit_id',circuitId);if(d.error){notice('cMsg','Errore aggiornamento stazioni: '+d.error.message);return;}}
- const stations=circuitStationsDraft.map((s,i)=>({circuit_id:circuitId,exercise_id:s.exercise_id||null,exercise_name:s.exercise_name||null,muscle_group:s.muscle_group||null,equipment:s.equipment||null,sort_order:i+1,mode:s.mode==='reps'?'reps':'time',work_seconds:s.mode==='time'?Math.max(1,Number(s.work_seconds||1)):0,repetitions:s.mode==='reps'?Math.min(50,Math.max(1,Number(s.repetitions||1))):0,rep_seconds:s.mode==='reps'?Math.max(1,Number(s.rep_seconds||1)):0,seconds_between_reps:s.mode==='reps'?Math.max(0,Number(s.seconds_between_reps??s.rep_seconds??0)):0,rest_seconds:Math.max(0,Number(s.rest_seconds||0)),prep_seconds:Math.max(0,Number(s.prep_seconds||0)),load_value:Math.max(0,Number(s.load_value||0)),notes:s.notes||null}));
+ const stations=circuitStationsDraft.map((st,i)=>({
+   circuit_id:circuitId,
+   sort_order:i+1,
+   station_type:st.station_type||'exercise',
+   muscle_group:st.muscle_group||null,
+   exercise_name:st.exercise_name||null,
+   equipment:st.equipment||null,
+   work_mode:st.mode==='reps'?'reps':'time',
+   work_seconds:st.mode==='time'?Math.max(1,Number(st.work_seconds||1)):null,
+   reps:st.mode==='reps'?Math.min(50,Math.max(1,Number(st.repetitions||1))):null,
+   recovery_seconds:Math.max(0,Number(st.rest_seconds||0)),
+   load_text:st.load_value!=null && st.load_value!=='' ? String(st.load_value) : null,
+   notes:st.notes||null,
+   rep_interval_seconds:st.mode==='reps'?Math.max(0,Number(st.seconds_between_reps||0)):0
+ }));
  if(stations.length){const ins=await db.from('functional_circuit_stations').insert(stations);if(ins.error){notice('cMsg','Circuito salvato ma stazioni non salvate: '+ins.error.message);return;}}
  closeModal();await loadCircuits();
 }
@@ -359,56 +390,68 @@ async function openCircuitRunner(id){
  const c=circuitsData.find(x=>String(x.id)===String(id));if(!c)return;
  const r=await db.from('functional_circuit_stations').select('*').eq('circuit_id',id).order('sort_order',{ascending:true});if(r.error){alert('Impossibile aprire il circuito: '+r.error.message);return;}
  if(!(r.data||[]).length){alert('Il circuito non contiene stazioni.');return;}
- circuitRunnerState={c,stations:r.data||[],round:1,index:0,phase:'prep',remaining:Number(c.initial_seconds||0),rep:0,running:false};
- openModal(`<div class="modalhead"><h2>▶ ${esc(c.name)}</h2><button class="close" onclick="stopCircuitRunner();closeModal()">Chiudi</button></div><div class="circuitRunner"><div class="circuitRunnerTitle" id="crExercise">Preparati</div><div class="circuitRunnerRound" id="crRound"></div><div class="circuitRunnerPhase" id="crPhase">Countdown iniziale</div><div class="circuitRunnerDisplay" id="crDisplay">00</div><div class="circuitRunnerExercise" id="crStation">—</div><div class="circuitRunnerNext" id="crNext"></div><div class="circuitRunnerActions"><button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button><button class="btn secondary" onclick="resetCircuitRunner()">RESET</button><button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button></div></div>`);renderCircuitRunner();
+ circuitRunnerState={c,stations:r.data||[],round:1,index:0,phase:(r.data||[])[0]?.work_mode==='reps'?'reps':'work',remaining:(r.data||[])[0]?.work_mode==='reps'?Number((r.data||[])[0]?.rep_interval_seconds||1):Number((r.data||[])[0]?.work_seconds||1),rep:0,running:false};
+ openModal(`<div class="modalhead"><h2>▶ ${esc(c.title)}</h2><button class="close" onclick="stopCircuitRunner();closeModal()">Chiudi</button></div><div class="circuitRunner"><div class="circuitRunnerTitle" id="crExercise">Preparati</div><div class="circuitRunnerRound" id="crRound"></div><div class="circuitRunnerPhase" id="crPhase">Countdown iniziale</div><div class="circuitRunnerDisplay" id="crDisplay">00</div><div class="circuitRunnerExercise" id="crStation">—</div><div class="circuitRunnerNext" id="crNext"></div><div class="circuitRunnerActions"><button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button><button class="btn secondary" onclick="resetCircuitRunner()">RESET</button><button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button></div></div>`);renderCircuitRunner();
 }
 function circuitFmt(sec){sec=Math.max(0,Math.ceil(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
-function renderCircuitRunner(){const s=circuitRunnerState;if(!s)return;const st=s.stations[s.index],ex=st?.exercise_name||'Esercizio',next=s.stations[s.index+1]?.exercise_name||(s.round<s.c.rounds?s.stations[0]?.exercise_name:'Fine circuito'),phase=s.phase==='prep'?'Preparati':s.phase==='rest'?'Recupero':s.phase==='reps'?'Ripetizioni':s.phase==='done'?'COMPLETO':'Lavoro';document.getElementById('crExercise').textContent=s.phase==='done'?'Circuito completato':(phase==='Preparati'?'Preparati':ex);document.getElementById('crRound').textContent=s.phase==='done'?'':`Giro ${s.round} / ${s.c.rounds}`;document.getElementById('crPhase').textContent=phase;document.getElementById('crDisplay').textContent=s.phase==='reps'?`${s.rep}/${st.repetitions}`:circuitFmt(s.remaining);document.getElementById('crStation').textContent=ex;document.getElementById('crNext').textContent=next&&next!=='Fine circuito'?`Prossima stazione: ${next}`:'Circuito completato';const btn=document.getElementById('crStart');if(btn)btn.textContent=s.running?'⏸ PAUSA':'▶ AVVIA';}
+function renderCircuitRunner(){
+ const s=circuitRunnerState;if(!s)return;
+ const st=s.stations[s.index],ex=st?.exercise_name||'Esercizio';
+ const next=s.stations[s.index+1]?.exercise_name||(s.round<s.c.rounds?s.stations[0]?.exercise_name:'Fine circuito');
+ const phase=s.phase==='rest'?'Recupero':s.phase==='reps'?'Ripetizioni':s.phase==='done'?'COMPLETO':'Lavoro';
+ document.getElementById('crExercise').textContent=s.phase==='done'?'Circuito completato':ex;
+ document.getElementById('crRound').textContent=s.phase==='done'?'':`Giro ${s.round} / ${s.c.rounds}`;
+ document.getElementById('crPhase').textContent=phase;
+ document.getElementById('crDisplay').textContent=s.phase==='reps'?`${s.rep}/${st?.reps||0}`:circuitFmt(s.remaining);
+ document.getElementById('crStation').textContent=st?.equipment?`${ex} · ${st.equipment}`:ex;
+ document.getElementById('crNext').textContent=next&&next!=='Fine circuito'?`Prossima stazione: ${next}`:'Circuito completato';
+ const btn=document.getElementById('crStart');if(btn)btn.textContent=s.running?'⏸ PAUSA':'▶ AVVIA';
+}
 function toggleCircuitRunner(){const s=circuitRunnerState;if(!s)return;s.running=!s.running;if(s.running){circuitRunnerLast=0;cancelAnimationFrame(circuitRunnerTimer);circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);}else cancelAnimationFrame(circuitRunnerTimer);renderCircuitRunner();}
 function stopCircuitRunner(){circuitRunnerState=null;cancelAnimationFrame(circuitRunnerTimer);}
-function resetCircuitRunner(){const s=circuitRunnerState;if(!s)return;s.round=1;s.index=0;s.phase='prep';s.remaining=Number(s.c.initial_seconds||0);s.rep=0;s.running=false;cancelAnimationFrame(circuitRunnerTimer);renderCircuitRunner();}
+function resetCircuitRunner(){
+ const s=circuitRunnerState;if(!s)return;
+ const st=s.stations[0];
+ s.round=1;s.index=0;s.phase=st?.work_mode==='reps'?'reps':'work';
+ s.remaining=s.phase==='reps'?Number(st?.rep_interval_seconds||1):Number(st?.work_seconds||1);
+ s.rep=0;s.running=false;cancelAnimationFrame(circuitRunnerTimer);renderCircuitRunner();
+}
 function nextCircuitRunner(){const s=circuitRunnerState;if(!s)return;circuitAdvanceRunner();renderCircuitRunner();}
-function circuitAdvanceRunner(){const s=circuitRunnerState,st=s.stations[s.index];if(s.phase==='prep'||s.phase==='work'||s.phase==='reps'){if(st.rest_seconds>0){s.phase='rest';s.remaining=st.rest_seconds;return;}}if(s.index<s.stations.length-1){s.index++;s.phase='prep';s.remaining=Number(s.stations[s.index].prep_seconds||0);s.rep=0;return;}if(s.round<s.c.rounds){s.round++;s.index=0;s.phase='rest';s.remaining=Number(s.c.rest_between_rounds||0);s.rep=0;return;}s.running=false;s.phase='done';s.remaining=0;}
-function circuitRunnerTick(t){const s=circuitRunnerState;if(!s||!s.running)return;if(!circuitRunnerLast)circuitRunnerLast=t;const dt=(t-circuitRunnerLast)/1000;circuitRunnerLast=t;const st=s.stations[s.index];if(s.phase==='prep'||s.phase==='work'||s.phase==='rest'){s.remaining-=dt;if(s.remaining<=0){if(s.phase==='prep'){if(st.mode==='reps'){s.phase='reps';s.rep=0;s.remaining=Number(st.rep_seconds||1);}else{s.phase='work';s.remaining=Number(st.work_seconds||1);}}else if(s.phase==='reps'){s.rep++;if(s.rep>=Number(st.repetitions||1)){circuitAdvanceRunner();}else s.remaining=Number(st.rep_seconds||1);}else circuitAdvanceRunner();}}renderCircuitRunner();if(s.running)circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);}
-
-let rampSequence=[],rampIndex=0,rampRemaining=0,rampRunning=false,rampPaused=false,rampLast=0,rampFrame=0;
-function rampNum(id,min,max){const v=Number(document.getElementById(id)?.value);return Math.max(min,Math.min(max,Number.isFinite(v)?v:min));}
-function rampFmt(sec){sec=Math.max(0,Math.ceil(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
-function rampBuild(){const work=rampNum('rampWork',1,3600),rest=rampNum('rampRest',0,3600),rounds=rampNum('rampRounds',1,100),ramp=rampNum('rampRamp',0,600);rampSequence=[];for(let i=1;i<=rounds;i++){if(ramp>0)rampSequence.push({name:'RAMP · ROUND '+i,d:ramp});rampSequence.push({name:'LAVORO · ROUND '+i,d:work});if(rest>0&&i<rounds)rampSequence.push({name:'RECUPERO · ROUND '+i,d:rest});}rampRenderSteps();}
-function rampRenderSteps(){const box=document.getElementById('rampTimerSteps');if(!box)return;box.innerHTML=rampSequence.map((x,i)=>'<div class="rampTimerStep '+(i===rampIndex?'active':'')+'"><span>'+x.name+'</span><span>'+x.d+'s</span></div>').join('');}
-function rampUpdate(){const d=document.getElementById('rampTimerDisplay'),ph=document.getElementById('rampTimerPhase');if(!d||!ph)return;d.textContent=rampFmt(rampRemaining);ph.textContent=rampSequence[rampIndex]?.name||'Pronto';document.querySelectorAll('.rampTimerStep').forEach((e,i)=>e.classList.toggle('active',i===rampIndex));}
-function rampReset(){cancelAnimationFrame(rampFrame);rampBuild();rampIndex=0;rampRemaining=rampSequence[0]?.d||0;rampRunning=false;rampPaused=false;rampLast=0;const st=document.getElementById('rampTimerStatus');if(st)st.textContent='';rampUpdate();}
-function rampStart(){if(!rampSequence.length)rampBuild();if(rampIndex>=rampSequence.length)rampReset();rampRunning=true;rampPaused=false;rampLast=0;cancelAnimationFrame(rampFrame);rampFrame=requestAnimationFrame(rampTick);}
-function rampPause(){if(rampRunning){rampRunning=false;rampPaused=true;document.getElementById('rampTimerStatus').textContent='In pausa';}else if(rampPaused){rampRunning=true;rampPaused=false;rampLast=0;rampFrame=requestAnimationFrame(rampTick);}}
-function rampTick(t){if(!rampRunning)return;if(!rampLast)rampLast=t;rampRemaining-=(t-rampLast)/1000;rampLast=t;if(rampRemaining<=0){rampIndex++;if(rampIndex>=rampSequence.length){rampRunning=false;rampRemaining=0;document.getElementById('rampTimerPhase').textContent='COMPLETO';document.getElementById('rampTimerStatus').textContent='Allenamento terminato';rampUpdate();return;}rampRemaining=rampSequence[rampIndex].d;}rampUpdate();rampFrame=requestAnimationFrame(rampTick);}
-function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog'||v==='circuits')&&!isSuperuserRole()) return;
- if(v==='myNotifications'&&!isClientRole()) return;
- if(v==='anagraficaClient'&&!isClientRole()) return;
- if(v==='qrcodes'&&!isClientRole()) return;
- if(v==='priceList'&&!isClientRole()) return;
- document.getElementById('content').innerHTML=views[v];
- document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
- if(el)el.classList.add('active');
- if(v==='dashboard'){fillDashboard();}
- if(v==='clients')loadClients();
- if(v==='anagrafica')loadAnagrafica();
- if(v==='anagraficaClient')loadClientAnagrafica();
- if(v==='slotAdmin')loadSlotAdmin();
- if(v==='notifications'){loadNotifications();notifRecipientUsers=[];notifSelectedRecipientIds.clear();}
- if(v==='myNotifications')loadMyNotifications();
- if(v==='qrcodes')loadQrCodes();
- if(v==='workout')loadWorkouts();
- if(v==='nutrition')loadNutrition();
- if(v==='booking')loadBookings();
- if(v==='priceList')loadClientPriceList();
- if(v==='payments')loadClientPayments();
- if(v==='progress')loadClientProgress();
- if(v==='admin')loadAdmin();
- if(v==='superuser'&&!isSuperuserRole()) return;
- if(v==='subscriptionPrices')loadSubscriptionPrices();
- if(v==='circuits')loadCircuits();
- if(v==='courseCatalog')loadCourseCatalog();
+function circuitAdvanceRunner(){
+ const s=circuitRunnerState,st=s.stations[s.index];
+ if(st?.recovery_seconds>0){s.phase='rest';s.remaining=Number(st.recovery_seconds);return;}
+ if(s.index<s.stations.length-1){
+   s.index++;const n=s.stations[s.index];s.phase=n.work_mode==='reps'?'reps':'work';
+   s.remaining=s.phase==='reps'?Number(n.rep_interval_seconds||1):Number(n.work_seconds||1);s.rep=0;return;
+ }
+ if(s.round<s.c.rounds){
+   s.round++;s.index=0;const n=s.stations[0];s.phase=n.work_mode==='reps'?'reps':'work';
+   s.remaining=s.phase==='reps'?Number(n.rep_interval_seconds||1):Number(n.work_seconds||1);s.rep=0;return;
+ }
+ s.running=false;s.phase='done';s.remaining=0;
+}
+function circuitRunnerTick(t){
+ const s=circuitRunnerState;if(!s||!s.running)return;
+ if(!circuitRunnerLast)circuitRunnerLast=t;
+ const dt=(t-circuitRunnerLast)/1000;circuitRunnerLast=t;
+ const st=s.stations[s.index];
+ if(s.phase==='work'||s.phase==='rest'){
+   s.remaining-=dt;
+   if(s.remaining<=0){
+     if(s.phase==='work'){
+       if(st.work_mode==='reps'){s.phase='reps';s.rep=0;s.remaining=Number(st.rep_interval_seconds||1);}
+       else circuitAdvanceRunner();
+     }else circuitAdvanceRunner();
+   }
+ }else if(s.phase==='reps'){
+   s.remaining-=dt;
+   if(s.remaining<=0){
+     s.rep++;
+     if(s.rep>=Number(st.reps||1)){circuitAdvanceRunner();}
+     else s.remaining=Number(st.rep_interval_seconds||1);
+   }
+ }
+ renderCircuitRunner();if(s.running)circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
 }
 const VAPID_PUBLIC_KEY='BF3sh9vV60FkOEH-lMcvI8Dl8vZsImpfm2WVwFBmSKx9uPcwythx0Mx-it4nTwobAs0JxNjyi5z0pElYegZorU4';
 function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}

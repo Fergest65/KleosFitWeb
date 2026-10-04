@@ -963,10 +963,13 @@ async function loadActiveSubscriptions(){
     list.innerHTML=''; if(count)count.textContent='Errore'; return;
   }
 
-  const clientRoles=['client','cliente','user','utente'];
+  // L'elenco deve contenere tutti i profili che non sono amministratori.
+  // Non filtriamo più sul valore del campo role: eventuali valori legacy,
+  // maiuscole o ruoli personalizzati non devono far sparire un cliente.
+  const adminRoles=['admin','administrator','amministratore','superuser'];
   const profiles=(pr.data||[]).filter(p=>{
     const role=String(p.role||'').toLowerCase().trim();
-    return clientRoles.includes(role) && isSubscriptionCurrentlyActive(p);
+    return !adminRoles.includes(role);
   });
   const ids=profiles.map(p=>p.id).filter(Boolean);
   let payments=[];
@@ -999,16 +1002,16 @@ function renderActiveSubscriptions(){
     return an;
   });
 
-  if(count)count.textContent=rows.length+(rows.length===1?' cliente attivo':' clienti attivi');
+  if(count)count.textContent=rows.length+(rows.length===1?' cliente':' clienti');
   if(!rows.length){
-    list.innerHTML='<div class="muted">Nessun cliente con abbonamento attivo.</div>';
+    list.innerHTML='<div class="muted">Nessun cliente trovato.</div>';
     return;
   }
 
   list.innerHTML=`<div style="overflow:auto"><table class="table">
     <thead><tr>
       <th>Cliente</th><th>Tessera</th><th>Abbonamento</th><th>Periodo</th>
-      <th>Importo</th><th>Ultimo pagamento</th><th>Situazione contabile</th><th></th>
+      <th>Importo</th><th>Stato abbonamento</th><th>Ultimo pagamento</th><th>Situazione contabile</th><th></th>
     </tr></thead>
     <tbody>${rows.map(p=>{
       const name=profileDisplayName(p)||p.full_name||p.name||'Cliente';
@@ -1017,6 +1020,13 @@ function renderActiveSubscriptions(){
       const cost=p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',');
       const last=p._payments?.[0];
       const lastPay=last?fmtDate(last.created_at):'Nessun pagamento registrato';
+      const active=isSubscriptionCurrentlyActive(p);
+      const open=['true','1','si','sì','yes','open'].includes(String(p?.subscription_open||'').toLowerCase().trim());
+      const statusBadge=open
+        ? '<span class="pill" style="background:#c6ff35;color:#111">OPEN</span>'
+        : active
+          ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
+          : '<span class="pill" style="background:#ff5c5c;color:#fff">NON ATTIVO</span>';
       const ok=p._accounting==='paid';
       const badge=ok
         ?'<span class="pill" style="background:#c6ff35;color:#111">REGOLARE</span>'
@@ -1026,8 +1036,9 @@ function renderActiveSubscriptions(){
         <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>
         <td>${esc(p.member_card_number||'—')}</td>
         <td>${esc(type)}${p.subscription_plus_cost?`<div class="muted">Plus € ${Number(p.subscription_plus_cost||0).toFixed(2).replace('.',',')}</div>`:''}</td>
-        <td>${esc(fmtDateIT(from))} → ${esc(fmtDateIT(to))}</td>
+        <td>${esc(from?fmtDateIT(from):'—')} → ${esc(to?fmtDateIT(to):'—')}</td>
         <td><b>${esc(cost)}</b></td>
+        <td>${statusBadge}</td>
         <td>${esc(lastPay)}</td>
         <td>${badge}</td>
         <td><button class="btn secondary mini" type="button" onclick="openClientSheet('${p.id}')">Scheda</button></td>

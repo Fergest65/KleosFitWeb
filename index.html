@@ -2637,7 +2637,7 @@ async function openPaymentEditor(profileId,paymentId=''){
  let row=null;
  let profile=null;
  try{
-   const pr=await db.from('profiles').select('id,full_name,name,subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
+   const pr=await db.from('profiles').select('id,full_name,subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
    if(pr.error)throw pr.error;
    profile=pr.data||null;
    if(paymentId){

@@ -869,7 +869,12 @@ async function loadActiveSubscriptions(){
     list.innerHTML=''; if(count)count.textContent='Errore'; return;
   }
 
-  const profiles=(pr.data||[]).filter(p=>isSubscriptionCurrentlyActive(p));
+  // Solo i profili cliente possono avere uno stato di abbonamento/pagamento.
+  // Gli account admin/administrator/superuser non devono comparire nella gestione pagamenti.
+  const profiles=(pr.data||[]).filter(p=>{
+    const role=String(p?.role||'client').trim().toLowerCase();
+    return ['client','cliente'].includes(role) && isSubscriptionCurrentlyActive(p);
+  });
   const ids=profiles.map(p=>p.id).filter(Boolean);
   let payments=[];
   if(ids.length){

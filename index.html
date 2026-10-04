@@ -1159,7 +1159,18 @@ async function openClientSheet(id){
       <div><label>Al</label><input id="cpPayTo" type="date" value="${esc(dateInputValue(subscriptionTo))}"></div>
       <div class="wide"><label>Nota</label><input id="cpPayNote" value="Pagamento abbonamento"></div>
     </div>
-    <div class="muted" style="margin-top:7px">Puoi registrare più pagamenti sullo stesso periodo. L'eventuale differenza non pagata rimane sospesa.</div>
+    <div id="cpNewPaymentSummary" class="card" style="padding:12px;margin-top:10px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div><div class="muted">Dovuto periodo</div><b id="cpDueAmount">€ 0,00</b></div>
+        <div><div class="muted">Pagato periodo</div><b id="cpPaidAmount">€ 0,00</b></div>
+        <div><div class="muted">Rimanente</div><b id="cpRemainingAmount" style="color:#ffb020">€ 0,00</b></div>
+        <div><div class="muted">Sospeso precedente</div><b id="cpSuspendedAmount" style="color:#ffb020">€ 0,00</b></div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <span class="muted">Dopo questo pagamento</span><b id="cpAfterPaymentAmount">Rimanente: € 0,00</b>
+      </div>
+      <div class="muted" style="margin-top:7px">Il riepilogo si aggiorna mentre inserisci l'importo. Puoi registrare più pagamenti sullo stesso periodo; la parte non pagata rimane sospesa.</div>
+    </div>
     <div class="actions" style="justify-content:flex-end;margin-top:10px"><button class="btn" type="button" onclick="registerClientPayment('${p.id}')">Registra pagamento</button></div>
    </div>
    <div id="cpPaymentHistoryCount" class="muted">Caricamento storico...</div>
@@ -2649,6 +2660,24 @@ function paymentPeriodOverlap(aFrom,aTo,bFrom,bTo){
  if(!a1||!a2||!b1||!b2)return false;
  return a1<=b2 && b1<=a2;
 }
+function updateClientPaymentEntrySummary(profile, payments){
+ const due=Math.max(0,Number(profile?.subscription_cost||0));
+ const from=document.getElementById('cpPayFrom')?.value||'';
+ const to=document.getElementById('cpPayTo')?.value||'';
+ const amount=Math.max(0,Number(document.getElementById('cpPayAmount')?.value||0));
+ const list=Array.isArray(payments)?payments:[];
+ const same=list.filter(x=>String(x?.paid_from||'').slice(0,10)===String(from).slice(0,10)&&String(x?.paid_to||'').slice(0,10)===String(to).slice(0,10));
+ const paid=same.reduce((sum,x)=>sum+Math.max(0,Number(x?.amount||0)),0);
+ const remaining=Math.max(0,due-paid);
+ const afterRemaining=Math.max(0,due-(paid+amount));
+ const suspended=subscriptionSuspendedBalance(profile,list);
+ const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent='€ '+Number(v||0).toFixed(2).replace('.',',')};
+ set('cpDueAmount',due); set('cpPaidAmount',paid); set('cpRemainingAmount',remaining); set('cpSuspendedAmount',suspended);
+ const after=document.getElementById('cpAfterPaymentAmount');
+ if(after){after.textContent=amount>0 ? ('Dopo questo pagamento · Pagato: € '+Number(paid+amount).toFixed(2).replace('.',',')+' · Rimanente: € '+Number(afterRemaining).toFixed(2).replace('.',',')) : ('Rimanente: € '+Number(remaining).toFixed(2).replace('.',',')); after.style.color=afterRemaining<=0.009?'#c6ff35':'#ffb020';}
+ const rem=document.getElementById('cpRemainingAmount'); if(rem)rem.style.color=remaining<=0.009?'#c6ff35':'#ffb020';
+}
+
 async function registerClientPayment(profileId){
  const err=document.getElementById('cpPaymentHistoryError');
  if(err){err.style.display='none';err.textContent=''}
@@ -2724,6 +2753,11 @@ async function loadClientSheetPayments(profileIdOrProfile){
  const payAmount=document.getElementById('cpPayAmount'),payFrom=document.getElementById('cpPayFrom'),payTo=document.getElementById('cpPayTo');
  if(payAmount && !payAmount.value)payAmount.value=totalOutstanding.toFixed(2);
  if(payFrom && cFrom)payFrom.value=cFrom; if(payTo && cTo)payTo.value=cTo;
+ const refreshEntry=()=>updateClientPaymentEntrySummary(p,rows);
+ payAmount?.addEventListener('input',refreshEntry);
+ payFrom?.addEventListener('change',refreshEntry);
+ payTo?.addEventListener('change',refreshEntry);
+ refreshEntry();
  if(!rows.length){box.innerHTML='<div class="muted">Nessun pagamento presente nello storico.</div>';return;}
  box.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th><th>Azioni</th></tr></thead><tbody>'+rows.map(x=>{
    const safe=String(x.id).replace(/[^a-zA-Z0-9_-]/g,'');
@@ -2759,8 +2793,11 @@ async function editClientPayment(paymentId,profileId){
  const residualPeriod=Math.max(0,due-paidOther);
  const suspended=subscriptionSuspendedBalance(p,payments);
  const totalOutstanding=Math.max(0,residualPeriod+suspended);
- const status=residualPeriod<=0.009?'REGOLARE':(paidOther>0?'PARZIALE':'DA VERIFICARE');
  const money=v=>'€ '+Number(v||0).toFixed(2).replace('.',',');
+ const initialAmount=Math.max(0,Number(x.amount||0));
+ const initialPaidAfter=Math.min(due,Math.max(0,paidOther+initialAmount));
+ const initialResidual=Math.max(0,due-initialPaidAfter);
+ const initialStatus=initialResidual<=0.009?'REGOLARE':(initialPaidAfter>0?'PARZIALE':'DA VERIFICARE');
  openModal(`<div class="modalhead"><h2>Modifica pagamento</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="clientSheet">
   <div class="clientSheetSection"><h3>Pagamento</h3>
@@ -2776,17 +2813,33 @@ async function editClientPayment(paymentId,profileId){
    <div id="epPaymentSummary" class="card" style="padding:12px;margin:0">
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
       <div><div class="muted">Totale dovuto</div><b>${money(due)}</b></div>
-      <div><div class="muted">Già pagato periodo</div><b>${money(paidOther)}</b></div>
+      <div><div class="muted">Già pagato periodo</div><b id="epPaidPeriod">${money(initialPaidAfter)}</b></div>
       <div><div class="muted">Sospeso precedente</div><b style="color:${suspended>0.009?'#ffb020':'#c6ff35'}">${money(suspended)}</b></div>
-      <div><div class="muted">Da incassare</div><b>${money(totalOutstanding)}</b></div>
+      <div><div class="muted">Da incassare</div><b id="epOutstanding">${money(initialResidual+suspended)}</b></div>
     </div>
-    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="pill">${status}</span><span class="muted">Periodo: ${paymentDateIT(from)} → ${paymentDateIT(to)}</span></div>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="epStatus" class="pill">${initialStatus}</span><span id="epPeriodLabel" class="muted">Periodo: ${paymentDateIT(from)} → ${paymentDateIT(to)}</span></div>
     <div class="muted" style="margin-top:8px">Il pagamento modificato può essere parziale. Più pagamenti sullo stesso periodo sono consentiti; il residuo resta sospeso.</div>
    </div>
   </div>
   <div id="epMsg" class="error"></div>
   <div class="actions" style="justify-content:flex-end"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveClientPayment('${paymentId}','${profileId}')">Salva modifica</button></div>
  </div>`);
+ const refreshEditPaymentSummary=()=>{
+   const a=Math.max(0,Number(document.getElementById('epAmount')?.value||0));
+   const paidAfter=paidOther+a;
+   const residualAfter=Math.max(0,due-paidAfter);
+   const outstandingAfter=residualAfter+suspended;
+   const st=residualAfter<=0.009?'REGOLARE':(paidAfter>0?'PARZIALE':'DA VERIFICARE');
+   const paidEl=document.getElementById('epPaidPeriod'); if(paidEl)paidEl.textContent=money(paidAfter);
+   const outEl=document.getElementById('epOutstanding'); if(outEl)outEl.textContent=money(outstandingAfter);
+   const stEl=document.getElementById('epStatus'); if(stEl){stEl.textContent=st;stEl.style.background=st==='REGOLARE'?'#c6ff35':st==='PARZIALE'?'#ffb020':'#ffb020';stEl.style.color='#111';}
+   const pf=document.getElementById('epFrom')?.value||from,pt=document.getElementById('epTo')?.value||to;
+   const pl=document.getElementById('epPeriodLabel'); if(pl)pl.textContent='Periodo: '+paymentDateIT(pf)+' → '+paymentDateIT(pt);
+ };
+ document.getElementById('epAmount')?.addEventListener('input',refreshEditPaymentSummary);
+ document.getElementById('epFrom')?.addEventListener('change',refreshEditPaymentSummary);
+ document.getElementById('epTo')?.addEventListener('change',refreshEditPaymentSummary);
+ refreshEditPaymentSummary();
 }
 async function saveClientPayment(paymentId,profileId){
  const from=document.getElementById('epFrom')?.value||'',to=document.getElementById('epTo')?.value||'',amount=Number(document.getElementById('epAmount')?.value);

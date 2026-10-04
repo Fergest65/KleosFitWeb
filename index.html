@@ -2336,6 +2336,7 @@ async function loadProgressAdmin(){
  renderProgressAdminClients(progressAdminClientsData);
 }
 let progressAdminClientsData=[];
+let progressAdminRowsById={};
 function renderProgressAdminClients(rows){
  const list=document.getElementById('progressAdminClients'); if(!list)return;
  if(!rows.length){list.innerHTML='<div class="muted">Nessun cliente trovato.</div>';return;}
@@ -2356,6 +2357,8 @@ async function openProgressAdminClient(id){
  const r=await db.from('progress_entries').select('*').eq('user_id',String(id)).limit(200);
  if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return;}
  const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(b)||0)-new Date(progressDate(a)||0));
+ progressAdminRowsById={};
+ rows.forEach(x=>{if(x?.id)progressAdminRowsById[String(x.id)]=x;});
  count.textContent=rows.length+(rows.length===1?' rilevazione':' rilevazioni');
  if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata per questo cliente.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return;}
  const latest=rows[0],previous=rows[1]||null;
@@ -2371,9 +2374,15 @@ async function openProgressEditor(clientId, entryId=''){
  // realmente memorizzato nella rilevazione. Questo evita l'errore 'Cliente non trovato'
  // se l'elenco profili non è stato caricato o il profilo non è presente nella cache.
  if(entryId){
-   const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).maybeSingle();
-   if(r.error||!r.data){alert('Misurazione non trovata: '+(r.error?.message||''));return}
-   row=r.data;
+   // Prima usiamo la riga già caricata nello storico: evita falsi 'Misurazione non trovata'
+   // dovuti a una seconda lettura filtrata per id/RLS.
+   row=progressAdminRowsById[String(entryId)]||{};
+   if(!row.user_id){
+     const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).limit(1);
+     if(r.error){alert('Impossibile caricare la misurazione: '+r.error.message);return}
+     if(!r.data?.length){alert('Misurazione non trovata. Aggiorna lo storico e riprova.');return}
+     row=r.data[0];
+   }
    if(row.user_id) clientId=String(row.user_id);
  }
  let p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId));

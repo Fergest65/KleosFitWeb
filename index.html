@@ -2629,7 +2629,7 @@ function renderAdmin(rows){
 }
 function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();renderAdmin(!q?adminData:adminData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('open')}
-function closeModal(){document.getElementById('modal').classList.remove('open')}
+function closeModal(){const modal=document.getElementById('modal');if(!modal)return;modal.classList.remove('open');modal.style.display='none';modal.style.visibility='hidden';modal.style.opacity='0';modal.style.zIndex='';}
 function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}
 async function editWorkoutPlan(id){
  if(!canEditWorkout()){alert('La scheda workout è in sola visualizzazione per il cliente.');return;}

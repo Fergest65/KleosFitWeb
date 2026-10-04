@@ -1216,7 +1216,7 @@ function openClientSheet(id){
    </div>
   </div>
   <div id="cpMsg" class="error"></div>
-  <div class="actions" style="justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button><button type="button" class="btn secondary mini" style="border-color:#c62828;color:#c62828" onclick="removeClientSubscription('${p.id}')">Rimuovi abbonamento</button></div><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
+  <div class="actions" style="justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button></div><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
  </div>`);
  Promise.all([ensureSubscriptionPricesLoaded(),ensureCourseCatalogLoaded()]).then(()=>{
    const sel=document.getElementById('cpSubType');if(!sel)return;
@@ -1294,25 +1294,43 @@ async function openMedicalCertificate(path){
  if(r.error){alert('Impossibile aprire il certificato: '+r.error.message);return;}
  window.open(r.data.signedUrl,'_blank','noopener');
 }
-async function removeClientSubscription(id){
+async function removeClientSubscriptionPeriod(profileId,from,to){
  if(!isSuperuserRole())return;
- if(!id)return;
- const ok=confirm("Rimuovere completamente l'abbonamento da questo cliente?\n\nVerranno cancellati dal profilo tipo, costo, date e stato dell'abbonamento. Il cliente e la sua anagrafica resteranno invariati.");
+ if(!profileId)return;
+ const periodFrom=String(from||'').slice(0,10);
+ const periodTo=String(to||'').slice(0,10);
+ if(!periodFrom || !periodTo){alert('Il periodo dell’abbonamento non è valido.');return;}
+ const ok=confirm(`Rimuovere SOLO l'abbonamento del periodo ${fmtDateIT(periodFrom)} → ${fmtDateIT(periodTo)}?\n\nVerranno rimossi i dati dell'abbonamento relativi esclusivamente a questo periodo e i relativi movimenti di pagamento. Gli altri periodi del cliente resteranno invariati.`);
  if(!ok)return;
  const msg=document.getElementById('cpMsg');
- if(msg){msg.textContent='Rimozione abbonamento...';msg.className='';msg.style.display='block'}
- const payload={subscription_type:null,subscription_plus_course:null,subscription_plus_cost:null,subscription_paid_from:null,subscription_paid_to:null,subscription_cost:null,subscription_active:false,subscription_open:false};
- const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
- if(r.error||!r.data){
-   const detail=r.error?.message||'nessun dato modificato';
-   if(msg){msg.textContent='Errore rimozione abbonamento: '+detail;msg.className='error';msg.style.display='block'}
-   alert("Impossibile rimuovere l'abbonamento: "+detail);
-   return;
+ if(msg){msg.textContent='Rimozione del periodo abbonamento...';msg.className='';msg.style.display='block';}
+ try{
+   // Elimina esclusivamente i movimenti collegati a questo periodo.
+   const del=await db.from('subscription_payment_history').delete().eq('profile_id',profileId).eq('paid_from',periodFrom).eq('paid_to',periodTo);
+   if(del.error)throw del.error;
+
+   // Il profilo può contenere un solo abbonamento corrente: azzeralo SOLO se
+   // le date del profilo corrispondono al periodo che l'utente ha scelto.
+   const pr=await db.from('profiles').select('subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
+   if(pr.error)throw pr.error;
+   const profileFrom=String(pr.data?.subscription_paid_from||'').slice(0,10);
+   const profileTo=String(pr.data?.subscription_paid_to||'').slice(0,10);
+   if(profileFrom===periodFrom && profileTo===periodTo){
+     const payload={subscription_type:null,subscription_plus_course:null,subscription_plus_cost:null,subscription_paid_from:null,subscription_paid_to:null,subscription_cost:null,subscription_active:false,subscription_open:false};
+     const up=await db.from('profiles').update(payload).eq('id',profileId);
+     if(up.error)throw up.error;
+     const updateLocal=(arr)=>{const x=(arr||[]).find(x=>String(x.id)===String(profileId));if(x)Object.assign(x,payload)};
+     updateLocal(clientsData);updateLocal(activeSubscriptionsData);updateLocal(anagraficaData);
+   }
+   await loadAdminClientPayments(profileId);
+   const sheetMsg=document.getElementById('cpMsg');
+   if(sheetMsg){sheetMsg.textContent='Periodo abbonamento rimosso correttamente.';sheetMsg.className='';sheetMsg.style.display='block';}
+   try{if(document.getElementById('activeSubList'))await loadActiveSubscriptions();}catch(e){}
+ }catch(e){
+   const detail=e?.message||String(e);
+   if(msg){msg.textContent='Errore rimozione periodo: '+detail;msg.className='error';msg.style.display='block';}
+   alert('Impossibile rimuovere il periodo abbonamento: '+detail);
  }
- const updateLocal=(arr)=>{const x=(arr||[]).find(x=>String(x.id)===String(id));if(x)Object.assign(x,r.data)};
- updateLocal(clientsData);updateLocal(activeSubscriptionsData);updateLocal(anagraficaData);
- try{if(document.getElementById('activeSubList'))await loadActiveSubscriptions();}catch(e){}
- closeModal();
 }
 
 async function saveClientSheet(id){
@@ -2675,7 +2693,7 @@ async function loadAdminClientPayments(profileId){
       return `<div class="card" style="margin-top:10px;padding:14px;border:1px solid var(--line)">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
           <div><strong>DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')}</strong><div class="muted">Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}${isCurrent?' · Periodo corrente':''}</div></div>
-          <div>${badge(st)}</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${badge(st)}<button class="btn secondary mini" type="button" style="border-color:#c62828;color:#c62828" onclick="removeClientSubscriptionPeriod('${profileId}','${esc(g.from)}','${esc(g.to)}')">Rimuovi questo abbonamento</button></div>
         </div>
         <div class="paymentSummary" style="margin-top:10px">
           <div class="sbRow"><span>Dovuto</span><b>${due==null?'—':fmtMoney(due)}</b></div>

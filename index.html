@@ -1300,16 +1300,9 @@ async function saveClientSheet(id){
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
- // Se l'abbonamento è stato registrato con periodo e importo, assicuriamo
- // anche la relativa registrazione nello storico pagamenti, evitando duplicati.
- if(paidFrom && paidTo && subscriptionCost!==null && Number.isFinite(Number(subscriptionCost))){
-   const ph=await db.from('subscription_payment_history').select('id').eq('profile_id',id).eq('paid_from',paidFrom).eq('paid_to',paidTo).limit(1);
-   if(ph.error){if(msg){msg.textContent='Cliente salvato, ma impossibile verificare lo storico pagamenti: '+ph.error.message;msg.className='error';msg.style.display='block'}return}
-   if(!(ph.data||[]).length){
-     const ins=await db.from('subscription_payment_history').insert({profile_id:id,paid_from:paidFrom,paid_to:paidTo,amount:Number(subscriptionCost),note:'Pagamento abbonamento'}).select('id').maybeSingle();
-     if(ins.error){if(msg){msg.textContent='Cliente salvato, ma pagamento non registrato nello storico: '+ins.error.message;msg.className='error';msg.style.display='block'}return}
-   }
- }
+ // Il pagamento NON viene registrato automaticamente qui.
+ // La registrazione di acconti/saldi avviene esclusivamente tramite la gestione
+ // dello storico pagamenti, così ogni versamento resta un movimento separato.
  try{
    await uploadMedicalCertificate(id);
  }catch(e){

@@ -1316,7 +1316,7 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
    const profileFrom=String(pr.data?.subscription_paid_from||'').slice(0,10);
    const profileTo=String(pr.data?.subscription_paid_to||'').slice(0,10);
    if(profileFrom===periodFrom && profileTo===periodTo){
-     const payload={subscription_type:null,subscription_plus_course:null,subscription_plus_cost:null,subscription_paid_from:null,subscription_paid_to:null,subscription_cost:null,subscription_active:false,subscription_open:false};
+     const payload={subscription_type:null,subscription_plus_course:'[]',subscription_plus_cost:0,subscription_paid_from:null,subscription_paid_to:null,subscription_cost:null,subscription_active:false,subscription_open:false};
      const up=await db.from('profiles').update(payload).eq('id',profileId);
      if(up.error)throw up.error;
      const updateLocal=(arr)=>{const x=(arr||[]).find(x=>String(x.id)===String(profileId));if(x)Object.assign(x,payload)};

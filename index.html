@@ -2330,18 +2330,26 @@ async function openProgressAdminClient(id){
 
 async function openProgressEditor(clientId, entryId=''){
  if(!isSuperuserRole()){alert('Funzione disponibile solo per amministratore/superuser.');return;}
- let p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId));
- if(!p){
-   const pr=await db.from('profiles').select('*').eq('id',String(clientId)).maybeSingle();
-   if(pr.error||!pr.data){alert('Cliente non trovato.');return;}
-   p=pr.data;
- }
  let row={};
+ // Quando si modifica una rilevazione esistente, usiamo sempre l'user_id
+ // realmente memorizzato nella rilevazione. Questo evita l'errore 'Cliente non trovato'
+ // se l'elenco profili non è stato caricato o il profilo non è presente nella cache.
  if(entryId){
    const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).maybeSingle();
    if(r.error||!r.data){alert('Misurazione non trovata: '+(r.error?.message||''));return}
    row=r.data;
+   if(row.user_id) clientId=String(row.user_id);
  }
+ let p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId));
+ if(!p && Array.isArray(clientsData)) p=clientsData.find(x=>String(x.id)===String(clientId));
+ if(!p && Array.isArray(anagraficaData)) p=anagraficaData.find(x=>String(x.id)===String(clientId));
+ if(!p){
+   const pr=await db.from('profiles').select('*').eq('id',String(clientId)).maybeSingle();
+   if(!pr.error && pr.data) p=pr.data;
+ }
+ // La modifica della misurazione non deve dipendere dal caricamento del profilo:
+ // abbiamo già clientId/user_id dalla riga progress_entries.
+ if(!p) p={id:String(clientId),full_name:'Cliente'};
  const c=document.getElementById('modalContent'); if(!c){alert('Finestra modifica non disponibile.');return;}
  const val=names=>{const v=firstVal(row,names,'');return v==null?'':String(v).replace('.',',')};
  const dateVal=String(progressDate(row)||'').slice(0,10)||isoLocal(new Date());

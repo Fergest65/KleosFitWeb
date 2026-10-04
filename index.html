@@ -734,7 +734,7 @@ function show(v,el){
  if(v==='courseCatalog') loadCourseCatalog();
  if(v==='circuits') loadCircuits();
 
-  if(name==='slotDelete') setTimeout(loadSlotDelete,100);
+  if(v==='slotDelete') setTimeout(loadSlotDelete,100);
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
@@ -770,10 +770,13 @@ function currentSubscriptionExpiry(p){
   return to;
 }
 async function getClientExpiryAlerts(){
-  if(!isClientRole()||!currentUser?.id)return [];
-  const r=await db.from('profiles').select('subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').eq('id',currentUser.id).maybeSingle();
-  if(r.error||!r.data)return [];
-  const p=r.data, out=[];
+  if(!currentUser?.id || isSuperuserRole())return [];
+  let p=profile||{};
+  try{
+    const r=await db.from('profiles').select('subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date,role').eq('id',currentUser.id).maybeSingle();
+    if(!r.error && r.data){p={...p,...r.data}; profile={...profile,...r.data};}
+  }catch(e){}
+  const out=[];
   const add=(name,date)=>{const info=expiryInfo(date);if(info)out.push({name,date:String(date).slice(0,10),...info})};
   add('Abbonamento',currentSubscriptionExpiry(p));
   add('Certificato medico',p.medical_certificate_expiry_date);
@@ -792,11 +795,26 @@ async function showExpiryPopup(alerts){
   openModal(`<div class="modalhead"><h2>Avviso scadenze</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div>${body}</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">HO CAPITO</button></div>`);
 }
 async function refreshClientExpiryAlerts(showPopup=true){
-  if(!isClientRole())return;
-  const alerts=await getClientExpiryAlerts();
-  renderDashboardExpiryAlerts(alerts);
-  if(showPopup && alerts.length) setTimeout(()=>showExpiryPopup(alerts),250);
+  if(!currentUser?.id || isSuperuserRole())return;
+  // Mostra subito gli avvisi usando il profilo già caricato.
+  let alerts=[];
+  try{
+    const p=profile||{};
+    const add=(name,date)=>{const info=expiryInfo(date);if(info)alerts.push({name,date:String(date).slice(0,10),...info})};
+    add('Abbonamento',currentSubscriptionExpiry(p));
+    add('Certificato medico',p.medical_certificate_expiry_date);
+    add('Assicurazione',p.insurance_expiry_date);
+    renderDashboardExpiryAlerts(alerts);
+    if(showPopup && alerts.length)setTimeout(()=>showExpiryPopup(alerts),350);
+  }catch(e){}
+  // Poi aggiorna dal database senza rimuovere gli avvisi già mostrati in caso di errore.
+  try{
+    const fresh=await getClientExpiryAlerts();
+    renderDashboardExpiryAlerts(fresh);
+    if(showPopup && fresh.length)setTimeout(()=>showExpiryPopup(fresh),350);
+  }catch(e){}
 }
+
 
 async function fillDashboard(){
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
@@ -1711,7 +1729,7 @@ function renderAdminReservations(rows,slots){
  list.innerHTML=`<div class="card"><div class="bookingResultHead"><h2 style="margin:0">Prenotazioni</h2><span class="pill">${sorted.length} risultati</span></div><div class="tableWrap"><table class="table bookingAdminTable"><thead><tr><th>DATA</th><th>ORARIO</th><th>ATTIVITÀ</th><th>ATLETA</th><th>STATO</th></tr></thead><tbody>${sorted.map(b=>{const sl=slots.find(x=>String(x.id)===String(pick(b,['slot_id','lesson_slot_id']))),d=bookingDateForRow(b,sl);return `<tr><td><b>${esc(d?d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'—')}</b></td><td><b>${esc(bookingTimes(sl,b))}</b></td><td><span class="bookingActivity">${esc(bookingActivity(sl,b))}</span></td><td>${esc(bookingAthleteName(b))}</td><td><span class="pill">${esc(pick(b,['status','state','booking_status'])||'attiva')}</span></td></tr>`}).join('')}</tbody></table></div></div>`;
 }
 
-function isClientRole(){const r=String(profile?.role||'').toLowerCase();return r==='client'||r==='cliente';}
+function isClientRole(){const r=String(profile?.role||'').toLowerCase().trim();return ['client','cliente','user','utente'].includes(r) && !isSuperuserRole();}
 function isSuperuserRole(){
  const r=String(profile?.role||'').toLowerCase().trim();
  return ['admin','administrator','amministratore','superuser'].includes(r);

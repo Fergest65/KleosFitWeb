@@ -8,7 +8,7 @@
 .bookingGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}.bookingCard{background:#111419;border:1px solid var(--line);border-radius:14px;padding:16px}.bookingCard.mine{border-color:#647d18}.bookingDate{font-size:20px;font-weight:850}.bookingTime{font-size:25px;font-weight:900;color:var(--accent);margin:5px 0}.bookingMeta{color:#cbd1da;font-size:13px;line-height:1.5}.bookingPlaces{margin:12px 0;padding:9px 10px;border-radius:9px;background:#171b21;color:#dce2ea;font-size:12px}.bookingActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.bookingNotice{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419;color:#cbd1da;margin-bottom:14px}.bookingPast{opacity:.55}
 .inputrow input{flex:1;padding:12px;border-radius:10px;border:1px solid #303743;background:#11151b;color:#fff}.muted{color:#9aa4b2}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#1c2430;color:#dbe3ed;font-size:12px}
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;place-items:center;padding:20px;z-index:50}.modal.open{display:grid}.modalbox{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}.modalhead{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px}.modalhead h2{margin:0}.close{background:transparent;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .wide{grid-column:1/-1}.formgrid label{margin:5px 0 6px}.checkrow{display:flex;gap:18px;align-items:center;margin-top:12px}.checkrow label{margin:0;display:flex;gap:7px;align-items:center}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.mini{padding:7px 10px;font-size:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rowactions{display:flex;gap:7px;flex-wrap:wrap}.success{color:#b9ff39;font-size:13px;margin-top:10px}.danger{color:#ff8993}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;place-items:center;padding:20px;z-index:10000}.modal.open{display:grid}.modalbox{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}.modalhead{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px}.modalhead h2{margin:0}.close{background:transparent;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .wide{grid-column:1/-1}.formgrid label{margin:5px 0 6px}.checkrow{display:flex;gap:18px;align-items:center;margin-top:12px}.checkrow label{margin:0;display:flex;gap:7px;align-items:center}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.mini{padding:7px 10px;font-size:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rowactions{display:flex;gap:7px;flex-wrap:wrap}.success{color:#b9ff39;font-size:13px;margin-top:10px}.danger{color:#ff8993}
 .archiveBox{border:1px solid var(--line);border-radius:11px;padding:12px;background:#111419}.archiveBox h3{margin:0 0 8px;font-size:14px}.archiveSearch{margin:0}.archiveList{display:grid;gap:7px;margin-top:9px;max-height:210px;overflow:auto}.archiveItem{width:100%;text-align:left;background:#171b21;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px;cursor:pointer}.archiveItem:hover{border-color:#68727f;background:#1d222a}.archiveItem b{display:block}.archiveItem span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.archiveInfo{margin-top:9px;padding:9px 10px;border-radius:9px;background:#171b21;color:#cfd5dd;font-size:12px}.archiveInfo b{color:var(--accent)}
 @media(max-width:700px){.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}}
 .rampTimerBox{background:#111419;border:1px solid var(--line);border-radius:14px;padding:18px}.rampTimerDisplay{text-align:center;font-size:clamp(58px,11vw,100px);font-weight:900;letter-spacing:-3px;line-height:1;margin:14px 0}.rampTimerPhase{text-align:center;color:var(--muted);min-height:22px;font-weight:700}.rampTimerControls{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}.rampTimerControls label{margin:0 0 6px}.rampTimerControls input{width:100%}.rampTimerActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}.rampTimerSteps{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;max-height:280px;overflow:auto}.rampTimerStep{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid var(--line);font-size:13px}.rampTimerStep.active{color:var(--accent);font-weight:850;background:#171b21;border-radius:8px}.rampTimerStatus{text-align:center;color:var(--muted);min-height:20px;margin-top:10px}@media(max-width:700px){.rampTimerControls{grid-template-columns:repeat(2,1fr)}}
@@ -704,7 +704,7 @@ async function loadProfile(){
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
  // Controllo indipendente: non dipende dal caricamento delle altre sezioni della dashboard.
- setTimeout(()=>refreshClientExpiryAlerts(true),50);
+ setTimeout(()=>refreshClientExpiryAlerts(true),500);
 }
 function show(v,el){
  if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
@@ -773,17 +773,57 @@ function currentSubscriptionExpiry(p){
   return to;
 }
 async function getClientExpiryAlerts(){
-  if(!currentUser?.id || isSuperuserRole())return [];
-  let p=profile||{};
-  try{
-    const r=await db.from('profiles').select('subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date,role').eq('id',currentUser.id).maybeSingle();
-    if(!r.error && r.data){p={...p,...r.data}; profile={...profile,...r.data};}
-  }catch(e){}
+  if(!currentUser?.id)return [];
+
   const out=[];
-  const add=(name,date)=>{const info=expiryInfo(date);if(info)out.push({name,date:String(date).slice(0,10),...info})};
-  add('Abbonamento',currentSubscriptionExpiry(p));
-  add('Certificato medico',p.medical_certificate_expiry_date);
-  add('Assicurazione',p.insurance_expiry_date);
+  const add=(name,date)=>{
+    const info=expiryInfo(date);
+    if(info)out.push({name,date:String(date).slice(0,10),...info});
+  };
+
+  // Cliente: mostra esclusivamente le proprie scadenze.
+  if(!isSuperuserRole()){
+    let p=profile||{};
+    try{
+      const r=await db.from('profiles')
+        .select('subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date,role')
+        .eq('id',currentUser.id).maybeSingle();
+      if(!r.error && r.data){
+        p={...p,...r.data};
+        profile={...profile,...r.data};
+      }
+    }catch(e){}
+    add('Abbonamento',currentSubscriptionExpiry(p));
+    add('Certificato medico',p.medical_certificate_expiry_date);
+    add('Assicurazione',p.insurance_expiry_date);
+    return out;
+  }
+
+  // Admin / Administrator / Superuser:
+  // controlla tutte le scadenze dei clienti.
+  try{
+    const r=await db.from('profiles')
+      .select('id,full_name,name,email,role,subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date')
+      .in('role',['client','cliente','user','utente']);
+
+    if(r.error)throw r.error;
+
+    (r.data||[]).forEach(p=>{
+      const displayName=String(p.full_name||p.name||p.email||'Cliente').trim()||'Cliente';
+      add(displayName+' — Abbonamento',currentSubscriptionExpiry(p));
+      add(displayName+' — Certificato medico',p.medical_certificate_expiry_date);
+      add(displayName+' — Assicurazione',p.insurance_expiry_date);
+    });
+
+    // Prima le urgenze, poi quelle meno urgenti.
+    out.sort((a,b)=>{
+      if(a.state!==b.state)return a.state==='expired'?-1:1;
+      return Number(a.days)-Number(b.days);
+    });
+  }catch(e){
+    console.warn('Errore caricamento avvisi scadenze:',e);
+  }
+
   return out;
 }
 function renderDashboardExpiryAlerts(alerts){
@@ -799,8 +839,8 @@ async function showExpiryPopup(alerts){
 }
 let expiryPopupShownForUser=false;
 async function refreshClientExpiryAlerts(showPopup=true){
-  // Gli avvisi personali sono esclusivi dei clienti: admin/superuser non li vedono.
-  if(!currentUser?.id || isSuperuserRole())return;
+  // Gli avvisi vengono caricati all'avvio sia per il cliente sia per admin/superuser.
+  if(!currentUser?.id)return;
   try{
     const alerts=await getClientExpiryAlerts();
     renderDashboardExpiryAlerts(alerts);
@@ -828,7 +868,7 @@ async function refreshClientExpiryAlerts(showPopup=true){
 
 async function fillDashboard(){
  // Renderizza gli avvisi subito, senza attendere workout/progressi o altre query.
- refreshClientExpiryAlerts(true);
+ void refreshClientExpiryAlerts(true);
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');

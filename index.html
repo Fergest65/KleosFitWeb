@@ -849,29 +849,43 @@ function isOpenSubscription(p){
   const n=String(v??'').trim().toLowerCase();
   return v===true || v===1 || n==='true' || n==='1' || n==='si' || n==='sì' || n==='yes' || n==='open';
 }
-function isSubscriptionCurrentlyActive(p){
-  // OPEN è sempre attivo. Per un abbonamento normale, un pagamento già
-  // registrato rende attivo il periodo anche se la data DAL è futura.
-  const isOpen=isOpenSubscription(p);
-  return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to,p?.subscription_active===true,isOpen);
+function todayISO(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function paymentPeriodContainsToday(x){
+  const pf=String(x?.paid_from||'').slice(0,10), pt=String(x?.paid_to||'').slice(0,10), today=todayISO();
+  return !!(pf&&pt&&pf<=today&&today<=pt);
+}
+function currentPaidPeriod(p,payments){
+  if(isOpenSubscription(p)) return null;
+  const list=(payments||[]).filter(x=>paymentPeriodContainsToday(x));
+  if(!list.length)return null;
+  list.sort((a,b)=>String(b.paid_from||'').localeCompare(String(a.paid_from||'')) || String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  return list[0];
+}
+function currentSubscriptionPeriod(p,payments){
+  if(isOpenSubscription(p))return null;
+  const paid=currentPaidPeriod(p,payments);
+  if(paid)return {from:String(paid.paid_from).slice(0,10),to:String(paid.paid_to).slice(0,10),cost:paid.amount,lastPayment:paid,paymentBased:true};
+  const from=activeSubscriptionDate(p,'subscription_paid_from'),to=activeSubscriptionDate(p,'subscription_paid_to');
+  const today=todayISO();
+  if(from&&to&&from<=today&&today<=to){
+    return {from,to,cost:p.subscription_cost,lastPayment:null,paymentBased:false};
+  }
+  return null;
+}
+function isSubscriptionCurrentlyActive(p,payments=[]){
+  if(isOpenSubscription(p)) return true;
+  return !!currentSubscriptionPeriod(p,payments);
 }
 function subscriptionAccountingStatus(p,payments){
   if(isOpenSubscription(p)) return 'open';
-  const from=activeSubscriptionDate(p,'subscription_paid_from');
-  const to=activeSubscriptionDate(p,'subscription_paid_to');
-  const cost=p.subscription_cost==null?null:Number(p.subscription_cost);
-  const start=from?new Date(from+'T00:00:00'):null;
-  const end=to?new Date(to+'T23:59:59'):null;
-  const matches=(payments||[]).filter(x=>{
-    if(cost!=null && Number.isFinite(cost) && x.amount!=null && Math.abs(Number(x.amount)-cost)>0.01)return false;
-    const pf=String(x.paid_from||'').slice(0,10), pt=String(x.paid_to||'').slice(0,10);
-    if(start && end && pf && pt){
-      const ps=new Date(pf+'T00:00:00'), pe=new Date(pt+'T23:59:59');
-      return ps<=end && pe>=start;
-    }
-    return !pf && !pt;
-  });
-  return matches.length?'paid':'check';
+  const current=currentPaidPeriod(p,payments);
+  if(current)return 'paid';
+  const from=activeSubscriptionDate(p,'subscription_paid_from'),to=activeSubscriptionDate(p,'subscription_paid_to'),today=todayISO();
+  if(from&&to&&from<=today&&today<=to)return 'paid';
+  return 'check';
 }
 async function loadActiveSubscriptions(){
   const list=document.getElementById('activeSubList'),err=document.getElementById('activeSubError'),count=document.getElementById('activeSubCount');
@@ -897,12 +911,9 @@ async function loadActiveSubscriptions(){
 
   activeSubscriptionsData=allProfiles.map(p=>{
     const ph=isOpenSubscription(p)?[]:payments.filter(x=>String(x.profile_id)===String(p.id));
-    const paidPeriod=ph.some(x=>{
-      const pf=String(x.paid_from||'').slice(0,10), pt=String(x.paid_to||'').slice(0,10);
-      return pf && pt && String(p.subscription_paid_from||'').slice(0,10)===pf && String(p.subscription_paid_to||'').slice(0,10)===pt;
-    });
-    const active=isSubscriptionCurrentlyActive(p) || (!isOpenSubscription(p) && paidPeriod);
-    return {...p,_payments:ph,_paidPeriod:paidPeriod,_computedActive:active,_accounting:isOpenSubscription(p)?'open':subscriptionAccountingStatus(p,ph)};
+    const current=currentSubscriptionPeriod(p,ph);
+    const active=isOpenSubscription(p) || !!current;
+    return {...p,_payments:ph,_currentPeriod:current,_computedActive:active,_accounting:isOpenSubscription(p)?'open':subscriptionAccountingStatus(p,ph)};
   }).filter(p=>p._computedActive);
   renderActiveSubscriptions();
 }
@@ -938,10 +949,11 @@ function renderActiveSubscriptions(){
     <tbody>${rows.map(p=>{
       const name=profileDisplayName(p)||p.full_name||p.name||'Cliente';
       const open=isOpenSubscription(p);
-      const from=activeSubscriptionDate(p,'subscription_paid_from');
-      const to=activeSubscriptionDate(p,'subscription_paid_to');
-      const cost=open?'—':(p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',','));
-      const last=p._payments?.[0];
+      const cur=p._currentPeriod;
+      const from=open?'':(cur?.from||'');
+      const to=open?'':(cur?.to||'');
+      const cost=open?'—':(cur?.cost==null?'—':'€ '+Number(cur.cost||0).toFixed(2).replace('.',','));
+      const last=open?null:(cur?.lastPayment||null);
       const lastPay=open?'Non gestito':(last?fmtDate(last.created_at):'Nessun pagamento registrato');
       const ok=p._accounting==='paid';
       const badge=open
@@ -1079,22 +1091,20 @@ async function generateClientCardNumber(){
 }
 async function openClientSheet(id){
  const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
- // Verifica lo storico anche quando la scheda viene aperta dall'elenco clienti.
- let sheetPaidPeriod=false;
- if(!isOpenSubscription(p)){
+ // La scheda deve mostrare il periodo effettivamente in corso, non quello futuro.
+ let sheetPayments=Array.isArray(p._payments)?p._payments:[];
+ if(!isOpenSubscription(p) && !sheetPayments.length){
    try{
-     const hp=await db.from('subscription_payment_history').select('id,paid_from,paid_to,amount,created_at').eq('profile_id',id).order('created_at',{ascending:false}).limit(500);
-     if(!hp.error){
-       const from=String(p.subscription_paid_from||'').slice(0,10), to=String(p.subscription_paid_to||'').slice(0,10);
-       sheetPaidPeriod=(hp.data||[]).some(x=>String(x.paid_from||'').slice(0,10)===from && String(x.paid_to||'').slice(0,10)===to);
-     }
+     const hp=await db.from('subscription_payment_history').select('id,paid_from,paid_to,amount,created_at,note').eq('profile_id',id).order('created_at',{ascending:false}).limit(500);
+     if(!hp.error) sheetPayments=hp.data||[];
    }catch(e){}
  }
- const sheetActive=computeSubscriptionActive(p.subscription_paid_from,p.subscription_paid_to,sheetPaidPeriod||p.subscription_active===true,isOpenSubscription(p));
+ const sheetCurrent=currentSubscriptionPeriod(p,sheetPayments);
+ const sheetActive=isOpenSubscription(p)||!!sheetCurrent;
  const full=p.full_name||p.name||[p.first_name,p.last_name].filter(Boolean).join(' ');
  const card=clientCardNumber(p);
- const subscriptionFrom=pick(p,['subscription_paid_from']);
- const subscriptionTo=pick(p,['subscription_paid_to']);
+ const subscriptionFrom=isOpenSubscription(p)?'':(sheetCurrent?.from||'');
+ const subscriptionTo=isOpenSubscription(p)?'':(sheetCurrent?.to||'');
  openModal(`<div class="modalhead"><h2>Scheda cliente</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>

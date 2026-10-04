@@ -880,12 +880,9 @@ function isSubscriptionCurrentlyActive(p,payments=[]){
   return !!currentSubscriptionPeriod(p,payments);
 }
 function subscriptionAccountingStatus(p,payments){
+  // REGOLARE solo con un pagamento registrato nel periodo attualmente in corso.
   if(isOpenSubscription(p)) return 'open';
-  const current=currentPaidPeriod(p,payments);
-  if(current)return 'paid';
-  const from=activeSubscriptionDate(p,'subscription_paid_from'),to=activeSubscriptionDate(p,'subscription_paid_to'),today=todayISO();
-  if(from&&to&&from<=today&&today<=to)return 'paid';
-  return 'check';
+  return currentPaidPeriod(p,payments) ? 'paid' : 'check';
 }
 async function loadActiveSubscriptions(){
   const list=document.getElementById('activeSubList'),err=document.getElementById('activeSubError'),count=document.getElementById('activeSubCount');

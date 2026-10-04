@@ -76,7 +76,9 @@
 @media(max-width:600px){.qrManagementBox{grid-template-columns:1fr}.qrManagementBox .qrBox{justify-self:center}}
 
 .circuitRunnerPage{max-width:900px;margin:20px auto 0;background:#0d1014;border:1px solid var(--line);border-radius:18px;padding:28px;min-height:520px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.circuitRunnerPage .circuitRunnerTitle{font-size:clamp(28px,5vw,52px);font-weight:950}.circuitRunnerPage .circuitRunnerRound{color:var(--muted);font-weight:800;margin-top:8px}.circuitRunnerPage .circuitRunnerPhase{color:var(--accent);font-weight:900;text-transform:uppercase;margin-top:18px}.circuitRunnerPage .circuitRunnerDisplay{font-size:clamp(72px,14vw,150px);font-weight:950;line-height:1;margin:18px 0}.circuitRunnerPage .circuitRunnerExercise{font-size:clamp(20px,3vw,30px);font-weight:900}.circuitRunnerPage .circuitRunnerNext{color:var(--muted);min-height:26px;margin-top:12px}.circuitRunnerPage .circuitRunnerActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}.circuitRunnerPage .circuitRunnerActions .btn{min-width:130px;min-height:52px}@media(max-width:600px){.circuitRunnerPage{padding:20px;min-height:calc(100vh - 180px)}.circuitRunnerPage .circuitRunnerActions{width:100%;display:grid;grid-template-columns:1fr 1fr}.circuitRunnerPage .circuitRunnerActions .btn:first-child{grid-column:1/-1}}
-</style></style>
+</style>
+<style>.kleosExpiryPopup{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px}.kleosExpiryPopupBox{width:min(520px,100%);background:#171a20;border:1px solid #39404b;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.55);padding:22px}.kleosExpiryPopupTitle{font-size:21px;font-weight:900;margin-bottom:14px}.kleosExpiryItem{border:1px solid #343a45;border-radius:12px;padding:13px 14px;margin:9px 0;background:#1e222a}.kleosExpiryItem.warn{border-color:#d7ff3f}.kleosExpiryItem.danger{border-color:#ff5d6c}.kleosExpiryItem strong{display:block;font-size:15px}.kleosExpiryItem .sub{margin-top:5px;color:#aeb5c0;font-size:13px}.kleosExpiryBadge{display:inline-block;margin-top:8px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;background:#d7ff3f;color:#101317}.kleosExpiryItem.danger .kleosExpiryBadge{background:#ff5d6c;color:#fff}</style>
+</style>
 </style>
 </style>
 </style>
@@ -170,7 +172,7 @@
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
 <div id="register" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeRegister()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Prima registrazione</h1><p>Crea il tuo account cliente per accedere a KleosFit Coach Pro.</p><form id="registerForm"><label>Nome e Cognome</label><input id="registerName" type="text" autocomplete="name" required><label>Email</label><input id="registerEmail" type="email" autocomplete="email" required><label>Password</label><div class="passwordWrap"><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPassword',this)">MOSTRA</button></div><label>Conferma Password</label><div class="passwordWrap"><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPasswordConfirm',this)">MOSTRA</button></div><button class="btn full" type="submit">Crea account</button><div id="registerError" class="error"></div><div id="registerSuccess" class="success" style="display:none"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button onclick="show('slotDelete',this)">🗑 <span>Elimina slot</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><div id="kleosExpiryPopup" class="kleosExpiryPopup" style="display:none" onclick="if(event.target===this)closeExpiryPopup()"><div class="kleosExpiryPopupBox"><div class="kleosExpiryPopupTitle">Scadenze da controllare</div><div id="kleosExpiryPopupList"></div><div class="actions" style="justify-content:flex-end;margin-top:16px"><button class="btn" type="button" onclick="closeExpiryPopup()">CHIUDI</button></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientOnlyNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button onclick="show('slotDelete',this)">🗑 <span>Elimina slot</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -181,7 +183,6 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
-<div id="dashboardExpiryNotice" style="display:none"></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -746,81 +747,19 @@ async function countTable(table){
  const r=await db.from(table).select('*',{count:'exact',head:true});
  return r.error?null:r.count;
 }
-function dashboardDateOnly(v){
-  const m=String(v||'').slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m)return null;
-  const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
-  return Number.isNaN(d.getTime())?null:d;
-}
-function dashboardToday(){
-  const n=new Date();
-  return new Date(n.getFullYear(),n.getMonth(),n.getDate());
-}
-function dashboardDaysUntil(v){
-  const d=dashboardDateOnly(v), t=dashboardToday();
-  return d?Math.round((d-t)/86400000):null;
-}
-function dashboardExpiryItem(label,dateValue,kind){
-  const days=dashboardDaysUntil(dateValue);
-  if(days===null)return null;
-  if(days>10)return null;
-  if(days>=0)return {label,dateValue,kind,days,status:'IN SCADENZA'};
-  return {label,dateValue,kind,days,status:'SCADUTO'};
-}
-function dashboardCurrentSubscriptionExpiry(profileRow,payments){
-  const open=profileRow?.subscription_open===true || ['true','1','si','sì','yes','open'].includes(String(profileRow?.subscription_open||'').trim().toLowerCase());
-  if(open)return null;
-  const today=dashboardToday();
-  const periods=[];
-  const pf=dashboardDateOnly(profileRow?.subscription_paid_from), pt=dashboardDateOnly(profileRow?.subscription_paid_to);
-  if(pf&&pt)periods.push({from:pf,to:pt});
-  for(const x of (payments||[])){
-    const from=dashboardDateOnly(x.paid_from),to=dashboardDateOnly(x.paid_to);
-    if(from&&to)periods.push({from,to});
-  }
-  periods.sort((a,b)=>a.from-b.from || a.to-b.to);
-  const current=periods.find(x=>x.from<=today&&today<=x.to);
-  if(current)return current.to;
-  const past=periods.filter(x=>x.from<=today).sort((a,b)=>b.to-a.to)[0];
-  return past?.to||null;
-}
-function renderDashboardExpiryNotice(items){
-  const el=document.getElementById('dashboardExpiryNotice');
-  if(!el)return;
-  if(!items.length){el.style.display='none';el.innerHTML='';return;}
-  el.style.display='block';
-  el.innerHTML=`<div class="card" style="border-color:#4b535f;background:#12161b;margin-bottom:18px"><div style="font-size:19px;font-weight:900;margin-bottom:12px">Scadenze</div>${items.map(x=>{
-    const cls=x.status==='SCADUTO'?'#ff8b8b':'#c4ff3d';
-    const msg=x.status==='SCADUTO'?`${esc(x.label)} scaduto il <b>${esc(fmtDateIT(x.dateValue))}</b>. Rinnova per rimuovere questa segnalazione.`:`${esc(x.label)} in scadenza il <b>${esc(fmtDateIT(x.dateValue))}</b> (${x.days===0?'oggi':`tra ${x.days} giorni`}).`;
-    return `<div style="padding:11px 13px;border:1px solid #2b3139;border-radius:10px;margin-top:8px"><span style="font-weight:900;color:${cls}">${esc(x.status)}</span><span style="margin-left:9px">${msg}</span></div>`;
-  }).join('')}</div>`;
-}
-async function loadDashboardExpiryNotice(){
-  const el=document.getElementById('dashboardExpiryNotice');
-  if(!el)return;
-  if(!isClientRole()||!currentUser?.id){el.style.display='none';el.innerHTML='';return;}
-  try{
-    const pr=profile||{};
-    const pay=await db.from('subscription_payment_history').select('paid_from,paid_to,amount,created_at').eq('profile_id',currentUser.id).order('paid_to',{ascending:false}).limit(500);
-    const subscriptionExpiry=dashboardCurrentSubscriptionExpiry(pr,pay.error?[]:(pay.data||[]));
-    const items=[];
-    if(subscriptionExpiry)items.push(dashboardExpiryItem('Abbonamento',subscriptionExpiry.toISOString().slice(0,10),'subscription'));
-    const med=pr.medical_certificate_expiry_date;
-    const ins=pr.insurance_expiry_date||pr.insurance_expiry;
-    const medItem=dashboardExpiryItem('Certificato medico',med,'medical');
-    const insItem=dashboardExpiryItem('Assicurazione',ins,'insurance');
-    if(medItem)items.push(medItem);
-    if(insItem)items.push(insItem);
-    renderDashboardExpiryNotice(items.filter(Boolean));
-  }catch(e){el.style.display='none';el.innerHTML='';}
-}
+
+function expiryDateOnly(v){const m=String(v||'').slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12,0,0):null;}
+function expiryDiffDays(v){const d=expiryDateOnly(v);if(!d)return null;const n=new Date();n.setHours(12,0,0,0);return Math.round((d-n)/86400000);}
+function expiryAlert(label,dateValue){const days=expiryDiffDays(dateValue);if(days===null||days>10)return null;const date=fmtDateIT(String(dateValue).slice(0,10));if(days>=0)return {label,date,days,status:'warn',text:days===0?'Scade oggi':'Scade tra '+days+' '+(days===1?'giorno':'giorni')};return {label,date,days,status:'danger',text:'Scaduto da '+Math.abs(days)+' '+(Math.abs(days)===1?'giorno':'giorni')};}
+function closeExpiryPopup(){const el=document.getElementById('kleosExpiryPopup');if(el)el.style.display='none';}
+function showExpiryPopup(alerts){const pop=document.getElementById('kleosExpiryPopup'),list=document.getElementById('kleosExpiryPopupList');if(!pop||!list||!alerts?.length)return;list.innerHTML=alerts.map(a=>`<div class="kleosExpiryItem ${a.status}"><strong>${esc(a.label)}</strong><div class="sub">Scadenza: ${esc(a.date)} · ${esc(a.text)}</div><span class="kleosExpiryBadge">${a.status==='danger'?'SCADUTO':'IN SCADENZA'}</span></div>`).join('');pop.style.display='flex';}
+function showClientExpiryPopup(){if(!isClientRole()||!profile)return;const alerts=[];const open=profile.subscription_open===true||['true','1','si','sì','yes','open'].includes(String(profile.subscription_open||'').trim().toLowerCase());if(!open){const a=expiryAlert('Abbonamento',profile.subscription_paid_to);if(a)alerts.push(a);}const med=expiryAlert('Certificato medico',profile.medical_certificate_expiry_date);if(med)alerts.push(med);const ins=expiryAlert('Assicurazione',profile.insurance_expiry_date||profile.insurance_expiry);if(ins)alerts.push(ins);if(alerts.length)setTimeout(()=>showExpiryPopup(alerts),180);}
 
 async function fillDashboard(){
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
  if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
- await loadDashboardExpiryNotice();
 
  const title=document.getElementById('dashboardWorkoutTitle');
  const sub=document.getElementById('dashboardWorkoutSub');
@@ -859,6 +798,7 @@ async function fillDashboard(){
    if(w) w.textContent='—';
    if(d) d.textContent='Prima rilevazione';
  }
+ showClientExpiryPopup();
 }
 
 

@@ -812,23 +812,39 @@ function renderDashboardExpiryAlerts(alerts){
   box.innerHTML='<div style="font-weight:900;font-size:16px;margin-bottom:10px">AVVISI IMPORTANTI</div>'+alerts.map(a=>`<div style="padding:11px 13px;margin:8px 0;border:1px solid ${a.state==='expired'?'#ff5c5c':'#ffb020'};border-radius:10px;background:${a.state==='expired'?'rgba(255,92,92,.10)':'rgba(255,176,32,.10)'}"><b>${esc(a.name)} — ${esc(a.label)}</b><div class="muted" style="margin-top:4px">Scadenza: ${esc(fmtDateIT(a.date))} · ${esc(a.text)}</div></div>`).join('');
 }
 async function showExpiryPopup(alerts){
-  if(!alerts.length)return;
+  if(!alerts || !alerts.length)return;
+  const modal=document.getElementById('modal');
+  const content=document.getElementById('modalContent');
+  if(!modal || !content){console.warn('Popup scadenze: modal non ancora presente nel DOM');return false;}
   const body=alerts.map(a=>`<div style="padding:12px 14px;margin:8px 0;border:1px solid ${a.state==='expired'?'#ff5c5c':'#ffb020'};border-radius:10px"><b>${esc(a.name)}</b><div style="margin-top:5px;font-weight:900">${esc(a.label)}</div><div class="muted" style="margin-top:4px">Scadenza: ${esc(fmtDateIT(a.date))} · ${esc(a.text)}</div></div>`).join('');
-  openModal(`<div class="modalhead"><h2>Avviso scadenze</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div>${body}</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">HO CAPITO</button></div>`);
+  content.innerHTML=`<div class="modalhead"><h2>Avviso scadenze</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div>${body}</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">HO CAPITO</button></div>`;
+  modal.classList.add('open');
+  // Forza l'apertura: il popup non deve dipendere da eventuali CSS/cache della classe .open.
+  modal.style.display='grid';
+  modal.style.visibility='visible';
+  modal.style.opacity='1';
+  modal.style.zIndex='999999';
+  return true;
 }
 let expiryPopupShownForUser=false;
 async function refreshClientExpiryAlerts(showPopup=true){
-  if(!currentUser?.id)return;
+  // Gli avvisi popup sono ESCLUSIVAMENTE per i clienti.
+  // Admin/Superuser possono vedere eventuali avvisi nella propria gestione, ma non il popup personale.
+  if(!currentUser?.id || !isClientRole())return;
   try{
     const alerts=await getClientExpiryAlerts();
     renderDashboardExpiryAlerts(alerts);
     if(showPopup&&alerts.length&&!expiryPopupShownForUser){
-      expiryPopupShownForUser=true;
-      // Apertura diretta del popup: non dipende dal caricamento della dashboard.
-      setTimeout(()=>{
-        try{showExpiryPopup(alerts);}
-        catch(e){console.warn('Errore apertura popup scadenze:',e);expiryPopupShownForUser=false;}
-      },150);
+      // Aspetta che il contenitore dell'app sia realmente montato, poi apri il popup.
+      const tryOpen=()=>{
+        try{
+          if(!document.getElementById('modal')||!document.getElementById('modalContent')){setTimeout(tryOpen,300);return;}
+          const opened=showExpiryPopup(alerts);
+          if(opened!==false)expiryPopupShownForUser=true;
+          else setTimeout(tryOpen,300);
+        }catch(e){console.warn('Errore apertura popup scadenze:',e);setTimeout(tryOpen,500);}
+      };
+      setTimeout(tryOpen,500);
     }
   }catch(e){console.warn('Errore avvisi scadenze:',e);}
 }

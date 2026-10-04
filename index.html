@@ -954,18 +954,23 @@ function isSubscriptionCurrentlyActive(p){
   if(open)return true;
   return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
 }
-function subscriptionAccountingStatus(p,payments){
+function subscriptionPaymentSummary(p,payments){
   const from=activeSubscriptionDate(p,'subscription_paid_from');
   const to=activeSubscriptionDate(p,'subscription_paid_to');
-  const cost=p.subscription_cost==null?null:Number(p.subscription_cost);
+  const due=p?.subscription_cost==null?null:Number(p.subscription_cost);
   const matches=(payments||[]).filter(x=>{
     const pf=String(x.paid_from||'').slice(0,10), pt=String(x.paid_to||'').slice(0,10);
-    if(from&&pf!==from)return false;
-    if(to&&pt!==to)return false;
-    if(cost!=null && Number.isFinite(cost) && x.amount!=null && Math.abs(Number(x.amount)-cost)>0.01)return false;
+    if(from && pf!==from)return false;
+    if(to && pt!==to)return false;
     return true;
   });
-  return matches.length?'paid':'check';
+  const paid=matches.reduce((sum,x)=>sum+(Number(x.amount)||0),0);
+  const remaining=due==null?null:Math.max(0,due-paid);
+  const status=due==null?'check':(paid+0.005>=due?'paid':(paid>0?'partial':'check'));
+  return {from,to,due,paid,remaining,status,matches};
+}
+function subscriptionAccountingStatus(p,payments){
+  return subscriptionPaymentSummary(p,payments).status;
 }
 async function loadActiveSubscriptions(){
   const list=document.getElementById('activeSubList'),err=document.getElementById('activeSubError'),count=document.getElementById('activeSubCount');
@@ -1043,10 +1048,12 @@ function renderActiveSubscriptions(){
         : active
           ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
           : '<span class="pill" style="background:#ff5c5c;color:#fff">NON ATTIVO</span>';
-      const ok=p._accounting==='paid';
-      const badge=ok
-        ?'<span class="pill" style="background:#c6ff35;color:#111">REGOLARE</span>'
-        :'<span class="pill" style="background:#ffb020;color:#111">DA VERIFICARE</span>';
+      const acc=subscriptionPaymentSummary(p,p._payments||[]);
+      const badge=acc.status==='paid'
+        ?'<span class="pill" style="background:#c6ff35;color:#111">SALDATO</span>'
+        :acc.status==='partial'
+          ?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>'
+          :'<span class="pill" style="background:#ff6b6b;color:#111">DA PAGARE</span>';
       const type=p.subscription_type||'Abbonamento';
       return `<tr>
         <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>
@@ -1056,7 +1063,7 @@ function renderActiveSubscriptions(){
         <td><b>${esc(cost)}</b></td>
         <td>${statusBadge}</td>
         <td>${esc(lastPay)}</td>
-        <td>${badge}</td>
+        <td>${badge}${acc.due!=null?`<div class="muted" style="margin-top:5px">Versato € ${acc.paid.toFixed(2).replace('.',',')} · Residuo € ${acc.remaining.toFixed(2).replace('.',',')}</div>`:''}</td>
         <td><button class="btn secondary mini" type="button" onclick="openClientSheet('${p.id}')">Scheda</button></td>
       </tr>`;
     }).join('')}</tbody>
@@ -1296,7 +1303,7 @@ async function saveClientSheet(id){
  // Se l'abbonamento è stato registrato con periodo e importo, assicuriamo
  // anche la relativa registrazione nello storico pagamenti, evitando duplicati.
  if(paidFrom && paidTo && subscriptionCost!==null && Number.isFinite(Number(subscriptionCost))){
-   const ph=await db.from('subscription_payment_history').select('id').eq('profile_id',id).eq('paid_from',paidFrom).eq('paid_to',paidTo).eq('amount',Number(subscriptionCost)).limit(1);
+   const ph=await db.from('subscription_payment_history').select('id').eq('profile_id',id).eq('paid_from',paidFrom).eq('paid_to',paidTo).limit(1);
    if(ph.error){if(msg){msg.textContent='Cliente salvato, ma impossibile verificare lo storico pagamenti: '+ph.error.message;msg.className='error';msg.style.display='block'}return}
    if(!(ph.data||[]).length){
      const ins=await db.from('subscription_payment_history').insert({profile_id:id,paid_from:paidFrom,paid_to:paidTo,amount:Number(subscriptionCost),note:'Pagamento abbonamento'}).select('id').maybeSingle();
@@ -2628,27 +2635,55 @@ async function loadAdminClientPayments(profileId){
 
 async function openPaymentEditor(profileId,paymentId=''){
  let row=null;
- if(paymentId){
-   const r=await db.from('subscription_payment_history').select('*').eq('id',paymentId).eq('profile_id',profileId).maybeSingle();
-   if(r.error||!r.data){alert(r.error?.message||'Pagamento non trovato.');return;}
-   row=r.data;
- }
- const title=row?'Modifica pagamento':'Nuovo pagamento';
- openModal(`<div class="modalhead"><h2>${title}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
- <div class="clientSheetGrid">
-   <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from))}"></div>
-   <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to))}"></div>
-   <div><label>Importo (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
-   <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
- </div>
- <div id="phMsg" class="error" style="display:none;margin-top:12px"></div>
- <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="savePaymentHistory('${profileId}','${paymentId}')">${row?'Salva modifica':'Registra pagamento'}</button></div>`);
- setTimeout(()=>{
-   const from=document.getElementById('phFrom'),to=document.getElementById('phTo');
-   if(!from||!to)return;
-   const sync=()=>{if(from.value){to.min=from.value;if(to.value&&to.value<from.value)to.value=from.value}else to.removeAttribute('min');};
-   from.addEventListener('change',sync);to.addEventListener('change',sync);sync();
- },20);
+ let profile=null;
+ try{
+   const pr=await db.from('profiles').select('id,full_name,name,subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
+   if(pr.error)throw pr.error;
+   profile=pr.data||null;
+   if(paymentId){
+     const r=await db.from('subscription_payment_history').select('*').eq('id',paymentId).eq('profile_id',profileId).maybeSingle();
+     if(r.error||!r.data){alert(r.error?.message||'Pagamento non trovato.');return;}
+     row=r.data;
+   }
+   const hist=await db.from('subscription_payment_history').select('amount,paid_from,paid_to').eq('profile_id',profileId).limit(500);
+   if(hist.error)throw hist.error;
+   const from=String(row?.paid_from||profile?.subscription_paid_from||'').slice(0,10);
+   const to=String(row?.paid_to||profile?.subscription_paid_to||'').slice(0,10);
+   const due=profile?.subscription_cost==null?null:Number(profile.subscription_cost);
+   const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from && String(x.paid_to||'').slice(0,10)===to && (!paymentId || String(x.id)!==String(paymentId))).reduce((a,x)=>a+(Number(x.amount)||0),0);
+   const current=Number(row?.amount||0);
+   const paidAfter=paidBefore+current;
+   const remaining=due==null?null:Math.max(0,due-paidAfter);
+   const title=row?'Modifica pagamento':'Nuovo pagamento';
+   openModal(`<div class="modalhead"><h2>${title}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+   <div class="clientSheetGrid">
+     <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from||profile?.subscription_paid_from))}"></div>
+     <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to||profile?.subscription_paid_to))}"></div>
+     <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
+     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
+   </div>
+   <div id="phSummary" class="subscriptionBreakdown">
+     <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
+     <div class="sbRow"><span>Versato con altri pagamenti</span><b id="phPaidBefore">€ ${paidBefore.toFixed(2).replace('.',',')}</b></div>
+     <div class="sbRow"><span>Versato totale</span><b id="phPaidTotal">€ ${paidAfter.toFixed(2).replace('.',',')}</b></div>
+     <div class="sbTotal"><span>Residuo</span> <b id="phRemaining">${due==null?'—':'€ '+remaining.toFixed(2).replace('.',',')}</b></div>
+   </div>
+   <div id="phMsg" class="error" style="display:none;margin-top:12px"></div>
+   <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="savePaymentHistory('${profileId}','${paymentId}')">${row?'Salva modifica':'Registra pagamento'}</button></div>`);
+   setTimeout(()=>{
+     const fromEl=document.getElementById('phFrom'),toEl=document.getElementById('phTo'),amountEl=document.getElementById('phAmount');
+     const sync=()=>{if(fromEl.value){toEl.min=fromEl.value;if(toEl.value&&toEl.value<fromEl.value)toEl.value=fromEl.value}else toEl.removeAttribute('min');updatePaymentEditorSummary(due,paidBefore);};
+     fromEl.addEventListener('change',sync);toEl.addEventListener('change',sync);amountEl.addEventListener('input',sync);sync();
+   },20);
+ }catch(e){alert('Impossibile aprire la gestione pagamento: '+(e?.message||e));}
+}
+function updatePaymentEditorSummary(due,paidBefore){
+ const amount=Number(document.getElementById('phAmount')?.value||0)||0;
+ const total=paidBefore+amount;
+ const remaining=due==null?null:Math.max(0,due-total);
+ const t=document.getElementById('phPaidTotal'),r=document.getElementById('phRemaining');
+ if(t)t.textContent='€ '+total.toFixed(2).replace('.',',');
+ if(r)r.textContent=remaining==null?'—':'€ '+remaining.toFixed(2).replace('.',',');
 }
 
 async function savePaymentHistory(profileId,paymentId=''){
@@ -2660,7 +2695,16 @@ async function savePaymentHistory(profileId,paymentId=''){
  const amount=amountRaw===''?null:Number(amountRaw);
  if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
  if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}
- if(amount===null||!Number.isFinite(amount)||amount<0){if(msg){msg.textContent='Inserisci un importo valido.';msg.style.display='block'}return;}
+ if(amount===null||!Number.isFinite(amount)||amount<=0){if(msg){msg.textContent='Inserisci un importo versato valido, maggiore di zero.';msg.style.display='block'}return;}
+ const prof=await db.from('profiles').select('subscription_cost').eq('id',profileId).maybeSingle();
+ if(prof.error){if(msg){msg.textContent='Impossibile verificare il totale abbonamento: '+prof.error.message;msg.style.display='block'}return;}
+ if(prof.data?.subscription_cost!=null){
+   const hist=await db.from('subscription_payment_history').select('amount,paid_from,paid_to,id').eq('profile_id',profileId).limit(500);
+   if(hist.error){if(msg){msg.textContent='Impossibile verificare i pagamenti precedenti: '+hist.error.message;msg.style.display='block'}return;}
+   const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from&&String(x.paid_to||'').slice(0,10)===to&&String(x.id)!==String(paymentId||'')).reduce((a,x)=>a+(Number(x.amount)||0),0);
+   const due=Number(prof.data.subscription_cost);
+   if(paidBefore+amount>due+0.005){if(msg){msg.textContent='Il versamento supera il totale dell’abbonamento. Totale: € '+due.toFixed(2).replace('.',',')+' · già versato: € '+paidBefore.toFixed(2).replace('.',',');msg.style.display='block'}return;}
+ }
  const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};
  try{
    let r;

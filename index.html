@@ -700,6 +700,8 @@ async function loadProfile(){
  document.getElementById('role').textContent=(profile?.role||'Utente').toString();
  document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
+ const paymentNav=[...document.querySelectorAll('.nav button')].find(x=>x.textContent.includes('Pagamenti'));
+ if(paymentNav) paymentNav.style.display=(isClientRole()&&!isOpenSubscription(profile))?'block':'none';
  show('dashboard',document.querySelector('.nav button'));
 }
 function show(v,el){
@@ -708,6 +710,7 @@ function show(v,el){
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
  if(v==='priceList'&&!isClientRole()) return;
+ if(v==='payments'&&(!isClientRole()||isOpenSubscription(profile))) return;
  const content=document.getElementById('content');
  if(!content||!views[v]) return;
  content.innerHTML=views[v];
@@ -873,7 +876,7 @@ async function loadActiveSubscriptions(){
   // Gli account admin/administrator/superuser non devono comparire nella gestione pagamenti.
   const profiles=(pr.data||[]).filter(p=>{
     const role=String(p?.role||'client').trim().toLowerCase();
-    return ['client','cliente'].includes(role) && isSubscriptionCurrentlyActive(p);
+    return ['client','cliente'].includes(role) && !isOpenSubscription(p) && isSubscriptionCurrentlyActive(p);
   });
   const ids=profiles.map(p=>p.id).filter(Boolean);
   let payments=[];
@@ -1064,7 +1067,7 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div>${p.subscription_open?'<div class="wide"><div class="muted" style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px">Abbonamento OPEN: non viene gestito con pagamenti, storico pagamenti o stato contabile.</div></div>':''}</div></div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -1162,14 +1165,14 @@ async function openMedicalCertificate(path){
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const paidFrom=valOrNull('cpFrom'),paidTo=valOrNull('cpTo'),subscriptionCost=nullableNumber('cpCost');
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:(()=>{const el=document.getElementById('cpSubType');const v=el?.value||'';if(v==='__custom__')return 'Personalizzato';const pr=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(v));return pr?.name||valOrNull('cpSubType')})(),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:paidFrom,subscription_paid_to:paidTo,subscription_cost:subscriptionCost,subscription_active:computeSubscriptionActive(paidFrom,paidTo),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const paidFrom=valOrNull('cpFrom'),paidTo=valOrNull('cpTo'),subscriptionCost=nullableNumber('cpCost'),subscriptionOpen=document.getElementById('cpOpen')?.value==='true';
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:(()=>{const el=document.getElementById('cpSubType');const v=el?.value||'';if(v==='__custom__')return 'Personalizzato';const pr=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(v));return pr?.name||valOrNull('cpSubType')})(),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:paidFrom,subscription_paid_to:paidTo,subscription_cost:subscriptionCost,subscription_active:computeSubscriptionActive(paidFrom,paidTo),subscription_open:subscriptionOpen,medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
  // Se l'abbonamento è stato registrato con periodo e importo, assicuriamo
  // anche la relativa registrazione nello storico pagamenti, evitando duplicati.
- if(paidFrom && paidTo && subscriptionCost!==null && Number.isFinite(Number(subscriptionCost))){
+ if(!subscriptionOpen && paidFrom && paidTo && subscriptionCost!==null && Number.isFinite(Number(subscriptionCost))){
    const ph=await db.from('subscription_payment_history').select('id').eq('profile_id',id).eq('paid_from',paidFrom).eq('paid_to',paidTo).eq('amount',Number(subscriptionCost)).limit(1);
    if(ph.error){if(msg){msg.textContent='Cliente salvato, ma impossibile verificare lo storico pagamenti: '+ph.error.message;msg.className='error';msg.style.display='block'}return}
    if(!(ph.data||[]).length){
@@ -1663,6 +1666,10 @@ function renderAdminReservations(rows,slots){
 }
 
 function isClientRole(){const r=String(profile?.role||'').toLowerCase();return r==='client'||r==='cliente';}
+function isOpenSubscription(p){
+ const v=p?.subscription_open;
+ return v===true || ['true','1','si','sì','yes','open'].includes(String(v??'').trim().toLowerCase());
+}
 function isSuperuserRole(){
  const r=String(profile?.role||'').toLowerCase().trim();
  return ['admin','administrator','amministratore','superuser'].includes(r);
@@ -2494,6 +2501,11 @@ async function loadClientPayments(){
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento storico...';count.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
+ if(isOpenSubscription(profile)){
+   list.innerHTML='<div class="muted">Questo abbonamento è OPEN: la gestione dei pagamenti e lo storico non sono applicabili.</div>';
+   count.textContent='Gestione pagamenti non applicabile';
+   return;
+ }
  const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
  if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
  const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');

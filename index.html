@@ -181,6 +181,7 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
+<div id="dashboardExpiryAlerts" class="card" style="display:none;margin-bottom:16px"></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -748,11 +749,46 @@ async function countTable(table){
  const r=await db.from(table).select('*',{count:'exact',head:true});
  return r.error?null:r.count;
 }
+async function loadDashboardExpiryAlerts(){
+ const box=document.getElementById('dashboardExpiryAlerts');
+ if(!box)return;
+ const today=new Date(); today.setHours(0,0,0,0);
+ const limit=new Date(today); limit.setDate(limit.getDate()+30);
+ const parseDate=v=>{if(!v)return null; const m=String(v).slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m)return null; const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3])); return Number.isNaN(d.getTime())?null:d};
+ const daysTo=d=>Math.round((d-today)/86400000);
+ const label=d=>d<today?'SCADUTO':daysTo(d)===0?'SCADENZA OGGI':`scade tra ${daysTo(d)} ${daysTo(d)===1?'giorno':'giorni'}`;
+ const isAdmin=isSuperuserRole();
+ let rows=[];
+ if(isAdmin){
+   const r=await db.from('profiles').select('id,full_name,name,email,role,subscription_open,insurance_expiry_date,insurance_expiry,medical_certificate_expiry_date').limit(1000);
+   rows=(r.error?[]:(r.data||[])).filter(p=>!['admin','administrator','amministratore','superuser'].includes(String(p.role||'').toLowerCase().trim()));
+ }else if(isClientRole()&&currentUser?.id){
+   const r=await db.from('profiles').select('id,full_name,name,email,role,subscription_open,insurance_expiry_date,insurance_expiry,medical_certificate_expiry_date').eq('id',currentUser.id).maybeSingle();
+   rows=r.error||!r.data?[]:[r.data];
+ }else{box.style.display='none';return;}
+ const alerts=[];
+ rows.forEach(p=>{
+   const name=p.full_name||p.name||p.email||'Cliente';
+   const insurance=parseDate(p.insurance_expiry_date||p.insurance_expiry);
+   const cert=parseDate(p.medical_certificate_expiry_date);
+   [['Assicurazione',insurance],['Certificato medico',cert]].forEach(([type,d])=>{
+     if(!d)return;
+     if(d<=limit){alerts.push({name,type,date:d,days:daysTo(d)});}
+   });
+ });
+ alerts.sort((a,b)=>a.date-b.date||a.name.localeCompare(b.name,'it'));
+ if(!alerts.length){box.style.display='none';return;}
+ const title=isAdmin?'SCADENZE DA VERIFICARE':'DOCUMENTI IN SCADENZA';
+ box.style.display='block';
+ box.innerHTML=`<div class="top" style="margin-bottom:10px"><div><h2 style="margin:0">${title}</h2><div class="muted">Assicurazione e certificato medico: scaduti o in scadenza entro 30 giorni.</div></div><div class="metric" style="font-size:24px">${alerts.length}</div></div><div style="display:grid;gap:8px">${alerts.map(a=>{const danger=a.days<0; const todayFlag=a.days===0; const cls=danger||todayFlag?'error':'muted'; return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#111419"><div><b>${esc(a.name)}</b><div class="muted" style="margin-top:3px">${esc(a.type)} · ${fmtDateIT(a.date.toISOString().slice(0,10))}</div></div><strong class="${cls}">${label(a.date)}</strong></div>`}).join('')}</div>`;
+}
+
 async function fillDashboard(){
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
  if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
+ await loadDashboardExpiryAlerts();
 
  const title=document.getElementById('dashboardWorkoutTitle');
  const sub=document.getElementById('dashboardWorkoutSub');
@@ -2515,7 +2551,7 @@ async function loadClientPayments(){
  const toVal=x=>x.paid_to;
  const amountVal=x=>x.amount;
  const noteVal=x=>x.note;
- list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fromVal(x)||'—')} → ${esc(toVal(x)||'—')}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDateIT(dateVal(x)))}</td><td>${esc(fmtDateIT(fromVal(x)))} → ${esc(fmtDateIT(toVal(x)))}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
 }
 
 async function loadAdmin(){

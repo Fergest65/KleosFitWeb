@@ -2768,7 +2768,7 @@ function renderAdmin(rows){
  '</tbody></table></div>';
 }
 function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();renderAdmin(!q?adminData:adminData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)))}
-function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('open')}
+function openModal(html){const modal=document.getElementById('modal'),content=document.getElementById('modalContent');if(!modal||!content)return;content.innerHTML=html;modal.style.display='grid';modal.style.visibility='visible';modal.style.opacity='1';modal.style.zIndex='999999';modal.classList.add('open')}
 function closeModal(){const modal=document.getElementById('modal');if(!modal)return;modal.classList.remove('open');modal.style.display='none';modal.style.visibility='hidden';modal.style.opacity='0';modal.style.zIndex='';}
 function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}
 async function editWorkoutPlan(id){

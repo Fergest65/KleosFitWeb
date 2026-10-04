@@ -768,11 +768,8 @@ function currentSubscriptionExpiry(p){
   if(!to)return null;
   const t=new Date();t.setHours(12,0,0,0);
   const td=isoLocal(t);
-  // Se il periodo è futuro non è ancora iniziato: nessun avviso.
-  // Se invece la data di fine è passata, l'avviso deve rimanere visibile
-  // anche quando subscription_open/subscription_active indicano NON ATTIVO,
-  // fino a quando il profilo viene effettivamente rinnovato con nuove date.
-  if(from && from>td && to>=from)return null;
+  // L'avviso dipende dalla data di fine: se la scadenza è entro 10 giorni
+  // deve essere mostrato anche quando l'abbonamento inizia nel periodo corrente.
   return to;
 }
 async function getClientExpiryAlerts(){

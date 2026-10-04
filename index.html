@@ -704,7 +704,7 @@ async function loadProfile(){
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
  // Controllo indipendente: non dipende dal caricamento delle altre sezioni della dashboard.
- setTimeout(()=>refreshClientExpiryAlerts(true),500);
+ setTimeout(()=>{expiryPopupShownForUser=false;refreshClientExpiryAlerts(true);},700);
 }
 function show(v,el){
  if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
@@ -774,60 +774,40 @@ function currentSubscriptionExpiry(p){
 }
 async function getClientExpiryAlerts(){
   if(!currentUser?.id)return [];
-
   const out=[];
-  const add=(name,date)=>{
-    const info=expiryInfo(date);
-    if(info)out.push({name,date:String(date).slice(0,10),...info});
-  };
+  const add=(name,date)=>{const info=expiryInfo(date);if(info)out.push({name,date:String(date).slice(0,10),...info})};
 
-  // Cliente: mostra esclusivamente le proprie scadenze.
   if(!isSuperuserRole()){
     let p=profile||{};
     try{
-      const r=await db.from('profiles')
-        .select('subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date,role')
-        .eq('id',currentUser.id).maybeSingle();
-      if(!r.error && r.data){
-        p={...p,...r.data};
-        profile={...profile,...r.data};
-      }
-    }catch(e){}
+      const r=await db.from('profiles').select('subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date,role').eq('id',currentUser.id).maybeSingle();
+      if(r.error)console.warn('Errore lettura scadenze profilo:',r.error.message);
+      if(!r.error&&r.data){p={...p,...r.data};profile={...profile,...r.data};}
+    }catch(e){console.warn('Errore lettura scadenze profilo:',e);}
     add('Abbonamento',currentSubscriptionExpiry(p));
     add('Certificato medico',p.medical_certificate_expiry_date);
     add('Assicurazione',p.insurance_expiry_date);
     return out;
   }
 
-  // Admin / Administrator / Superuser:
-  // controlla tutte le scadenze dei clienti.
   try{
-    const r=await db.from('profiles')
-      .select('id,full_name,name,email,role,subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date')
-      .in('role',['client','cliente','user','utente']);
-
-    if(r.error)throw r.error;
-
+    const r=await db.from('profiles').select('id,full_name,name,email,role,subscription_open,subscription_paid_from,subscription_paid_to,medical_certificate_expiry_date,insurance_expiry_date').limit(2000);
+    if(r.error){console.warn('Errore lettura profili per avvisi:',r.error.message);return out;}
+    const clientRoles=['client','cliente','user','utente'];
     (r.data||[]).forEach(p=>{
+      const role=String(p.role||'').toLowerCase().trim();
+      if(!clientRoles.includes(role))return;
       const displayName=String(p.full_name||p.name||p.email||'Cliente').trim()||'Cliente';
       add(displayName+' — Abbonamento',currentSubscriptionExpiry(p));
       add(displayName+' — Certificato medico',p.medical_certificate_expiry_date);
       add(displayName+' — Assicurazione',p.insurance_expiry_date);
     });
-
-    // Prima le urgenze, poi quelle meno urgenti.
-    out.sort((a,b)=>{
-      if(a.state!==b.state)return a.state==='expired'?-1:1;
-      return Number(a.days)-Number(b.days);
-    });
-  }catch(e){
-    console.warn('Errore caricamento avvisi scadenze:',e);
-  }
-
+    out.sort((a,b)=>{if(a.state!==b.state)return a.state==='expired'?-1:1;return Number(a.days)-Number(b.days);});
+  }catch(e){console.warn('Errore caricamento avvisi scadenze:',e);}
   return out;
 }
 function renderDashboardExpiryAlerts(alerts){
-  const box=document.getElementById('dashboardExpiryAlerts'); if(!box)return;
+  const box=document.getElementById('dashboardExpiryAlerts');if(!box)return;
   if(!alerts.length){box.innerHTML='';box.style.display='none';return;}
   box.style.display='block';
   box.innerHTML='<div style="font-weight:900;font-size:16px;margin-bottom:10px">AVVISI IMPORTANTI</div>'+alerts.map(a=>`<div style="padding:11px 13px;margin:8px 0;border:1px solid ${a.state==='expired'?'#ff5c5c':'#ffb020'};border-radius:10px;background:${a.state==='expired'?'rgba(255,92,92,.10)':'rgba(255,176,32,.10)'}"><b>${esc(a.name)} — ${esc(a.label)}</b><div class="muted" style="margin-top:4px">Scadenza: ${esc(fmtDateIT(a.date))} · ${esc(a.text)}</div></div>`).join('');
@@ -839,36 +819,24 @@ async function showExpiryPopup(alerts){
 }
 let expiryPopupShownForUser=false;
 async function refreshClientExpiryAlerts(showPopup=true){
-  // Gli avvisi vengono caricati all'avvio sia per il cliente sia per admin/superuser.
   if(!currentUser?.id)return;
-  try{
-    const alerts=await getClientExpiryAlerts();
-    renderDashboardExpiryAlerts(alerts);
-    if(showPopup && alerts.length && !expiryPopupShownForUser){
-      expiryPopupShownForUser=true;
-      setTimeout(()=>showExpiryPopup(alerts),200);
-    }
-  }catch(e){
-    // In caso di errore DB mantieni comunque gli eventuali dati già presenti nel profilo.
+  const run=async()=>{
     try{
-      const p=profile||{}, alerts=[];
-      const add=(name,date)=>{const info=expiryInfo(date);if(info)alerts.push({name,date:String(date).slice(0,10),...info})};
-      add('Abbonamento',currentSubscriptionExpiry(p));
-      add('Certificato medico',p.medical_certificate_expiry_date);
-      add('Assicurazione',p.insurance_expiry_date);
+      const alerts=await getClientExpiryAlerts();
       renderDashboardExpiryAlerts(alerts);
-      if(showPopup && alerts.length && !expiryPopupShownForUser){
+      if(showPopup&&alerts.length&&!expiryPopupShownForUser){
         expiryPopupShownForUser=true;
-        setTimeout(()=>showExpiryPopup(alerts),200);
+        setTimeout(()=>{try{showExpiryPopup(alerts);}catch(e){console.warn('Errore apertura popup scadenze:',e);}},350);
       }
-    }catch(_e){}
-  }
+    }catch(e){console.warn('Errore avvisi scadenze:',e);}
+  };
+  if(document.getElementById('dashboardExpiryAlerts'))await run();
+  else{let attempts=0;const retry=async()=>{if(document.getElementById('dashboardExpiryAlerts'))await run();else if(++attempts<20)setTimeout(retry,150);};setTimeout(retry,100);}
 }
-
 
 async function fillDashboard(){
  // Renderizza gli avvisi subito, senza attendere workout/progressi o altre query.
- void refreshClientExpiryAlerts(true);
+ setTimeout(()=>refreshClientExpiryAlerts(true),120);
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');

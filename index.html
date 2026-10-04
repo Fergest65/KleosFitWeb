@@ -933,6 +933,9 @@ function activeSubscriptionDate(p,key){
   return v?String(v).slice(0,10):'';
 }
 function isSubscriptionCurrentlyActive(p){
+  // Un abbonamento aperto è considerato attivo anche senza una data di fine.
+  const open=['true','1','si','sì','yes','open'].includes(String(p?.subscription_open||'').toLowerCase().trim());
+  if(open)return true;
   return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
 }
 function subscriptionAccountingStatus(p,payments){
@@ -960,7 +963,11 @@ async function loadActiveSubscriptions(){
     list.innerHTML=''; if(count)count.textContent='Errore'; return;
   }
 
-  const profiles=(pr.data||[]).filter(p=>isSubscriptionCurrentlyActive(p));
+  const clientRoles=['client','cliente','user','utente'];
+  const profiles=(pr.data||[]).filter(p=>{
+    const role=String(p.role||'').toLowerCase().trim();
+    return clientRoles.includes(role) && isSubscriptionCurrentlyActive(p);
+  });
   const ids=profiles.map(p=>p.id).filter(Boolean);
   let payments=[];
   if(ids.length){

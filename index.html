@@ -1211,6 +1211,27 @@ async function openMedicalCertificate(path){
  if(r.error){alert('Impossibile aprire il certificato: '+r.error.message);return;}
  window.open(r.data.signedUrl,'_blank','noopener');
 }
+async function sendPaymentRegisteredNotification(profileId, amount, paidFrom, paidTo){
+  try{
+    if(!profileId || amount===null || amount===undefined) return {ok:false,skipped:true};
+    const {data:{session}}=await db.auth.getSession();
+    if(!session?.access_token) return {ok:false,skipped:true};
+    const title='Pagamento ricevuto';
+    const body=`Abbiamo registrato il tuo pagamento di € ${Number(amount).toFixed(2).replace('.',',')} per il periodo ${paymentDateIT(paidFrom)} → ${paymentDateIT(paidTo)}.`;
+    const r=await fetch(SUPABASE_URL+'/functions/v1/send-web-push',{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},
+      body:JSON.stringify({title,body,target:'selected',recipient_user_ids:[String(profileId)]})
+    });
+    const out=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(out.error||out.message||'Errore invio notifica');
+    return {ok:true,sent:out.sent??0};
+  }catch(e){
+    console.warn('Notifica pagamento non inviata:',e);
+    return {ok:false,error:e?.message||String(e)};
+  }
+}
+
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
@@ -1261,6 +1282,10 @@ async function saveClientSheet(id){
    if(!(ph.data||[]).length){
      const ins=await db.from('subscription_payment_history').insert({profile_id:id,paid_from:paidFrom,paid_to:paidTo,amount:Number(subscriptionCost),note:'Pagamento abbonamento'}).select('id').maybeSingle();
      if(ins.error){if(msg){msg.textContent='Cliente salvato, ma pagamento non registrato nello storico: '+ins.error.message;msg.className='error';msg.style.display='block'}return}
+     // Dopo la registrazione del pagamento, invia una push solo al cliente interessato.
+     // Un eventuale errore della push non annulla il pagamento già registrato.
+     const pn=await sendPaymentRegisteredNotification(id,Number(subscriptionCost),paidFrom,paidTo);
+     if(msg && pn.ok) msg.textContent='Pagamento registrato e notifica inviata al cliente.';
    }
  }
  try{

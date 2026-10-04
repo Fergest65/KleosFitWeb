@@ -244,7 +244,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:240px"><option value="all">Tutti</option><option value="active">Attivi</option><option value="paid">Contabilità regolare</option><option value="check">Da verificare</option><option value="open">Open</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:240px"><option value="all">Tutti</option><option value="nonopen">Tutti tranne Open</option><option value="active">Attivi</option><option value="paid">Contabilità regolare</option><option value="check">Da verificare</option><option value="open">Open</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -985,6 +985,7 @@ function renderActiveSubscriptions(){
   let rows=activeSubscriptionsData.filter(p=>{
     const open=['true','1','si','sì','yes','open'].includes(String(p?.subscription_open||'').toLowerCase().trim());
     const active=isSubscriptionCurrentlyActive(p);
+    if(st==='nonopen' && open)return false;
     if(st==='active' && (!active || open))return false;
     if(st==='paid' && p._accounting!=='paid')return false;
     if(st==='check' && p._accounting==='paid')return false;

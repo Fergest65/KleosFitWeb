@@ -2610,37 +2610,63 @@ async function loadAdminClientPayments(profileId){
    const pr=await db.from('profiles').select('subscription_cost,subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
    if(pr.error)throw pr.error;
    const profile=pr.data||{};
-   const r=await db.from('subscription_payment_history').select('*').eq('profile_id',profileId).order('created_at',{ascending:false}).limit(500);
+   const r=await db.from('subscription_payment_history').select('*').eq('profile_id',profileId).order('created_at',{ascending:true}).limit(500);
    if(r.error)throw r.error;
    const rows=r.data||[];
-   const due=profile.subscription_cost==null?null:Number(profile.subscription_cost)||0;
+   const currentFrom=String(profile.subscription_paid_from||'').slice(0,10);
+   const currentTo=String(profile.subscription_paid_to||'').slice(0,10);
+   const currentKey=currentFrom+'|'+currentTo;
+   const currentDue=profile.subscription_cost==null?null:Number(profile.subscription_cost);
    const groups={};
    rows.forEach(x=>{
-     const from=String(x.paid_from||profile.subscription_paid_from||'').slice(0,10);
-     const to=String(x.paid_to||profile.subscription_paid_to||'').slice(0,10);
+     const from=String(x.paid_from||'').slice(0,10);
+     const to=String(x.paid_to||'').slice(0,10);
      const key=from+'|'+to;
      if(!groups[key])groups[key]={from,to,paid:0,rows:[]};
-     groups[key].paid+=Number(x.amount)||0; groups[key].rows.push(x);
+     groups[key].paid+=Number(x.amount)||0;
+     groups[key].rows.push(x);
    });
-   const groupRows=Object.values(groups);
-   if(!rows.length){
-     box.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Totale dovuto</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Totale pagato</span><b>€ 0,00</b></div><div class="sbTotal"><span>Residuo</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div></div><div class="muted" style="margin-top:12px">Nessun pagamento registrato.</div>`;
-     return;
-   }
-   const totalPaid=rows.reduce((a,x)=>a+(Number(x.amount)||0),0);
-   const totalDue=due==null?null:(groupRows.length>1?due*groupRows.length:due);
-   const totalRemaining=totalDue==null?null:Math.max(0,totalDue-totalPaid);
-   const status=totalRemaining===null?'DA VERIFICARE':totalRemaining<=0.005?'SALDATO':totalPaid>0?'PARZIALE':'NON PAGATO';
-   box.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Totale dovuto</span><b>${totalDue==null?'—':'€ '+totalDue.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Totale pagato</span><b>€ ${totalPaid.toFixed(2).replace('.',',')}</b></div><div class="sbTotal"><span>Residuo da pagare</span><b>${totalRemaining==null?'—':'€ '+totalRemaining.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Stato</span><b>${esc(status)}</b></div></div>
-   <div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Data</th><th>Periodo</th><th>Dovuto</th><th>Pagato</th><th>Residuo</th><th>Nota</th><th></th></tr></thead><tbody>${groupRows.map(g=>{
-     const rem=due==null?null:Math.max(0,due-g.paid);
-     return `<tr><td>${esc(g.rows[0]?.created_at?fmtDate(g.rows[0].created_at):'—')}</td><td>${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</td><td><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></td><td><b>€ ${g.paid.toFixed(2).replace('.',',')}</b></td><td><b>${rem==null?'—':'€ '+rem.toFixed(2).replace('.',',')}</b></td><td>${esc(g.rows.map(x=>x.note||'Pagamento').join(' · '))}</td><td>${g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');return `<div style="display:flex;gap:6px;justify-content:flex-end;margin:2px 0"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div>`}).join('')}</td></tr>`;
-   }).join('')}</tbody></table></div>`;
+   // Il dovuto è noto con certezza per il periodo corrente. I vecchi periodi
+   // vengono comunque mantenuti separati, ma senza inventare un dovuto che non è memorizzato.
+   if(currentKey!=='|' && !groups[currentKey])groups[currentKey]={from:currentFrom,to:currentTo,paid:0,rows:[]};
+   const groupRows=Object.values(groups).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
+   const fmtMoney=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
+   const statusFor=(due,paid)=>due==null?'DOVUTO NON DISPONIBILE':(due-paid<=0.005?'SALDATO':paid>0?'PARZIALE':'NON PAGATO');
+   const badge=(st)=>st==='SALDATO'?'<span class="pill" style="background:#c6ff35;color:#111">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5c5c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
+   const totalPaidCurrent=(groups[currentKey]?.paid||0);
+   const currentRemaining=currentDue==null?null:Math.max(0,currentDue-totalPaidCurrent);
+   const currentStatus=statusFor(currentDue,totalPaidCurrent);
+   box.innerHTML=`<div class="paymentSummary">
+     <div class="sbRow"><span>Dovuto periodo corrente</span><b>${currentDue==null?'—':fmtMoney(currentDue)}</b></div>
+     <div class="sbRow"><span>Totale acconti/pagamenti</span><b>${fmtMoney(totalPaidCurrent)}</b></div>
+     <div class="sbTotal"><span>Residuo</span><b>${currentRemaining==null?'—':fmtMoney(currentRemaining)}</b></div>
+     <div class="sbRow"><span>Stato</span><b>${badge(currentStatus)}</b></div>
+   </div>
+   <div class="muted" style="margin-top:14px;font-weight:700">Dovuti e relativi movimenti</div>
+   <div style="margin-top:8px">${groupRows.length?groupRows.map(g=>{
+      const key=g.from+'|'+g.to;
+      const isCurrent=key===currentKey;
+      const due=isCurrent?currentDue:null;
+      const rem=due==null?null:Math.max(0,due-g.paid);
+      const st=statusFor(due,g.paid);
+      return `<div class="card" style="margin-top:10px;padding:14px;border:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div><strong>DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')}</strong><div class="muted">Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}${isCurrent?' · Periodo corrente':''}</div></div>
+          <div>${badge(st)}</div>
+        </div>
+        <div class="paymentSummary" style="margin-top:10px">
+          <div class="sbRow"><span>Dovuto</span><b>${due==null?'—':fmtMoney(due)}</b></div>
+          <div class="sbRow"><span>Pagato / acconti</span><b>${fmtMoney(g.paid)}</b></div>
+          <div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div>
+        </div>
+        <div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>
+        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(x.note||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(x.note||'Pagamento')}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
+      </div>`;
+   }).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div>`;
  }catch(e){
    box.innerHTML='<div class="error" style="display:block">Impossibile leggere lo storico pagamenti: '+esc(e?.message||e)+'</div>';
  }
 }
-
 function closePaymentEditor(profileId){
   closeModal();
   setTimeout(()=>openClientSheet(profileId),50);
@@ -2658,7 +2684,7 @@ async function openPaymentEditor(profileId,paymentId=''){
      if(r.error||!r.data){alert(r.error?.message||'Pagamento non trovato.');return;}
      row=r.data;
    }
-   const hist=await db.from('subscription_payment_history').select('amount,paid_from,paid_to').eq('profile_id',profileId).limit(500);
+   const hist=await db.from('subscription_payment_history').select('id,amount,paid_from,paid_to').eq('profile_id',profileId).limit(500);
    if(hist.error)throw hist.error;
    const from=String(row?.paid_from||profile?.subscription_paid_from||'').slice(0,10);
    const to=String(row?.paid_to||profile?.subscription_paid_to||'').slice(0,10);
@@ -2753,23 +2779,29 @@ async function loadClientPayments(){
  if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento storico...';count.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
- const pr=await db.from('profiles').select('subscription_cost,subscription_paid_from,subscription_paid_to').eq('id',currentUser.id).maybeSingle();
- if(pr.error){err.textContent='Impossibile leggere il totale dovuto.';err.style.display='block';return}
- const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
- if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
- const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
- const due=pr.data?.subscription_cost==null?null:Number(pr.data.subscription_cost)||0;
- const totalPaid=rows.reduce((a,x)=>a+(Number(x.amount)||0),0);
- const totalDue=due==null?null:due;
- const remaining=totalDue==null?null:Math.max(0,totalDue-totalPaid);
- const status=remaining===null?'DA VERIFICARE':remaining<=0.005?'SALDATO':totalPaid>0?'PARZIALE':'NON PAGATO';
- if(!rows.length){
-   list.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Totale dovuto</span><b>${totalDue==null?'—':'€ '+totalDue.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Totale pagato</span><b>€ 0,00</b></div><div class="sbTotal"><span>Residuo da pagare</span><b>${totalDue==null?'—':'€ '+totalDue.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Stato</span><b>${status}</b></div></div><div class="muted" style="margin-top:12px">Nessun pagamento presente nello storico.</div>`;
-   return;
- }
- list.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Totale dovuto</span><b>${totalDue==null?'—':'€ '+totalDue.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Totale pagato</span><b>€ ${totalPaid.toFixed(2).replace('.',',')}</b></div><div class="sbTotal"><span>Residuo da pagare</span><b>${remaining==null?'—':'€ '+remaining.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Stato</span><b>${status}</b></div></div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo pagato</th><th>Nota</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(fmtDate(x.created_at))}</td><td>${esc(x.paid_from?fmtDateIT(x.paid_from):'—')} → ${esc(x.paid_to?fmtDateIT(x.paid_to):'—')}</td><td><b>€ ${Number(x.amount||0).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${esc(x.note||'Pagamento')}</span></td></tr>`).join('')}</tbody></table></div>`;
+ try{
+   const pr=await db.from('profiles').select('subscription_cost,subscription_paid_from,subscription_paid_to').eq('id',currentUser.id).maybeSingle();
+   if(pr.error)throw pr.error;
+   const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:true}).limit(100);
+   if(r.error)throw r.error;
+   const rows=r.data||[];
+   count.textContent=rows.length+(rows.length===1?' movimento':' movimenti');
+   const due=pr.data?.subscription_cost==null?null:Number(pr.data.subscription_cost);
+   const currentFrom=String(pr.data?.subscription_paid_from||'').slice(0,10), currentTo=String(pr.data?.subscription_paid_to||'').slice(0,10), currentKey=currentFrom+'|'+currentTo;
+   const groups={};
+   rows.forEach(x=>{const f=String(x.paid_from||'').slice(0,10),t=String(x.paid_to||'').slice(0,10),k=f+'|'+t;if(!groups[k])groups[k]={from:f,to:t,paid:0,rows:[]};groups[k].paid+=Number(x.amount)||0;groups[k].rows.push(x);});
+   if(currentKey!=='|'&&!groups[currentKey])groups[currentKey]={from:currentFrom,to:currentTo,paid:0,rows:[]};
+   const groupRows=Object.values(groups).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
+   const fmtMoney=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
+   const statusFor=(d,p)=>d==null?'DOVUTO NON DISPONIBILE':(d-p<=0.005?'SALDATO':p>0?'PARZIALE':'NON PAGATO');
+   const currentPaid=groups[currentKey]?.paid||0;
+   const currentRemaining=due==null?null:Math.max(0,due-currentPaid);
+   const currentStatus=statusFor(due,currentPaid);
+   list.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Dovuto periodo corrente</span><b>${due==null?'—':fmtMoney(due)}</b></div><div class="sbRow"><span>Acconti / pagamenti</span><b>${fmtMoney(currentPaid)}</b></div><div class="sbTotal"><span>Residuo</span><b>${currentRemaining==null?'—':fmtMoney(currentRemaining)}</b></div><div class="sbRow"><span>Stato</span><b>${esc(currentStatus)}</b></div></div>
+   <div class="muted" style="margin-top:14px;font-weight:700">Dovuti e relativi movimenti</div>
+   <div style="margin-top:8px">${groupRows.length?groupRows.map(g=>{const isCurrent=g.from+'|'+g.to===currentKey,d=isCurrent?due:null,rem=d==null?null:Math.max(0,d-g.paid),st=statusFor(d,g.paid);return `<div class="card" style="margin-top:10px;padding:14px;border:1px solid var(--line)"><div><strong>DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')}</strong><div class="muted">Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</div></div><div class="paymentSummary" style="margin-top:10px"><div class="sbRow"><span>Dovuto</span><b>${d==null?'—':fmtMoney(d)}</b></div><div class="sbRow"><span>Pagato / acconti</span><b>${fmtMoney(g.paid)}</b></div><div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div><div class="sbRow"><span>Stato</span><b>${esc(st)}</b></div></div><div style="margin-top:12px;font-weight:700">Acconti e saldo relativi a questo dovuto</div>${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th></tr></thead><tbody>'+g.rows.map(x=>`<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(x.note||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(x.note||'Pagamento')}</td></tr>`).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun movimento registrato.</div>'}</div>`}).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div><div class="muted" style="margin-top:14px">Ogni acconto è collegato al periodo di dovuto indicato nella sua registrazione.</div>`;
+ }catch(e){err.textContent='Impossibile leggere lo storico pagamenti: '+(e?.message||e);err.style.display='block';list.innerHTML='';count.textContent='';}
 }
-
 async function loadAdmin(){
  const list=document.getElementById('adminList'),err=document.getElementById('adminError'),count=document.getElementById('adminCount');if(!list)return;
  err.style.display='none';list.innerHTML='Caricamento utenti...';

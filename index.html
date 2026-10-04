@@ -758,14 +758,11 @@ async function loadDashboardAlerts(){
  box.style.display='none'; box.innerHTML='';
  try{
    let people=[];
+   // Le notifiche/scadenze della Dashboard sono personali: riguardano esclusivamente il cliente loggato.
    if(isClientRole() && currentUser?.id){
      const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
      if(r.error||!r.data)return;
      people=[r.data];
-   }else if(isSuperuserRole()){
-     const r=await db.from('profiles').select('*').limit(500);
-     if(r.error)return;
-     people=(r.data||[]).filter(p=>!['admin','administrator','amministratore','superuser'].includes(String(p.role||'').toLowerCase().trim()));
    }else return;
    const ids=people.map(p=>p.id).filter(Boolean);
    let payments=[];

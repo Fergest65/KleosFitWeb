@@ -698,10 +698,13 @@ async function sendAdminNotification(){
 async function loadProfile(){
  const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
  if(!r.error) profile=r.data;
+ expiryPopupShownForUser=false;
  document.getElementById('role').textContent=(profile?.role||'Utente').toString();
  document.querySelectorAll('.clientOnlyNav').forEach(x=>x.style.display=isClientRole()?'block':'none');
  document.querySelectorAll('.superuserOnlyNav').forEach(x=>x.style.display=isSuperuserRole()?'block':'none');
  show('dashboard',document.querySelector('.nav button'));
+ // Controllo indipendente: non dipende dal caricamento delle altre sezioni della dashboard.
+ setTimeout(()=>refreshClientExpiryAlerts(true),50);
 }
 function show(v,el){
  if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
@@ -794,29 +797,38 @@ async function showExpiryPopup(alerts){
   const body=alerts.map(a=>`<div style="padding:12px 14px;margin:8px 0;border:1px solid ${a.state==='expired'?'#ff5c5c':'#ffb020'};border-radius:10px"><b>${esc(a.name)}</b><div style="margin-top:5px;font-weight:900">${esc(a.label)}</div><div class="muted" style="margin-top:4px">Scadenza: ${esc(fmtDateIT(a.date))} · ${esc(a.text)}</div></div>`).join('');
   openModal(`<div class="modalhead"><h2>Avviso scadenze</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div>${body}</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">HO CAPITO</button></div>`);
 }
+let expiryPopupShownForUser=false;
 async function refreshClientExpiryAlerts(showPopup=true){
+  // Gli avvisi personali sono esclusivi dei clienti: admin/superuser non li vedono.
   if(!currentUser?.id || isSuperuserRole())return;
-  // Mostra subito gli avvisi usando il profilo già caricato.
-  let alerts=[];
   try{
-    const p=profile||{};
-    const add=(name,date)=>{const info=expiryInfo(date);if(info)alerts.push({name,date:String(date).slice(0,10),...info})};
-    add('Abbonamento',currentSubscriptionExpiry(p));
-    add('Certificato medico',p.medical_certificate_expiry_date);
-    add('Assicurazione',p.insurance_expiry_date);
+    const alerts=await getClientExpiryAlerts();
     renderDashboardExpiryAlerts(alerts);
-    if(showPopup && alerts.length)setTimeout(()=>showExpiryPopup(alerts),350);
-  }catch(e){}
-  // Poi aggiorna dal database senza rimuovere gli avvisi già mostrati in caso di errore.
-  try{
-    const fresh=await getClientExpiryAlerts();
-    renderDashboardExpiryAlerts(fresh);
-    if(showPopup && fresh.length)setTimeout(()=>showExpiryPopup(fresh),350);
-  }catch(e){}
+    if(showPopup && alerts.length && !expiryPopupShownForUser){
+      expiryPopupShownForUser=true;
+      setTimeout(()=>showExpiryPopup(alerts),200);
+    }
+  }catch(e){
+    // In caso di errore DB mantieni comunque gli eventuali dati già presenti nel profilo.
+    try{
+      const p=profile||{}, alerts=[];
+      const add=(name,date)=>{const info=expiryInfo(date);if(info)alerts.push({name,date:String(date).slice(0,10),...info})};
+      add('Abbonamento',currentSubscriptionExpiry(p));
+      add('Certificato medico',p.medical_certificate_expiry_date);
+      add('Assicurazione',p.insurance_expiry_date);
+      renderDashboardExpiryAlerts(alerts);
+      if(showPopup && alerts.length && !expiryPopupShownForUser){
+        expiryPopupShownForUser=true;
+        setTimeout(()=>showExpiryPopup(alerts),200);
+      }
+    }catch(_e){}
+  }
 }
 
 
 async function fillDashboard(){
+ // Renderizza gli avvisi subito, senza attendere workout/progressi o altre query.
+ refreshClientExpiryAlerts(true);
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
@@ -859,7 +871,6 @@ async function fillDashboard(){
    if(w) w.textContent='—';
    if(d) d.textContent='Prima rilevazione';
  }
- await refreshClientExpiryAlerts(true);
 }
 
 

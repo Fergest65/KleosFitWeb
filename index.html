@@ -2329,15 +2329,27 @@ async function openProgressAdminClient(id){
 }
 
 async function openProgressEditor(clientId, entryId=''){
- if(!isSuperuserRole())return;
- const p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId)); if(!p)return;
+ if(!isSuperuserRole()){alert('Funzione disponibile solo per amministratore/superuser.');return;}
+ let p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId));
+ if(!p){
+   const pr=await db.from('profiles').select('*').eq('id',String(clientId)).maybeSingle();
+   if(pr.error||!pr.data){alert('Cliente non trovato.');return;}
+   p=pr.data;
+ }
  let row={};
- if(entryId){const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).maybeSingle();if(r.error||!r.data){alert('Misurazione non trovata.');return}row=r.data}
- const c=document.getElementById('modalContent'); if(!c)return;
+ if(entryId){
+   const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).maybeSingle();
+   if(r.error||!r.data){alert('Misurazione non trovata: '+(r.error?.message||''));return}
+   row=r.data;
+ }
+ const c=document.getElementById('modalContent'); if(!c){alert('Finestra modifica non disponibile.');return;}
  const val=names=>{const v=firstVal(row,names,'');return v==null?'':String(v).replace('.',',')};
  const dateVal=String(progressDate(row)||'').slice(0,10)||isoLocal(new Date());
  c.innerHTML=`<div class="top"><div><div class="title">${entryId?'Modifica':'Nuova'} misurazione</div><div class="sub">${esc(profileDisplayName(p)||'Cliente')}</div></div><button class="btn secondary" type="button" onclick="closeModal()">Chiudi</button></div><div id="progressEditorError" class="error"></div><div class="inputrow" style="margin-top:14px"><div style="flex:1"><label>Data rilevazione</label><input id="progressEditDate" type="date" value="${esc(dateVal)}"></div></div><div class="clientSheetGrid" style="margin-top:14px">${progressDefs.map(([label,names,unit])=>`<div><label>${esc(label)} ${unit}</label><input id="progressEdit_${names[0]}" inputmode="decimal" placeholder="—" value="${esc(val(names))}"></div>`).join('')}<div class="wide"><label>Note</label><textarea id="progressEditNotes" rows="3" placeholder="Note sulla rilevazione">${esc(firstVal(row,['notes','note'],''))}</textarea></div></div><div class="rowactions" style="margin-top:18px"><button class="btn" type="button" onclick="saveProgressEntry('${clientId}','${entryId}')">Salva misurazione</button><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button></div>`;
- const modal=document.getElementById('modal'); modal.classList.add('open');modal.style.display='grid';modal.style.zIndex='999999';
+ const modal=document.getElementById('modal');
+ modal.classList.add('open');
+ modal.style.display='grid';
+ modal.style.zIndex='999999';
 }
 async function saveProgressEntry(clientId,entryId=''){
  if(!isSuperuserRole())return;

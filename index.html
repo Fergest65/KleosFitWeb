@@ -353,9 +353,11 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('progressAdmin',this)">Progressi</button>
  <button type="button" onclick="show('notifications')">Notifiche</button>
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
+ <button type="button" onclick="show('suspendedClients',this)">Clienti sospesi</button>
  <button type="button" onclick="show('activeSubscriptions',this)">Elenco abbonamenti</button>
  <button type="button" onclick="show('circuits')">Circuiti</button>
 </div>`,
+suspendedClients:`<div class="top"><div><div class="title">Clienti sospesi</div><div class="sub">Clienti messi in pausa e temporaneamente esclusi dalla gestione ordinaria.</div></div><button class="btn" type="button" onclick="loadSuspendedClients()">Aggiorna</button></div><div class="card"><div id="suspendedClientError" class="error"></div><div id="suspendedClientCount" class="muted">Caricamento...</div><div id="suspendedClientList" style="margin-top:12px">Caricamento...</div></div>`,
 subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti</div><div class="sub">Gestisci i prezzi predefiniti che possono essere selezionati nella scheda anagrafica del cliente.</div></div><button class="btn" type="button" onclick="openSubscriptionPriceModal()">＋ Nuovo prezzo</button></div>
 <div class="card"><div id="subscriptionPricesError" class="error"></div><div id="subscriptionPricesStatus" class="muted">Caricamento prezzi...</div><div id="subscriptionPricesList" style="margin-top:14px">Caricamento...</div></div>`,
 courseCatalog:`<div class="top"><div><div class="title">Gestione corsi</div><div class="sub">Gestisci i corsi disponibili come abbonamento base o come corso aggiuntivo Plus.</div></div><button class="btn" type="button" onclick="openCourseCatalogModal()">＋ Nuovo corso</button></div>
@@ -721,6 +723,7 @@ function show(v,el){
  if(v==='clients') loadClients();
  if(v==='anagrafica') loadAnagrafica();
  if(v==='activeSubscriptions') loadActiveSubscriptions();
+ if(v==='suspendedClients') loadSuspendedClients();
  if(v==='anagraficaClient') loadClientAnagrafica();
  if(v==='slotAdmin') loadSlotAdmin();
  if(v==='notifications'){loadNotifications();notifRecipientUsers=[];notifSelectedRecipientIds.clear();}
@@ -957,6 +960,7 @@ async function loadActiveSubscriptions(){
   // esclusivamente da renderActiveSubscriptions().
   const adminRoles=['admin','administrator','amministratore','superuser'];
   const profiles=(pr.data||[]).filter(p=>{
+    if(isClientSuspended(p)) return false;
     const role=String(p.role||'').toLowerCase().trim();
     return !adminRoles.includes(role);
   });
@@ -1038,15 +1042,39 @@ async function loadClients(){
  err.style.display='none';list.innerHTML='Caricamento clienti...';
  const r=await db.from('profiles').select('*').limit(500);
  if(r.error){err.textContent=r.error.message;err.style.display='block';count.textContent='Errore';list.innerHTML='';return}
- clientsData=r.data||[];renderClients(clientsData);
+ clientsData=(r.data||[]).filter(p=>!isClientSuspended(p));renderClients(clientsData);
 }
 function renderClients(rows){
  const list=document.getElementById('clientList'),count=document.getElementById('clientCount');if(!list)return;
  count.textContent=rows.length+' profili';
  if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th>Ruolo</th><th></th></tr></thead><tbody>'+
- rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina</button></div></td></tr>`}).join('')+
+ rows.map(p=>{const name=profileDisplayName(p);return `<tr><td><b>${esc(name)}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,['phone','phone_number','mobile']))}</td><td>${esc(pick(p,['member_card_number','member_card','card_number','tessera','member_code']))}</td><td><span class="pill">${esc(pick(p,['role']))}</span></td><td><div class="rowactions"><button class="btn secondary mini sheetBtn" onclick="openClientSheet('${p.id}')">Scheda cliente</button><button class="btn mini" onclick="openAdminQr('${p.id}')">QR Code</button><button type="button" class="btn mini" style="background:#7b1fa2;color:#fff" onclick="suspendClient('${p.id}')">Sospendi</button><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina</button></div></td></tr>`}).join('')+
  '</tbody></table></div>';
+}
+function isClientSuspended(p){ return p && (p.account_suspended===true || p.account_suspended===1 || ["true","1","si","sì","yes"].includes(String(p.account_suspended||"").toLowerCase().trim())); }
+async function suspendClient(id){
+ const p=(clientsData||[]).find(x=>String(x.id)===String(id)); if(!p)return;
+ if(!isSuperuserRole()){alert("Operazione riservata ad Administrator/Superuser.");return;}
+ const name=profileDisplayName(p)||p.email||"questo cliente";
+ if(!confirm("Sospendere "+name+"?\n\nIl cliente verrà tolto dalla gestione ordinaria e resterà disponibile nel menu Clienti sospesi."))return;
+ const r=await db.from("profiles").update({account_suspended:true}).eq("id",String(id));
+ if(r.error){alert("Impossibile sospendere il cliente.\n\n"+r.error.message+"\n\nSe la colonna account_suspended non esiste, esegui il SQL indicato nelle istruzioni.");return;}
+ clientsData=(clientsData||[]).filter(x=>String(x.id)!==String(id)); renderClients(clientsData);
+}
+async function loadSuspendedClients(){
+ const list=document.getElementById("suspendedClientList"),count=document.getElementById("suspendedClientCount"),err=document.getElementById("suspendedClientError"); if(!list)return;
+ err.style.display="none"; list.innerHTML="Caricamento...";
+ const r=await db.from("profiles").select("*").eq("account_suspended",true).limit(500);
+ if(r.error){err.textContent=r.error.message;err.style.display="block";count.textContent="Errore";list.innerHTML="";return;}
+ const rows=r.data||[]; count.textContent=rows.length+" clienti sospesi";
+ if(!rows.length){list.innerHTML='<div class="muted">Nessun cliente sospeso.</div>';return;}
+ list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Telefono</th><th>Tessera</th><th></th></tr></thead><tbody>'+rows.map(p=>`<tr><td><b>${esc(profileDisplayName(p))}</b></td><td>${esc(profileEmail(p))}</td><td>${esc(pick(p,["phone","phone_number","mobile"]))}</td><td>${esc(pick(p,["member_card_number","member_card","card_number","tessera","member_code"]))}</td><td><div class="rowactions"><button class="btn secondary mini" onclick="openClientSheet('${p.id}')">Scheda</button><button type="button" class="btn mini" style="background:#c6ff35;color:#111" onclick="reactivateClient('${p.id}')">Riattiva</button></div></td></tr>`).join('')+'</tbody></table></div>';
+}
+async function reactivateClient(id){
+ const r=await db.from("profiles").update({account_suspended:false}).eq("id",String(id));
+ if(r.error){alert("Impossibile riattivare il cliente.\n\n"+r.error.message);return;}
+ loadSuspendedClients(); loadClients();
 }
 async function deleteClientCompletely(id){
  const p=(clientsData||[]).find(x=>String(x.id)===String(id));

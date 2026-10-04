@@ -762,14 +762,17 @@ function expiryInfo(expiry){
   return {state:'expired',label:'SCADUTO',days:Math.abs(diff),text:'Scaduto da '+Math.abs(diff)+' '+(Math.abs(diff)===1?'giorno':'giorni')};
 }
 function currentSubscriptionExpiry(p){
-  if(!p || p.subscription_open===true || ['true','1','si','sì','yes','open'].includes(String(p.subscription_open||'').toLowerCase())) return null;
+  if(!p)return null;
   const to=String(p.subscription_paid_to||'').slice(0,10);
   const from=String(p.subscription_paid_from||'').slice(0,10);
   if(!to)return null;
   const t=new Date();t.setHours(12,0,0,0);
   const td=isoLocal(t);
-  // Un rinnovo futuro non sostituisce ancora il periodo corrente.
-  if(from && from>td)return null;
+  // Se il periodo è futuro non è ancora iniziato: nessun avviso.
+  // Se invece la data di fine è passata, l'avviso deve rimanere visibile
+  // anche quando subscription_open/subscription_active indicano NON ATTIVO,
+  // fino a quando il profilo viene effettivamente rinnovato con nuove date.
+  if(from && from>td && to>=from)return null;
   return to;
 }
 async function getClientExpiryAlerts(){

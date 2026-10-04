@@ -2314,7 +2314,7 @@ async function openProgressAdminClient(id){
  if(!isSuperuserRole())return;
  const p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(id));
  const box=document.getElementById('progressAdminDetail'); if(!box||!p)return;
- box.innerHTML=`<div class="card"><div class="top" style="margin-bottom:16px"><div><div class="title" style="font-size:22px">${esc(profileDisplayName(p)||'Cliente')}</div><div class="sub">Storico misurazioni corporee</div></div></div><div id="progressAdminError" class="error"></div><div id="progressAdminCount" class="muted">Caricamento...</div><div id="progressAdminCards" class="progressGrid" style="margin-top:14px"></div><div style="margin-top:18px"><h2>Storico misurazioni</h2><div id="progressAdminTable" class="progressTableWrap">Caricamento...</div></div></div>`;
+ box.innerHTML=`<div class="card"><div class="top" style="margin-bottom:16px"><div><div class="title" style="font-size:22px">${esc(profileDisplayName(p)||'Cliente')}</div><div class="sub">Storico misurazioni corporee</div></div><button class="btn" type="button" onclick="openProgressEditor('${p.id}')">＋ Nuova misurazione</button></div><div id="progressAdminError" class="error"></div><div id="progressAdminCount" class="muted">Caricamento...</div><div id="progressAdminCards" class="progressGrid" style="margin-top:14px"></div><div style="margin-top:18px"><h2>Storico misurazioni</h2><div id="progressAdminTable" class="progressTableWrap">Caricamento...</div></div></div>`;
  box.scrollIntoView({behavior:'smooth',block:'start'});
  const err=document.getElementById('progressAdminError'),count=document.getElementById('progressAdminCount'),cards=document.getElementById('progressAdminCards'),table=document.getElementById('progressAdminTable');
  const r=await db.from('progress_entries').select('*').eq('user_id',String(id)).limit(200);
@@ -2324,8 +2324,35 @@ async function openProgressAdminClient(id){
  if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata per questo cliente.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return;}
  const latest=rows[0],previous=rows[1]||null;
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend">↗</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
- const cols=['Data',...progressDefs.map(x=>x[0]),'Note'];
- table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
+ const cols=['Data',...progressDefs.map(x=>x[0]),'Note','Azioni'];
+ table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td><td><button class="btn mini secondary" type="button" onclick="openProgressEditor('${r.id}','${id}')">Modifica</button> <button class="btn mini" type="button" style="background:#c62828;color:#fff" onclick="deleteProgressEntry('${r.id}','${id}')">Elimina</button></td></tr>`).join('')+'</tbody></table>';
+}
+
+async function openProgressEditor(clientId, entryId=''){
+ if(!isSuperuserRole())return;
+ const p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId)); if(!p)return;
+ let row={};
+ if(entryId){const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).maybeSingle();if(r.error||!r.data){alert('Misurazione non trovata.');return}row=r.data}
+ const c=document.getElementById('modalContent'); if(!c)return;
+ const val=names=>{const v=firstVal(row,names,'');return v==null?'':String(v).replace('.',',')};
+ const dateVal=String(progressDate(row)||'').slice(0,10)||isoLocal(new Date());
+ c.innerHTML=`<div class="top"><div><div class="title">${entryId?'Modifica':'Nuova'} misurazione</div><div class="sub">${esc(profileDisplayName(p)||'Cliente')}</div></div><button class="btn secondary" type="button" onclick="closeModal()">Chiudi</button></div><div id="progressEditorError" class="error"></div><div class="inputrow" style="margin-top:14px"><div style="flex:1"><label>Data rilevazione</label><input id="progressEditDate" type="date" value="${esc(dateVal)}"></div></div><div class="clientSheetGrid" style="margin-top:14px">${progressDefs.map(([label,names,unit])=>`<div><label>${esc(label)} ${unit}</label><input id="progressEdit_${names[0]}" inputmode="decimal" placeholder="—" value="${esc(val(names))}"></div>`).join('')}<div class="wide"><label>Note</label><textarea id="progressEditNotes" rows="3" placeholder="Note sulla rilevazione">${esc(firstVal(row,['notes','note'],''))}</textarea></div></div><div class="rowactions" style="margin-top:18px"><button class="btn" type="button" onclick="saveProgressEntry('${clientId}','${entryId}')">Salva misurazione</button><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button></div>`;
+ const modal=document.getElementById('modal'); modal.classList.add('open');modal.style.display='grid';modal.style.zIndex='999999';
+}
+async function saveProgressEntry(clientId,entryId=''){
+ if(!isSuperuserRole())return;
+ const err=document.getElementById('progressEditorError');if(err){err.style.display='none';err.textContent=''}
+ const date=document.getElementById('progressEditDate')?.value||'';if(!date){if(err){err.textContent='Inserisci la data della rilevazione.';err.style.display='block'}return}
+ const payload={user_id:String(clientId),date};
+ progressDefs.forEach(([label,names])=>{const el=document.getElementById('progressEdit_'+names[0]);if(!el)return;const raw=String(el.value||'').trim().replace(',','.');payload[names[0]]=raw===''?null:Number(raw)});
+ const notes=String(document.getElementById('progressEditNotes')?.value||'').trim();payload.notes=notes||null;
+ const r=entryId?await db.from('progress_entries').update(payload).eq('id',String(entryId)).eq('user_id',String(clientId)):await db.from('progress_entries').insert(payload);
+ if(r.error){if(err){err.textContent='Salvataggio non riuscito: '+r.error.message;err.style.display='block'}return}
+ closeModal();await openProgressAdminClient(clientId);
+}
+async function deleteProgressEntry(entryId,clientId){
+ if(!isSuperuserRole())return;if(!confirm('Eliminare definitivamente questa rilevazione?'))return;
+ const r=await db.from('progress_entries').delete().eq('id',String(entryId)).eq('user_id',String(clientId));if(r.error){alert('Eliminazione non riuscita: '+r.error.message);return}await openProgressAdminClient(clientId);
 }
 
 async function loadClientProgress(){

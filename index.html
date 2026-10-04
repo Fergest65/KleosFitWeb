@@ -1167,7 +1167,20 @@ async function saveClientSheet(id){
  if(!document.getElementById('cpOpen')?.value || document.getElementById('cpOpen')?.value!=='true'){
    if(paidFrom && paidTo){
      if(paidFrom>paidTo){if(msg){msg.textContent='Periodo abbonamento non valido: Dal deve essere precedente o uguale ad Al.';msg.className='error';msg.style.display='block'}return;}
-     try{const ov=await checkPaymentOverlap(id,paidFrom,paidTo,null);if(ov){if(msg){msg.textContent=`Periodo pagamento sovrapposto a ${paymentDateIT(ov.paid_from)} → ${paymentDateIT(ov.paid_to)}. Inserimento/aggiornamento bloccato.`;msg.className='error';msg.style.display='block'}return;}}catch(e){if(msg){msg.textContent='Impossibile verificare le sovrapposizioni dei pagamenti: '+(e.message||e);msg.className='error';msg.style.display='block'}return;}
+     try{
+       // Se il periodo/importo è già presente nello storico, non è una sovrapposizione:
+       // è il pagamento già associato all'abbonamento e il salvataggio della scheda deve proseguire.
+       let samePayment=null;
+       if(subscriptionCost!==null && Number.isFinite(Number(subscriptionCost))){
+         const ex=await db.from('subscription_payment_history').select('id,paid_from,paid_to,amount').eq('profile_id',id).eq('paid_from',paidFrom).eq('paid_to',paidTo).eq('amount',Number(subscriptionCost)).limit(1);
+         if(ex.error)throw ex.error;
+         samePayment=(ex.data||[])[0]||null;
+       }
+       if(!samePayment){
+         const ov=await checkPaymentOverlap(id,paidFrom,paidTo,null);
+         if(ov){if(msg){msg.textContent=`Periodo pagamento sovrapposto a ${paymentDateIT(ov.paid_from)} → ${paymentDateIT(ov.paid_to)}. Inserimento/aggiornamento bloccato.`;msg.className='error';msg.style.display='block'}return;}
+       }
+     }catch(e){if(msg){msg.textContent='Impossibile verificare le sovrapposizioni dei pagamenti: '+(e.message||e);msg.className='error';msg.style.display='block'}return;}
    }
  }
  const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:(()=>{const el=document.getElementById('cpSubType');const v=el?.value||'';if(v==='__custom__')return 'Personalizzato';const pr=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(v));return pr?.name||valOrNull('cpSubType')})(),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:paidFrom,subscription_paid_to:paidTo,subscription_cost:subscriptionCost,subscription_active:computeSubscriptionActive(paidFrom,paidTo),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};

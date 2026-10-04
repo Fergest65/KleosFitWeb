@@ -2308,21 +2308,23 @@ async function cancelMyBooking(bookingId){
 }
 
 function progressNum(v){if(v===null||v===undefined||v==='')return null;const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:null}
-function progressDate(r){return firstVal(r,['date','measurement_date','measured_at','created_at','recorded_at','rilevazione_date'],null)}
+function progressDate(r){return firstVal(r,['entry_date','date','measurement_date','measured_at','recorded_at','rilevazione_date','created_at'],null)}
 function progressField(r,names){return progressNum(firstVal(r,names,null))}
 function progressUnit(label){return label==='Peso'?' kg':' cm'}
 function progressChange(latest,previous,label){if(latest===null)return '';if(previous===null)return '<div class="progressFirst">Prima rilevazione</div>';const d=latest-previous;const sign=d>0?'+':d<0?'':'';return `<div class="progressChange">${sign}${d.toFixed(1).replace('.',',')}${progressUnit(label)}</div>`}
+// Colonne REALI della tabella public.progress_entries.
+// Non usare nomi generici (arm, waist, ecc.): Supabase deve ricevere esattamente questi nomi.
 const progressDefs=[
- ['Peso',['weight','peso','body_weight','weight_kg'],' kg'],
- ['Vita',['waist','vita'],' cm'],
- ['Petto',['chest','petto'],' cm'],
- ['Fianchi',['hips','fianchi','hip'],' cm'],
- ['Glutei',['glutes','glutei','buttocks'],' cm'],
- ['Braccio',['arm_circumference','arm','braccio'],' cm'],
- ['Coscia',['thigh','coscia'],' cm'],
- ['Polpaccio',['calf','polpaccio'],' cm'],
- ['Avambraccio',['forearm','avambraccio'],' cm'],
- ['Polso',['wrist','polso'],' cm']
+ ['Peso',['weight_kg','weight','peso','body_weight'],' kg'],
+ ['Vita',['waist_cm','waist','vita'],' cm'],
+ ['Petto',['chest_cm','chest','petto'],' cm'],
+ ['Fianchi',['hips_cm','hips','fianchi','hip'],' cm'],
+ ['Glutei',['glutes_cm','glutes','glutei','buttocks'],' cm'],
+ ['Braccio',['arm_cm','arm_circumference','arm','braccio'],' cm'],
+ ['Coscia',['thigh_cm','thigh','coscia'],' cm'],
+ ['Polpaccio',['calf_cm','calf','polpaccio'],' cm'],
+ ['Avambraccio',['forearm_cm','forearm','avambraccio'],' cm'],
+ ['Polso',['wrist_cm','wrist','polso'],' cm']
 ];
 async function loadProgressAdmin(){
  if(!isSuperuserRole())return;
@@ -2410,16 +2412,41 @@ async function saveProgressEntry(clientId,entryId=''){
  if(!isSuperuserRole())return;
  const err=document.getElementById('progressEditorError');if(err){err.style.display='none';err.textContent=''}
  const date=document.getElementById('progressEditDate')?.value||'';if(!date){if(err){err.textContent='Inserisci la data della rilevazione.';err.style.display='block'}return}
- const payload={user_id:String(clientId),date};
- progressDefs.forEach(([label,names])=>{const el=document.getElementById('progressEdit_'+names[0]);if(!el)return;const raw=String(el.value||'').trim().replace(',','.');payload[names[0]]=raw===''?null:Number(raw)});
+ // Mappatura ESATTA dello schema public.progress_entries.
+ const payload={
+   user_id:String(clientId),
+   entry_date:date,
+   weight_kg:null,
+   waist_cm:null,
+   chest_cm:null,
+   hips_cm:null,
+   glutes_cm:null,
+   arm_cm:null,
+   thigh_cm:null,
+   calf_cm:null,
+   forearm_cm:null,
+   wrist_cm:null,
+   notes:null
+ };
+ progressDefs.forEach(([label,names])=>{
+   const dbField=names[0], el=document.getElementById('progressEdit_'+dbField); if(!el)return;
+   const raw=String(el.value||'').trim().replace(',','.');
+   if(raw===''){payload[dbField]=null;return}
+   const n=Number(raw);
+   if(!Number.isFinite(n)){throw new Error('Valore non valido per '+label)}
+   payload[dbField]=n;
+ });
+ if(payload.weight_kg===null){if(err){err.textContent='Il peso è obbligatorio.';err.style.display='block'}return}
  const notes=String(document.getElementById('progressEditNotes')?.value||'').trim();payload.notes=notes||null;
  let r;
  if(entryId){
+   // La tabella ha una sola chiave primaria per la rilevazione: id.
    r=await db.from('progress_entries').update(payload).eq('id',String(entryId)).eq('user_id',String(clientId));
-   if(r.error){r=await db.from('progress_entries').update(payload).eq('entry_id',String(entryId)).eq('user_id',String(clientId));}
    if(!r.error && (!r.data || !r.data.length)){
-     const oldDate=String(progressAdminRowsById[String(entryId)]?.date||'');
-     if(oldDate) r=await db.from('progress_entries').update(payload).eq('user_id',String(clientId)).eq('date',oldDate);
+     const oldDate=String(progressAdminRowsById[String(entryId)]?.entry_date||'');
+     if(oldDate){
+       r=await db.from('progress_entries').update(payload).eq('id',String(entryId)).eq('user_id',String(clientId));
+     }
    }
  }else r=await db.from('progress_entries').insert(payload);
  if(r.error){if(err){err.textContent='Salvataggio non riuscito: '+r.error.message;err.style.display='block'}return}
@@ -2427,8 +2454,7 @@ async function saveProgressEntry(clientId,entryId=''){
 }
 async function deleteProgressEntry(entryId,clientId){
  if(!isSuperuserRole())return;if(!confirm('Eliminare definitivamente questa rilevazione?'))return;
- let r=await db.from('progress_entries').delete().eq('id',String(entryId)).eq('user_id',String(clientId));
- if(r.error) r=await db.from('progress_entries').delete().eq('entry_id',String(entryId)).eq('user_id',String(clientId));
+ const r=await db.from('progress_entries').delete().eq('id',String(entryId)).eq('user_id',String(clientId));
  if(r.error){alert('Eliminazione non riuscita: '+r.error.message);return}await openProgressAdminClient(clientId);
 }
 

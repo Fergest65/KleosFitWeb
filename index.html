@@ -2711,9 +2711,11 @@ async function savePaymentHistory(profileId,paymentId=''){
    if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
    else r=await db.from('subscription_payment_history').insert(payload).select('id').maybeSingle();
    if(r.error)throw r.error;
-   closeModal();
+   // Mantieni aperta la scheda cliente: aggiorna lo storico senza chiudere il modal.
    await loadAdminClientPayments(profileId);
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
+   // Dopo il refresh dell'elenco, la scheda corrente resta aperta e lo storico viene ricaricato.
+   await loadAdminClientPayments(profileId);
  }catch(e){
    if(msg){msg.textContent='Errore salvataggio pagamento: '+(e?.message||e);msg.style.display='block';}
  }
@@ -2727,6 +2729,7 @@ async function deletePaymentHistory(profileId,paymentId){
    if(r.error)throw r.error;
    await loadAdminClientPayments(profileId);
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
+   await loadAdminClientPayments(profileId);
  }catch(e){
    const msg=document.getElementById('cpPaymentMsg');
    if(msg){msg.textContent='Errore eliminazione pagamento: '+(e?.message||e);msg.className='error';msg.style.display='block';}

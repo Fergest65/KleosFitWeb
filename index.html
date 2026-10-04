@@ -2337,6 +2337,8 @@ async function loadProgressAdmin(){
 }
 let progressAdminClientsData=[];
 let progressAdminRowsById={};
+let progressAdminRowsCache=[];
+function progressEntryId(r){return r?.id||r?.entry_id||r?.measurement_id||r?.progress_id||r?.uuid||null;}
 function renderProgressAdminClients(rows){
  const list=document.getElementById('progressAdminClients'); if(!list)return;
  if(!rows.length){list.innerHTML='<div class="muted">Nessun cliente trovato.</div>';return;}
@@ -2358,33 +2360,33 @@ async function openProgressAdminClient(id){
  if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return;}
  const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(b)||0)-new Date(progressDate(a)||0));
  progressAdminRowsById={};
- rows.forEach(x=>{if(x?.id)progressAdminRowsById[String(x.id)]=x;});
+ progressAdminRowsCache=rows.slice();
+ rows.forEach(x=>{const k=progressEntryId(x);if(k)progressAdminRowsById[String(k)]=x;});
  count.textContent=rows.length+(rows.length===1?' rilevazione':' rilevazioni');
  if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata per questo cliente.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return;}
  const latest=rows[0],previous=rows[1]||null;
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend">↗</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
  const cols=['Data',...progressDefs.map(x=>x[0]),'Note','Azioni'];
- table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td><td><button class="btn mini secondary" type="button" onclick="openProgressEditor('${r.id}','${id}')">Modifica</button> <button class="btn mini" type="button" style="background:#c62828;color:#fff" onclick="deleteProgressEntry('${r.id}','${id}')">Elimina</button></td></tr>`).join('')+'</tbody></table>';
+ table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td><td><button class="btn mini secondary" type="button" onclick="openProgressEditor('${id}','${esc(String(progressEntryId(r)||''))}',${rows.indexOf(r)})">Modifica</button> <button class="btn mini" type="button" style="background:#c62828;color:#fff" onclick="deleteProgressEntry('${r.id}','${id}')">Elimina</button></td></tr>`).join('')+'</tbody></table>';
 }
 
-async function openProgressEditor(clientId, entryId=''){
+async function openProgressEditor(clientId, entryId='', rowIndex=-1){
  if(!isSuperuserRole()){alert('Funzione disponibile solo per amministratore/superuser.');return;}
  let row={};
  // Quando si modifica una rilevazione esistente, usiamo sempre l'user_id
  // realmente memorizzato nella rilevazione. Questo evita l'errore 'Cliente non trovato'
  // se l'elenco profili non è stato caricato o il profilo non è presente nella cache.
- if(entryId){
-   // Prima usiamo la riga già caricata nello storico: evita falsi 'Misurazione non trovata'
-   // dovuti a una seconda lettura filtrata per id/RLS.
-   row=progressAdminRowsById[String(entryId)]||{};
-   if(!row.user_id){
-     const r=await db.from('progress_entries').select('*').eq('id',String(entryId)).limit(1);
-     if(r.error){alert('Impossibile caricare la misurazione: '+r.error.message);return}
-     if(!r.data?.length){alert('Misurazione non trovata. Aggiorna lo storico e riprova.');return}
-     row=r.data[0];
+ if(rowIndex>=0 && progressAdminRowsCache[rowIndex]) row=progressAdminRowsCache[rowIndex];
+ if(entryId && !Object.keys(row).length) row=progressAdminRowsById[String(entryId)]||{};
+ if(entryId && !Object.keys(row).length){
+   let r=await db.from('progress_entries').select('*').eq('id',String(entryId)).limit(1);
+   if(r.error || !r.data?.length){
+     r=await db.from('progress_entries').select('*').eq('entry_id',String(entryId)).limit(1);
    }
-   if(row.user_id) clientId=String(row.user_id);
+   if(r.error || !r.data?.length){alert('Misurazione non trovata. Ricarica lo storico e riprova.');return}
+   row=r.data[0];
  }
+ if(Object.keys(row).length && row.user_id) clientId=String(row.user_id);
  let p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId));
  if(!p && Array.isArray(clientsData)) p=clientsData.find(x=>String(x.id)===String(clientId));
  if(!p && Array.isArray(anagraficaData)) p=anagraficaData.find(x=>String(x.id)===String(clientId));
@@ -2411,13 +2413,23 @@ async function saveProgressEntry(clientId,entryId=''){
  const payload={user_id:String(clientId),date};
  progressDefs.forEach(([label,names])=>{const el=document.getElementById('progressEdit_'+names[0]);if(!el)return;const raw=String(el.value||'').trim().replace(',','.');payload[names[0]]=raw===''?null:Number(raw)});
  const notes=String(document.getElementById('progressEditNotes')?.value||'').trim();payload.notes=notes||null;
- const r=entryId?await db.from('progress_entries').update(payload).eq('id',String(entryId)).eq('user_id',String(clientId)):await db.from('progress_entries').insert(payload);
+ let r;
+ if(entryId){
+   r=await db.from('progress_entries').update(payload).eq('id',String(entryId)).eq('user_id',String(clientId));
+   if(r.error){r=await db.from('progress_entries').update(payload).eq('entry_id',String(entryId)).eq('user_id',String(clientId));}
+   if(!r.error && (!r.data || !r.data.length)){
+     const oldDate=String(progressAdminRowsById[String(entryId)]?.date||'');
+     if(oldDate) r=await db.from('progress_entries').update(payload).eq('user_id',String(clientId)).eq('date',oldDate);
+   }
+ }else r=await db.from('progress_entries').insert(payload);
  if(r.error){if(err){err.textContent='Salvataggio non riuscito: '+r.error.message;err.style.display='block'}return}
  closeModal();await openProgressAdminClient(clientId);
 }
 async function deleteProgressEntry(entryId,clientId){
  if(!isSuperuserRole())return;if(!confirm('Eliminare definitivamente questa rilevazione?'))return;
- const r=await db.from('progress_entries').delete().eq('id',String(entryId)).eq('user_id',String(clientId));if(r.error){alert('Eliminazione non riuscita: '+r.error.message);return}await openProgressAdminClient(clientId);
+ let r=await db.from('progress_entries').delete().eq('id',String(entryId)).eq('user_id',String(clientId));
+ if(r.error) r=await db.from('progress_entries').delete().eq('entry_id',String(entryId)).eq('user_id',String(clientId));
+ if(r.error){alert('Eliminazione non riuscita: '+r.error.message);return}await openProgressAdminClient(clientId);
 }
 
 async function loadClientProgress(){

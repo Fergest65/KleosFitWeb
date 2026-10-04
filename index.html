@@ -1183,7 +1183,12 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><select id="cpSubType" onchange="applySubscriptionType(this.value)"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo per aggiornare automaticamente il prezzo.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" onchange="applySubscriptionType(this.value)" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><button id="cpAddSubscriptionBtn" class="btn mini" type="button" onclick="addClientSubscriptionPeriod()">＋ Aggiungi abbonamento</button></div><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo, poi premi “Aggiungi abbonamento” per creare il periodo. La sola selezione del tipo non crea alcun abbonamento.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>€</span> Storico pagamenti</h3>
+   <div id="cpPaymentMsg" class="error" style="display:none"></div>
+   <div class="actions" style="justify-content:flex-end;margin-bottom:10px"><button class="btn mini" type="button" onclick="openPaymentEditor('${p.id}')">+ Nuovo pagamento</button><button class="btn secondary mini" type="button" onclick="loadAdminClientPayments('${p.id}')">Aggiorna storico</button></div>
+   <div id="cpPaymentHistory" class="muted">Caricamento storico pagamenti...</div>
+  </div>
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -1201,7 +1206,7 @@ function openClientSheet(id){
    </div>
   </div>
   <div id="cpMsg" class="error"></div>
-  <div class="actions" style="justify-content:space-between;align-items:center"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
+  <div class="actions" style="justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button></div><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
  </div>`);
  Promise.all([ensureSubscriptionPricesLoaded(),ensureCourseCatalogLoaded()]).then(()=>{
    const sel=document.getElementById('cpSubType');if(!sel)return;
@@ -1224,6 +1229,7 @@ function openClientSheet(id){
    renderPlusCourseSelection(p);
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
+ setTimeout(()=>loadAdminClientPayments(p.id),40);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
  setTimeout(()=>{
    const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
@@ -1278,6 +1284,44 @@ async function openMedicalCertificate(path){
  if(r.error){alert('Impossibile aprire il certificato: '+r.error.message);return;}
  window.open(r.data.signedUrl,'_blank','noopener');
 }
+async function removeClientSubscriptionPeriod(profileId,from,to){
+ if(!isSuperuserRole())return;
+ if(!profileId)return;
+ const periodFrom=String(from||'').slice(0,10);
+ const periodTo=String(to||'').slice(0,10);
+ if(!periodFrom || !periodTo){alert('Il periodo dell’abbonamento non è valido.');return;}
+ const ok=confirm(`Rimuovere SOLO l'abbonamento del periodo ${fmtDateIT(periodFrom)} → ${fmtDateIT(periodTo)}?\n\nVerranno rimossi i dati dell'abbonamento relativi esclusivamente a questo periodo e i relativi movimenti di pagamento. Gli altri periodi del cliente resteranno invariati.`);
+ if(!ok)return;
+ const msg=document.getElementById('cpMsg');
+ if(msg){msg.textContent='Rimozione del periodo abbonamento...';msg.className='';msg.style.display='block';}
+ try{
+   // Elimina esclusivamente i movimenti collegati a questo periodo.
+   const del=await db.from('subscription_payment_history').delete().eq('profile_id',profileId).eq('paid_from',periodFrom).eq('paid_to',periodTo);
+   if(del.error)throw del.error;
+
+   // Il profilo può contenere un solo abbonamento corrente: azzeralo SOLO se
+   // le date del profilo corrispondono al periodo che l'utente ha scelto.
+   const pr=await db.from('profiles').select('subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
+   if(pr.error)throw pr.error;
+   const profileFrom=String(pr.data?.subscription_paid_from||'').slice(0,10);
+   const profileTo=String(pr.data?.subscription_paid_to||'').slice(0,10);
+   if(profileFrom===periodFrom && profileTo===periodTo){
+     const payload={subscription_type:null,subscription_plus_course:'[]',subscription_plus_cost:0,subscription_paid_from:null,subscription_paid_to:null,subscription_cost:null,subscription_active:false,subscription_open:false};
+     const up=await db.from('profiles').update(payload).eq('id',profileId);
+     if(up.error)throw up.error;
+     const updateLocal=(arr)=>{const x=(arr||[]).find(x=>String(x.id)===String(profileId));if(x)Object.assign(x,payload)};
+     updateLocal(clientsData);updateLocal(activeSubscriptionsData);updateLocal(anagraficaData);
+   }
+   await loadAdminClientPayments(profileId);
+   const sheetMsg=document.getElementById('cpMsg');
+   if(sheetMsg){sheetMsg.textContent='Periodo abbonamento rimosso correttamente.';sheetMsg.className='';sheetMsg.style.display='block';}
+   try{if(document.getElementById('activeSubList'))await loadActiveSubscriptions();}catch(e){}
+ }catch(e){
+   const detail=e?.message||String(e);
+   if(msg){msg.textContent='Errore rimozione periodo: '+detail;msg.className='error';msg.style.display='block';}
+   alert('Impossibile rimuovere il periodo abbonamento: '+detail);
+ }
+}
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
@@ -1286,16 +1330,8 @@ async function saveClientSheet(id){
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
- // Se l'abbonamento è stato registrato con periodo e importo, assicuriamo
- // anche la relativa registrazione nello storico pagamenti, evitando duplicati.
- if(paidFrom && paidTo && subscriptionCost!==null && Number.isFinite(Number(subscriptionCost))){
-   const ph=await db.from('subscription_payment_history').select('id').eq('profile_id',id).eq('paid_from',paidFrom).eq('paid_to',paidTo).eq('amount',Number(subscriptionCost)).limit(1);
-   if(ph.error){if(msg){msg.textContent='Cliente salvato, ma impossibile verificare lo storico pagamenti: '+ph.error.message;msg.className='error';msg.style.display='block'}return}
-   if(!(ph.data||[]).length){
-     const ins=await db.from('subscription_payment_history').insert({profile_id:id,paid_from:paidFrom,paid_to:paidTo,amount:Number(subscriptionCost),note:'Pagamento abbonamento'}).select('id').maybeSingle();
-     if(ins.error){if(msg){msg.textContent='Cliente salvato, ma pagamento non registrato nello storico: '+ins.error.message;msg.className='error';msg.style.display='block'}return}
-   }
- }
+ // IMPORTANTE: il salvataggio della scheda cliente NON registra automaticamente un pagamento.
+ // I pagamenti vengono inseriti/modificati esclusivamente dalla sezione Storico pagamenti.
  try{
    await uploadMedicalCertificate(id);
  }catch(e){
@@ -2593,8 +2629,9 @@ function applySubscriptionPreset(id){
  if(cost){cost.dataset.baseCost=String(Number(p.price||0));cost.value=Number(p.price||0).toFixed(2);}
  updateClientSubscriptionTotal();
  const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
- if(from&&to&&p.duration_months){const start=from.value?new Date(from.value+'T12:00:00'):new Date();if(!from.value)from.value=start.toISOString().slice(0,10);const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);to.value=end.toISOString().slice(0,10);}
- const info=document.getElementById('cpPresetInfo');if(info&&!isPlus)info.innerHTML=`Totale abbonamento: <b>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</b>`;
+ // La selezione del listino NON crea più automaticamente il periodo.
+ // Le date vengono create esclusivamente quando l'utente preme “Aggiungi abbonamento”.
+ const info=document.getElementById('cpPresetInfo');if(info&&!isPlus)info.innerHTML=`Prezzo abbonamento: <b>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</b> · premi “Aggiungi abbonamento” per creare il periodo.`;
 }
 
 function applySubscriptionType(id){
@@ -2605,6 +2642,36 @@ function applySubscriptionType(id){
    return;
  }
  if(id) applySubscriptionPreset(id);
+}
+function addClientSubscriptionPeriod(){
+ const sel=document.getElementById('cpSubType');
+ const from=document.getElementById('cpFrom');
+ const to=document.getElementById('cpTo');
+ const cost=document.getElementById('cpCost');
+ const info=document.getElementById('cpPresetInfo');
+ const btn=document.getElementById('cpAddSubscriptionBtn');
+ const id=sel?.value||'';
+ if(!id){alert('Seleziona prima il tipo di abbonamento.');return;}
+ let months=1;
+ if(id!=='__custom__'){
+   const preset=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));
+   if(!preset){alert('Il tipo di abbonamento selezionato non è disponibile.');return;}
+   months=Math.max(1,Number(preset.duration_months||1));
+ }else if(!Number.isFinite(Number(cost?.value)) || Number(cost?.value)<=0){
+   alert('Inserisci prima il costo dell’abbonamento personalizzato.');return;
+ }
+ const start=from?.value?new Date(from.value+'T12:00:00'):new Date();
+ if(from && !from.value)from.value=start.toISOString().slice(0,10);
+ const end=new Date(start);
+ end.setMonth(end.getMonth()+months);
+ end.setDate(end.getDate()-1);
+ if(to && !to.value)to.value=end.toISOString().slice(0,10);
+ if(btn){btn.textContent='✓ Abbonamento aggiunto';btn.disabled=true;btn.classList.add('secondary');}
+ if(info)info.innerHTML='Periodo abbonamento creato: <b>'+esc(dateInputValue(from?.value)||'')+' → '+esc(dateInputValue(to?.value)||'')+'</b>. Premi “Salva tutti i dati cliente” per confermare.';
+ const active=document.getElementById('cpActiveStatus');
+ if(active)active.textContent=computeSubscriptionActive(from?.value,to?.value)?'ATTIVO — periodo aggiunto':'NON ATTIVO — periodo aggiunto';
+ const clientActive=document.getElementById('cpClientActiveStatus');
+ if(clientActive)clientActive.textContent=computeSubscriptionActive(from?.value,to?.value)?'ATTIVO':'NON ATTIVO';
 }
 
 async function loadClientPriceList(){
@@ -2641,6 +2708,179 @@ async function loadClientPriceList(){
    </div>`;
  }).join('')+'</div>';
 }
+
+async function loadAdminClientPayments(profileId){
+ const box=document.getElementById('cpPaymentHistory');
+ if(!box)return;
+ box.innerHTML='<div class="muted">Caricamento storico pagamenti...</div>';
+ try{
+   const pr=await db.from('profiles').select('subscription_cost,subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
+   if(pr.error)throw pr.error;
+   const profile=pr.data||{};
+   const r=await db.from('subscription_payment_history').select('*').eq('profile_id',profileId).order('created_at',{ascending:true}).limit(500);
+   if(r.error)throw r.error;
+   const rows=r.data||[];
+   const currentFrom=String(profile.subscription_paid_from||'').slice(0,10);
+   const currentTo=String(profile.subscription_paid_to||'').slice(0,10);
+   const currentKey=currentFrom+'|'+currentTo;
+   const currentDue=profile.subscription_cost==null?null:Number(profile.subscription_cost);
+   const groups={};
+   rows.forEach(x=>{
+     const from=String(x.paid_from||'').slice(0,10);
+     const to=String(x.paid_to||'').slice(0,10);
+     const key=from+'|'+to;
+     if(!groups[key])groups[key]={from,to,paid:0,rows:[]};
+     groups[key].paid+=Number(x.amount)||0;
+     groups[key].rows.push(x);
+   });
+   // Il dovuto è noto con certezza per il periodo corrente. I vecchi periodi
+   // vengono comunque mantenuti separati, ma senza inventare un dovuto che non è memorizzato.
+   if(currentKey!=='|' && !groups[currentKey])groups[currentKey]={from:currentFrom,to:currentTo,paid:0,rows:[]};
+   const groupRows=Object.values(groups).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
+   const fmtMoney=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
+   const statusFor=(due,paid)=>due==null?'DOVUTO NON DISPONIBILE':(due-paid<=0.005?'SALDATO':paid>0?'PARZIALE':'NON PAGATO');
+   const badge=(st)=>st==='SALDATO'?'<span class="pill" style="background:#c6ff35;color:#111">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5c5c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
+   const totalPaidCurrent=(groups[currentKey]?.paid||0);
+   const currentRemaining=currentDue==null?null:Math.max(0,currentDue-totalPaidCurrent);
+   const currentStatus=statusFor(currentDue,totalPaidCurrent);
+   box.innerHTML=`<div class="paymentSummary">
+     <div class="sbRow"><span>Dovuto periodo corrente</span><b>${currentDue==null?'—':fmtMoney(currentDue)}</b></div>
+     <div class="sbRow"><span>Totale acconti/pagamenti</span><b>${fmtMoney(totalPaidCurrent)}</b></div>
+     <div class="sbTotal"><span>Residuo</span><b>${currentRemaining==null?'—':fmtMoney(currentRemaining)}</b></div>
+     <div class="sbRow"><span>Stato</span><b>${badge(currentStatus)}</b></div>
+   </div>
+   <div class="muted" style="margin-top:14px;font-weight:700">Dovuti e relativi movimenti</div>
+   <div style="margin-top:8px">${groupRows.length?groupRows.map(g=>{
+      const key=g.from+'|'+g.to;
+      const isCurrent=key===currentKey;
+      const due=currentDue;
+      const rem=due==null?null:Math.max(0,due-g.paid);
+      const st=statusFor(due,g.paid);
+      return `<div class="card" style="margin-top:10px;padding:14px;border:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div><strong>DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')}</strong><div class="muted">Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}${isCurrent?' · Periodo corrente':''}</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${badge(st)}<button class="btn secondary mini" type="button" style="border-color:#c62828;color:#c62828" onclick="removeClientSubscriptionPeriod('${profileId}','${esc(g.from)}','${esc(g.to)}')">Rimuovi questo abbonamento</button></div>
+        </div>
+        <div class="paymentSummary" style="margin-top:10px">
+          <div class="sbRow"><span>Dovuto</span><b>${due==null?'—':fmtMoney(due)}</b></div>
+          <div class="sbRow"><span>Pagato / acconti</span><b>${fmtMoney(g.paid)}</b></div>
+          <div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div>
+        </div>
+        <div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>
+        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(x.note||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(x.note||'Pagamento')}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
+      </div>`;
+   }).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div>`;
+ }catch(e){
+   box.innerHTML='<div class="error" style="display:block">Impossibile leggere lo storico pagamenti: '+esc(e?.message||e)+'</div>';
+ }
+}
+function closePaymentEditor(profileId){
+  closeModal();
+  setTimeout(()=>openClientSheet(profileId),50);
+}
+
+async function openPaymentEditor(profileId,paymentId=''){
+ let row=null;
+ let profile=null;
+ try{
+   const pr=await db.from('profiles').select('id,full_name,subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
+   if(pr.error)throw pr.error;
+   profile=pr.data||null;
+   if(paymentId){
+     const r=await db.from('subscription_payment_history').select('*').eq('id',paymentId).eq('profile_id',profileId).maybeSingle();
+     if(r.error||!r.data){alert(r.error?.message||'Pagamento non trovato.');return;}
+     row=r.data;
+   }
+   const hist=await db.from('subscription_payment_history').select('id,amount,paid_from,paid_to').eq('profile_id',profileId).limit(500);
+   if(hist.error)throw hist.error;
+   const from=String(row?.paid_from||profile?.subscription_paid_from||'').slice(0,10);
+   const to=String(row?.paid_to||profile?.subscription_paid_to||'').slice(0,10);
+   const due=profile?.subscription_cost==null?null:Number(profile.subscription_cost);
+   const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from && String(x.paid_to||'').slice(0,10)===to && (!paymentId || String(x.id)!==String(paymentId))).reduce((a,x)=>a+(Number(x.amount)||0),0);
+   const current=Number(row?.amount||0);
+   const paidAfter=paidBefore+current;
+   const remaining=due==null?null:Math.max(0,due-paidAfter);
+   const title=row?'Modifica pagamento':'Nuovo pagamento';
+   openModal(`<div class="modalhead"><h2>${title}</h2><button class="close" onclick="closePaymentEditor('${profileId}')">Chiudi</button></div>
+   <div class="clientSheetGrid">
+     <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from||profile?.subscription_paid_from))}"></div>
+     <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to||profile?.subscription_paid_to))}"></div>
+     <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
+     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
+   </div>
+   <div id="phSummary" class="subscriptionBreakdown">
+     <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
+     <div class="sbRow"><span>Versato con altri pagamenti</span><b id="phPaidBefore">€ ${paidBefore.toFixed(2).replace('.',',')}</b></div>
+     <div class="sbRow"><span>Versato totale</span><b id="phPaidTotal">€ ${paidAfter.toFixed(2).replace('.',',')}</b></div>
+     <div class="sbTotal"><span>Residuo</span> <b id="phRemaining">${due==null?'—':'€ '+remaining.toFixed(2).replace('.',',')}</b></div>
+   </div>
+   <div id="phMsg" class="error" style="display:none;margin-top:12px"></div>
+   <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closePaymentEditor('${profileId}')">Annulla</button><button class="btn" type="button" onclick="savePaymentHistory('${profileId}','${paymentId}')">${row?'Salva modifica':'Registra pagamento'}</button></div>`);
+   setTimeout(()=>{
+     const fromEl=document.getElementById('phFrom'),toEl=document.getElementById('phTo'),amountEl=document.getElementById('phAmount');
+     const sync=()=>{if(fromEl.value){toEl.min=fromEl.value;if(toEl.value&&toEl.value<fromEl.value)toEl.value=fromEl.value}else toEl.removeAttribute('min');updatePaymentEditorSummary(due,paidBefore);};
+     fromEl.addEventListener('change',sync);toEl.addEventListener('change',sync);amountEl.addEventListener('input',sync);sync();
+   },20);
+ }catch(e){alert('Impossibile aprire la gestione pagamento: '+(e?.message||e));}
+}
+function updatePaymentEditorSummary(due,paidBefore){
+ const amount=Number(document.getElementById('phAmount')?.value||0)||0;
+ const total=paidBefore+amount;
+ const remaining=due==null?null:Math.max(0,due-total);
+ const t=document.getElementById('phPaidTotal'),r=document.getElementById('phRemaining');
+ if(t)t.textContent='€ '+total.toFixed(2).replace('.',',');
+ if(r)r.textContent=remaining==null?'—':'€ '+remaining.toFixed(2).replace('.',',');
+}
+
+async function savePaymentHistory(profileId,paymentId=''){
+ const msg=document.getElementById('phMsg');
+ const from=document.getElementById('phFrom')?.value||null;
+ const to=document.getElementById('phTo')?.value||null;
+ const amountRaw=document.getElementById('phAmount')?.value?.trim()||'';
+ const note=document.getElementById('phNote')?.value?.trim()||'Pagamento abbonamento';
+ const amount=amountRaw===''?null:Number(amountRaw);
+ if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
+ if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}
+ if(amount===null||!Number.isFinite(amount)||amount<=0){if(msg){msg.textContent='Inserisci un importo versato valido, maggiore di zero.';msg.style.display='block'}return;}
+ const prof=await db.from('profiles').select('subscription_cost').eq('id',profileId).maybeSingle();
+ if(prof.error){if(msg){msg.textContent='Impossibile verificare il totale abbonamento: '+prof.error.message;msg.style.display='block'}return;}
+ if(prof.data?.subscription_cost!=null){
+   const hist=await db.from('subscription_payment_history').select('amount,paid_from,paid_to,id').eq('profile_id',profileId).limit(500);
+   if(hist.error){if(msg){msg.textContent='Impossibile verificare i pagamenti precedenti: '+hist.error.message;msg.style.display='block'}return;}
+   const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from&&String(x.paid_to||'').slice(0,10)===to&&String(x.id)!==String(paymentId||'')).reduce((a,x)=>a+(Number(x.amount)||0),0);
+   const due=Number(prof.data.subscription_cost);
+   if(paidBefore+amount>due+0.005){if(msg){msg.textContent='Il versamento supera il totale dell’abbonamento. Totale: € '+due.toFixed(2).replace('.',',')+' · già versato: € '+paidBefore.toFixed(2).replace('.',',');msg.style.display='block'}return;}
+ }
+ const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};
+ try{
+   let r;
+   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
+   else r=await db.from('subscription_payment_history').insert(payload).select('id').maybeSingle();
+   if(r.error)throw r.error;
+   // Dopo il salvataggio torna sempre alla scheda cliente, non all'elenco.
+   if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
+   closeModal();
+   setTimeout(()=>openClientSheet(profileId),50);
+ }catch(e){
+   if(msg){msg.textContent='Errore salvataggio pagamento: '+(e?.message||e);msg.style.display='block';}
+ }
+}
+
+async function deletePaymentHistory(profileId,paymentId){
+ if(!paymentId)return;
+ if(!confirm('Eliminare definitivamente questo pagamento dallo storico?'))return;
+ try{
+   const r=await db.from('subscription_payment_history').delete().eq('id',paymentId).eq('profile_id',profileId);
+   if(r.error)throw r.error;
+   if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
+   closeModal();
+   setTimeout(()=>openClientSheet(profileId),50);
+ }catch(e){
+   const msg=document.getElementById('cpPaymentMsg');
+   if(msg){msg.textContent='Errore eliminazione pagamento: '+(e?.message||e);msg.className='error';msg.style.display='block';}
+ }
+}
+
 
 async function loadClientPayments(){
  const list=document.getElementById('clientPaymentList'),err=document.getElementById('clientPaymentError'),count=document.getElementById('clientPaymentCount');

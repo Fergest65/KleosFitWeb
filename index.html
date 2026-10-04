@@ -181,6 +181,7 @@ const views={
 dashboard:`<div class="dashboardHero">
 <div class="dashboardWelcome" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div class="dashboardGreeting">Ciao <span id="dashboardUserName">—</span></div><button class="btn secondary dashboardLogout" type="button" onclick="logout()">Esci</button></div>
 <div id="adminAccessBanner" class="adminAccessBanner" style="display:none" onclick="show('superuser',document.querySelector('.superuserOnlyNav'))">ACCESSO ADMIN / SUPERUSER</div>
+<div id="dashboardAlerts" class="card" style="display:none;margin-bottom:18px"></div>
 <div class="dashboardWorkout card">
 <div class="dashboardSectionTitle">WORKOUT DEL GIORNO</div>
 <div class="dashboardWorkoutTitle" id="dashboardWorkoutTitle">Nessuna scheda attiva</div>
@@ -739,14 +740,81 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
 function fmtDateIT(v){if(!v)return '—';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return String(v);return m[3]+'/'+m[2]+'/'+m[1];}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
-let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
+let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[],anagraficaData=[];
 
 async function countTable(table){
  const r=await db.from(table).select('*',{count:'exact',head:true});
  return r.error?null:r.count;
 }
+function dashboardDateLabel(v){return paymentDateIT(v)||'—'}
+function dashboardDaysUntil(v){
+ const s=String(v||'').slice(0,10); if(!s)return null;
+ const a=new Date(s+'T00:00:00'),b=new Date(todayISO()+'T00:00:00');
+ return Math.round((a-b)/86400000);
+}
+async function loadDashboardAlerts(){
+ const box=document.getElementById('dashboardAlerts');
+ if(!box)return;
+ box.style.display='none'; box.innerHTML='';
+ try{
+   let people=[];
+   if(isClientRole() && currentUser?.id){
+     const r=await db.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+     if(r.error||!r.data)return;
+     people=[r.data];
+   }else if(isSuperuserRole()){
+     const r=await db.from('profiles').select('*').limit(500);
+     if(r.error)return;
+     people=(r.data||[]).filter(p=>!['admin','administrator','amministratore','superuser'].includes(String(p.role||'').toLowerCase().trim()));
+   }else return;
+   const ids=people.map(p=>p.id).filter(Boolean);
+   let payments=[];
+   if(ids.length){
+     const r=await db.from('subscription_payment_history').select('*').in('profile_id',ids).order('created_at',{ascending:false}).limit(5000);
+     if(!r.error)payments=r.data||[];
+   }
+   const today=todayISO(), alerts=[];
+   for(const p of people){
+     const name=profileDisplayName(p)||p.full_name||p.name||p.email||'Cliente';
+     const ph=payments.filter(x=>String(x.profile_id)===String(p.id));
+     if(!isOpenSubscription(p)){
+       const periods=ph.map(x=>({from:String(x.paid_from||'').slice(0,10),to:String(x.paid_to||'').slice(0,10)})).filter(x=>x.from&&x.to);
+       const profFrom=activeSubscriptionDate(p,'subscription_paid_from'),profTo=activeSubscriptionDate(p,'subscription_paid_to');
+       const endDates=periods.map(x=>x.to).concat(profTo?[profTo]:[]).filter(Boolean);
+       const maxTo=endDates.sort().at(-1)||'';
+       if(maxTo && maxTo<today){
+         alerts.push({level:'danger',type:'Abbonamento scaduto',name,date:maxTo,text:`Abbonamento scaduto il ${dashboardDateLabel(maxTo)}`});
+       }else{
+         const cur=currentSubscriptionPeriod(p,ph);
+         if(cur){
+           const due=Math.max(0,Number(p.subscription_cost||0));
+           const paid=ph.filter(x=>String(x.paid_from||'').slice(0,10)===cur.from&&String(x.paid_to||'').slice(0,10)===cur.to).reduce((a,x)=>a+Math.max(0,Number(x.amount||0)),0);
+           if(due>0&&paid+0.009<due) alerts.push({level:'warning',type:'Pagamento sospeso',name,date:cur.to,text:`Pagamento parziale: residuo € ${(due-paid).toFixed(2).replace('.',',')}`});
+         }
+       }
+     }
+     for(const [field,label] of [['medical_certificate_expiry_date','Certificato medico'],['insurance_expiry_date','Assicurazione']]){
+       const d=String(p[field]||'').slice(0,10); if(!d)continue;
+       const days=dashboardDaysUntil(d);
+       if(days!==null && days<0) alerts.push({level:'danger',type:`${label} scaduto`,name,date:d,text:`${label} scaduto il ${dashboardDateLabel(d)}`});
+       else if(days!==null && days<=30) alerts.push({level:'warning',type:`${label} in scadenza`,name,date:d,text:`${label} in scadenza il ${dashboardDateLabel(d)}${days===0?' (oggi)':` (tra ${days} giorni)`}`});
+     }
+   }
+   if(!alerts.length){
+     box.style.display='none';
+     return;
+   }
+   const priority={danger:0,warning:1}; alerts.sort((a,b)=>(priority[a.level]-priority[b.level])||String(a.date||'').localeCompare(String(b.date||''))||String(a.name).localeCompare(String(b.name),'it'));
+   box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px"><div style="font-size:18px;font-weight:900">⚠ Notifiche e scadenze</div><span class="pill">${alerts.length}</span></div>`+
+     alerts.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;margin-top:7px;border:1px solid var(--line);border-radius:10px;background:${a.level==='danger'?'rgba(255,80,80,.08)':'rgba(255,176,32,.08)'}"><div><b>${esc(a.name)}</b><div class="muted" style="margin-top:3px">${esc(a.text)}</div></div><span class="pill" style="background:${a.level==='danger'?'#ff5b66':'#ffb020'};color:#111">${esc(a.type)}</span></div>`).join('');
+   box.style.display='block';
+ }catch(e){
+   box.style.display='none';
+ }
+}
 async function fillDashboard(){
  const userName=(profile?.full_name||profile?.name||currentUser?.email||'Utente').toString();
+ await loadDashboardAlerts();
  const nameEl=document.getElementById('dashboardUserName'); if(nameEl) nameEl.textContent=userName;
  const adminBanner=document.getElementById('adminAccessBanner');
  if(adminBanner) adminBanner.style.display=isSuperuserRole()?'flex':'none';
@@ -2870,7 +2938,9 @@ async function deleteClientPayment(paymentId,profileId){
  const r=await db.from('subscription_payment_history').delete().eq('id',paymentId).eq('profile_id',profileId);
  if(r.error){alert('Errore eliminazione: '+r.error.message);return;}
  const p=(clientsData||[]).find(x=>String(x.id)===String(profileId)) || (anagraficaData||[]).find(x=>String(x.id)===String(profileId));
- if(p)loadClientSheetPayments(p); else loadClientPayments();
+ if(p)await loadClientSheetPayments(p); else await loadClientPayments();
+ if(document.getElementById('activeSubList')){try{await loadActiveSubscriptions()}catch(e){}}
+ await loadDashboardAlerts();
 }
 
 async function loadAdmin(){

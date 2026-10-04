@@ -952,7 +952,14 @@ async function loadActiveSubscriptions(){
     list.innerHTML=''; if(count)count.textContent='Errore'; return;
   }
 
-  const profiles=(pr.data||[]).filter(p=>isSubscriptionCurrentlyActive(p));
+  // Carichiamo tutti i profili cliente: il filtro "Tutti" deve poter mostrare
+  // anche chi non ha un abbonamento attivo. I singoli stati vengono gestiti
+  // esclusivamente da renderActiveSubscriptions().
+  const adminRoles=['admin','administrator','amministratore','superuser'];
+  const profiles=(pr.data||[]).filter(p=>{
+    const role=String(p.role||'').toLowerCase().trim();
+    return !adminRoles.includes(role);
+  });
   const ids=profiles.map(p=>p.id).filter(Boolean);
   let payments=[];
   if(ids.length){

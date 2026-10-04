@@ -1088,38 +1088,90 @@ function renderClients(rows){
  '</tbody></table></div>';
 }
 async function deleteClientCompletely(id){
- const p=(clientsData||[]).find(x=>String(x.id)===String(id));
- if(!p){alert('Cliente non trovato nella lista.');return;}
+ const sid=String(id||'').trim();
+ if(!sid){alert('Cliente non valido.');return;}
  if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser. Ruolo rilevato: '+String(profile?.role||'nessuno'));return;}
- const name=profileDisplayName(p)||p.email||'questo cliente';
- const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo, i dati collegati e l’account di autenticazione.\n\nQUESTA OPERAZIONE NON È REVERSIBILE.\n\nContinuare?');
+ const p=(clientsData||[]).find(x=>String(x.id)===sid)
+   ||(activeSubscriptionsData||[]).find(x=>String(x.id)===sid)
+   ||(anagraficaData||[]).find(x=>String(x.id)===sid)
+   ||null;
+ let target=p;
+ if(!target){
+   const pr=await db.from('profiles').select('*').eq('id',sid).maybeSingle();
+   if(pr.error){alert('Impossibile leggere il cliente: '+pr.error.message);return;}
+   target=pr.data||null;
+ }
+ if(!target){alert('Cliente non trovato.');return;}
+ const name=profileDisplayName(target)||target.email||'questo cliente';
+ const ok=confirm('ATTENZIONE: stai per eliminare DEFINITIVAMENTE '+name+'.\n\nVerranno eliminati TUTTI i dati collegati al cliente, inclusi anagrafica, abbonamenti e storico pagamenti, certificati/documenti, schede workout, piani nutrizionali, misurazioni, prenotazioni, notifiche e account di autenticazione.\n\nI file caricati nello Storage verranno rimossi.\n\nQUESTA OPERAZIONE NON È REVERSIBILE.\n\nContinuare?');
  if(!ok)return;
  const msg=document.getElementById('clientError');
- if(msg){msg.textContent='Eliminazione definitiva in corso...';msg.className='muted';msg.style.display='block'}
+ if(msg){msg.textContent='Eliminazione completa in corso...';msg.className='muted';msg.style.display='block'}
  try{
    if(!db || typeof db.rpc!=='function') throw new Error('Connessione Supabase non disponibile.');
-   const docs=await db.from('client_documents').select('file_path').eq('profile_id',String(id));
+
+   // Conserviamo prima i percorsi dei documenti, perché il profilo verrà eliminato.
+   const docs=await db.from('client_documents').select('file_path').eq('profile_id',sid);
    if(docs.error) throw new Error('Impossibile leggere i documenti del cliente: '+(docs.error.message||JSON.stringify(docs.error)));
    const paths=(docs.data||[]).map(x=>String(x.file_path||'').trim()).filter(Boolean);
-   const r=await db.rpc('delete_user_completely',{p_user_id:String(id)});
+
+   // Elimina prima tramite RPC server-side: qui devono essere gestiti anche Auth
+   // e tutte le tabelle con FK/cascade. È il passaggio principale e atomico lato DB.
+   const r=await db.rpc('delete_user_completely',{p_user_id:sid});
    if(r.error) throw new Error(r.error.message||JSON.stringify(r.error));
+
+   // Pulizia di sicurezza delle tabelle che possono contenere dati senza FK/cascade.
+   // Se una tabella non esiste o non espone quella colonna, non blocchiamo la cancellazione già eseguita.
+   const cleanupAttempts=[
+     ['subscription_payment_history','profile_id'],
+     ['client_documents','profile_id'],
+     ['progress_entries','user_id'],
+     ['workout_plans','user_id'],
+     ['nutrition_plans','user_id'],
+     ['notifications','user_id'],
+     ['notifications','profile_id']
+   ];
+   const cleanupErrors=[];
+   for(const [table,col] of cleanupAttempts){
+     try{
+       const dr=await db.from(table).delete().eq(col,sid);
+       if(dr.error && !/does not exist|column .* does not exist|schema cache/i.test(dr.error.message||'')) cleanupErrors.push(table+'.'+col+': '+dr.error.message);
+     }catch(e){cleanupErrors.push(table+'.'+col+': '+(e?.message||e));}
+   }
+
+   // Prenotazioni: la colonna che identifica il cliente può variare nello schema.
+   const bookingCols=['user_id','profile_id','client_id','client_profile_id','athlete_id','customer_id','member_id','p_profile_id'];
+   for(const col of bookingCols){
+     try{
+       const br=await db.from('lesson_bookings').delete().eq(col,sid);
+       if(!br.error) break;
+       if(!/does not exist|column .* does not exist|schema cache/i.test(br.error.message||'')) cleanupErrors.push('lesson_bookings.'+col+': '+br.error.message);
+     }catch(e){}
+   }
+
+   // I file fisici del certificato vengono rimossi dallo Storage.
    if(paths.length){
      const sr=await db.storage.from('client-documents').remove(paths);
-     if(sr.error){
-       console.warn('File Storage non eliminati:',sr.error);
-       alert('Cliente eliminato dal database e da Auth.\n\nATTENZIONE: alcuni file del certificato sono rimasti nello Storage e devono essere rimossi manualmente o con un nuovo tentativo.\n\n'+(sr.error.message||JSON.stringify(sr.error)));
-     }
+     if(sr.error) cleanupErrors.push('Storage client-documents: '+(sr.error.message||JSON.stringify(sr.error)));
    }
-   clientsData=(clientsData||[]).filter(x=>String(x.id)!==String(id));
-   renderClients(clientsData);
+
+   clientsData=(clientsData||[]).filter(x=>String(x.id)!==sid);
+   activeSubscriptionsData=(activeSubscriptionsData||[]).filter(x=>String(x.id)!==sid);
+   anagraficaData=(anagraficaData||[]).filter(x=>String(x.id)!==sid);
+   if(typeof renderClients==='function')renderClients(clientsData||[]);
+   if(typeof renderAnagrafica==='function' && document.getElementById('anaList'))renderAnagrafica(anagraficaData||[]);
    closeModal();
-   if(msg){msg.textContent='Cliente eliminato definitivamente.';msg.className='success';msg.style.display='block'}
-   alert('Cliente eliminato definitivamente.');
+   if(cleanupErrors.length){
+     console.warn('Pulizia dati residui cliente:',cleanupErrors);
+     alert('Cliente eliminato definitivamente.\n\nAlcune tabelle hanno restituito un avviso durante la pulizia: controlla la console Supabase.\n\n'+cleanupErrors.join('\n'));
+   }else{
+     alert('Cliente eliminato definitivamente con tutti i dati collegati.');
+   }
  }catch(e){
    const detail=e?.message||String(e);
    if(msg){msg.textContent='ELIMINAZIONE NON ESEGUITA: '+detail;msg.className='error';msg.style.display='block'}
-   alert('ELIMINAZIONE NON ESEGUITA\n\n'+detail+'\n\nSe la funzione delete_user_completely non è stata creata nel Supabase SQL Editor, esegui il file SQL fornito.');
-   console.error('delete_user_completely:',e);
+   alert('ELIMINAZIONE NON ESEGUITA\n\n'+detail+'\n\nVerifica che la funzione Supabase delete_user_completely sia presente e autorizzata.');
+   console.error('deleteClientCompletely:',e);
  }
 }
 function clientName(p){return profileDisplayName(p)||'Cliente'}

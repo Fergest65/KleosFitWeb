@@ -425,8 +425,10 @@ async function deleteAccess(id){
  const row=accessListAll.find(x=>String(x.id)===String(id));if(!row)return;
  const label=accessClientLabel(accessRowUserId(row));
  if(!confirm(`Eliminare definitivamente l'accesso di ${label} del ${accessFmt(accessRowDate(row))}?`))return;
- const r=await db.from('check_ins').delete().eq('id',String(id));
+ const r=await db.rpc('admin_delete_check_in',{p_check_in_id:String(id)});
  if(r.error){alert('Errore eliminazione accesso: '+r.error.message);return;}
+ const result=r.data;
+ if(result && result.success===false){alert('Eliminazione non eseguita: '+(result.message||'operazione non autorizzata'));return;}
  await loadAccessList();
 }
 

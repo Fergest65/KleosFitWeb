@@ -746,7 +746,7 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}catch{return String(v)}}
 function fmtDateIT(v){if(!v)return '—';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return String(v);return m[3]+'/'+m[2]+'/'+m[1];}
 function pick(obj,keys){for(const k of keys){if(obj?.[k]!==undefined&&obj?.[k]!==null&&obj?.[k]!=='')return obj[k]}return '—'}
-let clientsData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
+let clientsData=[],anagraficaData=[],workoutsData=[],nutritionData=[],bookingsData=[],bookingSlots=[],adminData=[];
 
 async function countTable(table){
  const r=await db.from(table).select('*',{count:'exact',head:true});
@@ -1310,7 +1310,7 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
      const up=await db.from('profiles').update(payload).eq('id',profileId);
      if(up.error)throw up.error;
      const updateLocal=(arr)=>{const x=(arr||[]).find(x=>String(x.id)===String(profileId));if(x)Object.assign(x,payload)};
-     updateLocal(clientsData);updateLocal(activeSubscriptionsData);updateLocal(anagraficaData);
+     updateLocal(clientsData);updateLocal(activeSubscriptionsData);if(typeof anagraficaData!=='undefined')updateLocal(anagraficaData);
    }
    await loadAdminClientPayments(profileId);
    const sheetMsg=document.getElementById('cpMsg');

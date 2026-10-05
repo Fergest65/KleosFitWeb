@@ -352,6 +352,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('progressAdmin',this)">Progressi</button>
  <button type="button" onclick="show('notifications')">Notifiche</button>
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
+ <button type="button" onclick="show('accessList',this)">Elenco accessi</button>
  <button type="button" onclick="show('activeSubscriptions',this)">Elenco abbonamenti</button>
  <button type="button" onclick="show('circuits')">Circuiti</button>
 </div>`,
@@ -364,6 +365,8 @@ circuits:`<div class="top"><div><div class="title">Circuiti</div><div class="sub
 progressAdmin:`<div class="top"><div><div class="title">Progressi clienti</div><div class="sub">Consultazione delle misurazioni corporee registrate dal coach.</div></div><button class="btn" type="button" onclick="loadProgressAdmin()">Aggiorna</button></div>
 <div class="card"><div class="inputrow"><input id="progressAdminSearch" placeholder="Cerca cliente per nome, email o tessera" oninput="filterProgressAdminClients()"></div><div id="progressAdminStatus" class="muted">Caricamento clienti...</div><div id="progressAdminClients" style="margin-top:14px"></div></div>
 <div id="progressAdminDetail" class="section"></div>`,
+accessList:`<div class="top"><div><div class="title">Elenco accessi</div><div class="sub">Storico degli accessi registrati dal tornello.</div></div><button class="btn" type="button" onclick="loadAccessList()">Aggiorna</button></div>
+<div class="card"><div class="inputrow" style="flex-wrap:wrap"><div><label>DATA DA</label><input id="accessDateFrom" type="date" onchange="filterAccessList()"></div><div><label>DATA A</label><input id="accessDateTo" type="date" onchange="filterAccessList()"></div><div style="min-width:260px;flex:1"><label>CLIENTE</label><select id="accessClientFilter" onchange="filterAccessList()"><option value="">Tutti i clienti</option></select></div><button class="btn secondary" type="button" onclick="resetAccessFilters()">Azzera filtri</button></div><div id="accessListStatus" class="muted" style="margin-top:12px">Caricamento...</div><div id="accessListTable" style="margin-top:14px">Caricamento...</div></div>`,
 };
 
 let circuitsData=[];
@@ -371,6 +374,60 @@ let circuitStationsDraft=[];
 let circuitRunnerState=null;
 let circuitRunnerTimer=0;
 let circuitRunnerLast=0;
+
+let accessListAll=[];
+let accessListProfiles=[];
+let accessListTableName='';
+
+function accessRowDate(r){return r?.created_at||r?.accessed_at||r?.access_at||r?.timestamp||r?.entry_at||r?.check_in_at||r?.date||r?.data_ora||r?.data||null}
+function accessRowUserId(r){return String(r?.user_id||r?.userid||r?.userId||r?.profile_id||r?.cliente_id||r?.client_id||r?.id_utente||'')}
+function accessRowDirection(r){return String(r?.direction||r?.verso||r?.direction_type||r?.tipo||r?.access_type||r?.movimento||'').trim()}
+function accessProfileName(id){const p=accessListProfiles.find(x=>String(x.id)===String(id));return p?profileDisplayName(p):''}
+function accessProfileEmail(id){const p=accessListProfiles.find(x=>String(x.id)===String(id));return p?profileEmail(p):''}
+function accessClientLabel(id){const p=accessListProfiles.find(x=>String(x.id)===String(id));if(!p)return id||'Cliente';return profileDisplayName(p)||profileEmail(p)||id}
+function accessDateKey(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v||'').slice(0,10);return d.toISOString().slice(0,10)}
+function accessFmt(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'medium'})}catch{return String(v)}}
+
+async function loadAccessList(){
+ if(!isSuperuserRole())return;
+ const status=document.getElementById('accessListStatus'),table=document.getElementById('accessListTable');
+ if(!table)return;
+ if(status)status.textContent='Caricamento accessi...';table.innerHTML='Caricamento...';
+ accessListAll=[];accessListProfiles=[];
+ const candidates=['access_logs','access_history','gym_access_logs','checkins','check_in_logs','accessi'];
+ let result=null;
+ for(const name of candidates){
+   try{const r=await db.from(name).select('*').order('created_at',{ascending:false}).limit(2000);if(!r.error){result=r;accessListTableName=name;break;}}catch(e){}
+ }
+ if(!result){
+   if(status)status.textContent='Elenco accessi non disponibile.';
+   table.innerHTML='<div class="error" style="display:block">Non è stata individuata la tabella degli accessi. Verificare il nome della tabella usata da RegisterAccessAsync nel programma del tornello.</div>';
+   return;
+ }
+ accessListAll=result.data||[];
+ try{const pr=await db.from('profiles').select('*').limit(1000);if(!pr.error)accessListProfiles=pr.data||[];}catch(e){}
+ const ids=[...new Set(accessListAll.map(accessRowUserId).filter(Boolean))];
+ const missing=ids.filter(id=>!accessListProfiles.some(p=>String(p.id)===String(id)));
+ if(missing.length){try{const pr=await db.from('profiles').select('*').in('id',missing);if(!pr.error)accessListProfiles=accessListProfiles.concat(pr.data||[])}catch(e){}}
+ const sel=document.getElementById('accessClientFilter');
+ if(sel){const clients=accessListProfiles.filter(p=>ids.includes(String(p.id))).sort((a,b)=>profileDisplayName(a).localeCompare(profileDisplayName(b),'it'));sel.innerHTML='<option value="">Tutti i clienti</option>'+clients.map(p=>`<option value="${esc(p.id)}">${esc(profileDisplayName(p)||profileEmail(p)||p.id)}</option>`).join('')}
+ if(status)status.textContent=accessListAll.length+' accessi';
+ filterAccessList();
+}
+function filterAccessList(){
+ const table=document.getElementById('accessListTable'),status=document.getElementById('accessListStatus');if(!table)return;
+ const from=document.getElementById('accessDateFrom')?.value||'';
+ const to=document.getElementById('accessDateTo')?.value||'';
+ const client=document.getElementById('accessClientFilter')?.value||'';
+ const rows=accessListAll.filter(r=>{
+   const d=accessDateKey(accessRowDate(r));
+   return (!from||d>=from)&&(!to||d<=to)&&(!client||accessRowUserId(r)===client);
+ }).sort((a,b)=>new Date(accessRowDate(b)||0)-new Date(accessRowDate(a)||0));
+ if(status)status.textContent=rows.length+' accessi visualizzati';
+ if(!rows.length){table.innerHTML='<div class="muted">Nessun accesso trovato con i filtri selezionati.</div>';return;}
+ table.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data e ora</th><th>Cliente</th><th>Email</th><th>Direzione</th></tr></thead><tbody>'+rows.map(r=>{const id=accessRowUserId(r);return `<tr><td>${esc(accessFmt(accessRowDate(r)))}</td><td><b>${esc(accessClientLabel(id))}</b></td><td>${esc(accessProfileEmail(id)||'—')}</td><td>${esc(accessRowDirection(r)||'—')}</td></tr>`}).join('')+'</tbody></table></div>';
+}
+function resetAccessFilters(){const a=document.getElementById('accessDateFrom'),b=document.getElementById('accessDateTo'),c=document.getElementById('accessClientFilter');if(a)a.value='';if(b)b.value='';if(c)c.value='';filterAccessList()}
 
 async function loadCircuits(){
  const status=document.getElementById('circuitsStatus'),list=document.getElementById('circuitsList');if(!list)return;
@@ -703,7 +760,7 @@ async function loadProfile(){
  show('dashboard',document.querySelector('.nav button'));
 }
 function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='accessList'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
@@ -731,6 +788,7 @@ function show(v,el){
  if(v==='admin') loadAdmin();
  if(v==='subscriptionPrices') loadSubscriptionPrices();
  if(v==='courseCatalog') loadCourseCatalog();
+ if(v==='accessList') loadAccessList();
  if(v==='circuits') loadCircuits();
 
   if(name==='slotDelete') setTimeout(loadSlotDelete,100);

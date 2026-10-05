@@ -387,6 +387,48 @@ function accessProfileEmail(id){const p=accessListProfiles.find(x=>String(x.id)=
 function accessClientLabel(id){const p=accessListProfiles.find(x=>String(x.id)===String(id));if(!p)return id||'Cliente';return profileDisplayName(p)||profileEmail(p)||id}
 function accessDateKey(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v||'').slice(0,10);return d.toISOString().slice(0,10)}
 function accessFmt(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'medium'})}catch{return String(v)}}
+function accessRowId(r){return String(r?.id||'')}
+function accessDateField(r){return ['created_at','check_in_at','check_out_at','accessed_at','access_at','timestamp','entry_at','date','data_ora','data'].find(k=>r&&Object.prototype.hasOwnProperty.call(r,k))||null}
+function accessDirectionField(r){return ['direction','verso','direction_type','tipo','access_type','movimento'].find(k=>r&&Object.prototype.hasOwnProperty.call(r,k))||null}
+function accessDateInput(v){if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v).slice(0,16);const pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+async function editAccess(id){
+ if(!isSuperuserRole())return;
+ const row=accessListAll.find(x=>String(x.id)===String(id));if(!row){alert('Accesso non trovato.');return;}
+ const dateField=accessDateField(row),directionField=accessDirectionField(row);
+ const clients=(accessListProfiles||[]).filter(p=>String(p.role||'').toLowerCase()==='client' || !p.role);
+ const clientOptions=clients.sort((a,b)=>profileDisplayName(a).localeCompare(profileDisplayName(b),'it')).map(p=>`<option value="${esc(p.id)}" ${String(p.id)===String(row.user_id)?'selected':''}>${esc(profileDisplayName(p)||profileEmail(p)||p.id)}</option>`).join('');
+ const dir=accessRowDirection(row);
+ openModal(`<div class="modalhead"><h2>Modifica accesso</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid">
+ <div class="wide"><label>CLIENTE</label><select id="accessEditClient">${clientOptions}</select></div>
+ <div><label>DATA E ORA</label><input id="accessEditDate" type="datetime-local" value="${esc(accessDateInput(accessRowDate(row)))}" ${dateField?'':'disabled'}></div>
+ <div><label>DIREZIONE</label><select id="accessEditDirection"><option value="" ${!dir?'selected':''}>—</option><option value="Ingresso" ${dir.toLowerCase()==='ingresso'?'selected':''}>Ingresso</option><option value="Uscita" ${dir.toLowerCase()==='uscita'?'selected':''}>Uscita</option></select></div>
+ </div><div id="accessEditMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveAccessEdit('${esc(id)}')">Salva</button></div>`);
+}
+async function saveAccessEdit(id){
+ if(!isSuperuserRole())return;
+ const row=accessListAll.find(x=>String(x.id)===String(id));if(!row)return;
+ const msg=document.getElementById('accessEditMsg');if(msg){msg.style.display='none';msg.textContent='';}
+ const payload={};
+ const client=document.getElementById('accessEditClient')?.value||'';
+ if(client && Object.prototype.hasOwnProperty.call(row,'user_id'))payload.user_id=client;
+ const dateField=accessDateField(row),dateValue=document.getElementById('accessEditDate')?.value||'';
+ if(dateField && dateValue){payload[dateField]=new Date(dateValue).toISOString();}
+ const directionField=accessDirectionField(row),direction=document.getElementById('accessEditDirection')?.value||'';
+ if(directionField)payload[directionField]=direction||null;
+ if(!Object.keys(payload).length){if(msg){msg.textContent='Nessun campo modificabile disponibile per questo accesso.';msg.style.display='block';}return;}
+ const r=await db.from('check_ins').update(payload).eq('id',String(id));
+ if(r.error){if(msg){msg.textContent='Errore modifica: '+r.error.message;msg.style.display='block';}return;}
+ closeModal();await loadAccessList();
+}
+async function deleteAccess(id){
+ if(!isSuperuserRole())return;
+ const row=accessListAll.find(x=>String(x.id)===String(id));if(!row)return;
+ const label=accessClientLabel(accessRowUserId(row));
+ if(!confirm(`Eliminare definitivamente l'accesso di ${label} del ${accessFmt(accessRowDate(row))}?`))return;
+ const r=await db.from('check_ins').delete().eq('id',String(id));
+ if(r.error){alert('Errore eliminazione accesso: '+r.error.message);return;}
+ await loadAccessList();
+}
 
 async function loadAccessList(){
  if(!isSuperuserRole())return;
@@ -423,7 +465,7 @@ function filterAccessList(){
  }).sort((a,b)=>new Date(accessRowDate(b)||0)-new Date(accessRowDate(a)||0));
  if(status)status.textContent=rows.length+' accessi visualizzati';
  if(!rows.length){table.innerHTML='<div class="muted">Nessun accesso trovato con i filtri selezionati.</div>';return;}
- table.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data e ora</th><th>Cliente</th><th>Email</th><th>Direzione</th></tr></thead><tbody>'+rows.map(r=>{const id=accessRowUserId(r);return `<tr><td>${esc(accessFmt(accessRowDate(r)))}</td><td><b>${esc(accessClientLabel(id))}</b></td><td>${esc(accessProfileEmail(id)||'—')}</td><td>${esc(accessRowDirection(r)||'—')}</td></tr>`}).join('')+'</tbody></table></div>';
+ table.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data e ora</th><th>Cliente</th><th>Email</th><th>Direzione</th><th></th></tr></thead><tbody>'+rows.map(r=>{const id=accessRowUserId(r),rid=accessRowId(r);return `<tr><td>${esc(accessFmt(accessRowDate(r)))}</td><td><b>${esc(accessClientLabel(id))}</b></td><td>${esc(accessProfileEmail(id)||'—')}</td><td>${esc(accessRowDirection(r)||'—')}</td><td><div class="rowactions"><button class="btn secondary mini" type="button" onclick="editAccess('${esc(rid)}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteAccess('${esc(rid)}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>';
 }
 function resetAccessFilters(){const a=document.getElementById('accessDateFrom'),b=document.getElementById('accessDateTo'),c=document.getElementById('accessClientFilter');if(a)a.value='';if(b)b.value='';if(c)c.value='';filterAccessList()}
 

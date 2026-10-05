@@ -388,7 +388,7 @@ function accessClientLabel(id){const p=accessListProfiles.find(x=>String(x.id)==
 function accessDateKey(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v||'').slice(0,10);return d.toISOString().slice(0,10)}
 function accessFmt(v){if(!v)return '—';try{return new Date(v).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'medium'})}catch{return String(v)}}
 function accessRowId(r){return String(r?.id||'')}
-function accessDateField(r){return ['created_at','check_in_at','check_out_at','accessed_at','access_at','timestamp','entry_at','date','data_ora','data'].find(k=>r&&Object.prototype.hasOwnProperty.call(r,k))||null}
+function accessDateField(r){if(!r)return null;const candidates=['created_at','check_in_at','check_out_at','accessed_at','access_at','timestamp','entry_at','date','data_ora','data','datetime','date_time','access_date','access_datetime','checkin_date','checkout_date','checkin_at','checkout_at'];const hit=candidates.find(k=>Object.prototype.hasOwnProperty.call(r,k));if(hit)return hit;return Object.keys(r).find(k=>/(date|data|time|timestamp|_at)$/i.test(k)&&r[k]!=null&&String(r[k]).trim()&& !['id','user_id'].includes(k))||null}
 function accessDirectionField(r){return ['direction','verso','direction_type','tipo','access_type','movimento'].find(k=>r&&Object.prototype.hasOwnProperty.call(r,k))||null}
 function accessDateInput(v){if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v).slice(0,16);const pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
 async function editAccess(id){
@@ -400,7 +400,7 @@ async function editAccess(id){
  const dir=accessRowDirection(row);
  openModal(`<div class="modalhead"><h2>Modifica accesso</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid">
  <div class="wide"><label>CLIENTE</label><select id="accessEditClient">${clientOptions}</select></div>
- <div><label>DATA E ORA</label><input id="accessEditDate" type="datetime-local" value="${esc(accessDateInput(accessRowDate(row)))}" ${dateField?'':'disabled'}></div>
+ <div><label>DATA E ORA</label><input id="accessEditDate" type="datetime-local" value="${esc(accessDateInput(accessRowDate(row)))}" ${dateField?'':'title="Campo data non riconosciuto: verrà rilevato al salvataggio"'}></div>
  <div><label>DIREZIONE</label><select id="accessEditDirection"><option value="" ${!dir?'selected':''}>—</option><option value="Ingresso" ${dir.toLowerCase()==='ingresso'?'selected':''}>Ingresso</option><option value="Uscita" ${dir.toLowerCase()==='uscita'?'selected':''}>Uscita</option></select></div>
  </div><div id="accessEditMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveAccessEdit('${esc(id)}')">Salva</button></div>`);
 }
@@ -412,12 +412,19 @@ async function saveAccessEdit(id){
  const client=document.getElementById('accessEditClient')?.value||'';
  if(client && Object.prototype.hasOwnProperty.call(row,'user_id'))payload.user_id=client;
  const dateField=accessDateField(row),dateValue=document.getElementById('accessEditDate')?.value||'';
- if(dateField && dateValue){payload[dateField]=new Date(dateValue).toISOString();}
+ if(dateField && dateValue){
+  // Mantiene esattamente la data/ora scelta dall'amministratore.
+  // Per colonne DATE usa solo YYYY-MM-DD; per timestamp/timestamptz invia ISO.
+  const rawDate=new Date(dateValue);
+  const dateOnly=/^date$/i.test(String(row[dateField] ?? '')) || String(dateField).toLowerCase()==='date' || String(dateField).toLowerCase()==='data';
+  payload[dateField]=dateOnly ? dateValue.slice(0,10) : (Number.isNaN(rawDate.getTime()) ? dateValue : rawDate.toISOString());
+}
  const directionField=accessDirectionField(row),direction=document.getElementById('accessEditDirection')?.value||'';
  if(directionField)payload[directionField]=direction||null;
  if(!Object.keys(payload).length){if(msg){msg.textContent='Nessun campo modificabile disponibile per questo accesso.';msg.style.display='block';}return;}
  const r=await db.rpc('admin_update_check_in',{p_check_in_id:String(id),p_patch:payload});
  if(r.error){if(msg){msg.textContent='Errore modifica: '+r.error.message;msg.style.display='block';}return;}
+ if(!r.data || r.data.success!==true){if(msg){msg.textContent='Modifica non salvata.';msg.style.display='block';}return;}
  closeModal();await loadAccessList();
 }
 async function deleteAccess(id){

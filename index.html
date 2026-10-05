@@ -2482,8 +2482,14 @@ async function loadClientPriceList(){
      ? courses.find(c=>String(c.name||'').trim().toLowerCase()===String(x.plus_course_name||'').trim().toLowerCase())
      : null;
    const extraStored=Number(x.plus_extra_price||0);
-   const extraCourse=matchedCourse?Number(matchedCourse.plus_extra_price||0):0;
-   const extra=isPlus && extraStored<=0 && extraCourse>0?extraCourse:extraStored;
+   const extraCourse=matchedCourse?Math.max(0,Number(matchedCourse.plus_extra_price||0)):0;
+   const activeCourseExtras=isPlus?courses.map(c=>Math.max(0,Number(c.plus_extra_price||0))).filter(v=>v>0):[];
+   const commonCourseExtra=activeCourseExtras.length && activeCourseExtras.every(v=>Math.abs(v-activeCourseExtras[0])<0.01)?activeCourseExtras[0]:0;
+   const minCourseExtra=activeCourseExtras.length?Math.min(...activeCourseExtras):0;
+   const extra=isPlus
+     ? (extraStored>0?extraStored:(extraCourse>0?extraCourse:commonCourseExtra>0?commonCourseExtra:minCourseExtra))
+     : 0;
+   const extraIsRange=isPlus && !extraStored && !matchedCourse && activeCourseExtras.length>1 && !activeCourseExtras.every(v=>Math.abs(v-activeCourseExtras[0])<0.01);
    const base=Number(x.price||0);
    const total=Math.max(0,base+(isPlus?extra:0));
    const monthlyTotal=monthlyByPlan[String(x.plan_type||'').trim().toLowerCase()];
@@ -2500,7 +2506,7 @@ async function loadClientPriceList(){
      <div class="clientPriceDescription">${esc(extraDescription || (isPlus ? 'Include l’abbonamento standard più un corso aggiuntivo.' : 'Abbonamento secondo listino KLEOSFIT.'))}</div>
      <div class="clientPriceBreakdown">
        <div>Corso base: <b>€ ${base.toFixed(2).replace('.',',')}</b></div>
-       ${isPlus?`<div>Prezzo aggiuntivo: <b>€ ${extra.toFixed(2).replace('.',',')}</b>${x.plus_course_name?` — ${esc(x.plus_course_name)}`:''}</div>`:''}
+       ${isPlus?`<div>Prezzo aggiuntivo: <b>${extraIsRange?'da ':''}€ ${extra.toFixed(2).replace('.',',')}</b>${x.plus_course_name?` — ${esc(x.plus_course_name)}`:' — corso aggiuntivo a scelta'}</div>`:''}
        <div style="margin-top:3px"><strong>Totale: € ${total.toFixed(2).replace('.',',')}</strong></div>
        ${saving>0.009?`<div style="margin-top:5px">Risparmio pacchetto: <b>€ ${saving.toFixed(2).replace('.',',')}</b> (${savingPct.toFixed(0)}%)</div>`:''}
      </div>

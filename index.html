@@ -416,7 +416,7 @@ async function saveAccessEdit(id){
  const directionField=accessDirectionField(row),direction=document.getElementById('accessEditDirection')?.value||'';
  if(directionField)payload[directionField]=direction||null;
  if(!Object.keys(payload).length){if(msg){msg.textContent='Nessun campo modificabile disponibile per questo accesso.';msg.style.display='block';}return;}
- const r=await db.from('check_ins').update(payload).eq('id',String(id));
+ const r=await db.rpc('admin_update_check_in',{p_check_in_id:String(id),p_patch:payload});
  if(r.error){if(msg){msg.textContent='Errore modifica: '+r.error.message;msg.style.display='block';}return;}
  closeModal();await loadAccessList();
 }

@@ -2459,7 +2459,7 @@ async function loadClientPriceList(){
  box.innerHTML='';
  const [r,coursesRes]=await Promise.all([
    db.from('subscription_price_presets')
-     .select('id,name,plan_type,duration_months,duration_days,price,plus_course_name,plus_extra_price,description,sort_order,active')
+     .select('id,name,plan_type,duration_months,price,plus_course_name,plus_extra_price,description,sort_order,active')
      .eq('active',true)
      .order('sort_order',{ascending:true})
      .order('duration_months',{ascending:true})

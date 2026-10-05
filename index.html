@@ -2460,6 +2460,18 @@ async function loadClientPriceList(){
  }
  const rows=r.data||[];
  const courses=!coursesRes.error?(coursesRes.data||[]):[];
+ // Per i pacchetti plurimensili calcoliamo l'eventuale risparmio
+ // confrontando il prezzo del pacchetto con il costo di altrettanti mesi
+ // acquistati al prezzo del piano mensile equivalente.
+ const monthlyByPlan={};
+ rows.forEach(r=>{
+   const m=Number(r.duration_months||0);
+   if(m===1){
+     const key=String(r.plan_type||'').trim().toLowerCase();
+     const total=Math.max(0,Number(r.price||0)+(key==='plus'?Number(r.plus_extra_price||0):0));
+     if(key && (!monthlyByPlan[key] || total<monthlyByPlan[key])) monthlyByPlan[key]=total;
+   }
+ });
  if(status)status.textContent=rows.length+(rows.length===1?' abbonamento disponibile':' abbonamenti disponibili');
  if(!rows.length){box.innerHTML='<div class="muted">Nessun abbonamento disponibile.</div>';return;}
  box.innerHTML='<div class="clientPriceGrid">'+rows.map(x=>{
@@ -2472,7 +2484,13 @@ async function loadClientPriceList(){
    const extraStored=Number(x.plus_extra_price||0);
    const extraCourse=matchedCourse?Number(matchedCourse.plus_extra_price||0):0;
    const extra=isPlus && extraStored<=0 && extraCourse>0?extraCourse:extraStored;
-   const total=Math.max(0,Number(x.price||0)+ (isPlus?extra:0));
+   const base=Number(x.price||0);
+   const total=Math.max(0,base+(isPlus?extra:0));
+   const monthlyTotal=monthlyByPlan[String(x.plan_type||'').trim().toLowerCase()];
+   const months=Number(x.duration_months||1);
+   const theoretical=monthlyTotal!=null && months>1 ? monthlyTotal*months : 0;
+   const saving=Math.max(0,theoretical-total);
+   const savingPct=theoretical>0 ? (saving/theoretical)*100 : 0;
    const extraDescription=x.description || (isPlus ? (x.plus_course_name ? `Corso aggiuntivo: ${x.plus_course_name}` : 'Corso aggiuntivo Plus') : '');
    return `<div class="clientPriceCard">
      <div class="clientPriceType">${esc(x.plan_type||'Abbonamento')}</div>
@@ -2480,11 +2498,12 @@ async function loadClientPriceList(){
      <div class="clientPriceDuration">${esc(durata)}</div>
      <div class="clientPriceAmount">€ ${total.toFixed(2).replace('.',',')}</div>
      <div class="clientPriceDescription">${esc(extraDescription || (isPlus ? 'Include l’abbonamento standard più un corso aggiuntivo.' : 'Abbonamento secondo listino KLEOSFIT.'))}</div>
-     ${isPlus?`<div class="clientPriceBreakdown">
-       <div>Base: <b>€ ${Number(x.price||0).toFixed(2).replace('.',',')}</b></div>
-       <div>Prezzo aggiuntivo: <b>€ ${extra.toFixed(2).replace('.',',')}</b>${x.plus_course_name?` — ${esc(x.plus_course_name)}`:''}</div>
+     <div class="clientPriceBreakdown">
+       <div>Corso base: <b>€ ${base.toFixed(2).replace('.',',')}</b></div>
+       ${isPlus?`<div>Prezzo aggiuntivo: <b>€ ${extra.toFixed(2).replace('.',',')}</b>${x.plus_course_name?` — ${esc(x.plus_course_name)}`:''}</div>`:''}
        <div style="margin-top:3px"><strong>Totale: € ${total.toFixed(2).replace('.',',')}</strong></div>
-     </div>`:`<div class="clientPriceBreakdown">Totale: <b>€ ${total.toFixed(2).replace('.',',')}</b></div>`}
+       ${saving>0.009?`<div style="margin-top:5px">Risparmio pacchetto: <b>€ ${saving.toFixed(2).replace('.',',')}</b> (${savingPct.toFixed(0)}%)</div>`:''}
+     </div>
      <div class="clientPriceReadonly">Prezzo di listino</div>
    </div>`;
  }).join('')+'</div>';

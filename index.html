@@ -1183,7 +1183,7 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" onchange="applySubscriptionType(this.value)" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><button id="cpAddSubscriptionBtn" class="btn mini" type="button" onclick="addClientSubscriptionPeriod()">＋ Aggiungi abbonamento</button></div><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo, poi premi “Aggiungi abbonamento” per creare il periodo. La sola selezione del tipo non crea alcun abbonamento.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" onchange="applySubscriptionType(this.value)" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><button id="cpAddSubscriptionBtn" class="btn mini" type="button" onclick="addClientSubscriptionPeriod()">＋ Aggiungi abbonamento</button><button class="btn mini" type="button" onclick="openSubscriptionRenewal('${p.id}')">↻ Rinnova abbonamento</button></div><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo, poi premi “Aggiungi abbonamento” per creare il periodo. La sola selezione del tipo non crea alcun abbonamento.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>€</span> Storico pagamenti</h3>
    <div id="cpPaymentMsg" class="error" style="display:none"></div>
    <div class="actions" style="justify-content:flex-end;margin-bottom:10px"><button class="btn mini" type="button" onclick="openPaymentEditor('${p.id}')">+ Nuovo pagamento</button><button class="btn secondary mini" type="button" onclick="loadAdminClientPayments('${p.id}')">Aggiorna storico</button></div>
@@ -2723,6 +2723,107 @@ function applySubscriptionType(id){
    return;
  }
  if(id) applySubscriptionPreset(id);
+}
+async function openSubscriptionRenewal(profileId){
+  try{
+    await ensureSubscriptionPricesLoaded();
+    const pr=await db.from('profiles').select('id,full_name,subscription_type,subscription_cost,subscription_paid_from,subscription_paid_to,subscription_plus_course,subscription_plus_cost').eq('id',profileId).maybeSingle();
+    if(pr.error)throw pr.error;
+    const p=pr.data;
+    if(!p){alert('Cliente non trovato.');return;}
+    const preset=findMatchingSubscriptionPreset(p);
+    const months=Math.max(1,Number(preset?.duration_months||1));
+    const currentTo=String(p.subscription_paid_to||'').slice(0,10);
+    const today=new Date(); today.setHours(12,0,0,0);
+    const todayStr=today.toISOString().slice(0,10);
+    let start;
+    if(currentTo){
+      const d=new Date(currentTo+'T12:00:00');
+      if(!Number.isNaN(d.getTime())){
+        d.setDate(d.getDate()+1);
+        start=d<today?today:d;
+      }else start=today;
+    }else start=today;
+    const end=new Date(start); end.setMonth(end.getMonth()+months); end.setDate(end.getDate()-1);
+    const from=start.toISOString().slice(0,10),to=end.toISOString().slice(0,10);
+    const cost=Number(p.subscription_cost||0);
+    const name=p.full_name||'Cliente';
+    openModal(`<div class="modalhead"><h2>Rinnovo abbonamento</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+      <div class="muted" style="margin-bottom:14px">${esc(name)} · ${esc(p.subscription_type||'Abbonamento')}</div>
+      <div class="clientSheetGrid">
+        <div><label>Nuovo periodo dal</label><input id="renewFrom" type="date" value="${from}"></div>
+        <div><label>Nuovo periodo al</label><input id="renewTo" type="date" value="${to}"></div>
+        <div><label>Costo abbonamento (€)</label><input id="renewCost" type="number" min="0" step="0.01" value="${cost.toFixed(2)}"></div>
+        <div class="wide"><label>Pagamento al rinnovo</label>
+          <select id="renewPaymentMode" onchange="syncRenewalPaymentMode()">
+            <option value="none">Nessun pagamento</option>
+            <option value="full">Saldo completo</option>
+            <option value="partial">Acconto / pagamento parziale</option>
+          </select>
+        </div>
+        <div id="renewPartialWrap" class="wide" style="display:none"><label>Importo acconto (€)</label><input id="renewPartialAmount" type="number" min="0" step="0.01" value=""></div>
+        <div class="wide"><label>Nota pagamento</label><input id="renewPaymentNote" value="Rinnovo abbonamento"></div>
+      </div>
+      <div class="subscriptionBreakdown" style="margin-top:14px">
+        <div class="sbRow"><span>Periodo precedente</span><b>${currentTo?esc(fmtDateIT(currentTo)):'—'}</b></div>
+        <div class="sbRow"><span>Nuovo periodo</span><b>${esc(fmtDateIT(from))} → ${esc(fmtDateIT(to))}</b></div>
+        <div class="sbTotal"><span>Pagamento scelto</span><b id="renewPaymentSummary">Nessun pagamento</b></div>
+      </div>
+      <div id="renewMsg" class="error" style="display:none;margin-top:12px"></div>
+      <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="saveSubscriptionRenewal('${profileId}')">Conferma rinnovo</button></div>`);
+    setTimeout(()=>{
+      const f=document.getElementById('renewFrom'),t=document.getElementById('renewTo');
+      const recalc=()=>{if(f?.value&&t?.value&&t.value<f.value)t.value=f.value;};
+      f?.addEventListener('change',recalc); t?.addEventListener('change',recalc);
+      syncRenewalPaymentMode();
+    },20);
+  }catch(e){alert('Impossibile aprire il rinnovo: '+(e?.message||e));}
+}
+function syncRenewalPaymentMode(){
+  const mode=document.getElementById('renewPaymentMode')?.value||'none';
+  const wrap=document.getElementById('renewPartialWrap');
+  const amount=document.getElementById('renewPartialAmount');
+  const cost=Number(document.getElementById('renewCost')?.value||0);
+  if(wrap)wrap.style.display=mode==='partial'?'block':'none';
+  if(mode==='full'){
+    const s=document.getElementById('renewPaymentSummary');if(s)s.textContent='Saldo completo · € '+cost.toFixed(2).replace('.',',');
+  }else if(mode==='partial'){
+    const a=Number(amount?.value||0);const s=document.getElementById('renewPaymentSummary');if(s)s.textContent='Acconto · € '+a.toFixed(2).replace('.',',');
+  }else{const s=document.getElementById('renewPaymentSummary');if(s)s.textContent='Nessun pagamento';}
+}
+async function saveSubscriptionRenewal(profileId){
+  const msg=document.getElementById('renewMsg');
+  const from=document.getElementById('renewFrom')?.value||'';
+  const to=document.getElementById('renewTo')?.value||'';
+  const cost=Number(document.getElementById('renewCost')?.value||0);
+  const mode=document.getElementById('renewPaymentMode')?.value||'none';
+  const partial=Number(document.getElementById('renewPartialAmount')?.value||0);
+  const note=document.getElementById('renewPaymentNote')?.value?.trim()||'Rinnovo abbonamento';
+  const fail=(t)=>{if(msg){msg.textContent=t;msg.style.display='block';}};
+  if(!from||!to){fail('Inserisci il nuovo periodo.');return;}
+  if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}
+  if(!Number.isFinite(cost)||cost<=0){fail('Inserisci un costo abbonamento valido.');return;}
+  let amount=0;
+  if(mode==='full')amount=cost;
+  if(mode==='partial'){
+    if(!Number.isFinite(partial)||partial<=0){fail('Inserisci un acconto valido.');return;}
+    if(partial>cost+0.005){fail('L’acconto non può superare il costo dell’abbonamento.');return;}
+    amount=partial;
+  }
+  try{
+    const old=await db.from('profiles').select('subscription_type,subscription_plus_course,subscription_plus_cost').eq('id',profileId).maybeSingle();
+    if(old.error)throw old.error;
+    const payload={subscription_paid_from:from,subscription_paid_to:to,subscription_cost:cost,subscription_active:computeSubscriptionActive(from,to),subscription_open:false};
+    const upd=await db.from('profiles').update(payload).eq('id',profileId).select('id').maybeSingle();
+    if(upd.error)throw upd.error;
+    if(mode!=='none'){
+      const pay=await db.from('subscription_payment_history').insert({profile_id:profileId,paid_from:from,paid_to:to,amount,note}).select('id').maybeSingle();
+      if(pay.error)throw pay.error;
+    }
+    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
+    closeModal();
+    setTimeout(()=>openClientSheet(profileId),80);
+  }catch(e){fail('Errore salvataggio rinnovo: '+(e?.message||e));}
 }
 function addClientSubscriptionPeriod(){
  const sel=document.getElementById('cpSubType');

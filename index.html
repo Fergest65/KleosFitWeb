@@ -2221,8 +2221,21 @@ async function loadClientProgress(){
  table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names);return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
 }
 
+function builtInShortTermPrices(){
+ return [
+  {id:'__builtin_daily__',name:'Giornaliero',plan_type:'Giornaliero',duration_months:0,duration_days:1,price:15,plus_course_name:null,plus_extra_price:0,description:'Accesso giornaliero.',sort_order:-20,active:true,__builtin:true},
+  {id:'__builtin_weekly__',name:'Settimanale',plan_type:'Settimanale',duration_months:0,duration_days:7,price:80,plus_course_name:null,plus_extra_price:0,description:'7 giorni — prezzo pieno € 105,00, risparmio € 25,00 (23,8%).',sort_order:-19,active:true,__builtin:true}
+ ];
+}
+function mergeBuiltInShortTermPrices(rows){
+ const list=Array.isArray(rows)?rows.slice():[];
+ const names=new Set(list.map(x=>String(x?.name||'').trim().toLowerCase()));
+ builtInShortTermPrices().forEach(x=>{if(!names.has(x.name.toLowerCase()))list.push(x);});
+ return list.sort((a,b)=>(Number(a.sort_order||0)-Number(b.sort_order||0))||(Number(a.duration_months||0)-Number(b.duration_months||0))||String(a.name||'').localeCompare(String(b.name||'')));
+}
+
 function subscriptionPresetLabel(p){
- const duration=p.duration_months?`${p.duration_months} ${p.duration_months===1?'mese':'mesi'}`:'';
+ const duration=Number(p.duration_days||0)>0?(Number(p.duration_days)===1?'1 giorno':`${Number(p.duration_days)} giorni`):(p.duration_months?`${p.duration_months} ${p.duration_months===1?'mese':'mesi'}`:'');
  return [p.name,p.plan_type,duration].filter(Boolean).join(' · ');
 }
 function subscriptionPresetOption(p,selectedId){
@@ -2242,7 +2255,7 @@ async function loadSubscriptionPrices(){
    list.innerHTML='';
    return;
  }
- subscriptionPricePresets=(r.data||[]);
+ subscriptionPricePresets=mergeBuiltInShortTermPrices(r.data||[]);
  renderSubscriptionPrices();
 }
 function renderSubscriptionPrices(){
@@ -2251,7 +2264,7 @@ function renderSubscriptionPrices(){
  if(status)status.textContent=rows.length+(rows.length===1?' prezzo predefinito':' prezzi predefiniti');
  if(!rows.length){list.innerHTML='<div class="muted">Nessun prezzo configurato. Premi “＋ Nuovo prezzo”.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Piano</th><th>Durata</th><th>Prezzo base</th><th>Supplemento Plus</th><th>Totale</th><th>Stato</th><th></th></tr></thead><tbody>'+
- rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(p.duration_months||'—')} mesi</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div></td></tr>`).join('')+
+ rows.map(p=>{const durata=Number(p.duration_days||0)>0?(Number(p.duration_days)===1?'1 giorno':Number(p.duration_days)+' giorni'):(p.duration_months||'—')+' '+(Number(p.duration_months||0)===1?'mese':'mesi'); return `<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(durata)}</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td>${p.__builtin?'<span class="muted">Predefinito</span>':`<div class="rowactions"><button class="btn secondary mini" onclick="openSubscriptionPriceModal('${p.id}')">Modifica</button><button class="btn secondary mini" onclick="deleteSubscriptionPrice('${p.id}')">Elimina</button></div>`}</td></tr>`}).join('')+
  '</tbody></table></div>';
 }
 function parsePlusCourses(p){
@@ -2414,7 +2427,7 @@ function findMatchingSubscriptionPreset(p){
 async function ensureSubscriptionPricesLoaded(){
  if(subscriptionPricePresets?.length)return;
  const r=await db.from('subscription_price_presets').select('*').eq('active',true).order('sort_order',{ascending:true}).order('name',{ascending:true});
- if(!r.error)subscriptionPricePresets=r.data||[];
+ if(!r.error)subscriptionPricePresets=mergeBuiltInShortTermPrices(r.data||[]);
 }
 function applySubscriptionPreset(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));if(!p)return;
@@ -2424,7 +2437,7 @@ function applySubscriptionPreset(id){
  if(cost){cost.dataset.baseCost=String(Number(p.price||0));cost.value=Number(p.price||0).toFixed(2);}
  updateClientSubscriptionTotal();
  const from=document.getElementById('cpFrom'),to=document.getElementById('cpTo');
- if(from&&to&&p.duration_months){const start=from.value?new Date(from.value+'T12:00:00'):new Date();if(!from.value)from.value=start.toISOString().slice(0,10);const end=new Date(start);end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);to.value=end.toISOString().slice(0,10);}
+ if(from&&to&&(p.duration_months||p.duration_days)){const start=from.value?new Date(from.value+'T12:00:00'):new Date();if(!from.value)from.value=start.toISOString().slice(0,10);const end=new Date(start);if(Number(p.duration_days||0)>0){end.setDate(end.getDate()+Number(p.duration_days)-1);}else{end.setMonth(end.getMonth()+Number(p.duration_months));end.setDate(end.getDate()-1);}to.value=end.toISOString().slice(0,10);}
  const info=document.getElementById('cpPresetInfo');if(info&&!isPlus)info.innerHTML=`Totale abbonamento: <b>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</b>`;
 }
 
@@ -2475,8 +2488,9 @@ async function loadClientPriceList(){
  if(status)status.textContent=rows.length+(rows.length===1?' abbonamento disponibile':' abbonamenti disponibili');
  if(!rows.length){box.innerHTML='<div class="muted">Nessun abbonamento disponibile.</div>';return;}
  box.innerHTML='<div class="clientPriceGrid">'+rows.map(x=>{
-   const mesi=Number(x.duration_months||1);
-   const durata=mesi===1?'1 mese':mesi+' mesi';
+   const giorni=Number(x.duration_days||0);
+   const mesi=Number(x.duration_months||0);
+   const durata=giorni>0?(giorni===1?'1 giorno':giorni+' giorni'):(mesi===1?'1 mese':mesi+' mesi');
    const isPlus=String(x.plan_type||'').toLowerCase()==='plus';
    const matchedCourse=isPlus && x.plus_course_name
      ? courses.find(c=>String(c.name||'').trim().toLowerCase()===String(x.plus_course_name||'').trim().toLowerCase())

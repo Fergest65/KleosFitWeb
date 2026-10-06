@@ -244,7 +244,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active">Cliente attivo</option><option value="suspended">Cliente sospeso</option><option value="all" selected>Tutti</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active" selected>Abbonamento attivo</option><option value="suspended">Abbonamento sospeso</option><option value="all">Tutti</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -929,9 +929,7 @@ function activeSubscriptionDate(p,key){
   return v?String(v).slice(0,10):'';
 }
 function isSubscriptionCurrentlyActive(p){
-  // Lo stato mostrato nell'elenco clienti deve seguire l'attivazione/disattivazione
-  // dell'account. Il periodo dell'abbonamento resta un'informazione separata.
-  return !isClientSuspended(p);
+  return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
 }
 function subscriptionAccountingStatus(p,payments){
   const from=activeSubscriptionDate(p,'subscription_paid_from');
@@ -984,8 +982,7 @@ async function loadActiveSubscriptions(){
   // esclusivamente da renderActiveSubscriptions().
   const adminRoles=['admin','administrator','amministratore','superuser'];
   const profiles=(pr.data||[]).filter(p=>{
-    // I clienti sospesi NON vengono eliminati dall'elenco abbonamenti:
-    // devono rimanere visibili nel filtro "Abbonamento sospeso" e poter essere riattivati.
+    if(isClientSuspended(p)) return false;
     const role=String(p.role||'').toLowerCase().trim();
     return !adminRoles.includes(role);
   });
@@ -1044,29 +1041,24 @@ function renderActiveSubscriptions(){
   list.innerHTML=`<div style="overflow:auto"><table class="table">
     <thead><tr>
       <th>Cliente</th><th>Tessera</th><th>Abbonamento</th><th>Periodo</th>
-      <th>Stato cliente</th><th>Stato abbonamento</th><th>Costo</th><th></th>
+      <th>Stato abbonamento</th><th>Costo</th><th></th>
     </tr></thead>
     <tbody>${rows.map(p=>{
       const name=profileDisplayName(p)||p.full_name||p.name||'Cliente';
       const from=p._latestFrom||'';
       const to=p._latestTo||'';
       const cost=p._defaultCost==null?'—':'€ '+Number(p._defaultCost||0).toFixed(2).replace('.',',');
-      const clientActive=isSubscriptionCurrentlyActive(p);
-      const subscriptionActive=subscriptionPeriodsForProfile(p).some(x=>computeSubscriptionActive(x.from,x.to));
-      const clientStateBadge=clientActive
+      const active=isSubscriptionCurrentlyActive(p);
+      const stateBadge=active
         ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
         : '<span class="pill" style="background:#ffb020;color:#111">SOSPESO</span>';
-      const subscriptionStateBadge=subscriptionActive
-        ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
-        : '<span class="pill" style="background:#ffb020;color:#111">NON ATTIVO</span>';
       const type=p.subscription_type||'Abbonamento';
       return `<tr>
         <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>
         <td>${esc(p.member_card_number||'—')}</td>
         <td>${esc(type)}</td>
         <td>${esc(from?fmtDateIT(from):'—')} → ${esc(to?fmtDateIT(to):'—')}</td>
-        <td>${clientStateBadge}</td>
-        <td>${subscriptionStateBadge}</td>
+        <td>${stateBadge}</td>
         <td><b>${esc(cost)}</b></td>
         <td><button class="btn secondary mini" type="button" onclick="openClientSheet('${p.id}')">Scheda</button></td>
       </tr>`;
@@ -1112,7 +1104,6 @@ async function reactivateClient(id){
  const r=await db.from("profiles").update({account_suspended:false}).eq("id",String(id));
  if(r.error){alert("Impossibile riattivare il cliente.\n\n"+r.error.message);return;}
  loadSuspendedClients(); loadClients();
- if(typeof loadActiveSubscriptions==='function' && document.getElementById('activeSubList')) await loadActiveSubscriptions();
 }
 async function toggleClientAccount(id,suspended){
  if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser.');return;}
@@ -1124,13 +1115,26 @@ async function toggleClientAccount(id,suspended){
  if(r.error){alert('Impossibile '+action+' il cliente.\n\n'+(r.error.message||r.error));return;}
  if(p)p.account_suspended=!!suspended;
  if(typeof loadClients==='function')await loadClients();
- if(typeof loadActiveSubscriptions==='function' && document.getElementById('activeSubList'))await loadActiveSubscriptions();
  if(typeof loadSuspendedClients==='function' && document.getElementById('suspendedClientList'))await loadSuspendedClients();
  closeModal();
 }
 async function deleteClientCompletely(id){
- const p=(clientsData||[]).find(x=>String(x.id)===String(id));
- if(!p){alert('Cliente non trovato nella lista.');return;}
+ // La scheda cliente può essere stata aperta da Elenco abbonamenti, Clienti sospesi
+ // o Anagrafica: non deve dipendere dalla sola clientsData.
+ let p=(clientsData||[]).find(x=>String(x.id)===String(id))
+   ||(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id))
+   ||(anagraficaData||[]).find(x=>String(x.id)===String(id));
+ if(!p){
+   try{
+     const pr=await db.from('profiles').select('*').eq('id',String(id)).maybeSingle();
+     if(pr.error)throw pr.error;
+     p=pr.data||null;
+   }catch(e){
+     alert("Impossibile recuperare il cliente prima dell'eliminazione.\n\n"+(e?.message||e));
+     return;
+   }
+ }
+ if(!p){alert('Cliente non trovato.');return;}
  if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser. Ruolo rilevato: '+String(profile?.role||'nessuno'));return;}
  const name=profileDisplayName(p)||p.email||'questo cliente';
  const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo, i dati collegati e l’account di autenticazione.\n\nQUESTA OPERAZIONE NON È REVERSIBILE.\n\nContinuare?');
@@ -1152,7 +1156,11 @@ async function deleteClientCompletely(id){
      }
    }
    clientsData=(clientsData||[]).filter(x=>String(x.id)!==String(id));
-   renderClients(clientsData);
+   if(Array.isArray(activeSubscriptionsData)) activeSubscriptionsData=activeSubscriptionsData.filter(x=>String(x.id)!==String(id));
+   if(Array.isArray(anagraficaData)) anagraficaData=anagraficaData.filter(x=>String(x.id)!==String(id));
+   if(typeof loadClients==='function') await loadClients();
+   if(typeof loadSuspendedClients==='function' && document.getElementById('suspendedClientList')) await loadSuspendedClients();
+   if(typeof loadActiveSubscriptions==='function' && document.getElementById('activeSubList')) await loadActiveSubscriptions();
    closeModal();
    if(msg){msg.textContent='Cliente eliminato definitivamente.';msg.className='success';msg.style.display='block'}
    alert('Cliente eliminato definitivamente.');
@@ -1172,36 +1180,15 @@ function computeSubscriptionActive(from,to){
  const today=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
  return f<=today && today<=t;
 }
-function subscriptionPeriodsForProfile(p){
- const periods=[];
- const add=(from,to)=>{
-   const f=String(from||'').slice(0,10), t=String(to||'').slice(0,10);
-   if(f && t && !periods.some(x=>x.from===f && x.to===t)) periods.push({from:f,to:t});
- };
- add(p?.subscription_paid_from,p?.subscription_paid_to);
- (Array.isArray(p?._payments)?p._payments:[]).forEach(x=>add(x?.paid_from,x?.paid_to));
- return periods;
-}
-function hasSubscriptionToday(p){
- if(!p || isClientSuspended(p)) return false;
- return subscriptionPeriodsForProfile(p).some(x=>computeSubscriptionActive(x.from,x.to));
-}
-async function attachSubscriptionHistory(p){
- if(!p || !p.id) return p;
- if(Array.isArray(p._payments)) return p;
- const r=await db.from('subscription_payment_history').select('id,profile_id,paid_from,paid_to,amount,created_at').eq('profile_id',String(p.id)).limit(5000);
- p._payments=r.error?[]:(r.data||[]);
- return p;
-}
 function clientQrValue(p){
- const active=hasSubscriptionToday(p);
+ // subscription_active viene calcolato dall'app in base al periodo dell'abbonamento.
+ const active=computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
  return JSON.stringify({id:String(p.id),attivo:active?"SI":"NO",subscription_active:active});
 }
 async function regenerateClientQr(id){
  if(!isSuperuserRole())return;
  const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(!p)return;
- await attachSubscriptionHistory(p);
  if(!confirm('Generare nuovamente il QR Code del cliente?'))return;
  const safeId=String(id).replace(/[^a-zA-Z0-9_-]/g,'');
  const qrValue=clientQrValue(p);
@@ -1244,9 +1231,8 @@ async function generateClientCardNumber(){
    input.focus();
  }catch(e){alert(e.message||'Errore nella generazione del numero tessera');}
 }
-async function openClientSheet(id){
- let p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
- await attachSubscriptionHistory(p);
+function openClientSheet(id){
+ const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
  const full=p.full_name||p.name||[p.first_name,p.last_name].filter(Boolean).join(' ');
  const card=clientCardNumber(p);
  const subscriptionFrom=pick(p,['subscription_paid_from']);
@@ -1362,16 +1348,8 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
  if(msg){msg.textContent='Rimozione del periodo abbonamento...';msg.className='';msg.style.display='block';}
  try{
    // Elimina esclusivamente i movimenti collegati a questo periodo.
-   const del=await db.from('subscription_payment_history')
-     .delete()
-     .eq('profile_id',String(profileId))
-     .eq('paid_from',periodFrom)
-     .eq('paid_to',periodTo)
-     .select('id');
+   const del=await db.from('subscription_payment_history').delete().eq('profile_id',profileId).eq('paid_from',periodFrom).eq('paid_to',periodTo);
    if(del.error)throw del.error;
-   if(!del.data || !del.data.length){
-     throw new Error('Nessun movimento eliminato. Il database non autorizza la cancellazione per questo utente (RLS/policy DELETE su subscription_payment_history), oppure il periodo non ha movimenti.');
-   }
 
    // Il profilo può contenere un solo abbonamento corrente: azzeralo SOLO se
    // le date del profilo corrispondono al periodo che l'utente ha scelto.
@@ -1418,9 +1396,8 @@ async function saveClientSheet(id){
  if(document.getElementById('activeSubList')){ try{ await loadActiveSubscriptions(); }catch(e){} }
  if(typeof renderAnagrafica==='function' && Array.isArray(anagraficaData) && anagraficaData.some(x=>String(x.id)===String(id))) renderAnagrafica(anagraficaData); else renderClients(clientsData||[]);
 }
-async function openAdminQr(id){
+function openAdminQr(id){
  const p=clientsData.find(x=>String(x.id)===String(id));if(!p)return;
- await attachSubscriptionHistory(p);
  const name=clientName(p),card=clientCardNumber(p),value=clientQrValue(p);
  const safeId=String(p.id).replace(/[^a-zA-Z0-9_-]/g,'');
  const modal=document.getElementById('modal');
@@ -1439,12 +1416,11 @@ async function openAdminQr(id){
 function drawQrInto(el,p){if(!el)return;el.innerHTML='';if(typeof QRCode==='undefined'){el.innerHTML='<div style="color:#111;font-size:11px">QR non disponibile</div>';return}new QRCode(el,{text:clientQrValue(p),width:100,height:100,correctLevel:QRCode.CorrectLevel.M});}
 function qrCardHtml(p){const name=clientName(p),card=clientCardNumber(p),value=clientQrValue(p);return `<div class="qrClientCard" style="max-width:620px"><div id="qr_${esc(String(p.id).replace(/[^a-zA-Z0-9_-]/g,''))}" class="qrClientBox"></div><div><div class="qrClientName">${esc(name)}</div><div class="member">${esc(card||'Tessera non assegnata')}</div><div class="small">${esc(profileEmail(p)||'')} ${p.phone?' · '+esc(p.phone):''}</div><div class="small" style="margin-top:8px"><b>Formato tornello</b><br><code style="word-break:break-all">${esc(value)}</code></div><div class="qrClientActions"><button class="btn secondary mini" onclick="printQrCard('${p.id}')">Stampa QR</button></div></div></div>`}
 function renderQrCodes(rows){const list=document.getElementById('qrList'),count=document.getElementById('qrCount');if(!list)return;count.textContent=rows.length?'1 cliente':'Nessun cliente collegato';list.innerHTML=rows.length?qrCardHtml(rows[0]):'<div class="muted">Nessun profilo cliente associato all’account loggato.</div>';if(rows.length)setTimeout(()=>drawQrInto(document.getElementById('qr_'+String(rows[0].id).replace(/[^a-zA-Z0-9_-]/g,'')),rows[0]),20)}
-async function loadQrCodes(){const list=document.getElementById('qrList'),err=document.getElementById('qrError'),count=document.getElementById('qrCount');if(!list)return;err.style.display='none';list.innerHTML='Caricamento QR...';count.textContent='Caricamento...';const id=currentUser?.id;if(!id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';return}const r=await db.from('profiles').select('*').eq('id',id).maybeSingle();if(r.error){err.textContent=r.error.message;err.style.display='block';list.innerHTML='';return}if(!r.data){renderQrCodes([]);return}await attachSubscriptionHistory(r.data);renderQrCodes([r.data])}
+async function loadQrCodes(){const list=document.getElementById('qrList'),err=document.getElementById('qrError'),count=document.getElementById('qrCount');if(!list)return;err.style.display='none';list.innerHTML='Caricamento QR...';count.textContent='Caricamento...';const id=currentUser?.id;if(!id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';return}const r=await db.from('profiles').select('*').eq('id',id).maybeSingle();if(r.error){err.textContent=r.error.message;err.style.display='block';list.innerHTML='';return}if(!r.data){renderQrCodes([]);return}renderQrCodes([r.data])}
 function filterQrCodes(){/* Il QR è esclusivamente quello dell'account loggato. */loadQrCodes()}
-async function printQrCard(id){
+function printQrCard(id){
  const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(!p){alert('Cliente non trovato.');return;}
- await attachSubscriptionHistory(p);
  if(typeof QRCode==='undefined'){alert('Libreria QR non disponibile. Ricarica la pagina e riprova.');return;}
  const name=clientName(p),card=clientCardNumber(p),value=clientQrValue(p);
  const w=window.open('','_blank','width=560,height=760');
@@ -3285,31 +3261,16 @@ async function savePaymentHistory(profileId,paymentId=''){
 
 async function deletePaymentHistory(profileId,paymentId){
  if(!paymentId)return;
- if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser.');return;}
  if(!confirm('Eliminare definitivamente questo pagamento dallo storico?'))return;
- const msg=document.getElementById('cpPaymentMsg');
- if(msg){msg.textContent='Eliminazione pagamento in corso...';msg.className='';msg.style.display='block';}
  try{
-   // Usiamo SELECT sul DELETE per verificare che una riga sia stata realmente eliminata.
-   // Con RLS Supabase può restituire nessun errore ma 0 righe se il ruolo non ha DELETE.
-   const r=await db.from('subscription_payment_history')
-     .delete()
-     .eq('id',String(paymentId))
-     .eq('profile_id',String(profileId))
-     .select('id')
-     .maybeSingle();
+   const r=await db.from('subscription_payment_history').delete().eq('id',paymentId).eq('profile_id',profileId);
    if(r.error)throw r.error;
-   if(!r.data){
-     throw new Error('Nessun pagamento eliminato. Il database non autorizza la cancellazione per questo utente (RLS/policy DELETE su subscription_payment_history).');
-   }
-   if(msg){msg.textContent='Pagamento eliminato correttamente.';msg.className='';msg.style.display='block';}
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
-   await loadAdminClientPayments(profileId);
-   setTimeout(()=>openClientSheet(profileId),150);
+   closeModal();
+   setTimeout(()=>openClientSheet(profileId),50);
  }catch(e){
-   const detail=e?.message||String(e);
-   if(msg){msg.textContent='Errore eliminazione pagamento: '+detail;msg.className='error';msg.style.display='block';}
-   alert('ELIMINAZIONE NON ESEGUITA\n\n'+detail);
+   const msg=document.getElementById('cpPaymentMsg');
+   if(msg){msg.textContent='Errore eliminazione pagamento: '+(e?.message||e);msg.className='error';msg.style.display='block';}
  }
 }
 

@@ -244,7 +244,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active" selected>Abbonamento attivo</option><option value="suspended">Abbonamento sospeso</option><option value="all">Tutti</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active">Abbonamento attivo</option><option value="suspended">Abbonamento sospeso</option><option value="all" selected>Tutti</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -929,6 +929,8 @@ function activeSubscriptionDate(p,key){
   return v?String(v).slice(0,10):'';
 }
 function isSubscriptionCurrentlyActive(p){
+  // OPEN non dipende dalle date: per un abbonamento OPEN lo stato è sempre OPEN.
+  if(p?.subscription_open===true || p?.subscription_open===1 || ['true','1','si','sì','yes'].includes(String(p?.subscription_open||'').toLowerCase().trim())) return true;
   return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
 }
 function subscriptionAccountingStatus(p,payments){
@@ -1048,10 +1050,13 @@ function renderActiveSubscriptions(){
       const from=p._latestFrom||'';
       const to=p._latestTo||'';
       const cost=p._defaultCost==null?'—':'€ '+Number(p._defaultCost||0).toFixed(2).replace('.',',');
+      const open=(p?.subscription_open===true || p?.subscription_open===1 || ['true','1','si','sì','yes'].includes(String(p?.subscription_open||'').toLowerCase().trim()));
       const active=isSubscriptionCurrentlyActive(p);
-      const stateBadge=active
-        ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
-        : '<span class="pill" style="background:#ffb020;color:#111">SOSPESO</span>';
+      const stateBadge=open
+        ? '<span class="pill">OPEN</span>'
+        : active
+          ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
+          : '<span class="pill" style="background:#8b929b;color:#111">NON ATTIVO</span>';
       const type=p.subscription_type||'Abbonamento';
       return `<tr>
         <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>

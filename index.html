@@ -1362,8 +1362,16 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
  if(msg){msg.textContent='Rimozione del periodo abbonamento...';msg.className='';msg.style.display='block';}
  try{
    // Elimina esclusivamente i movimenti collegati a questo periodo.
-   const del=await db.from('subscription_payment_history').delete().eq('profile_id',profileId).eq('paid_from',periodFrom).eq('paid_to',periodTo);
+   const del=await db.from('subscription_payment_history')
+     .delete()
+     .eq('profile_id',String(profileId))
+     .eq('paid_from',periodFrom)
+     .eq('paid_to',periodTo)
+     .select('id');
    if(del.error)throw del.error;
+   if(!del.data || !del.data.length){
+     throw new Error('Nessun movimento eliminato. Il database non autorizza la cancellazione per questo utente (RLS/policy DELETE su subscription_payment_history), oppure il periodo non ha movimenti.');
+   }
 
    // Il profilo può contenere un solo abbonamento corrente: azzeralo SOLO se
    // le date del profilo corrispondono al periodo che l'utente ha scelto.
@@ -3277,16 +3285,31 @@ async function savePaymentHistory(profileId,paymentId=''){
 
 async function deletePaymentHistory(profileId,paymentId){
  if(!paymentId)return;
+ if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser.');return;}
  if(!confirm('Eliminare definitivamente questo pagamento dallo storico?'))return;
+ const msg=document.getElementById('cpPaymentMsg');
+ if(msg){msg.textContent='Eliminazione pagamento in corso...';msg.className='';msg.style.display='block';}
  try{
-   const r=await db.from('subscription_payment_history').delete().eq('id',paymentId).eq('profile_id',profileId);
+   // Usiamo SELECT sul DELETE per verificare che una riga sia stata realmente eliminata.
+   // Con RLS Supabase può restituire nessun errore ma 0 righe se il ruolo non ha DELETE.
+   const r=await db.from('subscription_payment_history')
+     .delete()
+     .eq('id',String(paymentId))
+     .eq('profile_id',String(profileId))
+     .select('id')
+     .maybeSingle();
    if(r.error)throw r.error;
+   if(!r.data){
+     throw new Error('Nessun pagamento eliminato. Il database non autorizza la cancellazione per questo utente (RLS/policy DELETE su subscription_payment_history).');
+   }
+   if(msg){msg.textContent='Pagamento eliminato correttamente.';msg.className='';msg.style.display='block';}
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
-   closeModal();
-   setTimeout(()=>openClientSheet(profileId),50);
+   await loadAdminClientPayments(profileId);
+   setTimeout(()=>openClientSheet(profileId),150);
  }catch(e){
-   const msg=document.getElementById('cpPaymentMsg');
-   if(msg){msg.textContent='Errore eliminazione pagamento: '+(e?.message||e);msg.className='error';msg.style.display='block';}
+   const detail=e?.message||String(e);
+   if(msg){msg.textContent='Errore eliminazione pagamento: '+detail;msg.className='error';msg.style.display='block';}
+   alert('ELIMINAZIONE NON ESEGUITA\n\n'+detail);
  }
 }
 

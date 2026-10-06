@@ -3195,6 +3195,7 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
    const from=String(row?.paid_from||forcedFrom||profile?.subscription_paid_from||'').slice(0,10);
    const to=String(row?.paid_to||forcedTo||profile?.subscription_paid_to||'').slice(0,10);
    const due=forcedDue!=null?Number(forcedDue):(profile?.subscription_cost==null?null:Number(profile.subscription_cost));
+   if(forcedDue!=null){ window.__forcedPaymentDueByProfile=window.__forcedPaymentDueByProfile||{}; window.__forcedPaymentDueByProfile[String(profileId)]=Number(forcedDue); }
    const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from && String(x.paid_to||'').slice(0,10)===to && (!paymentId || String(x.id)!==String(paymentId))).reduce((a,x)=>a+(Number(x.amount)||0),0);
    const current=Number(row?.amount||0);
    const paidAfter=paidBefore+current;

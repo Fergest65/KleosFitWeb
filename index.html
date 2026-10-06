@@ -244,7 +244,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active" selected>Abbonamento attivo</option><option value="suspended">Abbonamento sospeso</option><option value="all">Tutti</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="all" selected>Tutti</option><option value="active">Abbonamento attivo</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="suspended">Cliente sospeso</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -928,8 +928,26 @@ function activeSubscriptionDate(p,key){
   const v=p?.[key];
   return v?String(v).slice(0,10):'';
 }
+function isSubscriptionOpen(p){
+  return p?.subscription_open===true || p?.subscription_open===1 || ['true','1','si','sì','yes','open'].includes(String(p?.subscription_open||'').toLowerCase().trim());
+}
+function subscriptionPeriodsForList(p){
+  const periods=[];
+  const add=(from,to)=>{
+    const f=String(from||'').slice(0,10), t=String(to||'').slice(0,10);
+    if(f && t && !periods.some(x=>x.from===f && x.to===t)) periods.push({from:f,to:t});
+  };
+  add(p?.subscription_paid_from,p?.subscription_paid_to);
+  (p?._payments||[]).forEach(x=>add(x?.paid_from,x?.paid_to));
+  return periods;
+}
 function isSubscriptionCurrentlyActive(p){
-  return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
+  if(isSubscriptionOpen(p)) return false;
+  return subscriptionPeriodsForList(p).some(x=>computeSubscriptionActive(x.from,x.to));
+}
+function subscriptionListStatus(p){
+  if(isSubscriptionOpen(p)) return 'OPEN';
+  return isSubscriptionCurrentlyActive(p)?'ATTIVO':'NON ATTIVO';
 }
 function subscriptionAccountingStatus(p,payments){
   const from=activeSubscriptionDate(p,'subscription_paid_from');
@@ -982,7 +1000,6 @@ async function loadActiveSubscriptions(){
   // esclusivamente da renderActiveSubscriptions().
   const adminRoles=['admin','administrator','amministratore','superuser'];
   const profiles=(pr.data||[]).filter(p=>{
-    if(isClientSuspended(p)) return false;
     const role=String(p.role||'').toLowerCase().trim();
     return !adminRoles.includes(role);
   });
@@ -1017,9 +1034,11 @@ function renderActiveSubscriptions(){
   const q=(document.getElementById('activeSubSearch')?.value||'').toLowerCase().trim();
   const st=(document.getElementById('activeSubStatus')?.value||'all');
   let rows=activeSubscriptionsData.filter(p=>{
-    const active=isSubscriptionCurrentlyActive(p);
-    if(st==='active' && !active)return false;
-    if(st==='suspended' && active)return false;
+    const subStatus=subscriptionListStatus(p);
+    if(st==='active' && !['ATTIVO','OPEN'].includes(subStatus))return false;
+    if(st==='inactive' && subStatus!=='NON ATTIVO')return false;
+    if(st==='open' && subStatus!=='OPEN')return false;
+    if(st==='suspended' && !isClientSuspended(p))return false;
     const name=profileDisplayName(p)||p.full_name||p.name||'';
     const hay=[name,p.email,p.member_card_number,p.subscription_type,p.subscription_plus_course]
       .filter(Boolean).join(' ').toLowerCase();
@@ -1031,7 +1050,7 @@ function renderActiveSubscriptions(){
     return an;
   });
 
-  const stateText=st==='suspended'?'sospeso':st==='all'?'tutti':'attivo';
+  const stateText=st==='suspended'?'sospesi':st==='open'?'OPEN':st==='inactive'?'non attivi':st==='all'?'tutti':'attivi';
   if(count)count.textContent=rows.length+(rows.length===1?' cliente '+stateText:' clienti '+stateText);
   if(!rows.length){
     list.innerHTML='<div class="muted">Nessun cliente corrispondente ai filtri selezionati.</div>';
@@ -1041,23 +1060,30 @@ function renderActiveSubscriptions(){
   list.innerHTML=`<div style="overflow:auto"><table class="table">
     <thead><tr>
       <th>Cliente</th><th>Tessera</th><th>Abbonamento</th><th>Periodo</th>
-      <th>Stato abbonamento</th><th>Costo</th><th></th>
+      <th>Stato cliente</th><th>Stato abbonamento</th><th>Costo</th><th></th>
     </tr></thead>
     <tbody>${rows.map(p=>{
       const name=profileDisplayName(p)||p.full_name||p.name||'Cliente';
       const from=p._latestFrom||'';
       const to=p._latestTo||'';
       const cost=p._defaultCost==null?'—':'€ '+Number(p._defaultCost||0).toFixed(2).replace('.',',');
-      const active=isSubscriptionCurrentlyActive(p);
-      const stateBadge=active
-        ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
-        : '<span class="pill" style="background:#ffb020;color:#111">SOSPESO</span>';
+      const clientSuspended=isClientSuspended(p);
+      const clientStateBadge=clientSuspended
+        ? '<span class="pill" style="background:#ffb020;color:#111">SOSPESO</span>'
+        : '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>';
+      const subStatus=subscriptionListStatus(p);
+      const stateBadge=subStatus==='OPEN'
+        ? '<span class="pill">OPEN</span>'
+        : subStatus==='ATTIVO'
+          ? '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>'
+          : '<span class="pill" style="background:#8b929b;color:#111">NON ATTIVO</span>';
       const type=p.subscription_type||'Abbonamento';
       return `<tr>
         <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>
         <td>${esc(p.member_card_number||'—')}</td>
         <td>${esc(type)}</td>
         <td>${esc(from?fmtDateIT(from):'—')} → ${esc(to?fmtDateIT(to):'—')}</td>
+        <td>${clientStateBadge}</td>
         <td>${stateBadge}</td>
         <td><b>${esc(cost)}</b></td>
         <td><button class="btn secondary mini" type="button" onclick="openClientSheet('${p.id}')">Scheda</button></td>
@@ -1222,7 +1248,7 @@ function openClientSheet(id){
  openModal(`<div class="modalhead"><h2>Scheda cliente</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div><div><label>Abbonamento OPEN</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>NO</option><option value="true" ${p.subscription_open?'selected':''}>SÌ — OPEN</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option></select><button class="btn mini" type="button" onclick="openSubscriptionRenewal('${p.id}')">Abbonamento</button></div><div class="muted" style="margin-top:6px">Il tipo abbonamento resta il riferimento principale della scheda. Corsi Plus, supplementi e periodo vengono gestiti dal pulsante “Abbonamento”.</div></div></div></div>
   <div class="clientSheetSection"><h3><span>€</span> Dovuti e relativi movimenti</h3>
@@ -1359,7 +1385,7 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
@@ -3181,7 +3207,6 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
      <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
      <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
    </div>
-   <input type="hidden" id="phDue" value="${due==null?'':String(due)}">
    <div id="phSummary" class="subscriptionBreakdown">
      <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
      <div class="sbRow"><span>Versato con altri pagamenti</span><b id="phPaidBefore">€ ${paidBefore.toFixed(2).replace('.',',')}</b></div>
@@ -3222,9 +3247,8 @@ async function savePaymentHistory(profileId,paymentId=''){
    const hist=await db.from('subscription_payment_history').select('amount,paid_from,paid_to,id').eq('profile_id',profileId).limit(500);
    if(hist.error){if(msg){msg.textContent='Impossibile verificare i pagamenti precedenti: '+hist.error.message;msg.style.display='block'}return;}
    const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from&&String(x.paid_to||'').slice(0,10)===to&&String(x.id)!==String(paymentId||'')).reduce((a,x)=>a+(Number(x.amount)||0),0);
-   const modalDue=document.getElementById('phDue')?.value?.trim()||'';
    const forced=window.__forcedPaymentDueByProfile?.[String(profileId)];
-   const due=modalDue!==''?Number(modalDue):(forced!=null?Number(forced):Number(prof.data.subscription_cost));
+   const due=forced!=null?Number(forced):Number(prof.data.subscription_cost);
    if(paidBefore+amount>due+0.005){if(msg){msg.textContent='Il versamento supera il totale dell’abbonamento. Totale: € '+due.toFixed(2).replace('.',',')+' · già versato: € '+paidBefore.toFixed(2).replace('.',',');msg.style.display='block'}return;}
  }
  const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};

@@ -244,7 +244,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:240px"><option value="active" selected>Attivi</option><option value="all">Tutti</option><option value="nonopen">Tutti tranne Open</option><option value="paid">Contabilità regolare</option><option value="check">Da verificare</option><option value="open">Open</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active" selected>Abbonamento attivo</option><option value="inactive">Abbonamento non attivo</option><option value="all">Tutti</option><option value="open">Open</option></select> <select id="activeSubPayment" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="all" selected>Pagamento: tutti</option><option value="paid">Pagato</option><option value="partial">Parziale</option><option value="unpaid">Non pagato</option><option value="check">Da verificare</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -942,8 +942,29 @@ function subscriptionAccountingStatus(p,payments){
     if(to && pt!==to)return false;
     return true;
   }).reduce((sum,x)=>sum+(Number(x.amount)||0),0);
-  return total+0.005>=cost?'paid':'check';
+  if(total<=0.005)return 'unpaid';
+  if(total+0.005>=cost)return 'paid';
+  return 'partial';
 }
+function subscriptionPaymentLabel(status){
+  if(status==='paid')return 'PAGATO';
+  if(status==='partial')return 'PARZIALE';
+  if(status==='unpaid')return 'NON PAGATO';
+  return 'DA VERIFICARE';
+}
+function subscriptionPaymentBadge(status){
+  const label=subscriptionPaymentLabel(status);
+  if(status==='paid')return '<span class="pill" style="background:#c6ff35;color:#111">'+label+'</span>';
+  if(status==='partial')return '<span class="pill" style="background:#ffd54f;color:#111">'+label+'</span>';
+  if(status==='unpaid')return '<span class="pill" style="background:#ff6b6b;color:#111">'+label+'</span>';
+  return '<span class="pill" style="background:#ffb020;color:#111">'+label+'</span>';
+}
+function subscriptionStateBadge(active,open){
+  if(open)return '<span class="pill">OPEN</span>';
+  if(active)return '<span class="pill" style="background:#c6ff35;color:#111">ATTIVO</span>';
+  return '<span class="pill" style="background:#8b929b;color:#111">NON ATTIVO</span>';
+}
+
 async function loadActiveSubscriptions(){
   const list=document.getElementById('activeSubList'),err=document.getElementById('activeSubError'),count=document.getElementById('activeSubCount');
   if(!list)return;
@@ -982,16 +1003,15 @@ function renderActiveSubscriptions(){
   const list=document.getElementById('activeSubList'),count=document.getElementById('activeSubCount');
   if(!list)return;
   const q=(document.getElementById('activeSubSearch')?.value||'').toLowerCase().trim();
-  const st=document.getElementById('activeSubStatus')?.value||'all';
+  const st=(document.getElementById('activeSubStatus')?.value||'all');
+  const paySt=(document.getElementById('activeSubPayment')?.value||'all');
   let rows=activeSubscriptionsData.filter(p=>{
     const open=['true','1','si','sì','yes','open'].includes(String(p?.subscription_open||'').toLowerCase().trim());
     const active=isSubscriptionCurrentlyActive(p);
-    if(st==='nonopen' && open)return false;
     if(st==='active' && (!active || open))return false;
-    if(st==='inactive' && active)return false;
-    if(st==='paid' && p._accounting!=='paid')return false;
-    if(st==='check' && p._accounting==='paid')return false;
+    if(st==='inactive' && (active || open))return false;
     if(st==='open' && !open)return false;
+    if(paySt!=='all' && p._accounting!==paySt)return false;
     const name=profileDisplayName(p)||p.full_name||p.name||'';
     const hay=[name,p.email,p.member_card_number,p.subscription_type,p.subscription_plus_course]
       .filter(Boolean).join(' ').toLowerCase();
@@ -1003,16 +1023,17 @@ function renderActiveSubscriptions(){
     return an;
   });
 
-  if(count){ const inactive=st==='inactive'; count.textContent=rows.length+(rows.length===1?(inactive?' cliente non attivo':' cliente attivo'):(inactive?' clienti non attivi':' clienti attivi')); }
+  const stateText=st==='inactive'?'non attivo':st==='open'?'open':'attivo';
+  if(count)count.textContent=rows.length+(rows.length===1?' cliente '+stateText:' clienti '+stateText);
   if(!rows.length){
-    list.innerHTML='<div class="muted">'+(st==='inactive'?'Nessun cliente con abbonamento non attivo.':'Nessun cliente con abbonamento attivo.')+'</div>';
+    list.innerHTML='<div class="muted">Nessun cliente corrispondente ai filtri selezionati.</div>';
     return;
   }
 
   list.innerHTML=`<div style="overflow:auto"><table class="table">
     <thead><tr>
       <th>Cliente</th><th>Tessera</th><th>Abbonamento</th><th>Periodo</th>
-      <th>Importo</th><th>Ultimo pagamento</th><th>Situazione contabile</th><th></th>
+      <th>Stato abbonamento</th><th>Costo</th><th>Pagamento</th><th>Ultimo pagamento</th><th></th>
     </tr></thead>
     <tbody>${rows.map(p=>{
       const name=profileDisplayName(p)||p.full_name||p.name||'Cliente';
@@ -1021,19 +1042,20 @@ function renderActiveSubscriptions(){
       const cost=p.subscription_cost==null?'—':'€ '+Number(p.subscription_cost||0).toFixed(2).replace('.',',');
       const last=p._payments?.[0];
       const lastPay=last?fmtDate(last.created_at):'Nessun pagamento registrato';
-      const ok=p._accounting==='paid';
-      const badge=ok
-        ?'<span class="pill" style="background:#c6ff35;color:#111">REGOLARE</span>'
-        :'<span class="pill" style="background:#ffb020;color:#111">DA VERIFICARE</span>';
+      const active=isSubscriptionCurrentlyActive(p);
+      const open=['true','1','si','sì','yes','open'].includes(String(p?.subscription_open||'').toLowerCase().trim());
+      const stateBadge=subscriptionStateBadge(active,open);
+      const paymentBadge=subscriptionPaymentBadge(p._accounting);
       const type=p.subscription_type||'Abbonamento';
       return `<tr>
         <td><b>${esc(name)}</b><div class="muted">${esc(p.email||'')}</div></td>
         <td>${esc(p.member_card_number||'—')}</td>
         <td>${esc(type)}${p.subscription_plus_cost?`<div class="muted">Plus € ${Number(p.subscription_plus_cost||0).toFixed(2).replace('.',',')}</div>`:''}</td>
         <td>${esc(fmtDateIT(from))} → ${esc(fmtDateIT(to))}</td>
+        <td>${stateBadge}</td>
         <td><b>${esc(cost)}</b></td>
+        <td>${paymentBadge}</td>
         <td>${esc(lastPay)}</td>
-        <td>${badge}</td>
         <td><button class="btn secondary mini" type="button" onclick="openClientSheet('${p.id}')">Scheda</button></td>
       </tr>`;
     }).join('')}</tbody>

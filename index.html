@@ -244,12 +244,12 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="all" selected>Tutti</option><option value="active">Abbonamento attivo</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="suspended">Abbonamento sospeso</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="active" selected>Abbonamento attivo</option><option value="suspended">Abbonamento sospeso</option><option value="all">Tutti</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
 </div>`,
-anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione completa dei dati cliente — area amministratori. Tutti i campi della scheda sono modificabili.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><select id="anaStatus" onchange="filterAnagrafica()" style="max-width:190px"><option value="all" selected>Tutti</option><option value="open">OPEN</option></select><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
+anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione completa dei dati cliente — area amministratori. Tutti i campi della scheda sono modificabili.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
 anagraficaClient:`<div class="top"><div><div class="title">La mia anagrafica</div><div class="sub">Visualizza e modifica i tuoi dati personali e di contatto.</div></div><button class="btn" onclick="loadClientAnagrafica()">Aggiorna</button></div><div class="card"><div id="myAnaError" class="error"></div><div id="myAnaBox">Caricamento...</div></div>`,
 slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div class="sub">Gestione degli slot disponibili per categoria.</div></div><button class="btn" type="button" onclick="loadSlotAdmin()">Aggiorna</button></div><div class="card"><div class="inputrow"><input id="slotAdminSearch" placeholder="Cerca data, coach o categoria" oninput="filterSlotAdmin()"></div><div id="slotAdminError" class="error"></div>
 <div id="standardSlotsPanel" class="card" style="margin-top:14px">
@@ -918,13 +918,7 @@ function renderAnagrafica(rows){
 }
 function filterAnagrafica(){
  const q=(document.getElementById('anaSearch')?.value||'').toLowerCase().trim();
- const st=(document.getElementById('anaStatus')?.value||'all');
- const rows=(anagraficaData||[]).filter(p=>{
-   const hay=[profileDisplayName(p),profileEmail(p),p.phone,p.phone_number,p.mobile,p.member_card_number,p.member_card,p.card_number,p.tessera,p.member_code,p.fiscal_code,p.city,p.address].some(v=>String(v||'').toLowerCase().includes(q));
-   const open=['true','1','si','sì','yes','open'].includes(String(p.subscription_open||'').toLowerCase().trim());
-   if(st==='open' && !open)return false;
-   return hay;
- });
+ const rows=(anagraficaData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),p.phone,p.phone_number,p.mobile,p.member_card_number,p.member_card,p.card_number,p.tessera,p.member_code,p.fiscal_code,p.city,p.address].some(v=>String(v||'').toLowerCase().includes(q)));
  renderAnagrafica(rows);
 }
 
@@ -1024,11 +1018,7 @@ function renderActiveSubscriptions(){
   const st=(document.getElementById('activeSubStatus')?.value||'all');
   let rows=activeSubscriptionsData.filter(p=>{
     const active=isSubscriptionCurrentlyActive(p);
-    const open=String(p?.subscription_open||'').toLowerCase().trim();
-    const isOpen=p?.subscription_open===true || p?.subscription_open===1 || ['true','1','si','sì','yes','open'].includes(open);
     if(st==='active' && !active)return false;
-    if(st==='inactive' && active)return false;
-    if(st==='open' && !isOpen)return false;
     if(st==='suspended' && active)return false;
     const name=profileDisplayName(p)||p.full_name||p.name||'';
     const hay=[name,p.email,p.member_card_number,p.subscription_type,p.subscription_plus_course]
@@ -1041,7 +1031,7 @@ function renderActiveSubscriptions(){
     return an;
   });
 
-  const stateText=st==='suspended'?'sospeso':st==='open'?'open':st==='inactive'?'non attivo':st==='all'?'tutti':'attivo';
+  const stateText=st==='suspended'?'sospeso':st==='all'?'tutti':'attivo';
   if(count)count.textContent=rows.length+(rows.length===1?' cliente '+stateText:' clienti '+stateText);
   if(!rows.length){
     list.innerHTML='<div class="muted">Nessun cliente corrispondente ai filtri selezionati.</div>';
@@ -1232,7 +1222,7 @@ function openClientSheet(id){
  openModal(`<div class="modalhead"><h2>Scheda cliente</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div><div><label>Abbonamento OPEN</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>NO</option><option value="true" ${p.subscription_open?'selected':''}>SÌ — OPEN</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option></select><button class="btn mini" type="button" onclick="openSubscriptionRenewal('${p.id}')">Abbonamento</button></div><div class="muted" style="margin-top:6px">Il tipo abbonamento resta il riferimento principale della scheda. Corsi Plus, supplementi e periodo vengono gestiti dal pulsante “Abbonamento”.</div></div></div></div>
   <div class="clientSheetSection"><h3><span>€</span> Dovuti e relativi movimenti</h3>
@@ -1369,7 +1359,7 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}

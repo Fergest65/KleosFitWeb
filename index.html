@@ -1207,7 +1207,7 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
-  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" onchange="applySubscriptionType(this.value)" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option><option value="__custom__">Prezzo personalizzato</option></select><button id="cpAddSubscriptionBtn" class="btn mini" type="button" onclick="addClientSubscriptionPeriod()">＋ Aggiungi abbonamento</button><button class="btn mini" type="button" onclick="openSubscriptionRenewal('${p.id}')">↻ Rinnova abbonamento</button></div><div id="cpPresetInfo" class="muted" style="margin-top:6px">Seleziona un tipo, poi premi “Aggiungi abbonamento” per creare il periodo. La sola selezione del tipo non crea alcun abbonamento.</div></div><div class="wide"><label>Corsi aggiuntivi Plus</label><div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div><div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div></div><div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${esc(p.subscription_plus_cost??0)}" readonly></div><div><label>Costo totale abbonamento</label><input id="cpCost" type="number" step="0.01" value="${esc(p.subscription_cost??'')}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div><div><label>Dal</label><input id="cpFrom" type="date" value="${esc(dateInputValue(subscriptionFrom))}" title="Seleziona la data di inizio abbonamento"></div><div><label>Al</label><input id="cpTo" type="date" value="${esc(dateInputValue(subscriptionTo))}" title="Seleziona la data di fine abbonamento"></div><div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div><div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input value="${esc(p.subscription_type||'—')}" disabled style="flex:1;min-width:240px"><button class="btn mini" type="button" onclick="openSubscriptionRenewal('${p.id}')">Abbonamento</button></div><div class="muted" style="margin-top:6px">Il tipo abbonamento resta il riferimento principale della scheda. Tipo, corsi Plus, supplementi e periodo vengono gestiti dal pulsante “Abbonamento”.</div></div></div></div>
   <div class="clientSheetSection"><h3><span>€</span> Storico pagamenti</h3>
    <div id="cpPaymentMsg" class="error" style="display:none"></div>
    <div class="actions" style="justify-content:flex-end;margin-bottom:10px"><button class="btn mini" type="button" onclick="openPaymentEditor('${p.id}')">+ Nuovo pagamento</button><button class="btn secondary mini" type="button" onclick="loadAdminClientPayments('${p.id}')">Aggiorna storico</button></div>
@@ -1349,8 +1349,7 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const paidFrom=valOrNull('cpFrom'),paidTo=valOrNull('cpTo'),subscriptionCost=nullableNumber('cpCost');
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:(()=>{const el=document.getElementById('cpSubType');const v=el?.value||'';if(v==='__custom__')return 'Personalizzato';const pr=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(v));return pr?.name||valOrNull('cpSubType')})(),subscription_plus_course:JSON.stringify(Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({id:String(x.value),name:String(x.dataset.name||''),cost:Number(x.dataset.cost||0)}))),subscription_plus_cost:nullableNumber('cpPlusCost'),subscription_paid_from:paidFrom,subscription_paid_to:paidTo,subscription_cost:subscriptionCost,subscription_active:computeSubscriptionActive(paidFrom,paidTo),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
@@ -2750,35 +2749,57 @@ function applySubscriptionType(id){
 }
 async function openSubscriptionRenewal(profileId){
   try{
-    await ensureSubscriptionPricesLoaded();
-    const pr=await db.from('profiles').select('id,full_name,subscription_type,subscription_cost,subscription_paid_from,subscription_paid_to,subscription_plus_course,subscription_plus_cost').eq('id',profileId).maybeSingle();
+    await Promise.all([ensureSubscriptionPricesLoaded(),ensureCourseCatalogLoaded()]);
+    const pr=await db.from('profiles').select('id,full_name,subscription_type,subscription_cost,subscription_paid_from,subscription_paid_to,subscription_plus_course,subscription_plus_cost,subscription_open').eq('id',profileId).maybeSingle();
     if(pr.error)throw pr.error;
     const p=pr.data;
     if(!p){alert('Cliente non trovato.');return;}
+
     const preset=findMatchingSubscriptionPreset(p);
     const months=Math.max(1,Number(preset?.duration_months||1));
     const currentTo=String(p.subscription_paid_to||'').slice(0,10);
     const today=new Date(); today.setHours(12,0,0,0);
-    const todayStr=today.toISOString().slice(0,10);
-    let start;
+    let start=today;
     if(currentTo){
       const d=new Date(currentTo+'T12:00:00');
       if(!Number.isNaN(d.getTime())){
         d.setDate(d.getDate()+1);
         start=d<today?today:d;
-      }else start=today;
-    }else start=today;
-    const end=new Date(start); end.setMonth(end.getMonth()+months); end.setDate(end.getDate()-1);
+      }
+    }
+    const end=new Date(start);
+    end.setMonth(end.getMonth()+months);
+    end.setDate(end.getDate()-1);
     const from=start.toISOString().slice(0,10),to=end.toISOString().slice(0,10);
-    const cost=Number(p.subscription_cost||0);
+
+    const existingPlus=Number(p.subscription_plus_cost||0);
+    let baseCost=Number(p.subscription_cost||0)-existingPlus;
+    if(!Number.isFinite(baseCost)||baseCost<0)baseCost=Number(preset?.price||p.subscription_cost||0);
     const name=p.full_name||'Cliente';
-    openModal(`<div class="modalhead"><h2>Rinnovo abbonamento</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
-      <div class="muted" style="margin-bottom:14px">${esc(name)} · ${esc(p.subscription_type||'Abbonamento')}</div>
+
+    openModal(`<div class="modalhead"><h2>Abbonamento</h2><button class="close" onclick="closeModal();setTimeout(()=>openClientSheet('${profileId}'),80)">Chiudi</button></div>
+      <div class="muted" style="margin-bottom:14px">${esc(name)} · Gestione abbonamento</div>
       <div class="clientSheetGrid">
-        <div><label>Nuovo periodo dal</label><input id="renewFrom" type="date" value="${from}"></div>
-        <div><label>Nuovo periodo al</label><input id="renewTo" type="date" value="${to}"></div>
-        <div><label>Costo abbonamento (€)</label><input id="renewCost" type="number" min="0" step="0.01" value="${cost.toFixed(2)}"></div>
-        <div class="wide"><label>Pagamento al rinnovo</label>
+        <div class="wide"><label>Tipo abbonamento</label>
+          <select id="cpSubType" onchange="applySubscriptionType(this.value)" style="width:100%">
+            <option value="">— Seleziona tipo abbonamento —</option>
+            <option value="__custom__">Prezzo base personalizzato</option>
+          </select>
+        </div>
+        <div class="wide"><div id="cpPresetInfo" class="muted">Seleziona o conferma il tipo di abbonamento.</div></div>
+
+        <div class="wide"><label>Corsi aggiuntivi Plus</label>
+          <div id="cpPlusCourses" class="plusCoursesBox" style="border:1px solid var(--border,#ddd);border-radius:10px;padding:8px;background:rgba(0,0,0,.02)"></div>
+          <div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div>
+        </div>
+        <div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${existingPlus.toFixed(2)}" readonly></div>
+        <div><label>Costo totale abbonamento (€)</label><input id="cpCost" type="number" step="0.01" value="${Math.max(0,Number(p.subscription_cost||baseCost)).toFixed(2)}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div>
+        <div><label>Dal</label><input id="cpFrom" type="date" value="${from}" title="Seleziona la data di inizio abbonamento"></div>
+        <div><label>Al</label><input id="cpTo" type="date" value="${to}" title="Seleziona la data di fine abbonamento"></div>
+        <div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(from,to)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div>
+        <div><label>Abbonamento open</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>No</option><option value="true" ${p.subscription_open?'selected':''}>Sì</option></select></div>
+
+        <div class="wide"><label>Pagamento</label>
           <select id="renewPaymentMode" onchange="syncRenewalPaymentMode()">
             <option value="none">Nessun pagamento</option>
             <option value="full">Saldo completo</option>
@@ -2786,23 +2807,72 @@ async function openSubscriptionRenewal(profileId){
           </select>
         </div>
         <div id="renewPartialWrap" class="wide" style="display:none"><label>Importo acconto (€)</label><input id="renewPartialAmount" type="number" min="0" step="0.01" value=""></div>
-        <div class="wide"><label>Nota pagamento</label><input id="renewPaymentNote" value="Rinnovo abbonamento"></div>
+        <div class="wide"><label>Nota pagamento</label><input id="renewPaymentNote" value="Abbonamento"></div>
       </div>
       <div class="subscriptionBreakdown" style="margin-top:14px">
         <div class="sbRow"><span>Periodo precedente</span><b>${currentTo?esc(fmtDateIT(currentTo)):'—'}</b></div>
-        <div class="sbRow"><span>Nuovo periodo</span><b>${esc(fmtDateIT(from))} → ${esc(fmtDateIT(to))}</b></div>
-        <div class="sbTotal"><span>Pagamento scelto</span><b id="renewPaymentSummary">Nessun pagamento</b></div>
+        <div class="sbRow"><span>Nuovo periodo</span><b id="renewPeriodSummary">${esc(fmtDateIT(from))} → ${esc(fmtDateIT(to))}</b></div>
+        <div class="sbTotal"><span>Totale abbonamento</span><b id="renewTotalSummary">€ ${Number(p.subscription_cost||baseCost).toFixed(2).replace('.',',')}</b></div>
+        <div class="sbRow"><span>Pagamento scelto</span><b id="renewPaymentSummary">Nessun pagamento</b></div>
       </div>
       <div id="renewMsg" class="error" style="display:none;margin-top:12px"></div>
-      <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="saveSubscriptionRenewal('${profileId}')">Conferma rinnovo</button></div>`);
-    setTimeout(()=>{
-      const f=document.getElementById('renewFrom'),t=document.getElementById('renewTo');
-      const recalc=()=>{if(f?.value&&t?.value&&t.value<f.value)t.value=f.value;};
-      f?.addEventListener('change',recalc); t?.addEventListener('change',recalc);
-      syncRenewalPaymentMode();
-    },20);
-  }catch(e){alert('Impossibile aprire il rinnovo: '+(e?.message||e));}
+      <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal();setTimeout(()=>openClientSheet('${profileId}'),80)">Annulla</button><button class="btn" type="button" onclick="saveSubscriptionRenewal('${profileId}')">Conferma abbonamento</button></div>`);
+
+    const sel=document.getElementById('cpSubType');
+    const activePresets=(subscriptionPricePresets||[]).filter(x=>x.active!==false && String(x.plan_type||'').toLowerCase()!=='plus');
+    if(sel){
+      sel.innerHTML='<option value="">— Seleziona tipo abbonamento —</option>'+
+        activePresets.map(x=>`<option value="${esc(String(x.id))}">${esc(x.name||'Abbonamento')} — € ${Number(x.price||0).toFixed(2).replace('.',',')} / ${Number(x.duration_months||1)===1?'1 mese':String(x.duration_months)+' mesi'}</option>`).join('')+
+        '<option value="__custom__">Prezzo base personalizzato</option>';
+      if(preset)sel.value=String(preset.id);
+      else if(p.subscription_type)sel.value='__custom__';
+    }
+
+    const costEl=document.getElementById('cpCost');
+    if(costEl){
+      costEl.dataset.baseCost=String(baseCost);
+      if(preset)costEl.value=(baseCost+existingPlus).toFixed(2);
+    }
+    renderPlusCourseSelection(p);
+
+    const f=document.getElementById('cpFrom'),t=document.getElementById('cpTo');
+    const syncDates=()=>{
+      if(f?.value){
+        if(t)t.min=f.value;
+      }else if(t)t.removeAttribute('min');
+      if(t?.value&&f)f.max=t.value; else if(f)f.removeAttribute('max');
+      const period=document.getElementById('renewPeriodSummary');
+      if(period)period.textContent=(f?.value&&t?.value)?fmtDateIT(f.value)+' → '+fmtDateIT(t.value):'—';
+      const active=document.getElementById('cpActiveStatus');
+      if(active)active.textContent=computeSubscriptionActive(f?.value,t?.value)?'ATTIVO — periodo abbonamento':'NON ATTIVO — periodo abbonamento';
+    };
+    const recalcEndFromType=()=>{
+      const id=sel?.value;
+      const prx=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id));
+      if(!prx||!f?.value||!t)return;
+      const d=new Date(f.value+'T12:00:00');
+      d.setMonth(d.getMonth()+Math.max(1,Number(prx.duration_months||1)));
+      d.setDate(d.getDate()-1);
+      t.value=d.toISOString().slice(0,10);
+      syncDates();
+    };
+    sel?.addEventListener('change',recalcEndFromType);
+    f?.addEventListener('change',syncDates);
+    t?.addEventListener('change',syncDates);
+    syncDates();
+    syncRenewalPaymentMode();
+
+    const refreshTotal=()=>{
+      updateClientSubscriptionTotal();
+      const c=Number(document.getElementById('cpCost')?.value||0);
+      const totalSummary=document.getElementById('renewTotalSummary');
+      if(totalSummary)totalSummary.textContent='€ '+c.toFixed(2).replace('.',',');
+    };
+    document.querySelectorAll('.cpPlusCourseCheck').forEach(x=>x.addEventListener('change',refreshTotal));
+    refreshTotal();
+  }catch(e){alert('Impossibile aprire la gestione abbonamento: '+(e?.message||e));}
 }
+
 function syncRenewalPaymentMode(){
   const mode=document.getElementById('renewPaymentMode')?.value||'none';
   const wrap=document.getElementById('renewPartialWrap');
@@ -2817,16 +2887,20 @@ function syncRenewalPaymentMode(){
 }
 async function saveSubscriptionRenewal(profileId){
   const msg=document.getElementById('renewMsg');
-  const from=document.getElementById('renewFrom')?.value||'';
-  const to=document.getElementById('renewTo')?.value||'';
-  const cost=Number(document.getElementById('renewCost')?.value||0);
+  const from=document.getElementById('cpFrom')?.value||'';
+  const to=document.getElementById('cpTo')?.value||'';
+  const cost=Number(document.getElementById('cpCost')?.value||0);
   const mode=document.getElementById('renewPaymentMode')?.value||'none';
   const partial=Number(document.getElementById('renewPartialAmount')?.value||0);
-  const note=document.getElementById('renewPaymentNote')?.value?.trim()||'Rinnovo abbonamento';
+  const note=document.getElementById('renewPaymentNote')?.value?.trim()||'Abbonamento';
+  const typeEl=document.getElementById('cpSubType');
+  const typeId=typeEl?.value||'';
   const fail=(t)=>{if(msg){msg.textContent=t;msg.style.display='block';}};
-  if(!from||!to){fail('Inserisci il nuovo periodo.');return;}
+  if(!typeId){fail('Seleziona il tipo di abbonamento.');return;}
+  if(!from||!to){fail('Inserisci il periodo dell’abbonamento.');return;}
   if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}
   if(!Number.isFinite(cost)||cost<=0){fail('Inserisci un costo abbonamento valido.');return;}
+
   let amount=0;
   if(mode==='full')amount=cost;
   if(mode==='partial'){
@@ -2834,21 +2908,46 @@ async function saveSubscriptionRenewal(profileId){
     if(partial>cost+0.005){fail('L’acconto non può superare il costo dell’abbonamento.');return;}
     amount=partial;
   }
+
+  const preset=typeId==='__custom__'?null:(subscriptionPricePresets||[]).find(x=>String(x.id)===String(typeId));
+  const subscriptionType=typeId==='__custom__'?'Personalizzato':String(preset?.name||'');
+  if(!subscriptionType){fail('Il tipo di abbonamento selezionato non è disponibile.');return;}
+
+  const plusRows=Array.from(document.querySelectorAll('.cpPlusCourseCheck:checked')).map(x=>({
+    id:String(x.value),
+    name:String(x.dataset.name||''),
+    cost:Number(x.dataset.cost||0)
+  }));
+  const plusCost=plusRows.reduce((sum,x)=>sum+Math.max(0,Number(x.cost||0)),0);
+
   try{
-    const old=await db.from('profiles').select('subscription_type,subscription_plus_course,subscription_plus_cost').eq('id',profileId).maybeSingle();
-    if(old.error)throw old.error;
-    const payload={subscription_paid_from:from,subscription_paid_to:to,subscription_cost:cost,subscription_active:computeSubscriptionActive(from,to),subscription_open:false};
-    const upd=await db.from('profiles').update(payload).eq('id',profileId).select('id').maybeSingle();
+    const payload={
+      subscription_type:subscriptionType,
+      subscription_plus_course:JSON.stringify(plusRows),
+      subscription_plus_cost:plusCost,
+      subscription_paid_from:from,
+      subscription_paid_to:to,
+      subscription_cost:cost,
+      subscription_active:computeSubscriptionActive(from,to),
+      subscription_open:document.getElementById('cpOpen')?.value==='true'
+    };
+    const upd=await db.from('profiles').update(payload).eq('id',profileId).select('*').maybeSingle();
     if(upd.error)throw upd.error;
+    if(!upd.data)throw new Error('Salvataggio non autorizzato o cliente non trovato.');
+
     if(mode!=='none'){
       const pay=await db.from('subscription_payment_history').insert({profile_id:profileId,paid_from:from,paid_to:to,amount,note}).select('id').maybeSingle();
       if(pay.error)throw pay.error;
     }
+
+    const updated=(clientsData||[]).find(x=>String(x.id)===String(profileId)) || (activeSubscriptionsData||[]).find(x=>String(x.id)===String(profileId)) || (anagraficaData||[]).find(x=>String(x.id)===String(profileId));
+    if(updated)Object.assign(updated,upd.data);
     if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
     closeModal();
     setTimeout(()=>openClientSheet(profileId),80);
-  }catch(e){fail('Errore salvataggio rinnovo: '+(e?.message||e));}
+  }catch(e){fail('Errore salvataggio abbonamento: '+(e?.message||e));}
 }
+
 function addClientSubscriptionPeriod(){
  const sel=document.getElementById('cpSubType');
  const from=document.getElementById('cpFrom');

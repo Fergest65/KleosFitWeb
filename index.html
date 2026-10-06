@@ -929,7 +929,9 @@ function activeSubscriptionDate(p,key){
   return v?String(v).slice(0,10):'';
 }
 function isSubscriptionCurrentlyActive(p){
-  return computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
+  // Lo stato mostrato nell'elenco clienti deve seguire l'attivazione/disattivazione
+  // dell'account. Il periodo dell'abbonamento resta un'informazione separata.
+  return !isClientSuspended(p);
 }
 function subscriptionAccountingStatus(p,payments){
   const from=activeSubscriptionDate(p,'subscription_paid_from');
@@ -1115,6 +1117,7 @@ async function toggleClientAccount(id,suspended){
  if(r.error){alert('Impossibile '+action+' il cliente.\n\n'+(r.error.message||r.error));return;}
  if(p)p.account_suspended=!!suspended;
  if(typeof loadClients==='function')await loadClients();
+ if(typeof loadActiveSubscriptions==='function' && document.getElementById('activeSubList'))await loadActiveSubscriptions();
  if(typeof loadSuspendedClients==='function' && document.getElementById('suspendedClientList'))await loadSuspendedClients();
  closeModal();
 }

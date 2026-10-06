@@ -984,7 +984,8 @@ async function loadActiveSubscriptions(){
   // esclusivamente da renderActiveSubscriptions().
   const adminRoles=['admin','administrator','amministratore','superuser'];
   const profiles=(pr.data||[]).filter(p=>{
-    if(isClientSuspended(p)) return false;
+    // I clienti sospesi NON vengono eliminati dall'elenco abbonamenti:
+    // devono rimanere visibili nel filtro "Abbonamento sospeso" e poter essere riattivati.
     const role=String(p.role||'').toLowerCase().trim();
     return !adminRoles.includes(role);
   });
@@ -1106,6 +1107,7 @@ async function reactivateClient(id){
  const r=await db.from("profiles").update({account_suspended:false}).eq("id",String(id));
  if(r.error){alert("Impossibile riattivare il cliente.\n\n"+r.error.message);return;}
  loadSuspendedClients(); loadClients();
+ if(typeof loadActiveSubscriptions==='function' && document.getElementById('activeSubList')) await loadActiveSubscriptions();
 }
 async function toggleClientAccount(id,suspended){
  if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser.');return;}

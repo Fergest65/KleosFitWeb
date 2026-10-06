@@ -3043,6 +3043,19 @@ async function loadClientPriceList(){
  }).join('')+'</div>';
 }
 
+function subscriptionDueId(profileId,from,to){
+  const raw=String(profileId||'')+'|'+String(from||'').slice(0,10)+'|'+String(to||'').slice(0,10);
+  try{return 'DOVUTO-'+btoa(unescape(encodeURIComponent(raw))).replace(/[^a-zA-Z0-9_-]/g,'');}
+  catch(e){return 'DOVUTO-'+raw.replace(/[^a-zA-Z0-9_-]/g,'_');}
+}
+function extractSubscriptionDueId(note){
+  const m=String(note||'').match(/\[\[DOVUTO_ID:([^\]]+)\]\]/);
+  return m?m[1]:'';
+}
+function cleanPaymentNote(note){
+  return String(note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/g,' ').trim()||'Pagamento abbonamento';
+}
+
 async function loadAdminClientPayments(profileId){
  const box=document.getElementById('cpPaymentHistory');
  if(!box)return;
@@ -3056,20 +3069,23 @@ async function loadAdminClientPayments(profileId){
    const rows=r.data||[];
    const currentFrom=String(profile.subscription_paid_from||'').slice(0,10);
    const currentTo=String(profile.subscription_paid_to||'').slice(0,10);
-   const currentKey=currentFrom+'|'+currentTo;
+   const currentKey=subscriptionDueId(profileId,currentFrom,currentTo);
    const currentDue=profile.subscription_cost==null?null:Number(profile.subscription_cost);
    const groups={};
    rows.forEach(x=>{
      const from=String(x.paid_from||'').slice(0,10);
      const to=String(x.paid_to||'').slice(0,10);
-     const key=from+'|'+to;
-     if(!groups[key])groups[key]={from,to,paid:0,rows:[]};
+     // I nuovi movimenti sono legati all'ID logico del dovuto, non alla data dell'operazione.
+     // Per i vecchi movimenti senza ID manteniamo il raggruppamento storico per periodo.
+     const dueId=extractSubscriptionDueId(x.note)||subscriptionDueId(profileId,from,to);
+     const key=dueId;
+     if(!groups[key])groups[key]={id:dueId,from,to,paid:0,rows:[]};
      groups[key].paid+=Number(x.amount)||0;
      groups[key].rows.push(x);
    });
    // Il dovuto è noto con certezza per il periodo corrente. I vecchi periodi
    // vengono comunque mantenuti separati, ma senza inventare un dovuto che non è memorizzato.
-   if(currentKey!=='|' && !groups[currentKey])groups[currentKey]={from:currentFrom,to:currentTo,paid:0,rows:[]};
+   if(currentFrom && currentTo && !groups[currentKey])groups[currentKey]={id:currentKey,from:currentFrom,to:currentTo,paid:0,rows:[]};
    const groupRows=Object.values(groups).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
    const fmtMoney=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
    const statusFor=(due,paid)=>due==null?'DOVUTO NON DISPONIBILE':(due-paid<=0.005?'SALDATO':paid>0?'PARZIALE':'NON PAGATO');
@@ -3110,7 +3126,7 @@ async function loadAdminClientPayments(profileId){
           <div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div>
         </div>
         <div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>
-        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(x.note||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(x.note||'Pagamento')}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
+        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(x.note||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(cleanPaymentNote(x.note||'Pagamento'))}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
       </div>`;
    }).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div>`;
  }catch(e){
@@ -3194,9 +3210,13 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
    if(hist.error)throw hist.error;
    const from=String(row?.paid_from||forcedFrom||profile?.subscription_paid_from||'').slice(0,10);
    const to=String(row?.paid_to||forcedTo||profile?.subscription_paid_to||'').slice(0,10);
+   const dueId=extractSubscriptionDueId(row?.note)||subscriptionDueId(profileId,from,to);
    const due=forcedDue!=null?Number(forcedDue):(profile?.subscription_cost==null?null:Number(profile.subscription_cost));
-   if(forcedDue!=null){ window.__forcedPaymentDueByProfile=window.__forcedPaymentDueByProfile||{}; window.__forcedPaymentDueByProfile[String(profileId)]=Number(forcedDue); }
-   const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from && String(x.paid_to||'').slice(0,10)===to && (!paymentId || String(x.id)!==String(paymentId))).reduce((a,x)=>a+(Number(x.amount)||0),0);
+   const paidBefore=(hist.data||[]).filter(x=>{
+     const linked=extractSubscriptionDueId(x.note);
+     const sameLink=linked ? linked===dueId : (String(x.paid_from||'').slice(0,10)===from && String(x.paid_to||'').slice(0,10)===to);
+     return sameLink && (!paymentId || String(x.id)!==String(paymentId));
+   }).reduce((a,x)=>a+(Number(x.amount)||0),0);
    const current=Number(row?.amount||0);
    const paidAfter=paidBefore+current;
    const remaining=due==null?null:Math.max(0,due-paidAfter);
@@ -3206,7 +3226,8 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
      <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from||profile?.subscription_paid_from))}"></div>
      <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to||profile?.subscription_paid_to))}"></div>
      <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
-     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
+     <input id="phDueId" type="hidden" value="${esc(dueId)}">
+     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(cleanPaymentNote(row?.note||'Pagamento abbonamento'))}"></div>
    </div>
    <div id="phSummary" class="subscriptionBreakdown">
      <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
@@ -3238,6 +3259,8 @@ async function savePaymentHistory(profileId,paymentId=''){
  const to=document.getElementById('phTo')?.value||null;
  const amountRaw=document.getElementById('phAmount')?.value?.trim()||'';
  const note=document.getElementById('phNote')?.value?.trim()||'Pagamento abbonamento';
+ const dueId=document.getElementById('phDueId')?.value||subscriptionDueId(profileId,from,to);
+ const linkedNote=note+' [[DOVUTO_ID:'+dueId+']]';
  const amount=amountRaw===''?null:Number(amountRaw);
  if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
  if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}
@@ -3247,7 +3270,11 @@ async function savePaymentHistory(profileId,paymentId=''){
  if(prof.data?.subscription_cost!=null || (window.__forcedPaymentDueByProfile&&window.__forcedPaymentDueByProfile[String(profileId)]!=null)){
    const hist=await db.from('subscription_payment_history').select('amount,paid_from,paid_to,id').eq('profile_id',profileId).limit(500);
    if(hist.error){if(msg){msg.textContent='Impossibile verificare i pagamenti precedenti: '+hist.error.message;msg.style.display='block'}return;}
-   const paidBefore=(hist.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===from&&String(x.paid_to||'').slice(0,10)===to&&String(x.id)!==String(paymentId||'')).reduce((a,x)=>a+(Number(x.amount)||0),0);
+   const paidBefore=(hist.data||[]).filter(x=>{
+     const linked=extractSubscriptionDueId(x.note);
+     const sameLink=linked ? linked===dueId : (String(x.paid_from||'').slice(0,10)===from&&String(x.paid_to||'').slice(0,10)===to);
+     return sameLink&&String(x.id)!==String(paymentId||'');
+   }).reduce((a,x)=>a+(Number(x.amount)||0),0);
    const forced=window.__forcedPaymentDueByProfile?.[String(profileId)];
    const due=forced!=null?Number(forced):Number(prof.data.subscription_cost);
    if(paidBefore+amount>due+0.005){if(msg){msg.textContent='Il versamento supera il totale dell’abbonamento. Totale: € '+due.toFixed(2).replace('.',',')+' · già versato: € '+paidBefore.toFixed(2).replace('.',',');msg.style.display='block'}return;}
@@ -3255,8 +3282,8 @@ async function savePaymentHistory(profileId,paymentId=''){
  const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};
  try{
    let r;
-   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
-   else r=await db.from('subscription_payment_history').insert(payload).select('id').maybeSingle();
+   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note:linkedNote}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
+   else r=await db.from('subscription_payment_history').insert({...payload,note:linkedNote}).select('id').maybeSingle();
    if(r.error)throw r.error;
    // Dopo il salvataggio torna sempre alla scheda cliente, non all'elenco.
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();

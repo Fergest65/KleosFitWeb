@@ -3030,7 +3030,22 @@ async function loadAdminClientPayments(profileId){
    const totalPaidCurrent=(groups[currentKey]?.paid||0);
    const currentRemaining=currentDue==null?null:Math.max(0,currentDue-totalPaidCurrent);
    const currentStatus=statusFor(currentDue,totalPaidCurrent);
-   box.innerHTML=`<div class="muted" style="margin-top:4px;font-weight:700">Dovuti e relativi movimenti</div>
+   const subscriptionListHtml=groupRows.length?`<div class="clientSubscriptionList" style="margin-top:8px">${groupRows.map(g=>{
+      const key=g.from+'|'+g.to;
+      const isCurrent=key===currentKey;
+      const due=isCurrent?currentDue:null;
+      const rem=due==null?null:Math.max(0,due-g.paid);
+      const st=statusFor(due,g.paid);
+      return `<div class="card" style="margin-top:8px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+          <div><b>${esc(profile.subscription_type||'Abbonamento')}</b><div class="muted">${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}${isCurrent?' · Periodo corrente':''}</div></div>
+          <div>${badge(st)}${rem!=null?` <span class="muted" style="margin-left:6px">Residuo ${fmtMoney(rem)}</span>`:''}</div>
+        </div>
+      </div>`;
+   }).join('')}</div>`:'<div class="muted" style="margin-top:8px">Nessun abbonamento registrato.</div>';
+   box.innerHTML=`<div class="muted" style="margin-top:4px;font-weight:700">Elenco abbonamenti</div>
+   ${subscriptionListHtml}
+   <div class="muted" style="margin-top:16px;font-weight:700">Dovuti e relativi movimenti</div>
    <div style="margin-top:8px">${groupRows.length?groupRows.map(g=>{
       const key=g.from+'|'+g.to;
       const isCurrent=key===currentKey;

@@ -249,13 +249,6 @@ activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
 </div>`,
-inactiveSubscriptions:`<div class="top"><div><div class="title">Abbonamenti non attivi</div><div class="sub">Clienti senza un abbonamento attualmente valido.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
-<div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:240px"><option value="inactive" selected>Non attivi</option></select></div>
- <div id="activeSubError" class="error"></div>
- <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
- <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
-</div>`,
 anagrafica:`<div class="top"><div><div class="title">Anagrafica clienti</div><div class="sub">Gestione completa dei dati cliente — area amministratori. Tutti i campi della scheda sono modificabili.</div></div></div><div class="card"><div class="inputrow"><input id="anaSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterAnagrafica()"><button class="btn" onclick="loadAnagrafica()">Aggiorna</button></div><div id="anaError" class="error"></div><div id="anaCount" class="muted">Caricamento...</div><div id="anaList" style="margin-top:12px">Caricamento...</div></div>`,
 anagraficaClient:`<div class="top"><div><div class="title">La mia anagrafica</div><div class="sub">Visualizza e modifica i tuoi dati personali e di contatto.</div></div><button class="btn" onclick="loadClientAnagrafica()">Aggiorna</button></div><div class="card"><div id="myAnaError" class="error"></div><div id="myAnaBox">Caricamento...</div></div>`,
 slotAdmin:`<div class="top"><div><div class="title">Gestione slot</div><div class="sub">Gestione degli slot disponibili per categoria.</div></div><button class="btn" type="button" onclick="loadSlotAdmin()">Aggiorna</button></div><div class="card"><div class="inputrow"><input id="slotAdminSearch" placeholder="Cerca data, coach o categoria" oninput="filterSlotAdmin()"></div><div id="slotAdminError" class="error"></div>
@@ -362,7 +355,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
  <button type="button" onclick="show('suspendedClients',this)">Clienti sospesi</button>
  <button type="button" onclick="show('activeSubscriptions',this)">Abbonamenti attivi</button>
- <button type="button" onclick="show('inactiveSubscriptions',this)">Abbonamenti non attivi</button>
+ 
  <button type="button" onclick="show('circuits')">Circuiti</button>
 </div>`,
 suspendedClients:`<div class="top"><div><div class="title">Clienti sospesi</div><div class="sub">Clienti messi in pausa e temporaneamente esclusi dalla gestione ordinaria.</div></div><button class="btn" type="button" onclick="loadSuspendedClients()">Aggiorna</button></div><div class="card"><div id="suspendedClientError" class="error"></div><div id="suspendedClientCount" class="muted">Caricamento...</div><div id="suspendedClientList" style="margin-top:12px">Caricamento...</div></div>`,

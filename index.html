@@ -3030,13 +3030,7 @@ async function loadAdminClientPayments(profileId){
    const totalPaidCurrent=(groups[currentKey]?.paid||0);
    const currentRemaining=currentDue==null?null:Math.max(0,currentDue-totalPaidCurrent);
    const currentStatus=statusFor(currentDue,totalPaidCurrent);
-   box.innerHTML=`<div class="paymentSummary">
-     <div class="sbRow"><span>Dovuto periodo corrente</span><b>${currentDue==null?'—':fmtMoney(currentDue)}</b></div>
-     <div class="sbRow"><span>Totale acconti/pagamenti</span><b>${fmtMoney(totalPaidCurrent)}</b></div>
-     <div class="sbTotal"><span>Residuo</span><b>${currentRemaining==null?'—':fmtMoney(currentRemaining)}</b></div>
-     <div class="sbRow"><span>Stato</span><b>${badge(currentStatus)}</b></div>
-   </div>
-   <div class="muted" style="margin-top:14px;font-weight:700">Dovuti e relativi movimenti</div>
+   box.innerHTML=`<div class="muted" style="margin-top:4px;font-weight:700">Dovuti e relativi movimenti</div>
    <div style="margin-top:8px">${groupRows.length?groupRows.map(g=>{
       const key=g.from+'|'+g.to;
       const isCurrent=key===currentKey;

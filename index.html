@@ -1105,6 +1105,19 @@ async function reactivateClient(id){
  if(r.error){alert("Impossibile riattivare il cliente.\n\n"+r.error.message);return;}
  loadSuspendedClients(); loadClients();
 }
+async function toggleClientAccount(id,suspended){
+ if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser.');return;}
+ const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
+ const name=profileDisplayName(p)||p?.email||'questo cliente';
+ const action=suspended?'disattivare':'attivare';
+ if(!confirm((suspended?'Disattivare ':'Attivare ')+name+'?'))return;
+ const r=await db.from('profiles').update({account_suspended:!!suspended}).eq('id',String(id));
+ if(r.error){alert('Impossibile '+action+' il cliente.\n\n'+(r.error.message||r.error));return;}
+ if(p)p.account_suspended=!!suspended;
+ if(typeof loadClients==='function')await loadClients();
+ if(typeof loadSuspendedClients==='function' && document.getElementById('suspendedClientList'))await loadSuspendedClients();
+ closeModal();
+}
 async function deleteClientCompletely(id){
  const p=(clientsData||[]).find(x=>String(x.id)===String(id));
  if(!p){alert('Cliente non trovato nella lista.');return;}
@@ -1232,7 +1245,7 @@ function openClientSheet(id){
    </div>
   </div>
   <div id="cpMsg" class="error"></div>
-  <div class="actions" style="justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button></div><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
+  <div class="actions" style="justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;flex-wrap:wrap">${isClientSuspended(p)?`<button type="button" class="btn mini" style="background:#c6ff35;color:#111" onclick="toggleClientAccount('${p.id}',false)">Attiva cliente</button>`:`<button type="button" class="btn mini" style="background:#7b1fa2;color:#fff" onclick="toggleClientAccount('${p.id}',true)">Disattiva cliente</button>`}<button type="button" class="btn mini" style="background:#c62828;color:#fff" onclick="deleteClientCompletely('${p.id}')">Elimina cliente</button></div><div style="display:flex;gap:10px"><button class="btn secondary" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveClientSheet('${p.id}')">Salva tutti i dati cliente</button></div></div>
  </div>`);
  Promise.all([ensureSubscriptionPricesLoaded(),ensureCourseCatalogLoaded()]).then(()=>{
    const sel=document.getElementById('cpSubType');if(!sel)return;

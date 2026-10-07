@@ -5,14 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KleosFit — Circuito</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
-const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let circuitRunnerState=null,circuitRunnerTimer=0,circuitRunnerLast=0;
-</script>
 <style>
-(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}
 
 :root{--bg:#0f1115;--panel:#171a20;--panel2:#1e222a;--line:#2a2f38;--text:#f4f5f7;--muted:#9299a5;--accent:#d7ff3f;--danger:#ff5d6c}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}button,input{font:inherit}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}.brand{font-weight:900;font-size:28px;letter-spacing:2px}.brand span{color:var(--accent)}.loginbox h1{margin:28px 0 6px}.loginbox p{color:var(--muted)}label{display:block;color:#c8ccd3;font-size:13px;margin:18px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}input:focus{border-color:#59616d}select{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;outline:none}select:focus{border-color:#59616d}.btn{background:var(--accent);border:0;padding:12px 16px;border-radius:9px;font-weight:850;cursor:pointer}.btn.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.full{width:100%;margin-top:22px}.inputrow{display:flex;gap:10px;align-items:center}.inputrow input{flex:1}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:14px;background:#252b33;color:#d8dde5;font-size:12px}.targets{margin-top:15px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;color:#dce1e8;background:#111419}.mealgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.meal{padding:12px;border:1px solid var(--line);border-radius:10px;background:#111419}.meal b{display:block;color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:5px}.meal span{display:block;color:var(--muted);font-size:12px;margin-top:5px}@media(max-width:700px){.inputrow{flex-direction:column;align-items:stretch}.inputrow .btn{width:100%}.grid{grid-template-columns:1fr!important}}
 
@@ -185,10 +178,28 @@ let circuitRunnerState=null,circuitRunnerTimer=0,circuitRunnerLast=0;
 
 body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:30px;background:#fff;color:#111}.card{width:360px;margin:0 auto;border:2px solid #111;border-radius:18px;padding:25px;box-sizing:border-box}.brand{font-size:24px;font-weight:900;letter-spacing:2px}.name{font-size:22px;font-weight:800;margin-top:18px}.member{font-size:17px;margin-top:6px}.qr{margin:22px auto;width:280px;height:280px}.qr img{width:280px;height:280px;display:block}.small{font-size:12px;color:#555;margin-top:12px}button{margin-top:18px;padding:10px 18px;border:0;border-radius:8px;background:#111;color:#fff;font-weight:700}@media print{button{display:none}.card{border:2px solid #111}}
 </style>
+<style>
+/* Solo contenitore iniziale del selettore. Il runner è quello originale dell'index. */
+.monitorPicker{max-width:900px;margin:20px auto;background:#0d1014;border:1px solid var(--line);border-radius:18px;padding:22px}
+.monitorPicker h2{margin:0 0 14px}
+.monitorList{display:grid;gap:10px}
+.monitorCircuitBtn{width:100%;text-align:left}
+.monitorEmpty{color:var(--muted);padding:15px 0}
+</style>
 </head>
 <body>
 <div id="content"></div>
+
 <script>
+const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
+const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let circuitRunnerState=null;
+let circuitRunnerTimer=0;
+let circuitRunnerLast=0;
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
 async function openCircuitRunner(id){
  const c=await db.from('functional_circuits').select('*').eq('id',id).maybeSingle();
  if(c.error){alert('Impossibile aprire il circuito: '+c.error.message);return;}
@@ -266,7 +277,23 @@ function circuitRunnerTick(t){
  renderCircuitRunner();if(s.running)circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
 }
 
-(async()=>{const p=new URLSearchParams(location.search);const id=p.get('id')||p.get('circuit_id');if(!id){document.getElementById('content').innerHTML='<div class="top"><div><div class="title">Caricamento circuito</div><div class="sub">Esecuzione circuito</div></div></div><div style="text-align:center;color:#ff6b6b;font-weight:800;margin-top:24px">Manca l\'ID del circuito nell\'URL.</div>';return;}await openCircuitRunner(id);})();
+
+async function showCircuitPicker(){
+ const content=document.getElementById('content');
+ content.innerHTML=`<div class="top"><div><div class="title">KLEOSFIT</div><div class="sub">Seleziona circuito</div></div></div><div class="monitorPicker"><h2>Circuiti</h2><div id="monitorList" class="monitorList">Caricamento...</div></div>`;
+ const box=document.getElementById('monitorList');
+ const r=await db.from('functional_circuits').select('*').order('title',{ascending:true});
+ if(r.error){box.innerHTML='<div class="monitorEmpty">Errore: '+esc(r.error.message)+'</div>';return;}
+ if(!(r.data||[]).length){box.innerHTML='<div class="monitorEmpty">Nessun circuito disponibile.</div>';return;}
+ box.innerHTML=(r.data||[]).map(c=>`<button class="btn secondary monitorCircuitBtn" onclick="openCircuitRunner('${String(c.id).replace(/'/g,"\\'")}')"><b>${esc(c.title||'Circuito')}</b>${c.description?'<div class="muted">'+esc(c.description)+'</div>':''}</button>`).join('');
+}
+
+(async()=>{
+ const p=new URLSearchParams(location.search);
+ const id=p.get('id')||p.get('circuit_id');
+ if(id && id!=='IL-VERO-UUID') await openCircuitRunner(id);
+ else await showCircuitPicker();
+})();
 </script>
 </body>
 </html>

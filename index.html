@@ -440,17 +440,48 @@ async function openCircuitBuilder(id=null){
  renderCircuitBuilderModal();
 }
 
+function calculateCircuitTotalSeconds(){
+ const c=circuitBuilderContext||{};
+ const rounds=Math.max(1,Number(document.getElementById('cRounds')?.value||c.rounds||1));
+ const roundRest=Math.max(0,Number(document.getElementById('cRoundRest')?.value||c.rest_between_rounds_seconds||0));
+ const stationTotal=(circuitStationsDraft||[]).reduce((total,st)=>{
+  const work=st.station_type==='recovery'
+    ? Number(st.work_seconds||st.recovery_seconds||0)
+    : (st.mode==='reps'
+      ? Number(st.repetitions||0)*Number(st.seconds_between_reps||st.rep_interval_seconds||0)
+      : Number(st.work_seconds||0));
+  const rest=st.station_type==='exercise'?Number(st.rest_seconds||st.recovery_seconds||0):0;
+  return total+Math.max(0,work)+Math.max(0,rest);
+ },0);
+ return stationTotal*rounds+roundRest*Math.max(0,rounds-1);
+}
+function formatCircuitTotalSeconds(seconds){
+ const total=Math.max(0,Math.round(Number(seconds)||0));
+ const h=Math.floor(total/3600);
+ const m=Math.floor((total%3600)/60);
+ const sec=total%60;
+ return h>0
+  ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+  : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function updateCircuitTotalTime(){
+ const el=document.getElementById('cTotalTime');
+ if(el)el.value=formatCircuitTotalSeconds(calculateCircuitTotalSeconds());
+}
+
 function renderCircuitBuilderModal(){
  const c=circuitBuilderContext||{};
  openModal(`<div class="modalhead"><h2>${c.id?'Modifica circuito':'Nuovo circuito'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="circuitBuilderGrid">
   <div class="circuitBuilderWide"><label>Nome circuito</label><input id="cName" value="${esc(c.title||'')}" placeholder="es. Circuito Full Body 01"></div>
   <div class="circuitBuilderWide"><label>Descrizione</label><input id="cDesc" value="${esc(c.description||'')}" placeholder="Circuito a tempo/ripetizioni e recuperi"></div>
-  <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c.rounds??4)}"></div>
-  <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c.rest_between_rounds_seconds??60)}"></div>
+  <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c.rounds??4)}" oninput="updateCircuitTotalTime()"></div>
+  <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c.rest_between_rounds_seconds??60)}" oninput="updateCircuitTotalTime()"></div>
+  <div><label>Tempo totale circuito</label><input id="cTotalTime" type="text" value="${formatCircuitTotalSeconds(0)}" readonly></div>
  </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${c.status?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c.client_authorized?'checked':''}> Autorizzato ai clienti</label></div>
  <div class="circuitStationBuilder"><div class="circuitStationBuilderHead"><div><b>Stazioni</b><div class="muted">Gestisci esercizi e recuperi come nell'app.</div></div><button class="btn secondary mini" type="button" onclick="addCircuitStation()">＋ Nuova stazione</button></div><div id="circuitStationsDraft"></div></div>
  <div id="cMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCircuit('${c.id||''}')">Salva circuito</button></div>`);
  renderCircuitStationsDraft();
+ updateCircuitTotalTime();
 }
 
 function addCircuitStation(){
@@ -470,6 +501,7 @@ function renderCircuitStationsDraft(){
   const meta=recovery?`Recupero · ${Number(s.work_seconds||s.recovery_seconds||0)} sec`:`${s.mode==='reps'?'Ripetizioni':'Tempo'} · ${s.mode==='reps'?Number(s.repetitions||0)+' rep':Number(s.work_seconds||0)+' sec'}`;
   return `<div class="circuitStationCard"><div class="circuitStationCardMain"><div class="circuitStationCardTitle">STAZIONE ${i+1} · ${recovery?'RECUPERO':'ESERCIZIO'}</div><div class="circuitStationCardName">${esc(name)}</div><div class="circuitStationCardMeta">${esc(meta)}</div></div><div class="circuitStationCardActions"><button class="btn secondary mini" type="button" onclick="openCircuitStationEditor(${i})">Modifica</button><button class="btn secondary mini" type="button" onclick="removeCircuitStation(${i})">×</button></div></div>`;
  }).join('');
+ updateCircuitTotalTime();
 }
 
 function openCircuitStationEditor(i){

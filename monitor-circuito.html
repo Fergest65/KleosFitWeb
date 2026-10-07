@@ -17,6 +17,7 @@
     .status { color:var(--muted); font-weight:800; font-size:clamp(12px,.95vw,18px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .clock { color:var(--lime); font-size:clamp(42px,4.6vw,86px); line-height:.9; font-weight:1000; font-variant-numeric:tabular-nums; white-space:nowrap; min-width:520px; text-align:right; overflow:hidden; }
     .stateBox { display:grid; justify-items:end; gap:2px; }
+    .timeInfo { color:var(--muted); font-size:clamp(11px,.8vw,15px); font-weight:900; white-space:nowrap; font-variant-numeric:tabular-nums; }
     main { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,22vw); gap:clamp(14px,1.6vw,26px); padding:clamp(14px,2vh,28px); min-height:0; overflow:hidden; }
     .stage { border:1px solid rgba(166,255,0,.35); border-radius:8px; background:linear-gradient(180deg,#101114,#050606); padding:clamp(18px,2.3vw,38px); display:grid; grid-template-rows:auto minmax(0,1fr) auto; min-width:0; min-height:0; overflow:hidden; }
     .kicker { color:var(--lime); font-size:clamp(16px,1.35vw,26px); font-weight:1000; letter-spacing:.08em; text-transform:uppercase; }
@@ -224,6 +225,7 @@
       <div class="stateBox">
         <div id="realClock" class="clock">--:--</div>
         <div id="stateLabel" class="status">PRONTO</div>
+        <div id="circuitTimeInfo" class="timeInfo">TOTALE 00:00 · RIMANENTE 00:00</div>
       </div>
     </header>
 
@@ -370,6 +372,84 @@
       return `${min}:${sec}`;
     }
 
+    function stationDuration(station) {
+      if (!station) return 0;
+      if (station.station_type === "recovery") {
+        return Number(station.work_seconds) || 0;
+      }
+      if (station.work_mode === "reps") {
+        const reps = Number(station.reps) || 0;
+        const repSeconds = Number(station.rep_seconds) || 0;
+        const between = Number(station.seconds_between_reps) || 0;
+        return Math.max(0, reps * repSeconds + Math.max(0, reps - 1) * between) +
+          (Number(station.recovery_seconds) || 0);
+      }
+      return (Number(station.work_seconds) || 0) +
+        (Number(station.recovery_seconds) || 0);
+    }
+
+    function totalCircuitSeconds() {
+      if (!circuit || !stations.length) return 0;
+      const oneRound = stations.reduce((sum, station) => sum + stationDuration(station), 0);
+      const roundRest = Number(circuit.rest_between_rounds_seconds) || 0;
+      return oneRound * (Number(circuit.rounds) || 1) +
+        roundRest * Math.max(0, (Number(circuit.rounds) || 1) - 1);
+    }
+
+    function remainingCircuitSeconds() {
+      if (!circuit || !stations.length) return 0;
+
+      const rounds = Number(circuit.rounds) || 1;
+      const roundRest = Number(circuit.rest_between_rounds_seconds) || 0;
+      let total = 0;
+
+      if (phase === "roundRest") {
+        total += Math.max(0, Number(remaining) || 0);
+        for (let r = round + 1; r <= rounds; r++) {
+          total += stations.reduce((sum, station) => sum + stationDuration(station), 0);
+          if (r < rounds) total += roundRest;
+        }
+        return total;
+      }
+
+      const current = currentStation();
+
+      if (phase === "recovery") {
+        total += Math.max(0, Number(remaining) || 0);
+      } else if (current) {
+        if (current.station_type === "recovery") {
+          total += Math.max(0, Number(remaining) || 0);
+        } else if (current.work_mode === "time") {
+          total += Math.max(0, Number(remaining) || 0);
+          total += Number(current.recovery_seconds) || 0;
+        } else {
+          total += Number(current.recovery_seconds) || 0;
+        }
+      }
+
+      for (let i = stationIndex + 1; i < stations.length; i++) {
+        total += stationDuration(stations[i]);
+      }
+
+      if (round < rounds) {
+        total += roundRest;
+        const oneRound = stations.reduce((sum, station) => sum + stationDuration(station), 0);
+        total += oneRound * Math.max(0, rounds - round - 1);
+        total += roundRest * Math.max(0, rounds - round - 1);
+      }
+
+      return Math.max(0, total);
+    }
+
+    function renderCircuitTimes() {
+      const total = totalCircuitSeconds();
+      const remainingTotal = remainingCircuitSeconds();
+      const el = document.getElementById("circuitTimeInfo");
+      if (el) {
+        el.textContent = `TOTALE ${formatTime(total)} · RIMANENTE ${formatTime(remainingTotal)}`;
+      }
+    }
+
     function currentStation() {
       return stations[stationIndex] || null;
     }
@@ -406,6 +486,7 @@
       document.getElementById("roundLabel").textContent = circuit ? `${round}/${circuit.rounds}` : "1/1";
       document.getElementById("nextStation").textContent = nextStationName();
       document.getElementById("stateLabel").textContent = running ? "LIVE" : "PAUSA";
+      renderCircuitTimes();
 
       if (!s) {
         document.getElementById("stationType").textContent = "PRONTO";

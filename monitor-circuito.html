@@ -3,147 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KleosFit - Monitor Circuito</title>
+<title>KleosFit - Circuito</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
-  --bg:#050606;
-  --panel:#0d1014;
-  --line:#2a2d33;
-  --text:#f7f8fb;
-  --muted:#a7afbc;
-  --accent:#a6ff00;
-}
+:root{--bg:#050606;--panel:#0d1014;--line:#2a2d33;--text:#f7f8fb;--muted:#a7afbc;--accent:#a6ff00}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
 body{padding:0 18px 24px}
-.top{
-  max-width:1100px;
-  margin:0 auto;
-  padding:22px 0 0;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:18px
-}
+.top{max-width:1100px;margin:0 auto;padding:22px 0 0;display:flex;align-items:center;justify-content:space-between;gap:18px}
 .title{font-size:26px;font-weight:950}
 .sub{color:var(--muted);font-weight:800;margin-top:4px}
-.btn{
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:11px 16px;
-  background:var(--accent);
-  color:#071006;
-  font-weight:950;
-  cursor:pointer;
-  min-height:46px
-}
+.btn{border:1px solid var(--line);border-radius:10px;padding:11px 16px;background:var(--accent);color:#071006;font-weight:950;cursor:pointer;min-height:46px}
 .btn.secondary{background:#171b21;color:var(--text)}
-.circuitRunnerPage{
-  max-width:900px;
-  margin:20px auto 0;
-  background:#0d1014;
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:28px;
-  min-height:520px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center
-}
-.circuitRunnerPage .circuitRunnerTitle{
-  font-size:clamp(28px,5vw,52px);
-  font-weight:950
-}
-.circuitRunnerPage .circuitRunnerRound{
-  color:var(--muted);
-  font-weight:800;
-  margin-top:8px
-}
-.circuitRunnerPage .circuitRunnerPhase{
-  color:var(--accent);
-  font-weight:900;
-  text-transform:uppercase;
-  margin-top:18px
-}
-.circuitRunnerPage .circuitRunnerDisplay{
-  font-size:clamp(72px,14vw,150px);
-  font-weight:950;
-  line-height:1;
-  margin:18px 0
-}
-.circuitRunnerPage .circuitRunnerExercise{
-  font-size:clamp(20px,3vw,30px);
-  font-weight:900
-}
-.circuitRunnerPage .circuitRunnerNext{
-  color:var(--muted);
-  min-height:26px;
-  margin-top:12px
-}
-.circuitRunnerPage .circuitRunnerActions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:center;
-  margin-top:28px
-}
-.circuitRunnerPage .circuitRunnerActions .btn{
-  min-width:130px;
-  min-height:52px
-}
-.status{
-  max-width:900px;
-  margin:18px auto 0;
-  text-align:center;
-  color:#ff6b6b;
-  font-weight:800
-}
+.error{max-width:900px;margin:18px auto 0;text-align:center;color:#ff6b6b;font-weight:800;min-height:22px}
+
+.circuitRunnerPage{max-width:900px;margin:20px auto 0;background:#0d1014;border:1px solid var(--line);border-radius:18px;padding:28px;min-height:520px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.circuitRunnerPage .circuitRunnerTitle{font-size:clamp(28px,5vw,52px);font-weight:950}
+.circuitRunnerPage .circuitRunnerRound{color:var(--muted);font-weight:800;margin-top:8px}
+.circuitRunnerPage .circuitRunnerPhase{color:var(--accent);font-weight:900;text-transform:uppercase;margin-top:18px}
+.circuitRunnerPage .circuitRunnerDisplay{font-size:clamp(72px,14vw,150px);font-weight:950;line-height:1;margin:18px 0}
+.circuitRunnerPage .circuitRunnerExercise{font-size:clamp(20px,3vw,30px);font-weight:900}
+.circuitRunnerPage .circuitRunnerNext{color:var(--muted);min-height:26px;margin-top:12px}
+.circuitRunnerPage .circuitRunnerActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+.circuitRunnerPage .circuitRunnerActions .btn{min-width:130px;min-height:52px}
 @media(max-width:600px){
-  .top{align-items:flex-start}
-  .circuitRunnerPage{
-    padding:20px;
-    min-height:calc(100vh - 150px)
-  }
-  .circuitRunnerPage .circuitRunnerActions{
-    width:100%;
-    display:grid;
-    grid-template-columns:1fr 1fr
-  }
-  .circuitRunnerPage .circuitRunnerActions .btn:first-child{
-    grid-column:1/-1
-  }
+ .circuitRunnerPage{padding:20px;min-height:calc(100vh - 180px)}
+ .circuitRunnerPage .circuitRunnerActions{width:100%;display:grid;grid-template-columns:1fr 1fr}
+ .circuitRunnerPage .circuitRunnerActions .btn:first-child{grid-column:1/-1}
 }
+
 </style>
 </head>
 <body>
-
 <div class="top">
-  <div>
-    <div class="title" id="circuitTitle">Caricamento circuito</div>
-    <div class="sub">Esecuzione circuito</div>
-  </div>
-  <button class="btn secondary" type="button" onclick="history.back()">← Indietro</button>
+ <div>
+  <div class="title" id="pageTitle">Caricamento circuito</div>
+  <div class="sub">Esecuzione circuito</div>
+ </div>
+ <button class="btn secondary" type="button" onclick="history.back()">← Circuiti</button>
 </div>
-
-<div id="status" class="status"></div>
-
+<div id="error" class="error"></div>
 <div class="circuitRunnerPage">
-  <div class="circuitRunnerTitle" id="crExercise">Preparati</div>
-  <div class="circuitRunnerRound" id="crRound"></div>
-  <div class="circuitRunnerPhase" id="crPhase">Pronto</div>
-  <div class="circuitRunnerDisplay" id="crDisplay">00:00</div>
-  <div class="circuitRunnerExercise" id="crStation">—</div>
-  <div class="circuitRunnerNext" id="crNext"></div>
-  <div class="circuitRunnerActions">
-    <button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button>
-    <button class="btn secondary" onclick="resetCircuitRunner()">RESET</button>
-    <button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button>
-  </div>
+ <div class="circuitRunnerTitle" id="crExercise">Preparati</div>
+ <div class="circuitRunnerRound" id="crRound"></div>
+ <div class="circuitRunnerPhase" id="crPhase">Pronto</div>
+ <div class="circuitRunnerDisplay" id="crDisplay">00:00</div>
+ <div class="circuitRunnerExercise" id="crStation">—</div>
+ <div class="circuitRunnerNext" id="crNext"></div>
+ <div class="circuitRunnerActions">
+  <button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button>
+  <button class="btn secondary" onclick="resetCircuitRunner()">RESET</button>
+  <button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button>
+ </div>
 </div>
-
 <script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
@@ -153,233 +65,159 @@ let circuitRunnerState=null;
 let circuitRunnerTimer=0;
 let circuitRunnerLast=0;
 
+function esc(v){
+ return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
 function circuitFmt(sec){
-  sec=Math.max(0,Math.ceil(sec));
-  return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+ sec=Math.max(0,Math.ceil(sec));
+ return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
 }
 
-function setError(message){
-  document.getElementById('status').textContent=message||'';
-}
+async function loadCircuit(){
+ const p=new URLSearchParams(location.search);
+ const id=p.get('id')||p.get('circuit_id')||'';
 
-async function loadCircuitFromUrl(){
-  const params=new URLSearchParams(location.search);
-  const id=params.get('id')||params.get('circuit_id')||'';
+ if(!id){
+   document.getElementById('crExercise').textContent='Caricamento circuito';
+   document.getElementById('crPhase').textContent='';
+   document.getElementById('crDisplay').textContent='00:00';
+   document.getElementById('crStation').textContent='—';
+   document.getElementById('error').textContent="Manca l'ID del circuito nell'URL.";
+   return;
+ }
 
-  if(!id){
-    setError("Manca l'ID del circuito nell'URL.");
-    document.getElementById('circuitTitle').textContent='Caricamento circuito';
-    return;
-  }
+ const c=await db.from('functional_circuits').select('*').eq('id',id).maybeSingle();
+ if(c.error){
+   document.getElementById('error').textContent='Impossibile caricare il circuito: '+c.error.message;
+   return;
+ }
+ if(!c.data){
+   document.getElementById('error').textContent='Circuito non trovato.';
+   return;
+ }
 
-  const r=await db.from('functional_circuits').select('*').eq('id',id).maybeSingle();
-  if(r.error){
-    setError('Impossibile caricare il circuito: '+r.error.message);
-    return;
-  }
-  if(!r.data){
-    setError('Circuito non trovato.');
-    return;
-  }
+ const r=await db.from('functional_circuit_stations')
+   .select('*').eq('circuit_id',id).order('sort_order',{ascending:true});
 
-  const stations=await db.from('functional_circuit_stations')
-    .select('*')
-    .eq('circuit_id',id)
-    .order('sort_order',{ascending:true});
+ if(r.error){
+   document.getElementById('error').textContent='Impossibile caricare il circuito: '+r.error.message;
+   return;
+ }
+ if(!(r.data||[]).length){
+   document.getElementById('error').textContent='Il circuito non contiene stazioni.';
+   return;
+ }
 
-  if(stations.error){
-    setError('Impossibile caricare le stazioni: '+stations.error.message);
-    return;
-  }
-  if(!(stations.data||[]).length){
-    setError('Il circuito non contiene stazioni.');
-    return;
-  }
+ document.getElementById('error').textContent='';
+ document.getElementById('pageTitle').textContent=c.data.title||'Circuito';
 
-  setError('');
-  document.getElementById('circuitTitle').textContent=r.data.title||'Circuito';
-
-  circuitRunnerState={
-    c:r.data,
-    stations:stations.data||[],
-    round:1,
-    index:0,
-    phase:(stations.data||[])[0]?.work_mode==='reps'?'reps':'work',
-    remaining:(stations.data||[])[0]?.work_mode==='reps'
-      ?Number((stations.data||[])[0]?.rep_interval_seconds||1)
-      :Number((stations.data||[])[0]?.work_seconds||1),
-    rep:0,
-    running:false
-  };
-
-  renderCircuitRunner();
+ circuitRunnerState={
+   c:c.data,
+   stations:r.data||[],
+   round:1,
+   index:0,
+   phase:(r.data||[])[0]?.work_mode==='reps'?'reps':'work',
+   remaining:(r.data||[])[0]?.work_mode==='reps'
+     ?Number((r.data||[])[0]?.rep_interval_seconds||1)
+     :Number((r.data||[])[0]?.work_seconds||1),
+   rep:0,
+   running:false
+ };
+ renderCircuitRunner();
 }
 
 function renderCircuitRunner(){
-  const s=circuitRunnerState;
-  if(!s)return;
+ const s=circuitRunnerState;if(!s)return;
+ const st=s.stations[s.index],ex=st?.exercise_name||'Esercizio';
+ const next=s.stations[s.index+1]?.exercise_name||
+   (s.round<s.c.rounds?s.stations[0]?.exercise_name:'Fine circuito');
+ const phase=s.phase==='rest'?'Recupero':
+   s.phase==='reps'?'Ripetizioni':
+   s.phase==='done'?'COMPLETO':'Lavoro';
 
-  const st=s.stations[s.index];
-  const ex=st?.exercise_name||'Esercizio';
-  const next=s.stations[s.index+1]?.exercise_name ||
-    (s.round<s.c.rounds?s.stations[0]?.exercise_name:'Fine circuito');
-  const phase=s.phase==='rest'
-    ?'Recupero'
-    :s.phase==='reps'
-      ?'Ripetizioni'
-      :s.phase==='done'
-        ?'COMPLETO'
-        :'Lavoro';
-
-  document.getElementById('crExercise').textContent=
-    s.phase==='done'?'Circuito completato':ex;
-  document.getElementById('crRound').textContent=
-    s.phase==='done'?'':`Giro ${s.round} / ${s.c.rounds||1}`;
-  document.getElementById('crPhase').textContent=phase;
-  document.getElementById('crDisplay').textContent=
-    s.phase==='reps'
-      ?`${s.rep}/${st?.reps||0}`
-      :circuitFmt(s.remaining);
-  document.getElementById('crStation').textContent=
-    st?.equipment?`${ex} · ${st.equipment}`:ex;
-  document.getElementById('crNext').textContent=
-    next&&next!=='Fine circuito'
-      ?`Prossima stazione: ${next}`
-      :'Circuito completato';
-
-  const btn=document.getElementById('crStart');
-  if(btn)btn.textContent=s.running?'⏸ PAUSA':'▶ AVVIA';
+ document.getElementById('crExercise').textContent=s.phase==='done'?'Circuito completato':ex;
+ document.getElementById('crRound').textContent=s.phase==='done'?'':`Giro ${s.round} / ${s.c.rounds}`;
+ document.getElementById('crPhase').textContent=phase;
+ document.getElementById('crDisplay').textContent=s.phase==='reps'
+   ?`${s.rep}/${st?.reps||0}`:circuitFmt(s.remaining);
+ document.getElementById('crStation').textContent=st?.equipment?`${ex} · ${st.equipment}`:ex;
+ document.getElementById('crNext').textContent=next&&next!=='Fine circuito'
+   ?`Prossima stazione: ${next}`:'Circuito completato';
+ const btn=document.getElementById('crStart');
+ if(btn)btn.textContent=s.running?'⏸ PAUSA':'▶ AVVIA';
 }
 
 function toggleCircuitRunner(){
-  const s=circuitRunnerState;
-  if(!s)return;
-
-  s.running=!s.running;
-
-  if(s.running){
-    circuitRunnerLast=0;
-    cancelAnimationFrame(circuitRunnerTimer);
-    circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
-  }else{
-    cancelAnimationFrame(circuitRunnerTimer);
-  }
-
-  renderCircuitRunner();
+ const s=circuitRunnerState;if(!s)return;
+ s.running=!s.running;
+ if(s.running){
+   circuitRunnerLast=0;
+   cancelAnimationFrame(circuitRunnerTimer);
+   circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
+ }else cancelAnimationFrame(circuitRunnerTimer);
+ renderCircuitRunner();
 }
-
 function resetCircuitRunner(){
-  const s=circuitRunnerState;
-  if(!s)return;
-
-  const st=s.stations[0];
-  s.round=1;
-  s.index=0;
-  s.phase=st?.work_mode==='reps'?'reps':'work';
-  s.remaining=s.phase==='reps'
-    ?Number(st?.rep_interval_seconds||1)
-    :Number(st?.work_seconds||1);
-  s.rep=0;
-  s.running=false;
-
-  cancelAnimationFrame(circuitRunnerTimer);
-  renderCircuitRunner();
+ const s=circuitRunnerState;if(!s)return;
+ const st=s.stations[0];
+ s.round=1;s.index=0;s.phase=st?.work_mode==='reps'?'reps':'work';
+ s.remaining=s.phase==='reps'?Number(st?.rep_interval_seconds||1):Number(st?.work_seconds||1);
+ s.rep=0;s.running=false;
+ cancelAnimationFrame(circuitRunnerTimer);
+ renderCircuitRunner();
 }
-
 function nextCircuitRunner(){
-  const s=circuitRunnerState;
-  if(!s)return;
-  circuitAdvanceRunner();
-  renderCircuitRunner();
+ const s=circuitRunnerState;if(!s)return;
+ circuitAdvanceRunner();renderCircuitRunner();
 }
-
 function circuitAdvanceRunner(){
-  const s=circuitRunnerState;
-  const st=s.stations[s.index];
-
-  if(st?.recovery_seconds>0){
-    s.phase='rest';
-    s.remaining=Number(st.recovery_seconds);
-    return;
-  }
-
-  if(s.index<s.stations.length-1){
-    s.index++;
-    const n=s.stations[s.index];
-    s.phase=n.work_mode==='reps'?'reps':'work';
-    s.remaining=s.phase==='reps'
-      ?Number(n.rep_interval_seconds||1)
-      :Number(n.work_seconds||1);
-    s.rep=0;
-    return;
-  }
-
-  if(s.round<(s.c.rounds||1)){
-    s.round++;
-    s.index=0;
-    const n=s.stations[0];
-    s.phase=n.work_mode==='reps'?'reps':'work';
-    s.remaining=s.phase==='reps'
-      ?Number(n.rep_interval_seconds||1)
-      :Number(n.work_seconds||1);
-    s.rep=0;
-    return;
-  }
-
-  s.running=false;
-  s.phase='done';
-  s.remaining=0;
+ const s=circuitRunnerState,st=s.stations[s.index];
+ if(st?.recovery_seconds>0){
+   s.phase='rest';s.remaining=Number(st.recovery_seconds);return;
+ }
+ if(s.index<s.stations.length-1){
+   s.index++;
+   const n=s.stations[s.index];
+   s.phase=n.work_mode==='reps'?'reps':'work';
+   s.remaining=s.phase==='reps'?Number(n.rep_interval_seconds||1):Number(n.work_seconds||1);
+   s.rep=0;return;
+ }
+ if(s.round<s.c.rounds){
+   s.round++;s.index=0;
+   const n=s.stations[0];
+   s.phase=n.work_mode==='reps'?'reps':'work';
+   s.remaining=s.phase==='reps'?Number(n.rep_interval_seconds||1):Number(n.work_seconds||1);
+   s.rep=0;return;
+ }
+ s.running=false;s.phase='done';s.remaining=0;
 }
-
 function circuitRunnerTick(t){
-  const s=circuitRunnerState;
-  if(!s||!s.running)return;
+ const s=circuitRunnerState;if(!s||!s.running)return;
+ if(!circuitRunnerLast)circuitRunnerLast=t;
+ const dt=(t-circuitRunnerLast)/1000;circuitRunnerLast=t;
+ const st=s.stations[s.index];
 
-  if(!circuitRunnerLast)circuitRunnerLast=t;
-
-  const dt=(t-circuitRunnerLast)/1000;
-  circuitRunnerLast=t;
-
-  const st=s.stations[s.index];
-
-  if(s.phase==='work'||s.phase==='rest'){
-    s.remaining-=dt;
-
-    if(s.remaining<=0){
-      if(s.phase==='work'){
-        if(st.work_mode==='reps'){
-          s.phase='reps';
-          s.rep=0;
-          s.remaining=Number(st.rep_interval_seconds||1);
-        }else{
-          circuitAdvanceRunner();
-        }
-      }else{
-        circuitAdvanceRunner();
-      }
-    }
-  }else if(s.phase==='reps'){
-    s.remaining-=dt;
-
-    if(s.remaining<=0){
-      s.rep++;
-
-      if(s.rep>=Number(st.reps||1)){
-        circuitAdvanceRunner();
-      }else{
-        s.remaining=Number(st.rep_interval_seconds||1);
-      }
-    }
-  }
-
-  renderCircuitRunner();
-
-  if(s.running){
-    circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
-  }
+ if(s.phase==='work'||s.phase==='rest'){
+   s.remaining-=dt;
+   if(s.remaining<=0){
+     if(s.phase==='work'){
+       if(st.work_mode==='reps'){
+         s.phase='reps';s.rep=0;s.remaining=Number(st.rep_interval_seconds||1);
+       }else circuitAdvanceRunner();
+     }else circuitAdvanceRunner();
+   }
+ }else if(s.phase==='reps'){
+   s.remaining-=dt;
+   if(s.remaining<=0){
+     s.rep++;
+     if(s.rep>=Number(st.reps||1))circuitAdvanceRunner();
+     else s.remaining=Number(st.rep_interval_seconds||1);
+   }
+ }
+ renderCircuitRunner();
+ if(s.running)circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
 }
-
-loadCircuitFromUrl();
+loadCircuit();
 </script>
 </body>
 </html>

@@ -18,6 +18,10 @@
     .clock { color:var(--lime); font-size:clamp(42px,4.6vw,86px); line-height:.9; font-weight:1000; font-variant-numeric:tabular-nums; white-space:nowrap; min-width:520px; text-align:right; overflow:hidden; }
     .stateBox { display:grid; justify-items:end; gap:2px; }
     .timeInfo { color:var(--muted); font-size:clamp(11px,.8vw,15px); font-weight:900; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .timeRows { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .timeRows div { display:grid; gap:3px; }
+    .timeRows span { color:var(--muted); font-size:clamp(10px,.72vw,13px); font-weight:900; }
+    .timeRows strong { color:var(--lime); font-size:clamp(24px,2.15vw,38px); line-height:1; font-variant-numeric:tabular-nums; }
     main { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,22vw); gap:clamp(14px,1.6vw,26px); padding:clamp(14px,2vh,28px); min-height:0; overflow:hidden; }
     .stage { border:1px solid rgba(166,255,0,.35); border-radius:8px; background:linear-gradient(180deg,#101114,#050606); padding:clamp(18px,2.3vw,38px); display:grid; grid-template-rows:auto minmax(0,1fr) auto; min-width:0; min-height:0; overflow:hidden; }
     .kicker { color:var(--lime); font-size:clamp(16px,1.35vw,26px); font-weight:1000; letter-spacing:.08em; text-transform:uppercase; }
@@ -225,7 +229,6 @@
       <div class="stateBox">
         <div id="realClock" class="clock">--:--</div>
         <div id="stateLabel" class="status">PRONTO</div>
-        <div id="circuitTimeInfo" class="timeInfo">TOTALE 00:00 · RIMANENTE 00:00</div>
       </div>
     </header>
 
@@ -244,6 +247,13 @@
         <div class="box">
           <h3>Giro</h3>
           <div id="roundLabel" class="round">1/1</div>
+        </div>
+        <div class="box timeBox">
+          <h3>Tempi circuito</h3>
+          <div class="timeRows">
+            <div><span>TOTALE</span><strong id="totalCircuitTime">00:00</strong></div>
+            <div><span>RIMANENTE</span><strong id="remainingCircuitTime">00:00</strong></div>
+          </div>
         </div>
         <div class="box">
           <h3>Prossima</h3>
@@ -444,10 +454,10 @@
     function renderCircuitTimes() {
       const total = totalCircuitSeconds();
       const remainingTotal = remainingCircuitSeconds();
-      const el = document.getElementById("circuitTimeInfo");
-      if (el) {
-        el.textContent = `TOTALE ${formatTime(total)} · RIMANENTE ${formatTime(remainingTotal)}`;
-      }
+      const totalEl = document.getElementById("totalCircuitTime");
+      const remainingEl = document.getElementById("remainingCircuitTime");
+      if (totalEl) totalEl.textContent = formatTime(total);
+      if (remainingEl) remainingEl.textContent = formatTime(remainingTotal);
     }
 
     function currentStation() {

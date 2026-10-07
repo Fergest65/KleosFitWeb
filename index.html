@@ -155,9 +155,6 @@
 .circuitStationRow{display:block;padding:14px;border:1px solid var(--line);border-radius:12px;background:#111419;margin-bottom:10px}.circuitStationTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.circuitStationNum{font-weight:900;color:var(--accent);font-size:16px}.circuitMode{display:flex;gap:6px}.circuitMode button{min-width:110px}.circuitStationGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.circuitStationGrid .wide{grid-column:1/-1}.circuitStationRemove{margin-left:auto}.circuitStationField label{font-size:11px;text-transform:uppercase;color:#aeb5c1;display:block;margin-bottom:5px}.circuitStationField input,.circuitStationField select{width:100%}
 
 .circuitStationEmpty{padding:18px;text-align:center;color:#9299a5}
-.circuitStationCard{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#111419;margin-bottom:10px}.circuitStationCardMain{min-width:0}.circuitStationCardTitle{font-weight:900;color:var(--accent);font-size:16px}.circuitStationCardName{font-weight:800;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.circuitStationCardMeta{color:#9299a5;font-size:12px;margin-top:4px}.circuitStationCardActions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.circuitStationEditorHead{display:flex;align-items:center;gap:10px;margin-bottom:14px}.circuitStationEditorBack{width:100%;margin-bottom:14px}.circuitStationTypeTabs,.circuitModeTabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.circuitStationTypeTabs .btn,.circuitModeTabs .btn{min-height:54px;font-weight:900}.circuitStationPanel{border:1px solid var(--line);border-radius:14px;padding:14px;background:#111419}.circuitStationPanelGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.circuitStationPanelGrid .wide{grid-column:1/-1}.circuitStationPanelField label{font-size:11px;text-transform:uppercase;color:#aeb5c1;display:block;margin-bottom:6px}.circuitStationPanelField input,.circuitStationPanelField select,.circuitStationPanelField textarea{width:100%}.circuitStationSave{width:100%;margin-top:14px;min-height:56px}.circuitStationEditorActions{display:flex;gap:10px;margin-top:14px}.circuitStationEditorActions .btn{flex:1;min-height:52px}.circuitRecoveryNote{min-height:110px;resize:vertical}
-@media(max-width:600px){.circuitStationPanelGrid{grid-template-columns:1fr}.circuitStationPanelGrid .wide{grid-column:auto}.circuitStationCard{align-items:flex-start;flex-direction:column}.circuitStationCardActions{width:100%;justify-content:stretch}.circuitStationCardActions .btn{flex:1}}
-
 .circuitRunner{background:#0b0d10;border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center}
 .circuitRunnerTitle{font-size:22px;font-weight:900}
 .circuitRunnerRound{color:#aeb5c1;margin-top:5px}
@@ -400,192 +397,86 @@ function renderCircuits(){
  if(!rows.length){list.innerHTML='<div class="muted">Nessun circuito disponibile.</div>';return;}
  list.innerHTML=rows.map(c=>`<div class="circuitCard"><div class="circuitCardHead"><div><h3 style="margin:0">${esc(c.title||'Circuito')}</h3><div class="muted" style="margin-top:5px">${esc(c.description||'Circuito a tempo/ripetizioni e recuperi.')}</div></div><div class="circuitActions"><button class="btn mini" type="button" onclick="openCircuitRunner('${c.id}')">▶ AVVIA</button>${isSuperuserRole()?`<button class="btn secondary mini" type="button" onclick="openCircuitBuilder('${c.id}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteCircuit('${c.id}')">Elimina</button>`:''}</div></div><div class="circuitMeta"><span class="pill">${c.rounds||1} giri</span><span class="pill">${c.station_count||0} stazioni</span><span class="pill">Recupero ${c.rest_between_rounds_seconds||0}s</span>${isSuperuserRole()?`<span class="pill">${c.client_authorized===false?'Non autorizzato':'Autorizzato'}</span><span class="pill">${String(c.status||'').toLowerCase()!=='active'?'Disattivo':'Attivo'}</span>`:''}</div></div>`).join('');
 }
-let circuitBuilderContext=null;
-let circuitStationEditorIndex=null;
-let circuitStationEditorDraft=null;
-
 async function openCircuitBuilder(id=null){
  await loadExerciseLibrary();
  let c=null,stations=[];
  if(id){
   c=circuitsData.find(x=>String(x.id)===String(id));
   const r=await db.from('functional_circuit_stations').select('*').eq('circuit_id',id).order('sort_order',{ascending:true});
-  if(r.error){alert('Impossibile caricare il circuito: '+r.error.message);return;}
-  stations=r.data||[];
+  if(r.error){alert('Impossibile caricare il circuito: '+r.error.message);return;}stations=r.data||[];
  }
- circuitBuilderContext={
-  id:id||null,
-  title:c?.title||'',
-  description:c?.description||'',
-  rounds:c?.rounds??4,
-  rest_between_rounds_seconds:c?.rest_between_rounds_seconds??60,
-  status:String(c?.status||'active').toLowerCase()==='active',
-  client_authorized:c?.client_authorized===true
- };
  circuitStationsDraft=stations.map(s=>({
   ...s,
-  station_type:String(s.station_type||'exercise').toLowerCase()==='recovery'?'recovery':'exercise',
   exercise_id:'',
   exercise_name:s.exercise_name||'',
-  recovery_name:s.station_type==='recovery'?(s.exercise_name||'Recupero'):(s.recovery_name||''),
   mode:(s.work_mode==='reps'?'reps':'time'),
   work_seconds:s.work_seconds??60,
   repetitions:s.reps??1,
   seconds_between_reps:s.rep_interval_seconds??0,
-  rest_seconds:s.recovery_seconds??20,
+  rest_seconds:s.recovery_seconds??0,
   load_value:s.load_text??0,
-  prep_seconds:0,
-  notes:s.notes||''
- }));
- renderCircuitBuilderModal();
-}
-
-function renderCircuitBuilderModal(){
- const c=circuitBuilderContext||{};
- openModal(`<div class="modalhead"><h2>${c.id?'Modifica circuito':'Nuovo circuito'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="circuitBuilderGrid">
-  <div class="circuitBuilderWide"><label>Nome circuito</label><input id="cName" value="${esc(c.title||'')}" placeholder="es. Circuito Full Body 01"></div>
-  <div class="circuitBuilderWide"><label>Descrizione</label><input id="cDesc" value="${esc(c.description||'')}" placeholder="Circuito a tempo/ripetizioni e recuperi"></div>
-  <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c.rounds??4)}"></div>
-  <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c.rest_between_rounds_seconds??60)}"></div>
- </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${c.status?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c.client_authorized?'checked':''}> Autorizzato ai clienti</label></div>
- <div class="circuitStationBuilder"><div class="circuitStationBuilderHead"><div><b>Stazioni</b><div class="muted">Gestisci esercizi e recuperi come nell'app.</div></div><button class="btn secondary mini" type="button" onclick="addCircuitStation()">＋ Nuova stazione</button></div><div id="circuitStationsDraft"></div></div>
- <div id="cMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCircuit('${c.id||''}')">Salva circuito</button></div>`);
+  prep_seconds:0
+}));
+ openModal(`<div class="modalhead"><h2>${id?'Modifica circuito':'Nuovo circuito'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="circuitBuilderGrid">
+ <div class="circuitBuilderWide"><label>Nome circuito</label><input id="cName" value="${esc(c?.title||'')}" placeholder="es. Circuito Full Body 01"></div>
+ <div class="circuitBuilderWide"><label>Descrizione</label><input id="cDesc" value="${esc(c?.description||'')}" placeholder="Circuito a tempo/ripetizioni e recuperi"></div>
+ <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c?.rounds??4)}"></div>
+ <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c?.rest_between_rounds_seconds??60)}"></div>
+ </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${String(c?.status||'active').toLowerCase()==='active'?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c?.client_authorized===true?'checked':''}> Autorizzato ai clienti</label></div>
+ <div class="circuitStationBuilder"><div class="circuitStationBuilderHead"><div><b>Stazioni</b><div class="muted">Completa gli esercizi e gestisci i recuperi.</div></div><button class="btn secondary mini" type="button" onclick="addCircuitStation()">＋ Nuovo esercizio</button></div><div id="circuitStationsDraft"></div><div style="display:flex;justify-content:center;margin:12px 0 4px"><button class="btn secondary" type="button" onclick="addCircuitStation()">＋ AGGIUNGI ESERCIZIO</button></div></div>
+ <div id="cMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCircuit('${id||''}')">Salva circuito</button></div>`);
  renderCircuitStationsDraft();
 }
-
-function addCircuitStation(){
- circuitStationsDraft.push({station_type:'exercise',exercise_id:'',exercise_name:'',recovery_name:'Recupero',muscle_group:'Full body',equipment:'Corpo libero',mode:'time',work_seconds:60,repetitions:1,rep_seconds:2,seconds_between_reps:0,rest_seconds:20,prep_seconds:0,load_value:0,notes:''});
- const i=circuitStationsDraft.length-1;
- openCircuitStationEditor(i);
-}
-
+function addCircuitStation(){circuitStationsDraft.push({exercise_id:'',exercise_name:'',muscle_group:'Full body',equipment:'Corpo libero',mode:'time',work_seconds:60,repetitions:1,rep_seconds:2,seconds_between_reps:0,rest_seconds:20,prep_seconds:0,load_value:0,notes:''});renderCircuitStationsDraft();}
 function removeCircuitStation(i){circuitStationsDraft.splice(i,1);renderCircuitStationsDraft();}
-
 function renderCircuitStationsDraft(){
  const box=document.getElementById('circuitStationsDraft');if(!box)return;
- if(!circuitStationsDraft.length){box.innerHTML='<div class="circuitStationEmpty">Nessuna stazione inserita. Premi “＋ Nuova stazione”.</div>';return;}
- box.innerHTML=circuitStationsDraft.map((s,i)=>{
-  const recovery=s.station_type==='recovery';
-  const name=recovery?(s.recovery_name||s.exercise_name||'Recupero'):(s.exercise_name||'Esercizio non selezionato');
-  const meta=recovery?`Recupero · ${Number(s.work_seconds||s.recovery_seconds||0)} sec`:`${s.mode==='reps'?'Ripetizioni':'Tempo'} · ${s.mode==='reps'?Number(s.repetitions||0)+' rep':Number(s.work_seconds||0)+' sec'}`;
-  return `<div class="circuitStationCard"><div class="circuitStationCardMain"><div class="circuitStationCardTitle">STAZIONE ${i+1} · ${recovery?'RECUPERO':'ESERCIZIO'}</div><div class="circuitStationCardName">${esc(name)}</div><div class="circuitStationCardMeta">${esc(meta)}</div></div><div class="circuitStationCardActions"><button class="btn secondary mini" type="button" onclick="openCircuitStationEditor(${i})">Modifica</button><button class="btn secondary mini" type="button" onclick="removeCircuitStation(${i})">×</button></div></div>`;
- }).join('');
-}
-
-function openCircuitStationEditor(i){
- const s=circuitStationsDraft[i];if(!s)return;
- circuitStationEditorIndex=i;
- circuitStationEditorDraft={...s};
- renderCircuitStationEditor();
-}
-
-function renderCircuitStationEditor(){
- const s=circuitStationEditorDraft;if(!s)return;
- const i=circuitStationEditorIndex;
- const recovery=s.station_type==='recovery';
  const opts='<option value="">— Seleziona dalla libreria esercizi —</option>'+exerciseLibraryData.map(e=>`<option value="${esc(e.name)}">${esc(e.name)}</option>`).join('');
- openModal(`<div class="modalhead"><h2>Dati stazione</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
- <button class="btn secondary circuitStationEditorBack" type="button" onclick="returnToCircuitBuilder()">← Torna al circuito</button>
- <div class="circuitStationTypeTabs"><button type="button" class="btn ${!recovery?'':'secondary'}" onclick="setCircuitStationType('exercise')">Esercizio</button><button type="button" class="btn ${recovery?'':'secondary'}" onclick="setCircuitStationType('recovery')">Recupero</button></div>
- ${recovery?renderCircuitRecoveryEditor(s):renderCircuitExerciseEditor(s,opts)}
- <div id="stationMsg" class="error"></div><button class="btn circuitStationSave" type="button" onclick="saveCircuitStationEditor()">▣ Salva stazione</button>`);
- if(!recovery){const sel=document.getElementById('stationLibrary');if(sel)sel.value=s.exercise_name||'';}
+ if(!circuitStationsDraft.length){box.innerHTML='<div class="circuitStationEmpty">Nessuna stazione. Premi “＋ Nuova stazione”.</div>';return;}
+ box.innerHTML=circuitStationsDraft.map((s,i)=>`<div class="circuitStationRow">
+  <div class="circuitStationTop"><div class="circuitStationNum">STAZIONE ${i+1}</div><div class="circuitMode"><button type="button" class="btn ${s.mode!=='reps'?'':'secondary'} mini" onclick="updateCircuitStation(${i},'mode','time');renderCircuitStationsDraft()">Tempo</button><button type="button" class="btn ${s.mode==='reps'?'':'secondary'} mini" onclick="updateCircuitStation(${i},'mode','reps');renderCircuitStationsDraft()">Ripetizioni</button></div><button class="btn secondary mini circuitStationRemove" type="button" onclick="removeCircuitStation(${i})">×</button></div>
+  <div class="circuitStationGrid">
+   <div class="circuitStationField"><label>Gruppo muscolare</label><input value="${esc(s.muscle_group??'')}" placeholder="es. Full body" onchange="updateCircuitStation(${i},'muscle_group',this.value)"></div>
+   <div class="circuitStationField"><label>Nome esercizio</label><input value="${esc(s.exercise_name??'')}" placeholder="es. Jumping jack" onchange="updateCircuitStation(${i},'exercise_name',this.value)"></div>
+   <div class="circuitStationField wide"><label>Libreria esercizi</label><select onchange="updateCircuitStation(${i},'exercise_name',this.value);renderCircuitStationsDraft()">${opts}</select></div>
+   <div class="circuitStationField wide"><label>Attrezzo</label><input value="${esc(s.equipment??'Corpo libero')}" placeholder="es. Corpo libero, Kettlebell, Manubri" onchange="updateCircuitStation(${i},'equipment',this.value)"></div>
+   ${s.mode!=='reps'?`<div class="circuitStationField"><label>Secondi lavoro</label><input type="number" min="1" value="${esc(s.work_seconds??60)}" onchange="updateCircuitStation(${i},'work_seconds',this.value)"></div>`:`<div class="circuitStationField"><label>Ripetizioni max 50</label><input type="number" min="1" max="50" value="${esc(Math.min(50,s.repetitions??1))}" onchange="updateCircuitStation(${i},'repetitions',Math.min(50,this.value))"></div><div class="circuitStationField"><label>Secondi tra ripetizioni</label><input type="number" min="0" value="${esc(s.seconds_between_reps??s.rep_seconds??0)}" onchange="updateCircuitStation(${i},'seconds_between_reps',this.value)"></div>`}
+   <div class="circuitStationField"><label>Recupero dopo stazione (sec)</label><input type="number" min="0" value="${esc(s.rest_seconds??20)}" onchange="updateCircuitStation(${i},'rest_seconds',this.value)"></div>
+   <div class="circuitStationField"><label>Carico</label><input type="number" min="0" step="0.5" value="${esc(s.load_value??0)}" onchange="updateCircuitStation(${i},'load_value',this.value)"></div>
+  </div>
+ </div>`).join('');
+ circuitStationsDraft.forEach((s,i)=>{const selects=box.querySelectorAll('select');const el=selects[i*1];if(el)el.value=s.exercise_name||'';});
 }
-
-function renderCircuitExerciseEditor(s,opts){
- return `<div class="circuitStationPanel"><div class="circuitModeTabs"><button type="button" class="btn ${s.mode!=='reps'?'':'secondary'}" onclick="setCircuitStationMode('time')">Tempo</button><button type="button" class="btn ${s.mode==='reps'?'':'secondary'}" onclick="setCircuitStationMode('reps')">Ripetizioni</button></div><div class="circuitStationPanelGrid">
-  <div class="circuitStationPanelField"><label>Gruppo muscolare</label><input id="stationMuscle" value="${esc(s.muscle_group??'')}" placeholder="Gruppo muscolare"></div>
-  <div class="circuitStationPanelField"><label>Nome esercizio</label><input id="stationName" value="${esc(s.exercise_name??'')}" placeholder="Nome esercizio"></div>
-  <div class="circuitStationPanelField wide"><label>Libreria esercizi</label><select id="stationLibrary" onchange="setCircuitStationField('exercise_name',this.value)">${opts}</select></div>
-  <div class="circuitStationPanelField wide"><label>Attrezzo</label><input id="stationEquipment" value="${esc(s.equipment??'Corpo libero')}" placeholder="Attrezzo"></div>
-  ${s.mode!=='reps'?`<div class="circuitStationPanelField"><label>Secondi lavoro</label><input id="stationWork" type="number" min="1" value="${esc(s.work_seconds??60)}"></div>`:`<div class="circuitStationPanelField"><label>Ripetizioni max 50</label><input id="stationReps" type="number" min="1" max="50" value="${esc(Math.min(50,s.repetitions??1))}"></div><div class="circuitStationPanelField"><label>Secondi tra ripetizioni</label><input id="stationRepInterval" type="number" min="0" value="${esc(s.seconds_between_reps??0)}"></div>`}
-  <div class="circuitStationPanelField"><label>Recupero dopo stazione (sec)</label><input id="stationRest" type="number" min="0" value="${esc(s.rest_seconds??20)}"></div>
-  <div class="circuitStationPanelField"><label>Carico</label><input id="stationLoad" type="number" min="0" step="0.5" value="${esc(s.load_value??0)}"></div>
- </div></div>`;
-}
-
-function renderCircuitRecoveryEditor(s){
- return `<div class="circuitStationPanel"><div class="circuitStationPanelGrid">
-  <div class="circuitStationPanelField wide"><label>Nome recupero</label><input id="recoveryName" value="${esc(s.recovery_name||s.exercise_name||'Recupero')}" placeholder="Recupero"></div>
-  <div class="circuitStationPanelField wide"><label>Secondi lavoro</label><input id="recoverySeconds" type="number" min="0" value="${esc(s.work_seconds??60)}"></div>
-  <div class="circuitStationPanelField wide"><label>Note</label><textarea id="recoveryNotes" class="circuitRecoveryNote" placeholder="Respira profondamente">${esc(s.notes||'')}</textarea></div>
- </div></div>`;
-}
-
-function setCircuitStationType(type){
- circuitStationEditorDraft.station_type=type==='recovery'?'recovery':'exercise';
- if(circuitStationEditorDraft.station_type==='recovery'){
-  circuitStationEditorDraft.recovery_name=circuitStationEditorDraft.recovery_name||'Recupero';
-  circuitStationEditorDraft.notes=circuitStationEditorDraft.notes||'Respira profondamente';
- }else{
-  circuitStationEditorDraft.exercise_name=circuitStationEditorDraft.exercise_name||'';
- }
- renderCircuitStationEditor();
-}
-function setCircuitStationMode(mode){circuitStationEditorDraft.mode=mode==='reps'?'reps':'time';renderCircuitStationEditor();}
-function setCircuitStationField(key,value){circuitStationEditorDraft[key]=value;}
-
-function saveCircuitStationEditor(){
- const s=circuitStationEditorDraft;if(!s)return;
- if(s.station_type==='recovery'){
-  s.recovery_name=(document.getElementById('recoveryName')?.value||'Recupero').trim()||'Recupero';
-  s.exercise_name=s.recovery_name;
-  s.work_seconds=Math.max(0,Number(document.getElementById('recoverySeconds')?.value||0));
-  s.notes=document.getElementById('recoveryNotes')?.value||'';
-  s.mode='time';s.rest_seconds=0;s.load_value=0;
- }else{
-  s.muscle_group=document.getElementById('stationMuscle')?.value||'';
-  s.exercise_name=document.getElementById('stationName')?.value||'';
-  s.equipment=document.getElementById('stationEquipment')?.value||'Corpo libero';
-  if(s.mode!=='reps') s.work_seconds=Math.max(1,Number(document.getElementById('stationWork')?.value||1));
-  if(s.mode==='reps'){
-   s.repetitions=Math.min(50,Math.max(1,Number(document.getElementById('stationReps')?.value||1)));
-   s.seconds_between_reps=Math.max(0,Number(document.getElementById('stationRepInterval')?.value||0));
-  }
-  s.rest_seconds=Math.max(0,Number(document.getElementById('stationRest')?.value||0));
-  s.load_value=Math.max(0,Number(document.getElementById('stationLoad')?.value||0));
- }
- circuitStationsDraft[circuitStationEditorIndex]={...s};
- returnToCircuitBuilder();
-}
-
-function returnToCircuitBuilder(){
- const c=circuitBuilderContext||{};
- circuitStationEditorIndex=null;circuitStationEditorDraft=null;
- renderCircuitBuilderModal();
-}
-
 function updateCircuitStation(i,key,value){if(!circuitStationsDraft[i])return;if(['work_seconds','repetitions','rep_seconds','seconds_between_reps','rest_seconds','prep_seconds','load_value'].includes(key))value=Math.max(0,Number(value||0));if(key==='repetitions')value=Math.min(50,value);circuitStationsDraft[i][key]=value;}
 function updateCircuitStationName(i,id){const e=exerciseLibraryData.find(x=>String(x.id)===String(id));if(e)circuitStationsDraft[i].exercise_name=e.name||'';}
-
 async function saveCircuit(id){
  const title=document.getElementById('cName')?.value.trim();if(!title){notice('cMsg','Inserisci il nome del circuito.');return;}
  const payload={
-  title,
-  description:document.getElementById('cDesc')?.value.trim()||null,
-  rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),
-  rest_between_rounds_seconds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),
-  status:document.getElementById('cActive')?.checked===false?'inactive':'active',
-  client_authorized:document.getElementById('cAuthorized')?.checked===true
+   title,
+   description:document.getElementById('cDesc')?.value.trim()||null,
+   rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),
+   rest_between_rounds_seconds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),
+   status:document.getElementById('cActive')?.checked===false?'inactive':'active',
+   client_authorized:document.getElementById('cAuthorized')?.checked===true
  };
  let r=id?await db.from('functional_circuits').update(payload).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
  if(r.error){notice('cMsg','Errore salvataggio circuito: '+r.error.message);return;}
  const circuitId=r.data.id;
  if(id){const d=await db.from('functional_circuit_stations').delete().eq('circuit_id',circuitId);if(d.error){notice('cMsg','Errore aggiornamento stazioni: '+d.error.message);return;}}
  const stations=circuitStationsDraft.map((st,i)=>({
-  circuit_id:circuitId,
-  sort_order:i+1,
-  station_type:st.station_type||'exercise',
-  muscle_group:st.station_type==='recovery'?null:(st.muscle_group||null),
-  exercise_name:st.station_type==='recovery'?(st.recovery_name||st.exercise_name||'Recupero'):(st.exercise_name||null),
-  equipment:st.station_type==='recovery'?null:(st.equipment||null),
-  work_mode:st.station_type==='recovery'?'time':(st.mode==='reps'?'reps':'time'),
-  work_seconds:Math.max(0,Number(st.work_seconds||0)),
-  reps:st.station_type==='exercise' && st.mode==='reps'?Math.min(50,Math.max(1,Number(st.repetitions||1))):null,
-  recovery_seconds:st.station_type==='exercise'?Math.max(0,Number(st.rest_seconds||0)):Math.max(0,Number(st.work_seconds||0)),
-  load_text:st.station_type==='recovery'?null:(st.load_value!=null && st.load_value!=='' ? String(st.load_value) : null),
-  notes:st.notes||null,
-  rep_interval_seconds:st.station_type==='exercise' && st.mode==='reps'?Math.max(0,Number(st.seconds_between_reps||0)):0
+   circuit_id:circuitId,
+   sort_order:i+1,
+   station_type:st.station_type||'exercise',
+   muscle_group:st.muscle_group||null,
+   exercise_name:st.exercise_name||null,
+   equipment:st.equipment||null,
+   work_mode:st.mode==='reps'?'reps':'time',
+   work_seconds:st.mode==='time'?Math.max(1,Number(st.work_seconds||1)):null,
+   reps:st.mode==='reps'?Math.min(50,Math.max(1,Number(st.repetitions||1))):null,
+   recovery_seconds:Math.max(0,Number(st.rest_seconds||0)),
+   load_text:st.load_value!=null && st.load_value!=='' ? String(st.load_value) : null,
+   notes:st.notes||null,
+   rep_interval_seconds:st.mode==='reps'?Math.max(0,Number(st.seconds_between_reps||0)):0
  }));
  if(stations.length){const ins=await db.from('functional_circuit_stations').insert(stations);if(ins.error){notice('cMsg','Circuito salvato ma stazioni non salvate: '+ins.error.message);return;}}
  closeModal();await loadCircuits();
@@ -3157,35 +3048,84 @@ async function loadAdminClientPayments(profileId){
  if(!box)return;
  box.innerHTML='<div class="muted">Caricamento storico pagamenti...</div>';
  try{
-   const pr=await db.from('profiles').select('subscription_cost,subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
+   const pr=await db.from('profiles').select('subscription_cost,subscription_paid_from,subscription_paid_to,subscription_type').eq('id',profileId).maybeSingle();
    if(pr.error)throw pr.error;
    const profile=pr.data||{};
-   const r=await db.from('subscription_payment_history').select('*').eq('profile_id',profileId).order('created_at',{ascending:false}).limit(500);
+   const r=await db.from('subscription_payment_history').select('*').eq('profile_id',profileId).order('created_at',{ascending:true}).limit(500);
    if(r.error)throw r.error;
    const rows=r.data||[];
-   const due=profile.subscription_cost==null?null:Number(profile.subscription_cost)||0;
+   const currentFrom=String(profile.subscription_paid_from||'').slice(0,10);
+   const currentTo=String(profile.subscription_paid_to||'').slice(0,10);
+   const currentKey=currentFrom+'|'+currentTo;
+   const currentDue=profile.subscription_cost==null?null:Number(profile.subscription_cost);
+   const dueIdFor=(from,to)=>'DOVUTO-'+String(profileId)+'-'+String(from||'')+'-'+String(to||'');
+   const extractDueId=(note)=>{
+     const m=String(note||'').match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);
+     return m?String(m[1]):'';
+   };
    const groups={};
+   const ensureGroup=(id,from,to,due)=>{
+     if(!groups[id])groups[id]={id,from:String(from||'').slice(0,10),to:String(to||'').slice(0,10),due:due==null?null:Number(due),paid:0,rows:[]};
+     if(due!=null)groups[id].due=Number(due);
+     return groups[id];
+   };
+   if(currentFrom&&currentTo)ensureGroup(dueIdFor(currentFrom,currentTo),currentFrom,currentTo,currentDue);
+   const currentIdForLegacy=(from,to)=>dueIdFor(from,to);
    rows.forEach(x=>{
-     const from=String(x.paid_from||profile.subscription_paid_from||'').slice(0,10);
-     const to=String(x.paid_to||profile.subscription_paid_to||'').slice(0,10);
+     const token=extractDueId(x.note);
+     const xfrom=String(x.paid_from||'').slice(0,10);
+     // Compatibilità con gli acconti già registrati con un vecchio DOVUTO_ID:
+     // se appartengono alla stessa data di inizio del dovuto corrente, restano
+     // nello stesso pannello anche se il vecchio token non coincide con quello nuovo.
+     if(token){
+       if(currentFrom && xfrom===currentFrom && groups[currentIdForLegacy(currentFrom,currentTo)]){
+         const g=groups[currentIdForLegacy(currentFrom,currentTo)];
+         g.paid+=Number(x.amount)||0;
+         g.rows.push(x);
+       }else{
+         const g=ensureGroup(token,'','',null);
+         g.paid+=Number(x.amount)||0;
+         g.rows.push(x);
+       }
+       return;
+     }
+     const from=xfrom;
+     const to=String(x.paid_to||'').slice(0,10);
      const key=from+'|'+to;
-     if(!groups[key])groups[key]={from,to,paid:0,rows:[]};
-     groups[key].paid+=Number(x.amount)||0; groups[key].rows.push(x);
+     const g=ensureGroup(key,from,to,key===currentKey?currentDue:null);
+     g.paid+=Number(x.amount)||0;
+     g.rows.push(x);
    });
-   const groupRows=Object.values(groups);
-   if(!rows.length){
-     box.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Totale dovuto</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Totale pagato</span><b>€ 0,00</b></div><div class="sbTotal"><span>Residuo</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div></div><div class="muted" style="margin-top:12px">Nessun pagamento registrato.</div>`;
-     return;
-   }
-   const totalPaid=rows.reduce((a,x)=>a+(Number(x.amount)||0),0);
-   const totalDue=due==null?null:(groupRows.length>1?due*groupRows.length:due);
-   const totalRemaining=totalDue==null?null:Math.max(0,totalDue-totalPaid);
-   const status=totalRemaining===null?'DA VERIFICARE':totalRemaining<=0.005?'SALDATO':totalPaid>0?'PARZIALE':'NON PAGATO';
-   box.innerHTML=`<div class="paymentSummary"><div class="sbRow"><span>Totale dovuto</span><b>${totalDue==null?'—':'€ '+totalDue.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Totale pagato</span><b>€ ${totalPaid.toFixed(2).replace('.',',')}</b></div><div class="sbTotal"><span>Residuo da pagare</span><b>${totalRemaining==null?'—':'€ '+totalRemaining.toFixed(2).replace('.',',')}</b></div><div class="sbRow"><span>Stato</span><b>${esc(status)}</b></div></div>
-   <div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Data</th><th>Periodo</th><th>Dovuto</th><th>Pagato</th><th>Residuo</th><th>Nota</th><th></th></tr></thead><tbody>${groupRows.map(g=>{
-     const rem=due==null?null:Math.max(0,due-g.paid);
-     return `<tr><td>${esc(g.rows[0]?.created_at?fmtDate(g.rows[0].created_at):'—')}</td><td>${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</td><td><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></td><td><b>€ ${g.paid.toFixed(2).replace('.',',')}</b></td><td><b>${rem==null?'—':'€ '+rem.toFixed(2).replace('.',',')}</b></td><td>${esc(g.rows.map(x=>x.note||'Pagamento').join(' · '))}</td><td>${g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');return `<div style="display:flex;gap:6px;justify-content:flex-end;margin:2px 0"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div>`}).join('')}</td></tr>`;
-   }).join('')}</tbody></table></div>`;
+   // I movimenti con un DOVUTO_ID vengono ricondotti al relativo pannello.
+   // Se il token corrisponde al periodo corrente, il gruppo riceve anche il dovuto corrente.
+   const currentId=currentFrom&&currentTo?dueIdFor(currentFrom,currentTo):'';
+   if(currentId&&groups[currentId])groups[currentId].due=currentDue;
+   const groupRows=Object.values(groups).filter(g=>g.from||g.to||g.rows.length).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
+   const fmtMoney=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
+   const statusFor=(due,paid)=>due==null?'DOVUTO NON DISPONIBILE':(due-paid<=0.005?'SALDATO':paid>0?'PARZIALE':'NON PAGATO');
+   const badge=(st)=>st==='SALDATO'?'<span class="pill" style="background:#c6ff35;color:#111">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5c5c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
+   box.innerHTML=`<div style="margin-top:8px">${groupRows.length?groupRows.map(g=>{
+      const isCurrent=g.id===currentId;
+      const due=g.due;
+      const rem=due==null?null:Math.max(0,due-g.paid);
+      const st=statusFor(due,g.paid);
+      const cleanFrom=esc(g.from||currentFrom||'');
+      const cleanTo=esc(g.to||currentTo||'');
+      const dueToken=esc(g.id||dueIdFor(g.from,g.to));
+      return `<div class="card" style="margin-top:10px;padding:14px;border:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div><strong>DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')}</strong><div class="muted">Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}${isCurrent?' · Periodo corrente':''}</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${badge(st)}<button class="btn secondary mini" type="button" onclick="openSubscriptionDueEditor('${profileId}','${cleanFrom}','${cleanTo}')">Modifica abbonamento</button><button class="btn mini" type="button" onclick="openPaymentEditor('${profileId}','', '${cleanFrom}','${cleanTo}', ${due==null?'null':String(due)}, '${dueToken}')">+ Acconto</button><button class="btn secondary mini" type="button" style="border-color:#c62828;color:#c62828" onclick="removeClientSubscriptionPeriod('${profileId}','${cleanFrom}','${cleanTo}')">Rimuovi questo abbonamento</button></div>
+        </div>
+        <div class="paymentSummary" style="margin-top:10px">
+          <div class="sbRow"><span>Dovuto</span><b>${due==null?'—':fmtMoney(due)}</b></div>
+          <div class="sbRow"><span>Pagato / acconti</span><b>${fmtMoney(g.paid)}</b></div>
+          <div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div>
+        </div>
+        <div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>
+        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');const displayNote=String(x.note||'Pagamento').replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(displayNote||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(displayNote)}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica acconto</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
+      </div>`;
+   }).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div>`;
  }catch(e){
    box.innerHTML='<div class="error" style="display:block">Impossibile leggere lo storico pagamenti: '+esc(e?.message||e)+'</div>';
  }

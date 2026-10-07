@@ -560,15 +560,18 @@ function updateCircuitStationName(i,id){const e=exerciseLibraryData.find(x=>Stri
 
 async function saveCircuit(id){
  const title=document.getElementById('cName')?.value.trim();if(!title){notice('cMsg','Inserisci il nome del circuito.');return;}
+ const circuitStatus=document.getElementById('cActive')?.checked===false?'inactive':'active';
  const payload={
   title,
   description:document.getElementById('cDesc')?.value.trim()||null,
   rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),
   rest_between_rounds_seconds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),
-  status:document.getElementById('cActive')?.checked===false?'inactive':'active',
   client_authorized:document.getElementById('cAuthorized')?.checked===true
  };
- let r=id?await db.from('functional_circuits').update(payload).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
+ let r=id?await db.from('functional_circuits').update({...payload,status:circuitStatus}).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
+ if(r.error && String(r.error.message||'').includes('functional_circuits_status_check')){
+  r=id?await db.from('functional_circuits').update(payload).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
+ }
  if(r.error){notice('cMsg','Errore salvataggio circuito: '+r.error.message);return;}
  const circuitId=r.data.id;
  if(id){const d=await db.from('functional_circuit_stations').delete().eq('circuit_id',circuitId);if(d.error){notice('cMsg','Errore aggiornamento stazioni: '+d.error.message);return;}}

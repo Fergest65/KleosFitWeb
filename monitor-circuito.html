@@ -376,10 +376,21 @@
 
     function nextStationName() {
       if (!stations.length) return "-";
-      if (phase === "work") {
-        const s = currentStation();
-        if (s?.recovery_seconds > 0) return `Recupero ${s.recovery_seconds}s`;
+      const s = currentStation();
+
+      // Se siamo in recupero, mostra il vero passaggio successivo.
+      if (phase === "recovery" || s?.station_type === "recovery") {
+        const next = stations[stationIndex + 1];
+        if (next) return next.exercise_name;
+        if (round < circuit.rounds) return `Recupero giro ${circuit.rest_between_rounds_seconds}s`;
+        return "Fine circuito";
       }
+
+      // Durante l'esercizio, il recupero resta il prossimo passaggio.
+      if (phase === "work" && s?.recovery_seconds > 0) {
+        return `Recupero ${s.recovery_seconds}s`;
+      }
+
       const next = stations[stationIndex + 1];
       if (next) return next.exercise_name;
       if (round < circuit.rounds) return `Recupero giro ${circuit.rest_between_rounds_seconds}s`;
@@ -430,12 +441,19 @@
         document.getElementById("stationNote").textContent = s.notes || (s.work_mode === "reps" ? "Premi AVANTI quando completato." : "");
       }
 
-      document.getElementById("queue").innerHTML = stations.map((item, index) => `
+      const queue = document.getElementById("queue");
+      queue.innerHTML = stations.map((item, index) => `
         <div class="station ${index === stationIndex && phase === "work" ? "active" : ""}">
           <div class="name">${index + 1}. ${item.exercise_name}</div>
           <div class="sub">${item.station_type === "recovery" ? "Recupero" : item.work_mode === "reps" ? `${item.reps} rep` : `${item.work_seconds || 0}s`} ${item.recovery_seconds ? `+ rec ${item.recovery_seconds}s` : ""}</div>
         </div>
       `).join("");
+
+      // Scorre automaticamente l'elenco fino alla stazione corrente.
+      const activeStation = queue.querySelector(".station.active");
+      if (activeStation) {
+        activeStation.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
     }
 
     function setInitialTime() {

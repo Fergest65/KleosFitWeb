@@ -3434,7 +3434,8 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const from=document.getElementById('phFrom')?.value||null;
  const to=document.getElementById('phTo')?.value||null;
  const amountRaw=document.getElementById('phAmount')?.value?.trim()||'';
- const noteBase=(document.getElementById('phNote')?.value||'').trim()||'Pagamento abbonamento';
+ const noteInput=document.getElementById('phNote');
+ const noteBase=noteInput ? String(noteInput.value??'').trim() : 'Pagamento abbonamento';
  let token=String(dueToken||'').trim();
  let oldDueMarker='';
  // In modifica conserva sempre i metadati del dovuto già collegato: perderli
@@ -3448,8 +3449,8 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
    if(!token&&oldToken)token=String(oldToken[1]).trim();
    if(oldDue)oldDueMarker=' [[DOVUTO_IMPORTO:'+oldDue[1]+']]';
  }
- const cleanNote=noteBase.replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';
- const note=cleanNote+(token?' [[DOVUTO_ID:'+token+']]':'')+oldDueMarker;
+ const cleanNote=noteBase.replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim();
+ const note=[cleanNote,token?'[[DOVUTO_ID:'+token+']]':'',oldDueMarker.trim()].filter(Boolean).join(' ').trim();
  const amount=amountRaw===''?null:Number(amountRaw);
  if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
  if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}
@@ -3471,7 +3472,10 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
    else r=await db.from('subscription_payment_history').insert(payload).select('id,note').maybeSingle();
    if(r.error)throw r.error;
    if(!r.data)throw new Error('Supabase non ha confermato il salvataggio del pagamento. Verifica i permessi di modifica.');
-   if(String(r.data.note||'')!==String(note))throw new Error('Il pagamento è stato salvato, ma la nota restituita dal database non coincide con quella inserita.');
+   const verify=await db.from('subscription_payment_history').select('id,note').eq('id',r.data.id).eq('profile_id',profileId).maybeSingle();
+   if(verify.error)throw verify.error;
+   if(!verify.data)throw new Error('Pagamento salvato ma non rileggibile dal database.');
+   if(String(verify.data.note??'')!==String(note))throw new Error('La nota non è stata aggiornata nel database. Valore atteso: '+note+'; valore salvato: '+String(verify.data.note??''));
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
    closeModal();
    if(window.__forcedPaymentDueByProfile) delete window.__forcedPaymentDueByProfile[String(profileId)];

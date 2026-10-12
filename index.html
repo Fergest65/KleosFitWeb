@@ -1407,7 +1407,7 @@ function openClientSheet(id){
    <div id="cpPaymentHistory" class="muted">Caricamento...</div>
   </div>
   ${clientAge!==null&&clientAge<18?`<div class="clientSheetSection"><h3><span>✍</span> Iscrizione minorenne</h3><p class="muted">Per i clienti minorenni, compila il modulo con i dati del genitore/tutore e raccogli la firma del referente.</p><button class="btn" type="button" onclick="openMinorRegistrationForm('${p.id}')">Apri modulo iscrizione e firma referente</button><div id="mrSavedList" style="margin-top:12px">Caricamento moduli salvati...</div></div>`:''}
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div><div class="clientSheetSection" style="margin-top:12px;padding:12px"><h4 style="margin:0 0 8px">File caricati e documenti precedenti</h4><div id="cpClientDocuments" class="muted">Caricamento elenco file...</div></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
    <div class="qrManagementBox">
@@ -1443,6 +1443,7 @@ function openClientSheet(id){
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
  setTimeout(()=>loadAdminClientPayments(p.id),40);
+ setTimeout(()=>{loadMedicalCertificateMeta(p.id);loadClientDocuments(p.id);},100);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
  setTimeout(()=>{
    const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
@@ -1479,6 +1480,38 @@ async function loadMedicalCertificateMeta(profileId){
    const date=doc.created_at?fmtDate(doc.created_at):'';
    box.innerHTML=`<div class="card" style="padding:10px;margin:0"><div><b>Certificato presente</b> — ${esc(doc.file_name||'Documento')}</div><div class="muted" style="margin-top:4px">${esc(doc.mime_type||'')} ${date?'· '+esc(date):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openMedicalCertificate('${esc(doc.file_path)}')">Visualizza certificato</button></div></div>`;
  }catch(e){box.innerHTML='<div class="muted">Documento non disponibile: '+esc(e?.message||e)+'</div>';}
+}
+async function loadClientDocuments(profileId){
+ const box=document.getElementById('cpClientDocuments');if(!box)return;
+ box.innerHTML='<div class="muted">Caricamento elenco file...</div>';
+ try{
+  const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',String(profileId)).order('created_at',{ascending:false});
+  if(r.error)throw r.error;
+  const docs=r.data||[];
+  if(!docs.length){box.innerHTML='<div class="muted">Nessun file caricato per questo cliente.</div>';return;}
+  const labels={medical_certificate:'Certificato medico',insurance:'Assicurazione',minor_registration:'Modulo iscrizione minorenne'};
+  box.innerHTML=docs.map(d=>{
+   const name=esc(d.file_name||labels[d.document_type]||'Documento');
+   const type=esc(labels[d.document_type]||d.document_type||'Documento');
+   const date=esc(d.created_at?fmtDate(d.created_at):'Data non disponibile');
+   return `<div class="card" style="padding:10px;margin:8px 0"><div><b>${name}</b></div><div class="muted" style="margin-top:3px">${type} · ${date}${d.mime_type?' · '+esc(d.mime_type):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openClientDocument('${esc(d.file_path)}','${esc(d.document_type)}')">Apri file</button></div></div>`;
+  }).join('');
+ }catch(e){box.innerHTML='<div class="error">Impossibile caricare l’elenco file: '+esc(e?.message||e)+'</div>';}
+}
+async function openClientDocument(path,documentType){
+ if(!path)return;
+ if(documentType==='minor_registration'){
+  await viewMinorRegistrationForm(path);
+  return;
+ }
+ try{
+  const r=await db.storage.from('client-documents').createSignedUrl(path,300);
+  if(r.error)throw r.error;
+  const url=r.data?.signedUrl;
+  if(!url)throw new Error('Link temporaneo non disponibile.');
+  const w=window.open(url,'_blank','noopener');
+  if(!w)alert('Il browser ha bloccato l’apertura del file. Consenti i popup per app.kleosfit.it e riprova.');
+ }catch(e){alert('Impossibile aprire il file: '+(e?.message||String(e)));}
 }
 async function uploadMedicalCertificate(profileId){
  const file=document.getElementById('cpMedFile')?.files?.[0];if(!file)return null;

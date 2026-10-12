@@ -3559,20 +3559,25 @@ async function loadAccounting(){
     // Prima scelta: collegamento esatto tramite ID del dovuto.
     g=groups.get(token)||[...groups.values()].find(z=>z.pid===pid&&z.key===token);
     if(!g){
-     const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
-     if(parsed&&String(parsed[1])===pid){
-      // Compatibilità con vecchi token che codificano direttamente il periodo.
-      g=groups.get(token)||{key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
-      groups.set(token,g);
+     const p0=names.get(pid)||{};
+     const currentFrom=String(p0.subscription_paid_from||'').slice(0,10);
+     const currentTo=String(p0.subscription_paid_to||'').slice(0,10);
+     const profileDue=p0.subscription_cost==null?null:Number(p0.subscription_cost);
+     const marker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
+     const markerDue=marker?Number(marker[1]):null;
+     // Compatibilità per movimenti storici con DOVUTO_ID non più corrispondente
+     // alla chiave corrente: se il marker del dovuto coincide esattamente con
+     // il costo registrato e il cliente ha un periodo corrente valido, usa quel
+     // dovuto. Le date del movimento non partecipano alla scelta del periodo.
+     const markerMatches=markerDue!=null&&profileDue!=null&&Math.abs(markerDue-profileDue)<0.005;
+     if(currentFrom&&currentTo&&markerMatches){
+      g=ensure(pid,currentFrom,currentTo,profileDue);
      }else{
-      // Vecchi movimenti possono avere un token non più riconoscibile e date
-      // del pagamento vuote. In quel solo caso, collegali al periodo corrente
-      // del profilo, come fa la scheda Abbonamenti, invece di perderli in un
-      // gruppo senza periodo che non compare in Contabilità.
-      const currentFrom=String((names.get(pid)||{}).subscription_paid_from||'').slice(0,10);
-      const currentTo=String((names.get(pid)||{}).subscription_paid_to||'').slice(0,10);
-      if(currentFrom&&currentTo&&(!a||!b|| (a===currentFrom&&b===currentTo))){
-       g=ensure(pid,currentFrom,currentTo,(names.get(pid)||{}).subscription_cost);
+      const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
+      if(parsed&&String(parsed[1])===pid){
+       // Se il token identifica un periodo storico distinto, conserva quel periodo.
+       g=groups.get(token)||{key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
+       groups.set(token,g);
       }else{
        g={key:token,pid,from:'',to:'',due:null,paid:0,rows:[]};
        groups.set(token,g);
@@ -3592,16 +3597,7 @@ async function loadAccounting(){
     const markerDue=marker?Number(marker[1]):null;
     const profileDue=p0.subscription_cost==null?null:Number(p0.subscription_cost);
     const markerMatches=markerDue!=null&&profileDue!=null&&Math.abs(markerDue-profileDue)<0.005;
-    // Prima di usare il periodo corrente del profilo, prova a collegare il movimento
-    // al dovuto già registrato dello stesso cliente e dello stesso importo storico.
-    // Le date paid_from/paid_to sono date del movimento e non identificano il periodo.
-    const sameDueGroups=markerDue==null?[]:[...groups.values()].filter(z=>
-      String(z.pid)===pid && z.due!=null && Math.abs(Number(z.due)-markerDue)<0.005
-      && z.from && z.to
-    );
-    if(sameDueGroups.length===1){
-     g=sameDueGroups[0];
-    }else if(currentFrom&&currentTo&&((!a||!b)||markerMatches)){
+    if(currentFrom&&currentTo&&((!a||!b)||markerMatches)){
      g=ensure(pid,currentFrom,currentTo,profileDue);
     }else{
      g=ensure(pid,a,b,null);

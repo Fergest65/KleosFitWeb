@@ -3492,14 +3492,25 @@ async function loadAccounting(){
   ]);
   if(pay.error)throw new Error('Lettura movimenti non riuscita: '+pay.error.message);
   if(prof.error)throw new Error('Lettura anagrafica non riuscita: '+prof.error.message);
-  const profiles=prof.data||[],names=new Map(profiles.map(p=>[String(p.id),p])),allPayments=pay.data||[];
+  const profiles=(prof.data||[]).filter(p=>{
+   const role=String(p.role||'').trim().toLowerCase();
+   const name=String(p.full_name||p.name||'').trim().toLowerCase();
+   return !['admin','administrator','superuser'].includes(role) && name!=='open' && p.subscription_open!==true;
+  });
+  const names=new Map(profiles.map(p=>[String(p.id),p]));
+  const allowedIds=new Set(profiles.map(p=>String(p.id)));
+  const allPayments=(pay.data||[]).filter(x=>allowedIds.has(String(x.profile_id||'')));
   const money=n=>'€ '+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   const extractDueId=note=>{const m=String(note||'').match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);return m?String(m[1]):'';};
   const dueIdFor=(pid,a,b)=>'DOVUTO-'+String(pid)+'-'+String(a||'')+'-'+String(b||'');
   const groups=new Map();
   const ensure=(pid,fromDate,toDate,due)=>{const key=dueIdFor(pid,fromDate,toDate);if(!groups.has(key))groups.set(key,{key,pid,from:String(fromDate||'').slice(0,10),to:String(toDate||'').slice(0,10),due:due==null?null:Number(due),paid:0,rows:[]});const g=groups.get(key);if(due!=null)g.due=Number(due);return g;};
-  // Inserisce il dovuto attualmente presente in anagrafica, se il suo periodo ricade nell'intervallo scelto.
-  profiles.forEach(p=>{const a=String(p.subscription_paid_from||'').slice(0,10),b=String(p.subscription_paid_to||'').slice(0,10);if(a&&b&&a<=to&&b>=from&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);});
+  // Inserisce il dovuto per il periodo di abbonamento salvato in anagrafica.
+  // I periodi storici vengono ricostruiti dai movimenti collegati; ogni gruppo mantiene dovuto e pagamenti del proprio periodo.
+  profiles.forEach(p=>{
+   const a=String(p.subscription_paid_from||'').slice(0,10),b=String(p.subscription_paid_to||'').slice(0,10);
+   if(a&&b&&a<=to&&b>=from&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);
+  });
   // Associa i pagamenti al rispettivo periodo; visualizza un gruppo se il periodo o almeno un movimento ricade nell'intervallo.
   allPayments.forEach(x=>{
    const pid=String(x.profile_id||'');if(!pid)return;

@@ -1394,6 +1394,7 @@ function openClientSheet(id){
  const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));if(!p)return;
  const full=p.full_name||p.name||[p.first_name,p.last_name].filter(Boolean).join(' ');
  const card=clientCardNumber(p);
+ const clientAge=ageFromBirthDate(p.birth_date);
  const subscriptionFrom=pick(p,['subscription_paid_from']);
  const subscriptionTo=pick(p,['subscription_paid_to']);
  openModal(`<div class="modalhead"><h2>Scheda cliente</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
@@ -1405,7 +1406,8 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>€</span> Dovuti e relativi movimenti</h3>
    <div id="cpPaymentHistory" class="muted">Caricamento...</div>
   </div>
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn secondary" type="button" onclick="document.getElementById('cpMedFile')?.click()">Scatta foto / Carica certificato</button><span class="muted">Fotocamera, galleria o PDF</span></div><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)" style="display:block;margin-top:10px;max-width:100%"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Seleziona una foto del certificato oppure un PDF (max 10 MB).</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
+  ${clientAge!==null&&clientAge<18?`<div class="clientSheetSection"><h3><span>✍</span> Iscrizione minorenne</h3><p class="muted">Per i clienti minorenni, compila il modulo con i dati del genitore/tutore e raccogli la firma del referente.</p><button class="btn" type="button" onclick="openMinorRegistrationForm('${p.id}')">Apri modulo iscrizione e firma referente</button></div>`:''}
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
    <div class="qrManagementBox">
@@ -1441,7 +1443,6 @@ function openClientSheet(id){
  });
  setTimeout(()=>drawQrInto(document.getElementById('sheetQr_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')),p),20);
  setTimeout(()=>loadAdminClientPayments(p.id),40);
- setTimeout(()=>loadMedicalCertificateMeta(p.id),50);
  // Calendario Dal/Al: l'intervallo viene mantenuto coerente.
  setTimeout(()=>{
    const from=document.getElementById('cpFrom'), to=document.getElementById('cpTo');
@@ -1461,24 +1462,21 @@ function openClientSheet(id){
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
 
-async function getMedicalCertificates(profileId){
- const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',profileId).eq('document_type','medical_certificate').order('created_at',{ascending:false}).limit(100);
+async function getLatestMedicalCertificate(profileId){
+ const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',profileId).eq('document_type','medical_certificate').order('created_at',{ascending:false}).limit(1).maybeSingle();
  if(r.error)throw r.error;
- return r.data||[];
+ return r.data||null;
 }
 async function loadMedicalCertificateMeta(profileId){
  const box=document.getElementById('cpMedExisting');
  if(!box)return;
- box.innerHTML='<div class="muted">Caricamento documenti...</div>';
+ box.innerHTML='<div class="muted">Verifica documento...</div>';
  try{
-   const docs=await getMedicalCertificates(profileId);
-   if(!docs.length){box.innerHTML='<div class="muted">Nessun certificato caricato.</div>';return;}
-   box.innerHTML='<div style="font-weight:700;margin-bottom:8px">File caricati ('+docs.length+')</div>'+docs.map(doc=>{
-     const date=doc.created_at?fmtDate(doc.created_at):'';
-     const safePath=String(doc.file_path||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-     return `<div class="card" style="padding:10px;margin:0 0 8px 0"><div><b>${esc(doc.file_name||'Documento')}</b></div><div class="muted" style="margin-top:4px">${esc(doc.mime_type||'')} ${date?'· '+esc(date):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openMedicalCertificate('${esc(safePath)}')">Visualizza / Apri</button></div></div>`;
-   }).join('');
- }catch(e){box.innerHTML='<div class="muted">Documenti non disponibili: '+esc(e?.message||e)+'</div>';}
+   const doc=await getLatestMedicalCertificate(profileId);
+   if(!doc){box.innerHTML='<div class="muted">Nessun certificato caricato.</div>';return;}
+   const date=doc.created_at?fmtDate(doc.created_at):'';
+   box.innerHTML=`<div class="card" style="padding:10px;margin:0"><div><b>Certificato presente</b> — ${esc(doc.file_name||'Documento')}</div><div class="muted" style="margin-top:4px">${esc(doc.mime_type||'')} ${date?'· '+esc(date):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openMedicalCertificate('${esc(doc.file_path)}')">Visualizza certificato</button></div></div>`;
+ }catch(e){box.innerHTML='<div class="muted">Documento non disponibile: '+esc(e?.message||e)+'</div>';}
 }
 async function uploadMedicalCertificate(profileId){
  const file=document.getElementById('cpMedFile')?.files?.[0];if(!file)return null;
@@ -1536,6 +1534,62 @@ async function removeClientSubscriptionPeriod(profileId,from,to){
    if(msg){msg.textContent='Errore rimozione periodo: '+detail;msg.className='error';msg.style.display='block';}
    alert('Impossibile rimuovere il periodo abbonamento: '+detail);
  }
+}
+function ageFromBirthDate(value){
+ if(!value)return null;
+ const d=new Date(String(value).slice(0,10)+'T12:00:00');
+ if(Number.isNaN(d.getTime()))return null;
+ const now=new Date();let age=now.getFullYear()-d.getFullYear();
+ if(now.getMonth()<d.getMonth()||(now.getMonth()===d.getMonth()&&now.getDate()<d.getDate()))age--;
+ return age;
+}
+function openMinorRegistrationForm(profileId){
+ const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(profileId))||(clientsData||[]).find(x=>String(x.id)===String(profileId))||(anagraficaData||[]).find(x=>String(x.id)===String(profileId));
+ if(!p)return;
+ const full=p.full_name||p.name||[p.first_name,p.last_name].filter(Boolean).join(' ');
+ openModal(`<div class="modalhead"><h2>Modulo iscrizione — minorenne</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+ <div id="minorFormPrint" style="background:#fff;color:#111;padding:22px;border-radius:8px">
+ <h2 style="text-align:center;margin-top:0">KLEOSFIT — MODULO DI ISCRIZIONE MINORENNE</h2>
+ <p>Il modulo va compilato e firmato dal genitore o tutore legale del minore.</p>
+ <h3>Dati del minore</h3>
+ <div class="clientSheetGrid"><div><label>Nome e cognome</label><input id="mrMinorName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="mrMinorBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div><label>Codice fiscale</label><input id="mrMinorFiscal" value="${esc(p.fiscal_code||'')}"></div></div>
+ <h3>Dati del genitore / tutore (referente)</h3>
+ <div class="clientSheetGrid"><div><label>Nome e cognome referente</label><input id="mrGuardianName"></div><div><label>Relazione con il minore</label><select id="mrGuardianRelation"><option>Genitore</option><option>Tutore legale</option><option>Affidatario</option></select></div><div><label>Codice fiscale referente</label><input id="mrGuardianFiscal"></div><div><label>Telefono</label><input id="mrGuardianPhone" value="${esc(p.phone||'')}"></div><div class="wide"><label>Email</label><input id="mrGuardianEmail" value="${esc(p.email||'')}"></div></div>
+ <h3>Dichiarazione e autorizzazione</h3>
+ <p>Il/La sottoscritto/a, in qualità di genitore/tutore/affidatario del minore indicato, chiede l’iscrizione alle attività di KleosFit e dichiara di aver fornito dati veritieri. Dichiara inoltre di aver preso visione delle regole della struttura e si impegna a comunicare eventuali variazioni rilevanti per la partecipazione del minore.</p>
+ <p>La partecipazione alle attività resta subordinata alla consegna della documentazione sanitaria richiesta e alle eventuali ulteriori autorizzazioni previste dalla legge e dalla struttura. L’informativa privacy e gli eventuali consensi specifici devono essere forniti separatamente, ove richiesto.</p>
+ <div style="margin-top:18px"><label>Luogo e data</label><input id="mrPlaceDate" placeholder="Luogo, data"></div>
+ <div style="margin-top:16px"><label>Firma del genitore / tutore / referente</label><canvas id="mrSignature" width="900" height="180" style="display:block;width:100%;max-width:900px;height:180px;border:1px solid #888;background:#fff;touch-action:none"></canvas><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="clearMinorSignature()">Cancella firma</button></div></div>
+ <p style="font-size:12px;margin-top:16px">La firma acquisita in questo modulo è una firma tracciata sullo schermo. Per gli usi che richiedono una firma elettronica con specifici requisiti legali, verificare la procedura con un professionista.</p>
+ </div>
+ <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="printMinorRegistrationForm()">Stampa / Salva PDF</button></div>`);
+ setTimeout(initMinorSignature,30);
+}
+let minorSignatureState=null;
+function initMinorSignature(){
+ const c=document.getElementById('mrSignature');if(!c)return;
+ const ctx=c.getContext('2d');ctx.lineWidth=3;ctx.lineCap='round';ctx.strokeStyle='#111';
+ let drawing=false;
+ const point=e=>{const r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height};};
+ c.onpointerdown=e=>{drawing=true;c.setPointerCapture?.(e.pointerId);const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);};
+ c.onpointermove=e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();};
+ c.onpointerup=c.onpointercancel=()=>{drawing=false;};
+ minorSignatureState=c;
+}
+function clearMinorSignature(){const c=document.getElementById('mrSignature');if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+function printMinorRegistrationForm(){
+ const root=document.getElementById('minorFormPrint');if(!root)return;
+ const clone=root.cloneNode(true);
+ clone.querySelectorAll('input,select').forEach(el=>{
+  const span=document.createElement('span');span.textContent=el.value||'________________';span.style.cssText='display:inline-block;min-width:160px;border-bottom:1px solid #777;padding:5px;color:#111';
+  el.replaceWith(span);
+ });
+ const canvas=root.querySelector('#mrSignature');
+ if(canvas){const img=document.createElement('img');img.src=canvas.toDataURL('image/png');img.style.cssText='display:block;width:100%;max-width:900px;height:180px;border:1px solid #888;object-fit:contain';clone.querySelector('#mrSignature')?.replaceWith(img);}
+ const w=window.open('','_blank');
+ if(!w){alert('Consenti i popup per stampare o salvare il modulo in PDF.');return;}
+ w.document.write('<!doctype html><html><head><title>Modulo iscrizione minorenne</title><meta charset="utf-8"><style>body{font:14px Arial,sans-serif;color:#111;margin:24px}h2,h3{margin:14px 0 8px}p{line-height:1.45}.clientSheetGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-weight:bold;display:block;margin-bottom:4px}@media print{button{display:none}}</style></head><body>'+clone.outerHTML+'<script>window.onload=()=>window.print()<\\/script></body></html>');
+ w.document.close();
 }
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
@@ -3198,16 +3252,6 @@ async function loadClientPriceList(){
  }).join('')+'</div>';
 }
 
-function cleanVisiblePaymentNote(value){
- const raw=String(value??'');
- // Rimuove i metadati contabili e l'eventuale frammento di token legacy
- // rimasto in coda alla nota dopo le precedenti modifiche.
- return raw
-   .replace(/\\s*\\[\\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\\]]+\\]\\]\\s*/ig,' ')
-   .replace(/\\s+\\d{3}-\\d{2}-\\d{2}-\\d{4}-?\\s*$/,'')
-   .trim() || 'Pagamento abbonamento';
-}
-
 async function loadAdminClientPayments(profileId){
  const box=document.getElementById('cpPaymentHistory');
  if(!box)return;
@@ -3292,7 +3336,7 @@ async function loadAdminClientPayments(profileId){
           <div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div>
         </div>
         <div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>
-        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');const displayNote=String(x.note||'Pagamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(displayNote||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(displayNote)}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica acconto</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
+        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');const displayNote=String(x.note||'Pagamento').replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(displayNote||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(displayNote)}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica acconto</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
       </div>`;
    }).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div>`;
  }catch(e){
@@ -3417,7 +3461,7 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
      <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from||profile?.subscription_paid_from))}"></div>
      <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to||profile?.subscription_paid_to))}"></div>
      <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
-     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(String(row?.note||'Pagamento abbonamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento')}"></div>
+     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
    </div>
    <div id="phSummary" class="subscriptionBreakdown">
      <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
@@ -3448,23 +3492,9 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const from=document.getElementById('phFrom')?.value||null;
  const to=document.getElementById('phTo')?.value||null;
  const amountRaw=document.getElementById('phAmount')?.value?.trim()||'';
- const noteInput=document.getElementById('phNote');
- const noteBase=noteInput ? String(noteInput.value??'').trim() : 'Pagamento abbonamento';
- let token=String(dueToken||'').trim();
- let oldDueMarker='';
- // In modifica conserva sempre i metadati del dovuto già collegato: perderli
- // trasformava l'acconto in un nuovo gruppo/abbonamento nella contabilità.
- if(paymentId){
-   const old=await db.from('subscription_payment_history').select('note').eq('id',paymentId).eq('profile_id',profileId).maybeSingle();
-   if(old.error){if(msg){msg.textContent='Impossibile conservare il collegamento al dovuto: '+old.error.message;msg.style.display='block'}return;}
-   const oldNote=String(old.data?.note||'');
-   const oldToken=oldNote.match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);
-   const oldDue=oldNote.match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
-   if(!token&&oldToken)token=String(oldToken[1]).trim();
-   if(oldDue)oldDueMarker=' [[DOVUTO_IMPORTO:'+oldDue[1]+']]';
- }
- const cleanNote=noteBase.replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim();
- const note=[cleanNote,token?'[[DOVUTO_ID:'+token+']]':'',oldDueMarker.trim()].filter(Boolean).join(' ').trim();
+ const noteBase=document.getElementById('phNote')?.value?.trim()||'Pagamento abbonamento';
+ const token=String(dueToken||'').trim();
+ const note=token?(noteBase.replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,'').trim()+' [[DOVUTO_ID:'+token+']]'):noteBase;
  const amount=amountRaw===''?null:Number(amountRaw);
  if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
  if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}
@@ -3482,19 +3512,14 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};
  try{
    let r;
-   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id,note').maybeSingle();
-   else r=await db.from('subscription_payment_history').insert(payload).select('id,note').maybeSingle();
+   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
+   else r=await db.from('subscription_payment_history').insert(payload).select('id').maybeSingle();
    if(r.error)throw r.error;
-   if(!r.data)throw new Error('Supabase non ha confermato il salvataggio del pagamento. Verifica i permessi di modifica.');
-   const verify=await db.from('subscription_payment_history').select('id,note').eq('id',r.data.id).eq('profile_id',profileId).maybeSingle();
-   if(verify.error)throw verify.error;
-   if(!verify.data)throw new Error('Pagamento salvato ma non rileggibile dal database.');
-   if(String(verify.data.note??'')!==String(note))throw new Error('La nota non è stata aggiornata nel database. Valore atteso: '+note+'; valore salvato: '+String(verify.data.note??''));
+   // Dopo il salvataggio torna sempre alla scheda cliente, non all'elenco.
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
    closeModal();
    if(window.__forcedPaymentDueByProfile) delete window.__forcedPaymentDueByProfile[String(profileId)];
-   // Riapre la scheda cliente così lo storico e le note vengono riletti dal database.
-   setTimeout(()=>openClientSheet(profileId),80);
+   setTimeout(()=>openSubscriptionRenewal(profileId),50);
  }catch(e){
    if(msg){msg.textContent='Errore salvataggio pagamento: '+(e?.message||e);msg.style.display='block';}
  }
@@ -3592,25 +3617,20 @@ async function loadAccounting(){
     // Prima scelta: collegamento esatto tramite ID del dovuto.
     g=groups.get(token)||[...groups.values()].find(z=>z.pid===pid&&z.key===token);
     if(!g){
-     const p0=names.get(pid)||{};
-     const currentFrom=String(p0.subscription_paid_from||'').slice(0,10);
-     const currentTo=String(p0.subscription_paid_to||'').slice(0,10);
-     const profileDue=p0.subscription_cost==null?null:Number(p0.subscription_cost);
-     const marker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
-     const markerDue=marker?Number(marker[1]):null;
-     // Compatibilità per movimenti storici con DOVUTO_ID non più corrispondente
-     // alla chiave corrente: se il marker del dovuto coincide esattamente con
-     // il costo registrato e il cliente ha un periodo corrente valido, usa quel
-     // dovuto. Le date del movimento non partecipano alla scelta del periodo.
-     const markerMatches=markerDue!=null&&profileDue!=null&&Math.abs(markerDue-profileDue)<0.005;
-     if(currentFrom&&currentTo&&markerMatches){
-      g=ensure(pid,currentFrom,currentTo,profileDue);
+     const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
+     if(parsed&&String(parsed[1])===pid){
+      // Compatibilità con vecchi token che codificano direttamente il periodo.
+      g=groups.get(token)||{key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
+      groups.set(token,g);
      }else{
-      const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
-      if(parsed&&String(parsed[1])===pid){
-       // Se il token identifica un periodo storico distinto, conserva quel periodo.
-       g=groups.get(token)||{key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
-       groups.set(token,g);
+      // Vecchi movimenti possono avere un token non più riconoscibile e date
+      // del pagamento vuote. In quel solo caso, collegali al periodo corrente
+      // del profilo, come fa la scheda Abbonamenti, invece di perderli in un
+      // gruppo senza periodo che non compare in Contabilità.
+      const currentFrom=String((names.get(pid)||{}).subscription_paid_from||'').slice(0,10);
+      const currentTo=String((names.get(pid)||{}).subscription_paid_to||'').slice(0,10);
+      if(currentFrom&&currentTo&&(!a||!b|| (a===currentFrom&&b===currentTo))){
+       g=ensure(pid,currentFrom,currentTo,(names.get(pid)||{}).subscription_cost);
       }else{
        g={key:token,pid,from:'',to:'',due:null,paid:0,rows:[]};
        groups.set(token,g);

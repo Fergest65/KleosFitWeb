@@ -3270,7 +3270,7 @@ async function loadAdminClientPayments(profileId){
       return `<div class="card" style="margin-top:10px;padding:14px;border:1px solid var(--line)">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
           <div><strong>DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')}</strong><div class="muted">Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}${isCurrent?' · Periodo corrente':''}</div></div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${badge(st)}<button class="btn mini" type="button" style="background:#c4ff3d;color:#0a0d08;border:1px solid #c4ff3d" onclick="openSubscriptionDueEditor('${profileId}','${cleanFrom}','${cleanTo}','${g.rows.map(r=>String(r.id||'')).filter(Boolean).join('|')}')">Modifica abbonamento</button><button class="btn mini" type="button" onclick="openPaymentEditor('${profileId}','', '${cleanFrom}','${cleanTo}', ${due==null?'null':String(due)}, '${dueToken}')">+ Acconto</button><button class="btn secondary mini" type="button" style="border-color:#c62828;color:#c62828" onclick="removeClientSubscriptionPeriod('${profileId}','${cleanFrom}','${cleanTo}')">Rimuovi questo abbonamento</button></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${badge(st)}<button class="btn mini" type="button" style="background:#c4ff3d;color:#0a0d08;border:1px solid #c4ff3d" onclick="openSubscriptionDueEditor('${profileId}','${cleanFrom}','${cleanTo}')">Modifica abbonamento</button><button class="btn mini" type="button" onclick="openPaymentEditor('${profileId}','', '${cleanFrom}','${cleanTo}', ${due==null?'null':String(due)}, '${dueToken}')">+ Acconto</button><button class="btn secondary mini" type="button" style="border-color:#c62828;color:#c62828" onclick="removeClientSubscriptionPeriod('${profileId}','${cleanFrom}','${cleanTo}')">Rimuovi questo abbonamento</button></div>
         </div>
         <div class="paymentSummary" style="margin-top:10px">
           <div class="sbRow"><span>Dovuto</span><b>${due==null?'—':fmtMoney(due)}</b></div>
@@ -3286,85 +3286,79 @@ async function loadAdminClientPayments(profileId){
  }
 }
 
-function subscriptionDateISO(value){
-  const v=String(value??'').trim();
-  if(!v)return '';
-  if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
-  const it=v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if(it)return `${it[3]}-${it[2]}-${it[1]}`;
-  const dt=new Date(v);
-  return Number.isNaN(dt.getTime())?'':`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-}
-async function openSubscriptionDueEditor(profileId,from,to,rowIdsPacked=''){
+async function openSubscriptionDueEditor(profileId,from,to){
   try{
     const r=await db.from('profiles').select('id,full_name,subscription_type,subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
     if(r.error)throw r.error;
     const p=r.data;
     if(!p){alert('Cliente non trovato.');return;}
-    const currentFrom=subscriptionDateISO(p.subscription_paid_from);
-    const currentTo=subscriptionDateISO(p.subscription_paid_to);
-    const rowIds=String(rowIdsPacked||'').split('|').filter(Boolean);
-    const originalFrom=subscriptionDateISO(from)||currentFrom;
-    const originalTo=subscriptionDateISO(to)||currentTo;
-    // Per gruppi storici privi di date, usa gli ID dei movimenti visualizzati.
-    // Non interrogare mai una colonna date con stringhe vuote.
-    let rows=[];
-    if(rowIds.length){
-      const hr=await db.from('subscription_payment_history').select('id,note,paid_from,paid_to').eq('profile_id',profileId).in('id',rowIds).limit(500);
-      if(hr.error)throw hr.error;
-      rows=hr.data||[];
-    }else if(originalFrom&&originalTo){
-      const hr=await db.from('subscription_payment_history').select('id,note,paid_from,paid_to').eq('profile_id',profileId).eq('paid_from',originalFrom).eq('paid_to',originalTo).limit(500);
-      if(hr.error)throw hr.error;
-      rows=hr.data||[];
-    }
-    if(!originalFrom&&!originalTo&&!rows.length){alert('Non trovo date o movimenti collegati a questo abbonamento. Apri la scheda cliente e completa prima le date.');return;}
-    const historical=(!originalFrom||!originalTo)||originalFrom!==currentFrom||originalTo!==currentTo;
+    const currentFrom=String(p.subscription_paid_from||'').slice(0,10);
+    const currentTo=String(p.subscription_paid_to||'').slice(0,10);
+    const historical=String(from)!==currentFrom || String(to)!==currentTo;
     let initialCost=historical?null:(p.subscription_cost==null?null:Number(p.subscription_cost));
-    for(const row of rows){const m=String(row.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);if(m){initialCost=Number(m[1]);break;}}
-    const displayFrom=originalFrom||'';
-    const displayTo=originalTo||'';
+    if(historical){
+      const hr=await db.from('subscription_payment_history').select('note,paid_from,paid_to').eq('profile_id',profileId).eq('paid_from',String(from)).eq('paid_to',String(to)).limit(500);
+      if(hr.error)throw hr.error;
+      for(const row of (hr.data||[])){
+        const m=String(row.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
+        if(m){initialCost=Number(m[1]);break;}
+      }
+    }
     openModal(`<div class="modalhead"><h2>Modifica abbonamento ${historical?'storico':''}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
-      <div class="muted" style="margin-bottom:14px">${esc(p.full_name||'Cliente')} · ${esc(p.subscription_type||'Abbonamento')} · Periodo ${esc(displayFrom||'da impostare')} → ${esc(displayTo||'da impostare')}</div>
-      <div class="clientSheetGrid"><div><label>Dal</label><input id="dueEditFrom" type="date" value="${esc(displayFrom)}"></div><div><label>Al</label><input id="dueEditTo" type="date" value="${esc(displayTo)}"></div><div><label>Importo dovuto registrato (€)</label><input id="dueEditCost" type="number" min="0" step="0.01" value="${initialCost==null?'':Number(initialCost).toFixed(2)}" placeholder="Inserisci importo effettivo"></div></div>
-      <input type="hidden" id="dueEditHistorical" value="${historical?'1':'0'}"><input type="hidden" id="dueEditOriginalFrom" value="${esc(originalFrom)}"><input type="hidden" id="dueEditOriginalTo" value="${esc(originalTo)}"><input type="hidden" id="dueEditRowIds" value="${esc(rowIds.join('|'))}">
-      <div class="muted" style="margin-top:8px">La modifica aggiorna i movimenti selezionati senza crearne di nuovi.</div><div id="dueEditMsg" class="error" style="display:none;margin-top:12px"></div>
+      <div class="muted" style="margin-bottom:14px">${esc(p.full_name||'Cliente')} · ${esc(p.subscription_type||'Abbonamento')} · Periodo ${esc(from)} → ${esc(to)}</div>
+      <div class="clientSheetGrid">
+        <div><label>Dal</label><input id="dueEditFrom" type="date" value="${esc(from)}"></div>
+        <div><label>Al</label><input id="dueEditTo" type="date" value="${esc(to)}"></div>
+        <div><label>Importo dovuto registrato (€)</label><input id="dueEditCost" type="number" min="0" step="0.01" value="${initialCost==null?'':Number(initialCost).toFixed(2)}" placeholder="Inserisci importo effettivo"></div>
+      </div>
+      ${historical?'<div class="muted" style="margin-top:8px">Periodo storico: puoi correggere il dovuto senza modificare l’abbonamento corrente. Il valore viene salvato sui movimenti collegati a questo periodo.</div>':''}
+      <input type="hidden" id="dueEditHistorical" value="${historical?'1':'0'}"><input type="hidden" id="dueEditOriginalFrom" value="${esc(from)}"><input type="hidden" id="dueEditOriginalTo" value="${esc(to)}">
+      <div id="dueEditMsg" class="error" style="display:none;margin-top:12px"></div>
       <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="saveSubscriptionDueEditor('${profileId}')">Salva modifica</button></div>`);
-    setTimeout(()=>{const f=document.getElementById('dueEditFrom'),t=document.getElementById('dueEditTo');const sync=()=>{if(f?.value){t.min=f.value;if(t.value&&t.value<f.value)t.value=f.value}else t.removeAttribute('min');};f?.addEventListener('change',sync);t?.addEventListener('change',sync);sync();},20);
+    setTimeout(()=>{
+      const f=document.getElementById('dueEditFrom'),t=document.getElementById('dueEditTo');
+      const sync=()=>{if(f?.value){t.min=f.value;if(t.value&&t.value<f.value)t.value=f.value}else t.removeAttribute('min');};
+      f?.addEventListener('change',sync);t?.addEventListener('change',sync);sync();
+    },20);
   }catch(e){alert('Impossibile aprire la modifica: '+(e?.message||e));}
 }
 async function saveSubscriptionDueEditor(profileId){
   const msg=document.getElementById('dueEditMsg');
-  const from=subscriptionDateISO(document.getElementById('dueEditFrom')?.value||'');
-  const to=subscriptionDateISO(document.getElementById('dueEditTo')?.value||'');
+  const from=document.getElementById('dueEditFrom')?.value||'';
+  const to=document.getElementById('dueEditTo')?.value||'';
   const costRaw=document.getElementById('dueEditCost')?.value?.trim()||'';
   const cost=costRaw===''?NaN:Number(costRaw);
-  const originalFrom=subscriptionDateISO(document.getElementById('dueEditOriginalFrom')?.value||'');
-  const originalTo=subscriptionDateISO(document.getElementById('dueEditOriginalTo')?.value||'');
-  const rowIds=String(document.getElementById('dueEditRowIds')?.value||'').split('|').filter(Boolean);
   const historical=document.getElementById('dueEditHistorical')?.value==='1';
+  const originalFrom=document.getElementById('dueEditOriginalFrom')?.value||from;
+  const originalTo=document.getElementById('dueEditOriginalTo')?.value||to;
   const fail=t=>{if(msg){msg.textContent=t;msg.style.display='block';}};
-  if(!from||!to){fail('Inserisci entrambe le date.');return;}
+  if(!from||!to){fail('Inserisci il periodo.');return;}
   if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}
   if(!Number.isFinite(cost)||cost<=0){fail('Inserisci l’importo effettivo dovuto per questo periodo.');return;}
-  if(!rowIds.length&&(!originalFrom||!originalTo)){fail('Non ci sono movimenti identificati da aggiornare.');return;}
   try{
-    let query=db.from('subscription_payment_history').select('id,note').eq('profile_id',profileId);
-    if(rowIds.length) query=query.in('id',rowIds);
-    else query=query.eq('paid_from',originalFrom).eq('paid_to',originalTo);
-    const hr=await query.limit(500);if(hr.error)throw hr.error;
-    for(const row of (hr.data||[])){
-      const clean=String(row.note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';
-      const note=clean+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
-      const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId).select('id').maybeSingle();
-      if(up.error)throw up.error;if(!up.data)throw new Error('Supabase non ha aggiornato il movimento '+row.id+'. Verifica i permessi RLS.');
-    }
-    if(!historical){
+    if(historical){
+      // Seleziona i movimenti del periodo ORIGINALE e aggiorna quelle righe: non inserire nuove righe.
+      let query=db.from('subscription_payment_history').select('id,note,paid_from,paid_to').eq('profile_id',profileId);
+      if(originalFrom) query=query.eq('paid_from',originalFrom); else query=query.is('paid_from',null);
+      if(originalTo) query=query.eq('paid_to',originalTo); else query=query.is('paid_to',null);
+      const hr=await query.limit(500);
+      if(hr.error)throw hr.error;
+      if(!(hr.data||[]).length)throw new Error('Nessun movimento trovato per il periodo originale: date non salvate.');
+      for(const row of hr.data){
+        const clean=String(row.note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';
+        const note=clean+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
+        const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId).select('id').maybeSingle();
+        if(up.error)throw up.error;
+        if(!up.data)throw new Error('Supabase non ha confermato l’aggiornamento del movimento '+row.id+'. Controlla i permessi RLS.');
+      }
+    }else{
       const r=await db.from('profiles').update({subscription_paid_from:from,subscription_paid_to:to,subscription_cost:cost,subscription_active:computeSubscriptionActive(from,to)}).eq('id',profileId).select('id').maybeSingle();
-      if(r.error)throw r.error;if(!r.data)throw new Error('Supabase non ha aggiornato il profilo. Verifica i permessi RLS.');
+      if(r.error)throw r.error;
     }
-    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();closeModal();setTimeout(()=>openClientSheet(profileId),60);
-  }catch(e){fail('Modifica non completata: '+(e?.message||e));}
+    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
+    closeModal();
+    setTimeout(()=>openClientSheet(profileId),60);
+  }catch(e){fail('Errore salvataggio modifica: '+(e?.message||e));}
 }
 
 function closePaymentEditor(profileId){

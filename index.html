@@ -3194,6 +3194,16 @@ async function loadClientPriceList(){
  }).join('')+'</div>';
 }
 
+function cleanVisiblePaymentNote(value){
+ const raw=String(value??'');
+ // Rimuove i metadati contabili e l'eventuale frammento di token legacy
+ // rimasto in coda alla nota dopo le precedenti modifiche.
+ return raw
+   .replace(/\\s*\\[\\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\\]]+\\]\\]\\s*/ig,' ')
+   .replace(/\\s+\\d{3}-\\d{2}-\\d{2}-\\d{4}-?\\s*$/,'')
+   .trim() || 'Pagamento abbonamento';
+}
+
 async function loadAdminClientPayments(profileId){
  const box=document.getElementById('cpPaymentHistory');
  if(!box)return;
@@ -3278,7 +3288,7 @@ async function loadAdminClientPayments(profileId){
           <div class="sbTotal"><span>Residuo</span><b>${rem==null?'—':fmtMoney(rem)}</b></div>
         </div>
         <div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>
-        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');const displayNote=String(x.note||'Pagamento').replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(displayNote||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(displayNote)}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica acconto</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
+        ${g.rows.length?'<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th><th></th></tr></thead><tbody>'+g.rows.map(x=>{const id=String(x.id||'').replace(/[^a-zA-Z0-9_-]/g,'');const displayNote=String(x.note||'Pagamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td><span class="pill">${esc(String(displayNote||'Acconto').toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</span></td><td><b>${fmtMoney(x.amount)}</b></td><td>${esc(displayNote)}</td><td><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn secondary mini" type="button" onclick="openPaymentEditor('${profileId}','${id}')">Modifica acconto</button><button class="btn secondary mini" style="color:#fff;background:#c62828" type="button" onclick="deletePaymentHistory('${profileId}','${id}')">Elimina</button></div></td></tr>`}).join('')+'</tbody></table></div>':'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}
       </div>`;
    }).join(''):'<div class="muted">Nessun dovuto o movimento registrato.</div>'}</div>`;
  }catch(e){
@@ -3403,7 +3413,7 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
      <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from||profile?.subscription_paid_from))}"></div>
      <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to||profile?.subscription_paid_to))}"></div>
      <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
-     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
+     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(String(row?.note||'Pagamento abbonamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento')}"></div>
    </div>
    <div id="phSummary" class="subscriptionBreakdown">
      <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
@@ -3434,9 +3444,23 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const from=document.getElementById('phFrom')?.value||null;
  const to=document.getElementById('phTo')?.value||null;
  const amountRaw=document.getElementById('phAmount')?.value?.trim()||'';
- const noteBase=document.getElementById('phNote')?.value?.trim()||'Pagamento abbonamento';
- const token=String(dueToken||'').trim();
- const note=token?(noteBase.replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,'').trim()+' [[DOVUTO_ID:'+token+']]'):noteBase;
+ const noteInput=document.getElementById('phNote');
+ const noteBase=noteInput ? String(noteInput.value??'').trim() : 'Pagamento abbonamento';
+ let token=String(dueToken||'').trim();
+ let oldDueMarker='';
+ // In modifica conserva sempre i metadati del dovuto già collegato: perderli
+ // trasformava l'acconto in un nuovo gruppo/abbonamento nella contabilità.
+ if(paymentId){
+   const old=await db.from('subscription_payment_history').select('note').eq('id',paymentId).eq('profile_id',profileId).maybeSingle();
+   if(old.error){if(msg){msg.textContent='Impossibile conservare il collegamento al dovuto: '+old.error.message;msg.style.display='block'}return;}
+   const oldNote=String(old.data?.note||'');
+   const oldToken=oldNote.match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);
+   const oldDue=oldNote.match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
+   if(!token&&oldToken)token=String(oldToken[1]).trim();
+   if(oldDue)oldDueMarker=' [[DOVUTO_IMPORTO:'+oldDue[1]+']]';
+ }
+ const cleanNote=noteBase.replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim();
+ const note=[cleanNote,token?'[[DOVUTO_ID:'+token+']]':'',oldDueMarker.trim()].filter(Boolean).join(' ').trim();
  const amount=amountRaw===''?null:Number(amountRaw);
  if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
  if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}
@@ -3454,14 +3478,19 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};
  try{
    let r;
-   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
-   else r=await db.from('subscription_payment_history').insert(payload).select('id').maybeSingle();
+   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id,note').maybeSingle();
+   else r=await db.from('subscription_payment_history').insert(payload).select('id,note').maybeSingle();
    if(r.error)throw r.error;
-   // Dopo il salvataggio torna sempre alla scheda cliente, non all'elenco.
+   if(!r.data)throw new Error('Supabase non ha confermato il salvataggio del pagamento. Verifica i permessi di modifica.');
+   const verify=await db.from('subscription_payment_history').select('id,note').eq('id',r.data.id).eq('profile_id',profileId).maybeSingle();
+   if(verify.error)throw verify.error;
+   if(!verify.data)throw new Error('Pagamento salvato ma non rileggibile dal database.');
+   if(String(verify.data.note??'')!==String(note))throw new Error('La nota non è stata aggiornata nel database. Valore atteso: '+note+'; valore salvato: '+String(verify.data.note??''));
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
    closeModal();
    if(window.__forcedPaymentDueByProfile) delete window.__forcedPaymentDueByProfile[String(profileId)];
-   setTimeout(()=>openSubscriptionRenewal(profileId),50);
+   // Riapre la scheda cliente così lo storico e le note vengono riletti dal database.
+   setTimeout(()=>openClientSheet(profileId),80);
  }catch(e){
    if(msg){msg.textContent='Errore salvataggio pagamento: '+(e?.message||e);msg.style.display='block';}
  }

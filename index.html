@@ -2534,14 +2534,14 @@ function progressTrend(latest,previous,label){
  if(previous===null)return {status:'first',arrow:'•',delta:null,text:'Prima rilevazione'};
  const d=latest-previous;
  const cfg=progressTrendConfig[label]||{direction:'neutral',threshold:0.5};
- if(Math.abs(d)<cfg.threshold)return {status:'stable',arrow:'→',delta:d,text:'Stabile'};
+ if(Math.abs(d)<cfg.threshold)return {status:'stable',arrow:'→',delta:d,text:''};
  let positive=false;
  if(cfg.direction==='up')positive=d>0;
  else if(cfg.direction==='down')positive=d<0;
  else positive=false;
  const arrow=d>0?'↗':'↘';
  const sign=d>0?'+':'';
- return {status:cfg.direction==='neutral'?'change':(positive?'better':'worse'),arrow,delta:d,text:`${sign}${d.toFixed(1).replace('.',',')}${progressUnit(label)} · ${cfg.direction==='neutral'?'Variazione':(positive?'Migliora':'Peggiora')}`};
+ return {status:cfg.direction==='neutral'?'change':(positive?'better':'worse'),arrow,delta:d,text:`${sign}${d.toFixed(1).replace('.',',')}${progressUnit(label)}`};
 }
 function progressTrendClass(status){return status==='better'?'progressBetter':status==='worse'?'progressWorse':status==='stable'?'progressStable':status==='first'?'progressFirst':'progressNeutral'}
 function progressChange(latest,previous,label){

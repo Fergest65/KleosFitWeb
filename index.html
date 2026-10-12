@@ -3347,37 +3347,21 @@ async function saveSubscriptionDueEditor(profileId){
         if(up.error)throw up.error;
       }
     }else{
-      // Modifica il periodo della registrazione esistente: aggiorna anche i movimenti
-      // già collegati al periodo originale, senza crearne uno nuovo e senza cambiare created_at.
-      const pr=await db.from('profiles').select('subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
-      if(pr.error)throw pr.error;
-      const profileFrom=String(pr.data?.subscription_paid_from||'').slice(0,10);
-      const profileTo=String(pr.data?.subscription_paid_to||'').slice(0,10);
-      const oldFrom=String(originalFrom||profileFrom).slice(0,10);
-      const oldTo=String(originalTo||profileTo).slice(0,10);
-      const r=await db.from('profiles').update({subscription_paid_from:from,subscription_paid_to:to,subscription_cost:cost,subscription_active:computeSubscriptionActive(from,to)}).eq('id',profileId).select('id').maybeSingle();
-      if(r.error)throw r.error;
-      if(!r.data)throw new Error('Abbonamento non aggiornato: cliente non trovato o permessi insufficienti.');
-      if(oldFrom&&oldTo&&(oldFrom!==from||oldTo!==to)){
-        const hr=await db.from('subscription_payment_history').select('id,note').eq('profile_id',profileId).eq('paid_from',oldFrom).eq('paid_to',oldTo).limit(500);
-        if(hr.error)throw hr.error;
-        const newToken='DOVUTO-'+String(profileId)+'-'+from+'-'+to;
-        for(const row of (hr.data||[])){
-          let note=String(row.note||'Pagamento abbonamento');
-          if(/\[\[DOVUTO_ID:[^\]]+\]\]/i.test(note)) note=note.replace(/\[\[DOVUTO_ID:[^\]]+\]\]/ig,'[[DOVUTO_ID:'+newToken+']]');
-          const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId);
-          if(up.error)throw up.error;
-        }
-      }
-      // Allinea l'importo dovuto salvato sui movimenti del periodo, se presente.
-      const hrDue=await db.from('subscription_payment_history').select('id,note').eq('profile_id',profileId).eq('paid_from',from).eq('paid_to',to).limit(500);
-      if(hrDue.error)throw hrDue.error;
-      for(const row of (hrDue.data||[])){
-        let note=String(row.note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]\s*/ig,' ').trim();
-        note=(note||'Pagamento abbonamento')+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
-        const up=await db.from('subscription_payment_history').update({note}).eq('id',row.id).eq('profile_id',profileId);
+      // Modifica la registrazione esistente: sposta anche i movimenti già collegati
+      // al periodo originale, così non restano come un secondo abbonamento storico.
+      const hr=await db.from('subscription_payment_history').select('id,note,paid_from,paid_to').eq('profile_id',profileId).eq('paid_from',originalFrom).eq('paid_to',originalTo).limit(500);
+      if(hr.error)throw hr.error;
+      const newToken='DOVUTO-'+String(profileId)+'-'+from+'-'+to;
+      for(const row of (hr.data||[])){
+        let note=String(row.note||'Pagamento abbonamento');
+        if(/\[\[DOVUTO_ID:[^\]]+\]\]/i.test(note)) note=note.replace(/\[\[DOVUTO_ID:[^\]]+\]\]/ig,'[[DOVUTO_ID:'+newToken+']]');
+        else note=note.trim()+' [[DOVUTO_ID:'+newToken+']]';
+        note=note.replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]/ig,'').trim()+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
+        const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId);
         if(up.error)throw up.error;
       }
+      const r=await db.from('profiles').update({subscription_paid_from:from,subscription_paid_to:to,subscription_cost:cost,subscription_active:computeSubscriptionActive(from,to)}).eq('id',profileId).select('id').maybeSingle();
+      if(r.error)throw r.error;
     }
     if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
     closeModal();

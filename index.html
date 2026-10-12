@@ -347,6 +347,10 @@ rampTimer:`<div class="top"><div><div class="title">Cronometro RAMP</div><div cl
 <div id="rampTimerStatus" class="rampTimerStatus"></div><div id="rampTimerSteps" class="rampTimerSteps"></div>
 </div></div>`,
 myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
+accounting:`<div class="top"><div><div class="title">Contabilità</div><div class="sub">Riepilogo degli importi registrati nel periodo selezionato.</div></div><button class="btn" type="button" onclick="loadAccounting()">Aggiorna</button></div>
+<div class="card"><div class="bookingDateFilters" style="display:flex;align-items:end;gap:12px;flex-wrap:wrap"><div><label>DAL</label><input id="accountingFrom" type="date" onchange="loadAccounting()"></div><div><label>AL</label><input id="accountingTo" type="date" onchange="loadAccounting()"></div><button class="btn secondary" type="button" onclick="setAccountingMonth()">Mese corrente</button></div>
+<div id="accountingError" class="error"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:16px"><div class="card"><div class="label">Totale incassato</div><div id="accountingTotal" class="metric">€ 0,00</div></div><div class="card"><div class="label">Movimenti</div><div id="accountingCount" class="metric">0</div></div><div class="card"><div class="label">Clienti distinti</div><div id="accountingClients" class="metric">0</div></div></div>
+<div id="accountingStatus" class="muted" style="margin:12px 0"></div><div id="accountingList" style="overflow:auto"></div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
  <button type="button" onclick="show('subscriptionPrices')">Prezzi abbonamenti</button>
@@ -358,6 +362,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
  <button type="button" onclick="show('suspendedClients',this)">Clienti sospesi</button>
  <button type="button" onclick="show('activeSubscriptions',this)">Abbonamenti attivi</button>
+ <button type="button" onclick="show('accounting',this)">CONTABILITÀ</button>
  
  <button type="button" onclick="show('circuits')">Circuiti</button>
 </div>`,
@@ -855,7 +860,7 @@ async function loadProfile(){
  setTimeout(()=>refreshClientExpiryAlerts(true),50);
 }
 function show(v,el){
- if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='inactiveSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog')&&!isSuperuserRole()) return;
+ if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='inactiveSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog'||v==='accounting')&&!isSuperuserRole()) return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
@@ -883,6 +888,7 @@ function show(v,el){
  if(v==='progress') loadClientProgress();
  if(v==='admin') loadAdmin();
  if(v==='subscriptionPrices') loadSubscriptionPrices();
+ if(v==='accounting') { setAccountingMonth(false); loadAccounting(); }
  if(v==='courseCatalog') loadCourseCatalog();
  if(v==='circuits') loadCircuits();
 
@@ -3459,6 +3465,42 @@ async function loadClientPayments(){
  const amountVal=x=>x.amount;
  const noteVal=x=>x.note;
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Data pagamento</th><th>Periodo</th><th>Importo</th><th>Tipo</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(fmtDate(dateVal(x)))}</td><td>${esc(fromVal(x)||'—')} → ${esc(toVal(x)||'—')}</td><td><b>€ ${esc(amountVal(x)??'—')}</b></td><td><span class="pill">${esc(noteVal(x)||'Pagamento')}</span></td></tr>`).join('')+'</tbody></table></div>';
+}
+
+function setAccountingMonth(refresh=true){
+ const from=document.getElementById('accountingFrom'),to=document.getElementById('accountingTo');
+ if(!from||!to)return;
+ const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),1);
+ const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ from.value=iso(start);to.value=iso(now);
+ if(refresh)loadAccounting();
+}
+async function loadAccounting(){
+ const fromEl=document.getElementById('accountingFrom'),toEl=document.getElementById('accountingTo'),list=document.getElementById('accountingList'),err=document.getElementById('accountingError');
+ if(!list||!fromEl||!toEl)return;
+ if(err){err.style.display='none';err.textContent='';}
+ const from=fromEl.value,to=toEl.value;
+ if(!from||!to){if(err){err.textContent='Seleziona entrambe le date del periodo.';err.style.display='block';}return;}
+ if(from>to){if(err){err.textContent='La data DAL non può essere successiva alla data AL.';err.style.display='block';}return;}
+ list.innerHTML='<div class="muted">Caricamento movimenti contabili...</div>';
+ const status=document.getElementById('accountingStatus');if(status)status.textContent=`Periodo: ${fmtDateIT(from)} – ${fmtDateIT(to)}`;
+ const end=new Date(to+'T00:00:00');end.setDate(end.getDate()+1);const until=`${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+ try{
+  const [pay,prof]=await Promise.all([
+   db.from('subscription_payment_history').select('*').gte('created_at',from+'T00:00:00').lt('created_at',until+'T00:00:00').order('created_at',{ascending:true}).limit(10000),
+   db.from('profiles').select('id,full_name,first_name,last_name,email,phone').limit(5000)
+  ]);
+  if(pay.error)throw new Error('Lettura movimenti non riuscita: '+pay.error.message);
+  if(prof.error)throw new Error('Lettura anagrafica non riuscita: '+prof.error.message);
+  const names=new Map((prof.data||[]).map(p=>[String(p.id),p]));const rows=pay.data||[];
+  const money=n=>'€ '+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0);const clients=new Set(rows.map(x=>String(x.profile_id||'')).filter(Boolean));
+  const totalEl=document.getElementById('accountingTotal'),countEl=document.getElementById('accountingCount'),clientsEl=document.getElementById('accountingClients');
+  if(totalEl)totalEl.textContent=money(total);if(countEl)countEl.textContent=String(rows.length);if(clientsEl)clientsEl.textContent=String(clients.size);
+  if(status)status.textContent=`${rows.length} movimenti nel periodo ${fmtDateIT(from)} – ${fmtDateIT(to)}. Importi basati sui pagamenti registrati.`;
+  if(!rows.length){list.innerHTML='<div class="muted">Nessun movimento contabile nel periodo selezionato.</div>';return;}
+  list.innerHTML='<table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Periodo abbonamento</th><th>Tipo / nota</th><th>Importo</th></tr></thead><tbody>'+rows.map(x=>{const p=names.get(String(x.profile_id))||{};const name=p.full_name||[p.first_name,p.last_name].filter(Boolean).join(' ')||p.email||'Cliente non disponibile';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td>${esc(name)}</td><td>${esc(x.paid_from||'—')} → ${esc(x.paid_to||'—')}</td><td>${esc(x.note||'Pagamento abbonamento')}</td><td><b>${money(x.amount)}</b></td></tr>`}).join('')+'</tbody></table>';
+ }catch(e){if(err){err.textContent=e?.message||String(e);err.style.display='block';}list.innerHTML='';}
 }
 
 async function loadAdmin(){

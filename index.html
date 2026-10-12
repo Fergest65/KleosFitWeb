@@ -1494,9 +1494,22 @@ async function loadClientDocuments(profileId){
    const name=esc(d.file_name||labels[d.document_type]||'Documento');
    const type=esc(labels[d.document_type]||d.document_type||'Documento');
    const date=esc(d.created_at?fmtDate(d.created_at):'Data non disponibile');
-   return `<div class="card" style="padding:10px;margin:8px 0"><div><b>${name}</b></div><div class="muted" style="margin-top:3px">${type} · ${date}${d.mime_type?' · '+esc(d.mime_type):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openClientDocument('${esc(d.file_path)}','${esc(d.document_type)}')">Apri file</button></div></div>`;
+   return `<div class="card" style="padding:10px;margin:8px 0"><div><b>${name}</b></div><div class="muted" style="margin-top:3px">${type} · ${date}${d.mime_type?' · '+esc(d.mime_type):''}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="openClientDocument('${esc(d.file_path)}','${esc(d.document_type)}')">Apri file</button><button class="btn secondary mini" type="button" style="border-color:#b91c1c;color:#b91c1c" onclick="deleteClientDocument('${esc(d.id)}','${esc(d.file_path)}','${String(profileId).replace(/[^a-zA-Z0-9_-]/g,'')}')">Elimina file</button></div></div>`;
   }).join('');
  }catch(e){box.innerHTML='<div class="error">Impossibile caricare l’elenco file: '+esc(e?.message||e)+'</div>';}
+}
+async function deleteClientDocument(documentId,path,profileId){
+ if(!documentId||!path){alert('Impossibile eliminare: dati del documento mancanti.');return;}
+ if(!confirm('Vuoi eliminare definitivamente questo file e il relativo record dalla scheda cliente? L’operazione non è reversibile.'))return;
+ try{
+  const storageResult=await db.storage.from('client-documents').remove([path]);
+  if(storageResult.error)throw new Error('Eliminazione dal deposito file non riuscita: '+storageResult.error.message);
+  const rowResult=await db.from('client_documents').delete().eq('id',documentId);
+  if(rowResult.error)throw new Error('File rimosso dallo Storage, ma non è stato possibile eliminare il record: '+rowResult.error.message);
+  alert('File eliminato.');
+  await loadClientDocuments(profileId);
+  await loadMedicalCertificateMeta(profileId);
+ }catch(e){alert('Impossibile eliminare il file: '+(e?.message||String(e))+'\nVerifica i permessi Supabase per Storage e client_documents.');}
 }
 async function openClientDocument(path,documentType){
  if(!path)return;

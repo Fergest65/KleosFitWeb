@@ -3467,14 +3467,16 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const payload={profile_id:profileId,paid_from:from,paid_to:to,amount,note};
  try{
    let r;
-   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id').maybeSingle();
-   else r=await db.from('subscription_payment_history').insert(payload).select('id').maybeSingle();
+   if(paymentId) r=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,amount,note}).eq('id',paymentId).eq('profile_id',profileId).select('id,note').maybeSingle();
+   else r=await db.from('subscription_payment_history').insert(payload).select('id,note').maybeSingle();
    if(r.error)throw r.error;
-   // Dopo il salvataggio torna sempre alla scheda cliente, non all'elenco.
+   if(!r.data)throw new Error('Supabase non ha confermato il salvataggio del pagamento. Verifica i permessi di modifica.');
+   if(String(r.data.note||'')!==String(note))throw new Error('Il pagamento è stato salvato, ma la nota restituita dal database non coincide con quella inserita.');
    if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
    closeModal();
    if(window.__forcedPaymentDueByProfile) delete window.__forcedPaymentDueByProfile[String(profileId)];
-   setTimeout(()=>openSubscriptionRenewal(profileId),50);
+   // Riapre la scheda cliente così lo storico e le note vengono riletti dal database.
+   setTimeout(()=>openClientSheet(profileId),80);
  }catch(e){
    if(msg){msg.textContent='Errore salvataggio pagamento: '+(e?.message||e);msg.style.display='block';}
  }

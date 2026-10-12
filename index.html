@@ -3488,7 +3488,7 @@ async function loadAccounting(){
  try{
   const [pay,prof]=await Promise.all([
    db.from('subscription_payment_history').select('*').gte('created_at',from+'T00:00:00').lt('created_at',until+'T00:00:00').order('created_at',{ascending:true}).limit(10000),
-   db.from('profiles').select('id,full_name,first_name,last_name,email,phone').limit(5000)
+   db.from('profiles').select('*').limit(5000)
   ]);
   if(pay.error)throw new Error('Lettura movimenti non riuscita: '+pay.error.message);
   if(prof.error)throw new Error('Lettura anagrafica non riuscita: '+prof.error.message);

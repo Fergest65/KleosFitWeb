@@ -3592,7 +3592,16 @@ async function loadAccounting(){
     const markerDue=marker?Number(marker[1]):null;
     const profileDue=p0.subscription_cost==null?null:Number(p0.subscription_cost);
     const markerMatches=markerDue!=null&&profileDue!=null&&Math.abs(markerDue-profileDue)<0.005;
-    if(currentFrom&&currentTo&&((!a||!b)||markerMatches)){
+    // Prima di usare il periodo corrente del profilo, prova a collegare il movimento
+    // al dovuto già registrato dello stesso cliente e dello stesso importo storico.
+    // Le date paid_from/paid_to sono date del movimento e non identificano il periodo.
+    const sameDueGroups=markerDue==null?[]:[...groups.values()].filter(z=>
+      String(z.pid)===pid && z.due!=null && Math.abs(Number(z.due)-markerDue)<0.005
+      && z.from && z.to
+    );
+    if(sameDueGroups.length===1){
+     g=sameDueGroups[0];
+    }else if(currentFrom&&currentTo&&((!a||!b)||markerMatches)){
      g=ensure(pid,currentFrom,currentTo,profileDue);
     }else{
      g=ensure(pid,a,b,null);

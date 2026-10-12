@@ -3403,7 +3403,7 @@ async function openPaymentEditor(profileId,paymentId='',forcedFrom='',forcedTo='
      <div><label>Dal</label><input id="phFrom" type="date" value="${esc(dateInputValue(row?.paid_from||profile?.subscription_paid_from))}"></div>
      <div><label>Al</label><input id="phTo" type="date" value="${esc(dateInputValue(row?.paid_to||profile?.subscription_paid_to))}"></div>
      <div><label>Importo versato (€)</label><input id="phAmount" type="number" min="0" step="0.01" value="${esc(row?.amount??'')}"></div>
-     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(row?.note||'Pagamento abbonamento')}"></div>
+     <div class="wide"><label>Nota</label><input id="phNote" value="${esc(String(row?.note||'Pagamento abbonamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento')}"></div>
    </div>
    <div id="phSummary" class="subscriptionBreakdown">
      <div class="sbRow"><span>Totale abbonamento</span><b>${due==null?'—':'€ '+due.toFixed(2).replace('.',',')}</b></div>
@@ -3434,9 +3434,22 @@ async function savePaymentHistory(profileId,paymentId='',dueToken=''){
  const from=document.getElementById('phFrom')?.value||null;
  const to=document.getElementById('phTo')?.value||null;
  const amountRaw=document.getElementById('phAmount')?.value?.trim()||'';
- const noteBase=document.getElementById('phNote')?.value?.trim()||'Pagamento abbonamento';
- const token=String(dueToken||'').trim();
- const note=token?(noteBase.replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,'').trim()+' [[DOVUTO_ID:'+token+']]'):noteBase;
+ const noteBase=(document.getElementById('phNote')?.value||'').trim()||'Pagamento abbonamento';
+ let token=String(dueToken||'').trim();
+ let oldDueMarker='';
+ // In modifica conserva sempre i metadati del dovuto già collegato: perderli
+ // trasformava l'acconto in un nuovo gruppo/abbonamento nella contabilità.
+ if(paymentId){
+   const old=await db.from('subscription_payment_history').select('note').eq('id',paymentId).eq('profile_id',profileId).maybeSingle();
+   if(old.error){if(msg){msg.textContent='Impossibile conservare il collegamento al dovuto: '+old.error.message;msg.style.display='block'}return;}
+   const oldNote=String(old.data?.note||'');
+   const oldToken=oldNote.match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);
+   const oldDue=oldNote.match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
+   if(!token&&oldToken)token=String(oldToken[1]).trim();
+   if(oldDue)oldDueMarker=' [[DOVUTO_IMPORTO:'+oldDue[1]+']]';
+ }
+ const cleanNote=noteBase.replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';
+ const note=cleanNote+(token?' [[DOVUTO_ID:'+token+']]':'')+oldDueMarker;
  const amount=amountRaw===''?null:Number(amountRaw);
  if(!from||!to){if(msg){msg.textContent='Inserisci il periodo Dal / Al.';msg.style.display='block'}return;}
  if(to<from){if(msg){msg.textContent='La data Al non può essere precedente alla data Dal.';msg.style.display='block'}return;}

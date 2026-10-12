@@ -2598,7 +2598,7 @@ async function openProgressAdminClient(id){
  const err=document.getElementById('progressAdminError'),count=document.getElementById('progressAdminCount'),cards=document.getElementById('progressAdminCards'),table=document.getElementById('progressAdminTable');
  const r=await db.from('progress_entries').select('*').eq('user_id',String(id)).limit(200);
  if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return;}
- const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(a)||0)-new Date(progressDate(b)||0));
+ const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(a)||0).getTime()-new Date(progressDate(b)||0).getTime());
  progressAdminRowsById={};
  progressAdminRowsCache=rows.slice();
  rows.forEach(x=>{const k=progressEntryId(x);if(k)progressAdminRowsById[String(k)]=x;});

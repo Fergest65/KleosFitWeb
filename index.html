@@ -3538,7 +3538,10 @@ async function loadAccounting(){
   // o il costo corrente per stimare un periodo storico differente.
   profiles.forEach(p=>{
    const a=String(p.subscription_paid_from||'').slice(0,10),b=String(p.subscription_paid_to||'').slice(0,10);
-   if(a&&b&&a<=to&&b>=from&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);
+   // Usa la stessa registrazione dell'abbonamento della Gestione abbonamenti.
+   // Non limitare il recupero del dovuto alle date del filtro contabile: un pagamento
+   // può essere stato registrato nel periodo selezionato per un abbonamento con periodo diverso.
+   if(a&&b&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);
   });
   // Collega prima di tutto ogni movimento al DOVUTO_ID salvato al momento della registrazione.
   // Le date del movimento possono essere diverse da quelle dell'abbonamento: non devono creare
@@ -3548,13 +3551,24 @@ async function loadAccounting(){
    const a=String(x.paid_from||'').slice(0,10),b=String(x.paid_to||'').slice(0,10),token=extractDueId(x.note);
    let g;
    if(token){
+    // L'identificativo della registrazione dell'abbonamento è la chiave primaria
+    // del collegamento: le date del movimento di acconto/saldo possono essere diverse.
     g=groups.get(token)||[...groups.values()].find(z=>z.pid===pid&&z.key===token);
     if(!g){
      const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
-     if(parsed&&String(parsed[1])===pid)g=ensure(pid,parsed[2],parsed[3],null);
-     else g=ensure(pid,a,b,null);
+     if(parsed&&String(parsed[1])===pid){
+      g={key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
+      groups.set(token,g);
+     }else{
+      // Token presente ma non decodificabile: conserva un gruppo distinto per token,
+      // senza associare il movimento a un altro abbonamento in base alle date.
+      g={key:token,pid,from:'',to:'',due:null,paid:0,rows:[]};
+      groups.set(token,g);
+     }
     }
    }else{
+    // Movimenti senza identificativo storico: si raggruppano solo per date dichiarate
+    // nel movimento; non vengono associati automaticamente ad altri abbonamenti.
     g=ensure(pid,a,b,null);
    }
    const dueMarker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
@@ -3565,17 +3579,20 @@ async function loadAccounting(){
   // preciso abbonamento. Se il database contiene solo movimenti ma non il costo
   // storico registrato per quel periodo, lasciamo il dovuto non disponibile invece
   // di sostituirlo con il costo corrente del profilo o con un prezzo di listino.
+  // Il filtro DAL–AL riguarda esclusivamente il periodo dell'abbonamento.
+  // Le date di registrazione degli acconti/saldi non devono includere o escludere abbonamenti.
   const selected=[...groups.values()].filter(g=>{
-   const dueInRange=(g.from&&g.to&&g.from<=to&&g.to>=from);
-   const paymentInRange=g.rows.some(x=>{const d=String(x.created_at||'').slice(0,10);return d>=from&&d<=to;});
-   return dueInRange||paymentInRange;
+   return Boolean(g.from&&g.to&&g.from<=to&&g.to>=from);
   }).sort((a,b)=>(a.from||'').localeCompare(b.from||'')||String((names.get(a.pid)||{}).full_name||'').localeCompare(String((names.get(b.pid)||{}).full_name||''),'it'));
-  const periodPayments=allPayments.filter(x=>{const d=String(x.created_at||'').slice(0,10);return d>=from&&d<=to;});
+  // Totali e conteggi considerano tutti i movimenti collegati agli abbonamenti selezionati,
+  // anche quando la data dell'acconto è fuori dall'intervallo scelto.
+  const selectedKeys=new Set(selected.map(g=>g.key));
+  const periodPayments=selected.flatMap(g=>g.rows);
   const total=periodPayments.reduce((sum,x)=>sum+Number(x.amount||0),0),clients=new Set(periodPayments.map(x=>String(x.profile_id||'')).filter(Boolean));
   const totalEl=document.getElementById('accountingTotal'),countEl=document.getElementById('accountingCount'),clientsEl=document.getElementById('accountingClients');
   if(totalEl)totalEl.textContent=money(total);if(countEl)countEl.textContent=String(periodPayments.length);if(clientsEl)clientsEl.textContent=String(clients.size);
-  if(status)status.textContent=`${selected.length} dovuti con relativi movimenti; riepilogo incassi riferito ai pagamenti registrati dal ${fmtDateIT(from)} al ${fmtDateIT(to)}.`;
-  if(!selected.length){list.innerHTML='<div class="muted">Nessun dovuto o movimento nel periodo selezionato.</div>';return;}
+  if(status)status.textContent=`${selected.length} abbonamenti nel periodo ${fmtDateIT(from)} – ${fmtDateIT(to)}; conteggi inclusivi di tutti gli acconti e saldi collegati, indipendentemente dalla data di pagamento.`;
+  if(!selected.length){list.innerHTML='<div class="muted">Nessun abbonamento con periodo compreso nell'intervallo selezionato.</div>';return;}
   list.innerHTML=selected.map(g=>{const p=names.get(g.pid)||{},name=p.full_name||p.name||p.email||'Cliente non disponibile',residuo=g.due==null?null:Math.max(0,g.due-g.paid),st=g.due==null?'DOVUTO NON DISPONIBILE':(g.due-g.paid<=0.005?'SALDATO':g.paid>0?'PARZIALE':'NON PAGATO');const badge=st==='SALDATO'?'<span class="pill" style="background:#c4ff3d;color:#10130a">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5d6c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
    const movements=g.rows.slice().sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))).map(x=>{const note=String(x.note||'Pagamento abbonamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td>${esc(note.toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</td><td><b>${money(x.amount)}</b></td><td>${esc(note)}</td></tr>`;}).join('');
    return `<div class="card" style="margin-top:12px;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>${esc(name)}</strong><div class="muted">DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')} · Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</div></div>${badge}</div><div class="paymentSummary" style="margin-top:10px"><div class="sbRow"><span>Dovuto</span><b>${g.due==null?'—':money(g.due)}</b></div><div class="sbRow"><span>Pagato / acconti registrati</span><b>${money(g.paid)}</b></div><div class="sbTotal"><span>Residuo</span><b>${residuo==null?'—':money(residuo)}</b></div></div><div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>${movements?`<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th></tr></thead><tbody>${movements}</tbody></table></div>`:'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}</div>`;

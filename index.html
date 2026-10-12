@@ -3505,8 +3505,9 @@ async function loadAccounting(){
   const dueIdFor=(pid,a,b)=>'DOVUTO-'+String(pid)+'-'+String(a||'')+'-'+String(b||'');
   const groups=new Map();
   const ensure=(pid,fromDate,toDate,due)=>{const key=dueIdFor(pid,fromDate,toDate);if(!groups.has(key))groups.set(key,{key,pid,from:String(fromDate||'').slice(0,10),to:String(toDate||'').slice(0,10),due:due==null?null:Number(due),paid:0,rows:[]});const g=groups.get(key);if(due!=null)g.due=Number(due);return g;};
-  // Inserisce il dovuto per il periodo di abbonamento salvato in anagrafica.
-  // I periodi storici vengono ricostruiti dai movimenti collegati; ogni gruppo mantiene dovuto e pagamenti del proprio periodo.
+  // Il dovuto viene letto dal costo registrato SOLO quando le date coincidono
+  // esattamente con il periodo salvato sul profilo. Non usare mai il prezzo di listino
+  // o il costo corrente per stimare un periodo storico differente.
   profiles.forEach(p=>{
    const a=String(p.subscription_paid_from||'').slice(0,10),b=String(p.subscription_paid_to||'').slice(0,10);
    if(a&&b&&a<=to&&b>=from&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);
@@ -3520,6 +3521,10 @@ async function loadAccounting(){
    else g=ensure(pid,a,b,null);
    g.paid+=Number(x.amount)||0;g.rows.push(x);
   });
+  // Per i periodi storici il dovuto deve provenire dalla registrazione di quel
+  // preciso abbonamento. Se il database contiene solo movimenti ma non il costo
+  // storico registrato per quel periodo, lasciamo il dovuto non disponibile invece
+  // di sostituirlo con il costo corrente del profilo o con un prezzo di listino.
   const selected=[...groups.values()].filter(g=>{
    const dueInRange=(g.from&&g.to&&g.from<=to&&g.to>=from);
    const paymentInRange=g.rows.some(x=>{const d=String(x.created_at||'').slice(0,10);return d>=from&&d<=to;});

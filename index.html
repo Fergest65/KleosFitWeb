@@ -3580,12 +3580,20 @@ async function loadAccounting(){
      }
     }
    }else{
-    // Se il movimento non contiene né token né periodo, ma la scheda corrente
-    // lo include come pagamento del dovuto corrente, usa quel periodo registrato.
-    const currentFrom=String((names.get(pid)||{}).subscription_paid_from||'').slice(0,10);
-    const currentTo=String((names.get(pid)||{}).subscription_paid_to||'').slice(0,10);
-    if((!a||!b)&&currentFrom&&currentTo){
-     g=ensure(pid,currentFrom,currentTo,(names.get(pid)||{}).subscription_cost);
+    // I movimenti legacy possono avere paid_from/paid_to impostate sulle date
+    // del pagamento, non sul periodo dell'abbonamento. Se la nota conserva il
+    // dovuto registrato, associa al periodo corrente solo quando l'importo del
+    // marker coincide con il costo registrato del profilo; non usare la data
+    // dell'acconto come filtro del periodo di abbonamento.
+    const p0=names.get(pid)||{};
+    const currentFrom=String(p0.subscription_paid_from||'').slice(0,10);
+    const currentTo=String(p0.subscription_paid_to||'').slice(0,10);
+    const marker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
+    const markerDue=marker?Number(marker[1]):null;
+    const profileDue=p0.subscription_cost==null?null:Number(p0.subscription_cost);
+    const markerMatches=markerDue!=null&&profileDue!=null&&Math.abs(markerDue-profileDue)<0.005;
+    if(currentFrom&&currentTo&&((!a||!b)||markerMatches)){
+     g=ensure(pid,currentFrom,currentTo,profileDue);
     }else{
      g=ensure(pid,a,b,null);
     }

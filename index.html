@@ -3286,18 +3286,29 @@ async function loadAdminClientPayments(profileId){
  }
 }
 
+function subscriptionDateISO(value){
+  const v=String(value??'').trim();
+  if(!v)return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+  const it=v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(it)return `${it[3]}-${it[2]}-${it[1]}`;
+  const dt=new Date(v);
+  return Number.isNaN(dt.getTime())?'':`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
 async function openSubscriptionDueEditor(profileId,from,to){
   try{
     const r=await db.from('profiles').select('id,full_name,subscription_type,subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
     if(r.error)throw r.error;
     const p=r.data;
     if(!p){alert('Cliente non trovato.');return;}
-    const currentFrom=String(p.subscription_paid_from||'').slice(0,10);
-    const currentTo=String(p.subscription_paid_to||'').slice(0,10);
-    const originalFrom=String(from||currentFrom).slice(0,10);
-    const originalTo=String(to||currentTo).slice(0,10);
+    const currentFrom=subscriptionDateISO(p.subscription_paid_from);
+    const currentTo=subscriptionDateISO(p.subscription_paid_to);
+    const originalFrom=subscriptionDateISO(from)||currentFrom;
+    const originalTo=subscriptionDateISO(to)||currentTo;
+    if(!originalFrom||!originalTo){alert('Impossibile aprire la modifica: date dell’abbonamento mancanti o non valide.');return;}
     const historical=originalFrom!==currentFrom || originalTo!==currentTo;
     let initialCost=historical?null:(p.subscription_cost==null?null:Number(p.subscription_cost));
+    // Non inviare mai stringhe vuote a colonne PostgreSQL di tipo date.
     const hr=await db.from('subscription_payment_history').select('note,paid_from,paid_to').eq('profile_id',profileId).eq('paid_from',originalFrom).eq('paid_to',originalTo).limit(500);
     if(hr.error)throw hr.error;
     for(const row of (hr.data||[])){
@@ -3324,13 +3335,13 @@ async function openSubscriptionDueEditor(profileId,from,to){
 }
 async function saveSubscriptionDueEditor(profileId){
   const msg=document.getElementById('dueEditMsg');
-  const from=document.getElementById('dueEditFrom')?.value||'';
-  const to=document.getElementById('dueEditTo')?.value||'';
+  const from=subscriptionDateISO(document.getElementById('dueEditFrom')?.value||'');
+  const to=subscriptionDateISO(document.getElementById('dueEditTo')?.value||'');
   const costRaw=document.getElementById('dueEditCost')?.value?.trim()||'';
   const cost=costRaw===''?NaN:Number(costRaw);
   const historical=document.getElementById('dueEditHistorical')?.value==='1';
-  const originalFrom=document.getElementById('dueEditOriginalFrom')?.value||'';
-  const originalTo=document.getElementById('dueEditOriginalTo')?.value||'';
+  const originalFrom=subscriptionDateISO(document.getElementById('dueEditOriginalFrom')?.value||'');
+  const originalTo=subscriptionDateISO(document.getElementById('dueEditOriginalTo')?.value||'');
   const fail=t=>{if(msg){msg.textContent=t;msg.style.display='block';}};
   if(!from||!to){fail('Inserisci il periodo.');return;}
   if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}

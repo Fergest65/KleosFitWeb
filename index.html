@@ -3482,24 +3482,48 @@ async function loadAccounting(){
  const from=fromEl.value,to=toEl.value;
  if(!from||!to){if(err){err.textContent='Seleziona entrambe le date del periodo.';err.style.display='block';}return;}
  if(from>to){if(err){err.textContent='La data DAL non può essere successiva alla data AL.';err.style.display='block';}return;}
- list.innerHTML='<div class="muted">Caricamento movimenti contabili...</div>';
+ list.innerHTML='<div class="muted">Caricamento dovuti e relativi movimenti...</div>';
  const status=document.getElementById('accountingStatus');if(status)status.textContent=`Periodo: ${fmtDateIT(from)} – ${fmtDateIT(to)}`;
  const end=new Date(to+'T00:00:00');end.setDate(end.getDate()+1);const until=`${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
  try{
   const [pay,prof]=await Promise.all([
-   db.from('subscription_payment_history').select('*').gte('created_at',from+'T00:00:00').lt('created_at',until+'T00:00:00').order('created_at',{ascending:true}).limit(10000),
+   db.from('subscription_payment_history').select('*').order('created_at',{ascending:true}).limit(10000),
    db.from('profiles').select('*').limit(5000)
   ]);
   if(pay.error)throw new Error('Lettura movimenti non riuscita: '+pay.error.message);
   if(prof.error)throw new Error('Lettura anagrafica non riuscita: '+prof.error.message);
-  const names=new Map((prof.data||[]).map(p=>[String(p.id),p]));const rows=pay.data||[];
+  const profiles=prof.data||[],names=new Map(profiles.map(p=>[String(p.id),p])),allPayments=pay.data||[];
   const money=n=>'€ '+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0);const clients=new Set(rows.map(x=>String(x.profile_id||'')).filter(Boolean));
+  const extractDueId=note=>{const m=String(note||'').match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);return m?String(m[1]):'';};
+  const dueIdFor=(pid,a,b)=>'DOVUTO-'+String(pid)+'-'+String(a||'')+'-'+String(b||'');
+  const groups=new Map();
+  const ensure=(pid,fromDate,toDate,due)=>{const key=dueIdFor(pid,fromDate,toDate);if(!groups.has(key))groups.set(key,{key,pid,from:String(fromDate||'').slice(0,10),to:String(toDate||'').slice(0,10),due:due==null?null:Number(due),paid:0,rows:[]});const g=groups.get(key);if(due!=null)g.due=Number(due);return g;};
+  // Inserisce il dovuto attualmente presente in anagrafica, se il suo periodo ricade nell'intervallo scelto.
+  profiles.forEach(p=>{const a=String(p.subscription_paid_from||'').slice(0,10),b=String(p.subscription_paid_to||'').slice(0,10);if(a&&b&&a<=to&&b>=from&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);});
+  // Associa i pagamenti al rispettivo periodo; visualizza un gruppo se il periodo o almeno un movimento ricade nell'intervallo.
+  allPayments.forEach(x=>{
+   const pid=String(x.profile_id||'');if(!pid)return;
+   const a=String(x.paid_from||'').slice(0,10),b=String(x.paid_to||'').slice(0,10),token=extractDueId(x.note);
+   let g;
+   if(token){g=[...groups.values()].find(z=>z.pid===pid&&z.from===a&&z.to===b)||ensure(pid,a,b,null);}
+   else g=ensure(pid,a,b,null);
+   g.paid+=Number(x.amount)||0;g.rows.push(x);
+  });
+  const selected=[...groups.values()].filter(g=>{
+   const dueInRange=(g.from&&g.to&&g.from<=to&&g.to>=from);
+   const paymentInRange=g.rows.some(x=>{const d=String(x.created_at||'').slice(0,10);return d>=from&&d<=to;});
+   return dueInRange||paymentInRange;
+  }).sort((a,b)=>(a.from||'').localeCompare(b.from||'')||String((names.get(a.pid)||{}).full_name||'').localeCompare(String((names.get(b.pid)||{}).full_name||''),'it'));
+  const periodPayments=allPayments.filter(x=>{const d=String(x.created_at||'').slice(0,10);return d>=from&&d<=to;});
+  const total=periodPayments.reduce((sum,x)=>sum+Number(x.amount||0),0),clients=new Set(periodPayments.map(x=>String(x.profile_id||'')).filter(Boolean));
   const totalEl=document.getElementById('accountingTotal'),countEl=document.getElementById('accountingCount'),clientsEl=document.getElementById('accountingClients');
-  if(totalEl)totalEl.textContent=money(total);if(countEl)countEl.textContent=String(rows.length);if(clientsEl)clientsEl.textContent=String(clients.size);
-  if(status)status.textContent=`${rows.length} movimenti nel periodo ${fmtDateIT(from)} – ${fmtDateIT(to)}. Importi basati sui pagamenti registrati.`;
-  if(!rows.length){list.innerHTML='<div class="muted">Nessun movimento contabile nel periodo selezionato.</div>';return;}
-  list.innerHTML='<table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Periodo abbonamento</th><th>Tipo / nota</th><th>Importo</th></tr></thead><tbody>'+rows.map(x=>{const p=names.get(String(x.profile_id))||{};const name=p.full_name||[p.first_name,p.last_name].filter(Boolean).join(' ')||p.email||'Cliente non disponibile';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td>${esc(name)}</td><td>${esc(x.paid_from||'—')} → ${esc(x.paid_to||'—')}</td><td>${esc(x.note||'Pagamento abbonamento')}</td><td><b>${money(x.amount)}</b></td></tr>`}).join('')+'</tbody></table>';
+  if(totalEl)totalEl.textContent=money(total);if(countEl)countEl.textContent=String(periodPayments.length);if(clientsEl)clientsEl.textContent=String(clients.size);
+  if(status)status.textContent=`${selected.length} dovuti con relativi movimenti; riepilogo incassi riferito ai pagamenti registrati dal ${fmtDateIT(from)} al ${fmtDateIT(to)}.`;
+  if(!selected.length){list.innerHTML='<div class="muted">Nessun dovuto o movimento nel periodo selezionato.</div>';return;}
+  list.innerHTML=selected.map(g=>{const p=names.get(g.pid)||{},name=p.full_name||p.name||p.email||'Cliente non disponibile',residuo=g.due==null?null:Math.max(0,g.due-g.paid),st=g.due==null?'DOVUTO NON DISPONIBILE':(g.due-g.paid<=0.005?'SALDATO':g.paid>0?'PARZIALE':'NON PAGATO');const badge=st==='SALDATO'?'<span class="pill" style="background:#c4ff3d;color:#10130a">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5d6c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
+   const movements=g.rows.slice().sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))).map(x=>{const note=String(x.note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td>${esc(note.toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</td><td><b>${money(x.amount)}</b></td><td>${esc(note)}</td></tr>`;}).join('');
+   return `<div class="card" style="margin-top:12px;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>${esc(name)}</strong><div class="muted">DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')} · Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</div></div>${badge}</div><div class="paymentSummary" style="margin-top:10px"><div class="sbRow"><span>Dovuto</span><b>${g.due==null?'—':money(g.due)}</b></div><div class="sbRow"><span>Pagato / acconti registrati</span><b>${money(g.paid)}</b></div><div class="sbTotal"><span>Residuo</span><b>${residuo==null?'—':money(residuo)}</b></div></div><div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>${movements?`<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th></tr></thead><tbody>${movements}</tbody></table></div>`:'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}</div>`;
+  }).join('');
  }catch(e){if(err){err.textContent=e?.message||String(e);err.style.display='block';}list.innerHTML='';}
 }
 

@@ -1406,7 +1406,7 @@ function openClientSheet(id){
   <div class="clientSheetSection"><h3><span>€</span> Dovuti e relativi movimenti</h3>
    <div id="cpPaymentHistory" class="muted">Caricamento...</div>
   </div>
-  ${clientAge!==null&&clientAge<18?`<div class="clientSheetSection"><h3><span>✍</span> Iscrizione minorenne</h3><p class="muted">Per i clienti minorenni, compila il modulo con i dati del genitore/tutore e raccogli la firma del referente.</p><button class="btn" type="button" onclick="openMinorRegistrationForm('${p.id}')">Apri modulo iscrizione e firma referente</button></div>`:''}
+  ${clientAge!==null&&clientAge<18?`<div class="clientSheetSection"><h3><span>✍</span> Iscrizione minorenne</h3><p class="muted">Per i clienti minorenni, compila il modulo con i dati del genitore/tutore e raccogli la firma del referente.</p><button class="btn" type="button" onclick="openMinorRegistrationForm('${p.id}')">Apri modulo iscrizione e firma referente</button><div id="mrSavedList" style="margin-top:12px">Caricamento moduli salvati...</div></div>`:''}
   <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
@@ -1458,6 +1458,8 @@ function openClientSheet(id){
    to.addEventListener('change',syncDates);
    syncDates();
  },30);
+
+ setTimeout(()=>{if(clientAge!==null&&clientAge<18)loadMinorRegistrationForms(p.id);},80);
 }
 
 function nullableNumber(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:Number(v)}
@@ -1562,7 +1564,7 @@ function openMinorRegistrationForm(profileId){
  <div style="margin-top:16px"><label>Firma del genitore / tutore / referente</label><canvas id="mrSignature" width="900" height="180" style="display:block;width:100%;max-width:900px;height:180px;border:1px solid #888;background:#fff;touch-action:none"></canvas><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="clearMinorSignature()">Cancella firma</button></div></div>
  <p style="font-size:12px;margin-top:16px">La firma acquisita in questo modulo è una firma tracciata sullo schermo. Per gli usi che richiedono una firma elettronica con specifici requisiti legali, verificare la procedura con un professionista.</p>
  </div>
- <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="printMinorRegistrationForm()">Stampa / Salva PDF</button></div>`);
+ <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Chiudi</button><button class="btn secondary" type="button" onclick="printMinorRegistrationForm()">Stampa / Salva PDF</button><button class="btn" type="button" onclick="saveMinorRegistrationForm('${profileId}')">Salva modulo</button></div>`);
  setTimeout(initMinorSignature,30);
 }
 let minorSignatureState=null;
@@ -1577,6 +1579,44 @@ function initMinorSignature(){
  minorSignatureState=c;
 }
 function clearMinorSignature(){const c=document.getElementById('mrSignature');if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+async function saveMinorRegistrationForm(profileId){
+ const required=[['mrMinorName','Nome del minore'],['mrGuardianName','Nome del genitore/tutore'],['mrGuardianFiscal','Codice fiscale del genitore/tutore'],['mrPlaceDate','Luogo e data']];
+ for(const [id,label] of required){const el=document.getElementById(id);if(!el||!el.value.trim()){alert('Compila il campo obbligatorio: '+label+'.');el?.focus();return;}}
+ const canvas=document.getElementById('mrSignature');
+ if(!canvas||!canvas.toDataURL){alert('Area firma non disponibile.');return;}
+ const signature=canvas.toDataURL('image/png');
+ const blank=document.createElement('canvas');blank.width=canvas.width;blank.height=canvas.height;
+ if(signature===blank.toDataURL('image/png')){if(!confirm('La firma sembra vuota. Vuoi salvare comunque il modulo?'))return;}
+ const record={version:1,profile_id:String(profileId),saved_at:new Date().toISOString(),minor:{name:document.getElementById('mrMinorName').value.trim(),birth_date:document.getElementById('mrMinorBirth').value||null,fiscal_code:document.getElementById('mrMinorFiscal').value.trim()},guardian:{name:document.getElementById('mrGuardianName').value.trim(),relation:document.getElementById('mrGuardianRelation').value,fiscal_code:document.getElementById('mrGuardianFiscal').value.trim(),phone:document.getElementById('mrGuardianPhone').value.trim(),email:document.getElementById('mrGuardianEmail').value.trim()},declaration:'Il/La sottoscritto/a, in qualità di genitore/tutore/affidatario del minore indicato, chiede l’iscrizione alle attività di KleosFit e dichiara di aver fornito dati veritieri. Dichiara inoltre di aver preso visione delle regole della struttura e si impegna a comunicare eventuali variazioni rilevanti per la partecipazione del minore. La partecipazione alle attività resta subordinata alla consegna della documentazione sanitaria richiesta e alle eventuali ulteriori autorizzazioni previste dalla legge e dalla struttura. L’informativa privacy e gli eventuali consensi specifici devono essere forniti separatamente, ove richiesto.',place_date:document.getElementById('mrPlaceDate').value.trim(),signature_data_url:signature};
+ const btn=document.querySelector('button[onclick*="saveMinorRegistrationForm"]');if(btn){btn.disabled=true;btn.textContent='Salvataggio...';}
+ try{
+  const safeId=String(profileId).replace(/[^a-zA-Z0-9_-]/g,'');
+  const path=`${String(profileId)}/minor_registration/${Date.now()}-${crypto.randomUUID()}.json`;
+  const blob=new Blob([JSON.stringify(record)],{type:'application/json'});
+  const up=await db.storage.from('client-documents').upload(path,blob,{contentType:'application/json',upsert:false});
+  if(up.error)throw up.error;
+  const ins=await db.from('client_documents').insert({profile_id:String(profileId),document_type:'minor_registration',file_path:path,file_name:`modulo_iscrizione_minorenne_${new Date().toISOString().slice(0,10)}.json`,mime_type:'application/json'}).select('*').maybeSingle();
+  if(ins.error){await db.storage.from('client-documents').remove([path]);throw ins.error;}
+  alert('Modulo salvato correttamente. Potrai visualizzarlo dalla scheda cliente.');
+  closeModal();
+  openClientSheet(profileId);
+ }catch(e){alert('Errore durante il salvataggio del modulo: '+(e?.message||String(e))+'\nVerifica i permessi Supabase per Storage e client_documents.');}
+ finally{if(btn){btn.disabled=false;btn.textContent='Salva modulo';}}
+}
+async function loadMinorRegistrationForms(profileId){
+ const box=document.getElementById('mrSavedList');if(!box)return;
+ box.innerHTML='<div class="muted">Caricamento moduli salvati...</div>';
+ try{
+  const r=await db.from('client_documents').select('id,profile_id,document_type,file_path,file_name,mime_type,created_at').eq('profile_id',String(profileId)).eq('document_type','minor_registration').order('created_at',{ascending:false});
+  if(r.error)throw r.error;
+  const docs=r.data||[];
+  box.innerHTML=docs.length?'<h4>Moduli salvati</h4>'+docs.map(d=>`<div class="card" style="padding:10px;margin:8px 0"><div><b>${esc(d.file_name||'Modulo iscrizione minorenne')}</b></div><div class="muted">${esc(d.created_at?fmtDate(d.created_at):'Data non disponibile')}</div><div class="actions" style="margin-top:8px"><button class="btn secondary mini" type="button" onclick="viewMinorRegistrationForm('${esc(d.file_path)}')">Visualizza modulo</button><button class="btn secondary mini" type="button" onclick="printSavedMinorRegistrationForm('${esc(d.file_path)}')">Stampa / PDF</button></div></div>`).join(''):'<div class="muted">Nessun modulo di iscrizione salvato.</div>';
+ }catch(e){box.innerHTML='<div class="error">Impossibile caricare i moduli salvati: '+esc(e?.message||e)+'</div>';}
+}
+async function readSavedMinorRegistration(path){const r=await db.storage.from('client-documents').download(path);if(r.error)throw r.error;return JSON.parse(await r.data.text());}
+function minorRegistrationHtml(d){const escv=v=>esc(v==null?'':String(v));return `<div id="minorSavedPrint" style="background:#fff;color:#111;padding:22px;border-radius:8px"><h2 style="text-align:center">KLEOSFIT — MODULO DI ISCRIZIONE MINORENNE</h2><h3>Dati del minore</h3><p><b>Nome e cognome:</b> ${escv(d.minor?.name)}</p><p><b>Data di nascita:</b> ${escv(d.minor?.birth_date)}</p><p><b>Codice fiscale:</b> ${escv(d.minor?.fiscal_code)}</p><h3>Dati del genitore / tutore</h3><p><b>Nome e cognome:</b> ${escv(d.guardian?.name)}</p><p><b>Relazione:</b> ${escv(d.guardian?.relation)}</p><p><b>Codice fiscale:</b> ${escv(d.guardian?.fiscal_code)}</p><p><b>Telefono:</b> ${escv(d.guardian?.phone)}</p><p><b>Email:</b> ${escv(d.guardian?.email)}</p><h3>Dichiarazione e autorizzazione</h3><p>${escv(d.declaration)}</p><p><b>Luogo e data:</b> ${escv(d.place_date)}</p><h3>Firma del genitore / tutore / referente</h3>${d.signature_data_url?`<img alt="Firma" src="${d.signature_data_url}" style="display:block;max-width:100%;width:600px;height:140px;object-fit:contain;border:1px solid #888">`:'<p>Firma non presente</p>'}<p style="font-size:12px">Salvato il: ${escv(d.saved_at?new Date(d.saved_at).toLocaleString('it-IT'):'')}</p></div>`;}
+async function viewMinorRegistrationForm(path){try{const d=await readSavedMinorRegistration(path);openModal(`<div class="modalhead"><h2>Modulo iscrizione salvato</h2><button class="close" onclick="closeModal()">Chiudi</button></div>${minorRegistrationHtml(d)}<div class="actions" style="justify-content:flex-end;margin-top:12px"><button class="btn" onclick="printSavedMinorRegistrationForm('${esc(path)}')">Stampa / Salva PDF</button></div>`);}catch(e){alert('Impossibile visualizzare il modulo: '+(e?.message||e));}}
+async function printSavedMinorRegistrationForm(path){try{const d=await readSavedMinorRegistration(path);const w=window.open('','_blank');if(!w){alert('Consenti i popup per stampare il modulo.');return;}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Modulo iscrizione minorenne</title><style>body{font:14px Arial;margin:24px;color:#111}h2,h3{margin:14px 0 8px}p{line-height:1.45}</style></head><body>'+minorRegistrationHtml(d)+'<script>window.onload=()=>window.print()<\\/script></body></html>');w.document.close();}catch(e){alert('Impossibile stampare il modulo: '+(e?.message||e));}}
 function printMinorRegistrationForm(){
  const root=document.getElementById('minorFormPrint');if(!root)return;
  const clone=root.cloneNode(true);

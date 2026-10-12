@@ -3307,11 +3307,11 @@ async function openSubscriptionDueEditor(profileId,from,to){
     openModal(`<div class="modalhead"><h2>Modifica abbonamento ${historical?'storico':''}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
       <div class="muted" style="margin-bottom:14px">${esc(p.full_name||'Cliente')} · ${esc(p.subscription_type||'Abbonamento')} · Periodo ${esc(from)} → ${esc(to)}</div>
       <div class="clientSheetGrid">
-        <div><label>Dal</label><input id="dueEditFrom" type="date" value="${esc(from)}" ${historical?'readonly':''}></div>
-        <div><label>Al</label><input id="dueEditTo" type="date" value="${esc(to)}" ${historical?'readonly':''}></div>
+        <div><label>Dal</label><input id="dueEditFrom" type="date" value="${esc(from)}"></div>
+        <div><label>Al</label><input id="dueEditTo" type="date" value="${esc(to)}"></div>
         <div><label>Importo dovuto registrato (€)</label><input id="dueEditCost" type="number" min="0" step="0.01" value="${initialCost==null?'':Number(initialCost).toFixed(2)}" placeholder="Inserisci importo effettivo"></div>
       </div>
-      ${historical?'<div class="muted" style="margin-top:8px">Periodo storico: puoi correggere il dovuto senza modificare l’abbonamento corrente. Il valore viene salvato sui movimenti collegati a questo periodo.</div>':''}
+      ${historical?'<div class="muted" style="margin-top:8px">Modifica il periodo di questo abbonamento storico: verranno aggiornati i movimenti già collegati, senza crearne uno nuovo.</div>':''}
       <input type="hidden" id="dueEditHistorical" value="${historical?'1':'0'}"><input type="hidden" id="dueEditOriginalFrom" value="${esc(from)}"><input type="hidden" id="dueEditOriginalTo" value="${esc(to)}">
       <div id="dueEditMsg" class="error" style="display:none;margin-top:12px"></div>
       <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button><button class="btn" type="button" onclick="saveSubscriptionDueEditor('${profileId}')">Salva modifica</button></div>`);
@@ -3329,44 +3329,53 @@ async function saveSubscriptionDueEditor(profileId){
   const costRaw=document.getElementById('dueEditCost')?.value?.trim()||'';
   const cost=costRaw===''?NaN:Number(costRaw);
   const historical=document.getElementById('dueEditHistorical')?.value==='1';
-  const originalFrom=document.getElementById('dueEditOriginalFrom')?.value||from;
-  const originalTo=document.getElementById('dueEditOriginalTo')?.value||to;
+  const originalFrom=document.getElementById('dueEditOriginalFrom')?.value||'';
+  const originalTo=document.getElementById('dueEditOriginalTo')?.value||'';
   const fail=t=>{if(msg){msg.textContent=t;msg.style.display='block';}};
   if(!from||!to){fail('Inserisci il periodo.');return;}
   if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}
   if(!Number.isFinite(cost)||cost<=0){fail('Inserisci l’importo effettivo dovuto per questo periodo.');return;}
   try{
-    if(historical){
-      const hr=await db.from('subscription_payment_history').select('id,note').eq('profile_id',profileId).eq('paid_from',originalFrom).eq('paid_to',originalTo).limit(500);
-      if(hr.error)throw hr.error;
-      if(!(hr.data||[]).length)throw new Error('Non ci sono movimenti collegati al periodo storico. Non è possibile salvare il dovuto senza una registrazione associata.');
-      for(const row of hr.data){
-        const clean=String(row.note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';
-        const note=clean+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
-        const up=await db.from('subscription_payment_history').update({note}).eq('id',row.id).eq('profile_id',profileId);
-        if(up.error)throw up.error;
-      }
-    }else{
-      // Modifica la registrazione esistente: sposta anche i movimenti già collegati
-      // al periodo originale, così non restano come un secondo abbonamento storico.
-      const hr=await db.from('subscription_payment_history').select('id,note,paid_from,paid_to').eq('profile_id',profileId).eq('paid_from',originalFrom).eq('paid_to',originalTo).limit(500);
-      if(hr.error)throw hr.error;
-      const newToken='DOVUTO-'+String(profileId)+'-'+from+'-'+to;
-      for(const row of (hr.data||[])){
-        let note=String(row.note||'Pagamento abbonamento');
-        if(/\[\[DOVUTO_ID:[^\]]+\]\]/i.test(note)) note=note.replace(/\[\[DOVUTO_ID:[^\]]+\]\]/ig,'[[DOVUTO_ID:'+newToken+']]');
-        else note=note.trim()+' [[DOVUTO_ID:'+newToken+']]';
-        note=note.replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]/ig,'').trim()+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
-        const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId);
-        if(up.error)throw up.error;
-      }
-      const r=await db.from('profiles').update({subscription_paid_from:from,subscription_paid_to:to,subscription_cost:cost,subscription_active:computeSubscriptionActive(from,to)}).eq('id',profileId).select('id').maybeSingle();
-      if(r.error)throw r.error;
+    // Trova esclusivamente i movimenti del periodo che si sta modificando.
+    // Nessun INSERT: il salvataggio aggiorna le registrazioni già esistenti.
+    const hr=await db.from('subscription_payment_history')
+      .select('id,note,paid_from,paid_to')
+      .eq('profile_id',profileId)
+      .eq('paid_from',originalFrom)
+      .eq('paid_to',originalTo)
+      .limit(500);
+    if(hr.error)throw hr.error;
+    const rows=hr.data||[];
+    if(historical && !rows.length)throw new Error('Non trovo movimenti collegati al periodo storico selezionato: nessuna modifica eseguita.');
+
+    if(!historical){
+      const pr=await db.from('profiles').update({
+        subscription_paid_from:from,
+        subscription_paid_to:to,
+        subscription_cost:cost,
+        subscription_active:computeSubscriptionActive(from,to)
+      }).eq('id',profileId).select('id').maybeSingle();
+      if(pr.error)throw pr.error;
+      if(!pr.data)throw new Error('Il profilo non è stato aggiornato. Verifica i permessi Supabase.');
     }
+
+    const newToken='DOVUTO-'+String(profileId)+'-'+from+'-'+to;
+    for(const row of rows){
+      let note=String(row.note||'Pagamento abbonamento');
+      note=note.replace(/\s*\[\[DOVUTO_ID:[^\]]+\]\]/ig,' ')
+               .replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]/ig,' ')
+               .trim()||'Pagamento abbonamento';
+      note+=' [[DOVUTO_ID:'+newToken+']] [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
+      const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note})
+        .eq('id',row.id).eq('profile_id',profileId).select('id').maybeSingle();
+      if(up.error)throw up.error;
+      if(!up.data)throw new Error('Un movimento non è stato aggiornato; controlla i permessi Supabase.');
+    }
+
     if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
     closeModal();
-    setTimeout(()=>openClientSheet(profileId),60);
-  }catch(e){fail('Errore salvataggio modifica: '+(e?.message||e));}
+    setTimeout(()=>openClientSheet(profileId),80);
+  }catch(e){fail('Modifica non completata: '+(e?.message||e));}
 }
 
 function closePaymentEditor(profileId){

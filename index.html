@@ -3556,25 +3556,39 @@ async function loadAccounting(){
    const a=String(x.paid_from||'').slice(0,10),b=String(x.paid_to||'').slice(0,10),token=extractDueId(x.note);
    let g;
    if(token){
-    // L'identificativo della registrazione dell'abbonamento è la chiave primaria
-    // del collegamento: le date del movimento di acconto/saldo possono essere diverse.
+    // Prima scelta: collegamento esatto tramite ID del dovuto.
     g=groups.get(token)||[...groups.values()].find(z=>z.pid===pid&&z.key===token);
     if(!g){
      const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
      if(parsed&&String(parsed[1])===pid){
-      g={key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
+      // Compatibilità con vecchi token che codificano direttamente il periodo.
+      g=groups.get(token)||{key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
       groups.set(token,g);
      }else{
-      // Token presente ma non decodificabile: conserva un gruppo distinto per token,
-      // senza associare il movimento a un altro abbonamento in base alle date.
-      g={key:token,pid,from:'',to:'',due:null,paid:0,rows:[]};
-      groups.set(token,g);
+      // Vecchi movimenti possono avere un token non più riconoscibile e date
+      // del pagamento vuote. In quel solo caso, collegali al periodo corrente
+      // del profilo, come fa la scheda Abbonamenti, invece di perderli in un
+      // gruppo senza periodo che non compare in Contabilità.
+      const currentFrom=String((names.get(pid)||{}).subscription_paid_from||'').slice(0,10);
+      const currentTo=String((names.get(pid)||{}).subscription_paid_to||'').slice(0,10);
+      if(currentFrom&&currentTo&&(!a||!b|| (a===currentFrom&&b===currentTo))){
+       g=ensure(pid,currentFrom,currentTo,(names.get(pid)||{}).subscription_cost);
+      }else{
+       g={key:token,pid,from:'',to:'',due:null,paid:0,rows:[]};
+       groups.set(token,g);
+      }
      }
     }
    }else{
-    // Movimenti senza identificativo storico: si raggruppano solo per date dichiarate
-    // nel movimento; non vengono associati automaticamente ad altri abbonamenti.
-    g=ensure(pid,a,b,null);
+    // Se il movimento non contiene né token né periodo, ma la scheda corrente
+    // lo include come pagamento del dovuto corrente, usa quel periodo registrato.
+    const currentFrom=String((names.get(pid)||{}).subscription_paid_from||'').slice(0,10);
+    const currentTo=String((names.get(pid)||{}).subscription_paid_to||'').slice(0,10);
+    if((!a||!b)&&currentFrom&&currentTo){
+     g=ensure(pid,currentFrom,currentTo,(names.get(pid)||{}).subscription_cost);
+    }else{
+     g=ensure(pid,a,b,null);
+    }
    }
    const dueMarker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
    if(dueMarker)g.due=Number(dueMarker[1]);

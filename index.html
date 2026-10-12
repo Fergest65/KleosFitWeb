@@ -1407,7 +1407,7 @@ function openClientSheet(id){
    <div id="cpPaymentHistory" class="muted">Caricamento...</div>
   </div>
   ${clientAge!==null&&clientAge<18?`<div class="clientSheetSection"><h3><span>✍</span> Iscrizione minorenne</h3><p class="muted">Per i clienti minorenni, compila il modulo con i dati del genitore/tutore e raccogli la firma del referente.</p><button class="btn" type="button" onclick="openMinorRegistrationForm('${p.id}')">Apri modulo iscrizione e firma referente</button><div id="mrSavedList" style="margin-top:12px">Caricamento moduli salvati...</div></div>`:''}
-  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="previewMedicalCertificate(this)"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div><div class="clientSheetSection" style="margin-top:12px;padding:12px"><h4 style="margin:0 0 8px">File caricati e documenti precedenti</h4><div id="cpClientDocuments" class="muted">Caricamento elenco file...</div></div></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Certificato medico</h3><div class="clientSheetGrid"><div><label>Tipo certificato</label><input id="cpMedType" value="${esc(p.medical_certificate_type||'')}"></div><div><label>Scadenza certificato</label><input id="cpMedExpiry" type="date" value="${esc(dateInputValue(p.medical_certificate_expiry_date))}"></div><div class="wide"><label>Documento certificato</label><input id="cpMedFile" type="file" accept="image/*,.pdf" capture="environment" onchange="handleMedicalCertificateSelection(this, '${esc(p.id)}')"><div id="cpMedFileInfo" class="muted" style="margin-top:7px">Caricamento da fotocamera, galleria o PDF.</div><div id="cpMedPreview" style="margin-top:8px"></div><div id="cpMedExisting" style="margin-top:10px"></div><div class="clientSheetSection" style="margin-top:12px;padding:12px"><h4 style="margin:0 0 8px">File caricati e documenti precedenti</h4><div id="cpClientDocuments" class="muted">Caricamento elenco file...</div></div></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Assicurazione</h3><div class="clientSheetGrid"><div><label>Tipo assicurazione</label><input id="cpInsuranceType" value="${esc(p.insurance_type||p.insurance||'')}"></div><div><label>Scadenza assicurazione</label><input id="cpInsuranceExpiry" type="date" value="${esc(dateInputValue(p.insurance_expiry_date||p.insurance_expiry))}"></div></div></div>
   <div class="clientSheetSection"><h3><span>▣</span> QR Code tessera</h3>
    <div class="qrManagementBox">
@@ -1538,6 +1538,31 @@ async function uploadMedicalCertificate(profileId){
  const ins=await db.from('client_documents').insert({profile_id:profileId,document_type:'medical_certificate',file_path:path,file_name:safeName,mime_type:file.type}).select('*').maybeSingle();
  if(ins.error)throw ins.error;
  return ins.data||{file_path:path,file_name:safeName,mime_type:file.type};
+}
+async function handleMedicalCertificateSelection(input, profileId){
+ const info=document.getElementById('cpMedFileInfo');
+ const preview=document.getElementById('cpMedPreview');
+ const file=input?.files?.[0];
+ if(!file)return;
+ if(info){info.textContent='Caricamento certificato in corso...';info.className='muted';}
+ if(preview)preview.innerHTML='';
+ try{
+  if(file.size>10*1024*1024)throw new Error('Il certificato supera il limite di 10 MB.');
+  if(!(file.type.startsWith('image/')||file.type==='application/pdf'))throw new Error('Formato non supportato. Usa una foto JPG/PNG/WebP oppure un PDF.');
+  if(file.type.startsWith('image/') && preview){
+   const localUrl=URL.createObjectURL(file);
+   preview.innerHTML=`<img src="${localUrl}" alt="Anteprima certificato" style="max-width:100%;max-height:220px;object-fit:contain;border-radius:8px">`;
+  }else if(file.type==='application/pdf' && preview){preview.innerHTML='<div class="muted">PDF selezionato.</div>';}
+  const result=await uploadMedicalCertificate(profileId);
+  if(!result)throw new Error('Nessun file selezionato.');
+  if(info){info.textContent='Certificato caricato correttamente.';info.className='success';}
+  input.value='';
+  await loadMedicalCertificateMeta(profileId);
+  await loadClientDocuments(profileId);
+ }catch(e){
+  if(info){info.textContent='Errore caricamento: '+(e?.message||String(e));info.className='error';}
+  alert('Impossibile caricare il certificato: '+(e?.message||String(e))+'\nIl file non è stato registrato correttamente.');
+ }
 }
 async function openMedicalCertificate(path){
  if(!path)return;

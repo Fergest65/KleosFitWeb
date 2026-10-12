@@ -2571,7 +2571,7 @@ async function loadProgressAdmin(){
  status.textContent='Caricamento clienti...'; list.innerHTML='';
  const r=await db.from('profiles').select('*').limit(500);
  if(r.error){status.textContent='Errore caricamento clienti: '+r.error.message;return;}
- progressAdminClientsData=(r.data||[]).filter(p=>['client','cliente'].includes(String(p.role||'client').toLowerCase()));
+ progressAdminClientsData=(r.data||[]).filter(p=>['client','cliente'].includes(String(p.role||'client').toLowerCase())).sort((a,b)=>String(profileDisplayName(a)||'').localeCompare(String(profileDisplayName(b)||''),'it',{sensitivity:'base'}));
  status.textContent=progressAdminClientsData.length+(progressAdminClientsData.length===1?' cliente':' clienti');
  renderProgressAdminClients(progressAdminClientsData);
 }
@@ -2586,7 +2586,7 @@ function renderProgressAdminClients(rows){
 }
 function filterProgressAdminClients(){
  const q=(document.getElementById('progressAdminSearch')?.value||'').toLowerCase().trim();
- const rows=(progressAdminClientsData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),clientCardNumber(p),p.phone].some(v=>String(v||'').toLowerCase().includes(q)));
+ const rows=(progressAdminClientsData||[]).filter(p=>[profileDisplayName(p),profileEmail(p),clientCardNumber(p),p.phone].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>String(profileDisplayName(a)||'').localeCompare(String(profileDisplayName(b)||''),'it',{sensitivity:'base'}));
  renderProgressAdminClients(rows);
 }
 async function openProgressAdminClient(id){
@@ -2598,7 +2598,7 @@ async function openProgressAdminClient(id){
  const err=document.getElementById('progressAdminError'),count=document.getElementById('progressAdminCount'),cards=document.getElementById('progressAdminCards'),table=document.getElementById('progressAdminTable');
  const r=await db.from('progress_entries').select('*').eq('user_id',String(id)).limit(200);
  if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return;}
- const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(b)||0)-new Date(progressDate(a)||0));
+ const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(a)||0)-new Date(progressDate(b)||0));
  progressAdminRowsById={};
  progressAdminRowsCache=rows.slice();
  rows.forEach(x=>{const k=progressEntryId(x);if(k)progressAdminRowsById[String(k)]=x;});
@@ -2704,7 +2704,7 @@ async function loadClientProgress(){
  if(!currentUser?.id){err.textContent='Utente non autenticato.';err.style.display='block';return}
  const r=await db.from('progress_entries').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(200);
  if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return}
- const rows=(r.data||[]).slice().sort((a,b)=>{const da=new Date(progressDate(a)||0).getTime(),db=new Date(progressDate(b)||0).getTime();return db-da});
+ const rows=(r.data||[]).slice().sort((a,b)=>{const da=new Date(progressDate(a)||0).getTime(),db=new Date(progressDate(b)||0).getTime();return da-db});
  count.textContent=rows.length+(rows.length===1?' rilevazione':' rilevazioni');
  if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return}
  const latest=rows[0],previous=rows[1]||null;

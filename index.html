@@ -3064,6 +3064,11 @@ function renderPlusCourseSelection(p){
 function subscriptionPresetDurationLabel(p){const type=String(p?.plan_type||'').trim().toLowerCase(),name=String(p?.name||'').trim().toLowerCase();if(type==='accesso breve'&&name.includes('settiman'))return '7 giorni';if(type==='accesso breve'&&name.includes('giornal'))return '1 giorno';if(type==='personal training')return '1 lezione';const mesi=Number(p?.duration_months||1);return mesi===1?'1 mese':mesi+' mesi';}
 function subscriptionPresetTotal(p){const base=Number(p?.price||0),extra=String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;return Math.max(0,base+extra);}
 function subscriptionPresetExtra(p){return String(p?.plan_type||'').toLowerCase()==='plus'?Number(p?.plus_extra_price||0):0;}
+function plusCourseOptions(selectedName){
+ const selected=String(selectedName||'');
+ const rows=(courseCatalog||[]).filter(x=>x.active!==false);
+ return '<option value="">Nessun corso aggiuntivo</option>'+rows.map(x=>`<option value="${esc(x.name||'')}" ${String(x.name||'')===selected?'selected':''}>${esc(x.name||'')}</option>`).join('');
+}
 function openSubscriptionPriceModal(id){
  const p=(subscriptionPricePresets||[]).find(x=>String(x.id)===String(id))||{};
  openModal(`<div class="modalhead"><h2>${id?'Modifica prezzo':'Nuovo prezzo abbonamento'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div>

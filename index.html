@@ -2718,6 +2718,14 @@ function progressTrend(latest,previous,label){
  const sign=d>0?'+':'';
  return {status:cfg.direction==='neutral'?'change':(positive?'better':'worse'),arrow,delta:d,text:`${sign}${d.toFixed(1).replace('.',',')}${progressUnit(label)}`};
 }
+function progressArrowFromValues(current,previous,label){
+ // La freccia indica esclusivamente la variazione numerica rispetto alla rilevazione precedente.
+ if(current===null||previous===null)return '';
+ const delta=current-previous;
+ const threshold=(progressTrendConfig[label]||{threshold:0.5}).threshold;
+ if(Math.abs(delta)<threshold)return '→';
+ return delta>0?'↗':'↘';
+}
 function progressTrendClass(status){return status==='better'?'progressBetter':status==='worse'?'progressWorse':status==='stable'?'progressStable':status==='first'?'progressFirst':'progressNeutral'}
 function progressChange(latest,previous,label){
  const t=progressTrend(latest,previous,label);
@@ -2782,7 +2790,7 @@ async function openProgressAdminClient(id){
  const latest=rows[rows.length-1],previous=rows[rows.length-2]||null;
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend ${progressTrendClass(progressTrend(v,pv,label).status)}">${progressTrend(v,pv,label).arrow}</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
  const cols=['Data',...progressDefs.map(x=>x[0]),'Note','Azioni'];
- table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,idx)=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names),older=idx>0?rows[idx-1]:null,pv=older?progressField(older,names):null,t=progressTrend(v,pv,label),arrow=(idx===0||v===null||pv===null)?'':` <span class="${progressTrendClass(t.status)}" style="font-size:15px;font-weight:900;margin-left:5px">${t.arrow}</span>`;return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit+arrow}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td><td><button class="btn mini secondary" type="button" onclick="openProgressEditor('${id}','${esc(String(progressEntryId(r)||''))}',${rows.indexOf(r)})">Modifica</button> <button class="btn mini" type="button" style="background:#c62828;color:#fff" onclick="deleteProgressEntry('${r.id}','${id}')">Elimina</button></td></tr>`).join('')+'</tbody></table>';
+ table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,idx)=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names),older=idx>0?rows[idx-1]:null,pv=older?progressField(older,names):null,t=progressTrend(v,pv,label),arrowGlyph=progressArrowFromValues(v,pv,label),arrow=(idx===0||!arrowGlyph)?'':` <span class="${progressTrendClass(t.status)}" title="Confronto con la rilevazione precedente" style="font-size:15px;font-weight:900;margin-left:5px">${arrowGlyph}</span>`;return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit+arrow}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td><td><button class="btn mini secondary" type="button" onclick="openProgressEditor('${id}','${esc(String(progressEntryId(r)||''))}',${rows.indexOf(r)})">Modifica</button> <button class="btn mini" type="button" style="background:#c62828;color:#fff" onclick="deleteProgressEntry('${r.id}','${id}')">Elimina</button></td></tr>`).join('')+'</tbody></table>';
 }
 
 async function openProgressEditor(clientId, entryId='', rowIndex=-1){
@@ -2885,7 +2893,7 @@ async function loadClientProgress(){
  const latest=rows[rows.length-1],previous=rows[rows.length-2]||null;
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend ${progressTrendClass(progressTrend(v,pv,label).status)}">${progressTrend(v,pv,label).arrow}</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
  const cols=['Data',...progressDefs.map(x=>x[0]),'Note'];
- table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,idx)=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names),older=idx>0?rows[idx-1]:null,pv=older?progressField(older,names):null,t=progressTrend(v,pv,label),arrow=(idx===0||v===null||pv===null)?'':` <span class="${progressTrendClass(t.status)}" style="font-size:15px;font-weight:900;margin-left:5px">${t.arrow}</span>`;return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit+arrow}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
+ table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,idx)=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names),older=idx>0?rows[idx-1]:null,pv=older?progressField(older,names):null,t=progressTrend(v,pv,label),arrowGlyph=progressArrowFromValues(v,pv,label),arrow=(idx===0||!arrowGlyph)?'':` <span class="${progressTrendClass(t.status)}" title="Confronto con la rilevazione precedente" style="font-size:15px;font-weight:900;margin-left:5px">${arrowGlyph}</span>`;return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit+arrow}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
 }
 
 function subscriptionPresetLabel(p){

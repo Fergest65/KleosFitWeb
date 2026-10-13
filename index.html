@@ -3378,9 +3378,8 @@ async function loadClientPriceList(){
    return;
  }
  const rows=r.data||[];
- if(status)status.textContent=rows.length+(rows.length===1?' abbonamento disponibile':' abbonamenti disponibili');
- if(!rows.length){box.innerHTML='<div class="muted">Nessun abbonamento disponibile.</div>';return;}
- box.innerHTML='<div class="clientPriceGrid">'+rows.map(x=>{
+ if(status)status.textContent=rows.length+(rows.length===1?' abbonamento disponibile':' abbonamenti disponibili')+' · 3 servizi aggiuntivi';
+ const plans=rows.map(x=>{
    const mesi=Number(x.duration_months||1);
    const durata=mesi===1?'1 mese':mesi+' mesi';
    return `<div class="clientPriceCard">
@@ -3392,7 +3391,34 @@ async function loadClientPriceList(){
      ${String(x.plan_type||'').toLowerCase()==='plus'?`<div class="clientPriceBreakdown">Base: € ${Number(x.price||0).toFixed(2).replace('.',',')}<br>Corso: <b>${esc(x.plus_course_name||'—')}</b> + € ${subscriptionPresetExtra(x).toFixed(2).replace('.',',')}<br><strong>Totale: € ${subscriptionPresetTotal(x).toFixed(2).replace('.',',')}</strong></div>`:`<div class="clientPriceBreakdown">Totale: <b>€ ${subscriptionPresetTotal(x).toFixed(2).replace('.',',')}</b></div>`}
      <div class="clientPriceReadonly">Prezzo di listino</div>
    </div>`;
- }).join('')+'</div>';
+ }).join('');
+ const extraServices=`
+   <div class="clientPriceCard">
+     <div class="clientPriceType">Accesso breve</div>
+     <div class="clientPriceName">Quota settimanale</div>
+     <div class="clientPriceDuration">Validità: 7 giorni</div>
+     <div class="clientPriceAmount">€ 15,00</div>
+     <div class="clientPriceDescription">Accesso alla palestra per una settimana.</div>
+     <div class="clientPriceReadonly">Prezzo di listino</div>
+   </div>
+   <div class="clientPriceCard">
+     <div class="clientPriceType">Accesso breve</div>
+     <div class="clientPriceName">Quota giornaliera</div>
+     <div class="clientPriceDuration">Validità: 1 giorno</div>
+     <div class="clientPriceAmount">€ 15,00</div>
+     <div class="clientPriceDescription">Accesso alla palestra per una giornata.</div>
+     <div class="clientPriceReadonly">Prezzo di listino</div>
+   </div>
+   <div class="clientPriceCard">
+     <div class="clientPriceType">Personal training</div>
+     <div class="clientPriceName">Lezione personal</div>
+     <div class="clientPriceDuration">1 lezione</div>
+     <div class="clientPriceAmount">€ 35,00</div>
+     <div class="clientPriceDescription">Lezione da concordare previo appuntamento.</div>
+     <div class="clientPriceReadonly">Prezzo di listino</div>
+   </div>`;
+ box.innerHTML='<div class="clientPriceGrid">'+(plans||'')+extraServices+'</div>';
+
 }
 
 async function loadAdminClientPayments(profileId){

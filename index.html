@@ -168,7 +168,20 @@
 .circuitRunnerActions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
 @media(max-width:800px){.circuitBuilderGrid{grid-template-columns:1fr}.circuitBuilderWide{grid-column:auto}}
 @media(max-width:600px){.circuitStationGrid{grid-template-columns:1fr}.circuitStationGrid .wide{grid-column:auto}.circuitMode button{min-width:0;flex:1}}
-</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
+</style><style>
+/* Contabilità: uniforma il carattere a quello usato nelle altre sezioni, senza modificare la logica. */
+#content:has(#accountingList) { font-family: inherit; }
+#content:has(#accountingList) .title,
+#content:has(#accountingList) .sub,
+#content:has(#accountingList) .card,
+#content:has(#accountingList) .label,
+#content:has(#accountingList) .muted,
+#content:has(#accountingList) .paymentSummary,
+#content:has(#accountingList) #accountingList { font-family: inherit; }
+#content:has(#accountingList) #accountingList table.table th,
+#content:has(#accountingList) #accountingList table.table td { font-family: inherit; font-size: 13px; }
+</style>
+</head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
@@ -362,7 +375,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('clients')">Utenti / QR Code</button>
  <button type="button" onclick="show('suspendedClients',this)">Clienti sospesi</button>
  <button type="button" onclick="show('activeSubscriptions',this)">Abbonamenti attivi</button>
- <button type="button" onclick="show('accounting',this)">CONTABILITÀ</button>
+ <button type="button" onclick="show('accounting',this)">Contabilità</button>
  
  <button type="button" onclick="show('circuits')">Circuiti</button>
 </div>`,

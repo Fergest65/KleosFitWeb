@@ -3986,7 +3986,7 @@ function openLogin(){document.getElementById('welcome').style.display='none';doc
 function closeLogin(){document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='flex'}
 function openPasswordRecovery(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('passwordRecovery').style.display='flex';document.getElementById('recoveryForm').style.display='block';document.getElementById('resetPasswordForm').style.display='none';document.getElementById('recoveryError').style.display='none';document.getElementById('recoverySuccess').style.display='none';setTimeout(()=>document.getElementById('recoveryEmail')?.focus(),50)}
 function closePasswordRecovery(){document.getElementById('passwordRecovery').style.display='none';openLogin()}
-function showPasswordReset(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('passwordRecovery').style.display='flex';document.getElementById('recoveryForm').style.display='none';document.getElementById('resetPasswordForm').style.display='block';document.getElementById('recoveryTitle').textContent='Imposta nuova password';document.getElementById('recoveryDescription').textContent='Scegli una nuova password di almeno 6 caratteri.'}
+function showPasswordReset(){document.getElementById('welcome').style.display='none';document.getElementById('app').classList.add('hide');document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('passwordRecovery').style.display='flex';document.getElementById('recoveryForm').style.display='none';document.getElementById('resetPasswordForm').style.display='block';document.getElementById('recoveryTitle').textContent='Imposta nuova password';document.getElementById('recoveryDescription').textContent='Scegli una nuova password di almeno 6 caratteri.'}
 function togglePassword(id,btn){const input=document.getElementById(id);if(!input)return;const visible=input.type==='text';input.type=visible?'password':'text';btn.classList.toggle('visible',!visible);btn.setAttribute('aria-label',visible?'Mostra password':'Nascondi password');btn.textContent=visible?'MOSTRA':'NASCONDI'}
 function openRegister(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('register').style.display='flex';setTimeout(()=>document.getElementById('registerName')?.focus(),50)}
 function closeRegister(){document.getElementById('register').style.display='none';document.getElementById('welcome').style.display='flex'}
@@ -4046,7 +4046,10 @@ db.auth.onAuthStateChange((event, session)=>{
  const recoveryFromHash=hashType==='recovery';
  const hasAccessToken=!!hashParams.get('access_token');
  const hasRefreshToken=!!hashParams.get('refresh_token');
- const recoveryIntent=hasRecoveryMarker || recoveryFromHash || (hasAccessToken && hashType==='recovery');
+ // Alcuni template Supabase restituiscono i token nell'hash senza type=recovery.
+ // Se sono presenti token di sessione nel link email, privilegia il flusso di reset
+ // invece di aprire automaticamente una sessione/dashboard già memorizzata.
+ const recoveryIntent=hasRecoveryMarker || recoveryFromHash || (hasAccessToken && hasRefreshToken);
  if(recoveryIntent){
    passwordRecoveryActive=true;
    // Assicura che il token del link email venga acquisito prima di mostrare il modulo.

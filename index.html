@@ -271,7 +271,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="all" selected>Tutti</option><option value="active">Abbonamento attivo</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="suspended">Cliente sospeso</option></select></div>
+ <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="all" selected>Tutti</option><option value="active">Abbonamento attivo (inclusi OPEN)</option><option value="active_no_open">ATTIVI NO OPEN</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="suspended">Cliente sospeso</option></select></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -1212,6 +1212,7 @@ function renderActiveSubscriptions(){
   let rows=activeSubscriptionsData.filter(p=>{
     const subStatus=subscriptionListStatus(p);
     if(st==='active' && !['ATTIVO','OPEN'].includes(subStatus))return false;
+    if(st==='active_no_open' && subStatus!=='ATTIVO')return false;
     if(st==='inactive' && subStatus!=='NON ATTIVO')return false;
     if(st==='open' && subStatus!=='OPEN')return false;
     if(st==='suspended' && !isClientSuspended(p))return false;
@@ -1226,7 +1227,7 @@ function renderActiveSubscriptions(){
     return an;
   });
 
-  const stateText=st==='suspended'?'sospesi':st==='open'?'OPEN':st==='inactive'?'non attivi':st==='all'?'tutti':'attivi';
+  const stateText=st==='suspended'?'sospesi':st==='open'?'OPEN':st==='inactive'?'non attivi':st==='active_no_open'?'attivi esclusi OPEN':st==='all'?'tutti':'attivi';
   if(count)count.textContent=rows.length+(rows.length===1?' cliente '+stateText:' clienti '+stateText);
   if(!rows.length){
     list.innerHTML='<div class="muted">Nessun cliente corrispondente ai filtri selezionati.</div>';

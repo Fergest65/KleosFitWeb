@@ -4030,54 +4030,49 @@ document.getElementById('registerForm').addEventListener('submit',register);
 document.getElementById('recoveryForm').addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('recoveryError'),ok=document.getElementById('recoverySuccess');er.style.display='none';ok.style.display='none';const email=document.getElementById('recoveryEmail').value.trim().toLowerCase();const btn=document.querySelector('#recoveryForm button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Invio in corso...'}try{const redirectTo='https://app.kleosfit.it/?password_recovery=1';const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});if(error)throw error;ok.textContent='Se l’indirizzo è associato a un account, riceverai un’email con il link per reimpostare la password. Controlla anche la cartella Spam.';ok.style.display='block'}catch(err){er.textContent=err?.message||'Impossibile inviare il link di recupero.';er.style.display='block'}finally{if(btn){btn.disabled=false;btn.textContent='Invia link di recupero'}}});
 document.getElementById('resetPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('resetError'),ok=document.getElementById('resetSuccess');er.style.display='none';ok.style.display='none';const password=document.getElementById('newPassword').value,confirm=document.getElementById('confirmNewPassword').value;if(password.length<6){er.textContent='La password deve contenere almeno 6 caratteri.';er.style.display='block';return}if(password!==confirm){er.textContent='Le password non coincidono.';er.style.display='block';return}const btn=document.querySelector('#resetPasswordForm button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Salvataggio...'}try{const {error}=await db.auth.updateUser({password});if(error)throw error;ok.textContent='Password aggiornata correttamente. Ora puoi accedere con la nuova password.';ok.style.display='block';document.getElementById('newPassword').value='';document.getElementById('confirmNewPassword').value='';if(btn)btn.textContent='Password salvata';setTimeout(()=>{document.getElementById('passwordRecovery').style.display='none';openLogin()},1800)}catch(err){er.textContent=err?.message||'Impossibile aggiornare la password. Richiedi un nuovo link di recupero.';er.style.display='block'}finally{if(btn&&btn.textContent==='Salvataggio...'){btn.disabled=false;btn.textContent='Salva nuova password'}}});
 let passwordRecoveryActive=false;
-db.auth.onAuthStateChange((event)=>{
+db.auth.onAuthStateChange((event, session)=>{
  if(event==='PASSWORD_RECOVERY'){
    passwordRecoveryActive=true;
+   if(session?.user) currentUser=session.user;
    showPasswordReset();
  }
 });
 (async()=>{
- const hash=window.location.hash||'';
+ const hashParams=new URLSearchParams((window.location.hash||'').replace(/^#/,'').replace(/^\?/,'').replace(/^\//,''));
  const params=new URLSearchParams(window.location.search);
  const code=params.get('code');
  const hasRecoveryMarker=params.get('password_recovery')==='1';
- const recoveryFromHash=/type=recovery/i.test(hash);
- // Il link inviato dalla schermata di recupero contiene il marcatore dedicato.
- // Supporta anche i vecchi link Supabase che riportano type=recovery nell'hash.
- // I link con code vengono scambiati solo dopo aver verificato se Supabase ha già creato la sessione.
- if(hasRecoveryMarker || recoveryFromHash){
+ const hashType=hashParams.get('type');
+ const recoveryFromHash=hashType==='recovery';
+ const hasAccessToken=!!hashParams.get('access_token');
+ const hasRefreshToken=!!hashParams.get('refresh_token');
+ const recoveryIntent=hasRecoveryMarker || recoveryFromHash || (hasAccessToken && hashType==='recovery');
+ if(recoveryIntent){
    passwordRecoveryActive=true;
+   // Assicura che il token del link email venga acquisito prima di mostrare il modulo.
    let {data,error}=await db.auth.getSession();
+   if(!data?.session && hasAccessToken && hasRefreshToken){
+     const restored=await db.auth.setSession({access_token:hashParams.get('access_token'),refresh_token:hashParams.get('refresh_token')});
+     data=restored.data; error=restored.error;
+   }
    if(!data?.session && code){
-     try{
-       const exchanged=await db.auth.exchangeCodeForSession(code);
-       error=exchanged.error;
-       if(!error){data=exchanged.data;}
-       else {
-         // Il client potrebbe aver già consumato il code durante l'inizializzazione.
-         const retry=await db.auth.getSession();
-         if(retry.data?.session){data=retry.data;error=null;}
-       }
-     }catch(_err){
-       const retry=await db.auth.getSession();
-       if(retry.data?.session){data=retry.data;error=null;}
-     }
+     const exchanged=await db.auth.exchangeCodeForSession(code);
+     data=exchanged.data; error=exchanged.error;
+     if(!data?.session){const retry=await db.auth.getSession();if(retry.data?.session){data=retry.data;error=null;}}
    }
    showPasswordReset();
    if(!data?.session){
      const er=document.getElementById('resetError');
-     er.textContent='Il link di recupero non è valido o è scaduto. Richiedi una nuova email di recupero.';
+     er.textContent='Il link di recupero non è valido o è scaduto. Richiedi una nuova email dalla dashboard app.kleosfit.it.';
      er.style.display='block';
    }else{
      currentUser=data.session.user;
    }
    return;
  }
- // Compatibilità con i link PKCE di recupero generati prima dell'aggiunta del marcatore.
  if(code){
    const {data:sessionData}=await db.auth.getSession();
    if(sessionData?.session){
-     // Un link di conferma/registrazione può avere anch'esso un code: non forziamo il reset.
      currentUser=sessionData.session.user;
      document.getElementById('welcome').style.display='none';
      document.getElementById('login').style.display='none';
@@ -4089,7 +4084,7 @@ db.auth.onAuthStateChange((event)=>{
  }
  const {data}=await db.auth.getSession();
  if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('passwordRecovery').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
-})();
+})();;
 </script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();
 /* ===== SLOT STANDARD — GESTIONE RICORRENTE ===== */
 let editingStandardGroup=null;

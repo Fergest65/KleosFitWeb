@@ -194,7 +194,8 @@
 </style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>
 </div></div>
-<div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
+<div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:12px;text-align:center"><button class="btn secondary mini" type="button" onclick="openPasswordRecovery()">Password dimenticata?</button></div><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
+<div id="passwordRecovery" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closePasswordRecovery()">← Torna all'accesso</button><div class="brand">KLEOS<span>FIT</span></div><h1 id="recoveryTitle">Recupera password</h1><p id="recoveryDescription">Inserisci l'email del tuo account. Riceverai un link per impostare una nuova password.</p><form id="recoveryForm"><label>Email</label><input id="recoveryEmail" type="email" autocomplete="email" required><button class="btn full" type="submit">Invia link di recupero</button><div id="recoveryError" class="error"></div><div id="recoverySuccess" class="success" style="display:none"></div></form><form id="resetPasswordForm" style="display:none"><label>Nuova password</label><div class="passwordWrap"><input id="newPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" onclick="togglePassword('newPassword',this)">MOSTRA</button></div><label>Conferma nuova password</label><div class="passwordWrap"><input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" onclick="togglePassword('confirmNewPassword',this)">MOSTRA</button></div><button class="btn full" type="submit">Salva nuova password</button><div id="resetError" class="error"></div><div id="resetSuccess" class="success" style="display:none"></div></form></div></div>
 <div id="register" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeRegister()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Prima registrazione</h1><p>Crea il tuo account cliente per accedere a KleosFit Coach Pro.</p><form id="registerForm"><label>Nome e Cognome</label><input id="registerName" type="text" autocomplete="name" required><label>Email</label><input id="registerEmail" type="email" autocomplete="email" required><label>Password</label><div class="passwordWrap"><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPassword',this)">MOSTRA</button></div><label>Conferma Password</label><div class="passwordWrap"><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPasswordConfirm',this)">MOSTRA</button></div><button class="btn full" type="submit">Crea account</button><div id="registerError" class="error"></div><div id="registerSuccess" class="success" style="display:none"></div></form></div></div><div id="app" class="app hide">
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button class="hideForClientNav" style="display:none" onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button onclick="show('regulation',this)">☷ <span>Regolamento</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientAnagraficaNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
@@ -3981,8 +3982,11 @@ async function saveNutritionMeal(id){
  const payload={meal_type:valOrNull('nmType'),name:valOrNull('nmName'),grams:valOrNull('nmGrams'),sort_order:valOrNull('nmSort'),description:valOrNull('nmDesc')};
  const r=await db.from('nutrition_meals').update(payload).eq('id',id);if(r.error){notice('nmMsg',r.error.message);return}closeModal();await loadNutrition()
 }
-function openLogin(){document.getElementById('welcome').style.display='none';document.getElementById('register').style.display='none';document.getElementById('login').style.display='flex';setTimeout(()=>document.getElementById('email')?.focus(),50)}
+function openLogin(){document.getElementById('welcome').style.display='none';document.getElementById('register').style.display='none';document.getElementById('passwordRecovery').style.display='none';document.getElementById('login').style.display='flex';setTimeout(()=>document.getElementById('email')?.focus(),50)}
 function closeLogin(){document.getElementById('login').style.display='none';document.getElementById('welcome').style.display='flex'}
+function openPasswordRecovery(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('passwordRecovery').style.display='flex';document.getElementById('recoveryForm').style.display='block';document.getElementById('resetPasswordForm').style.display='none';document.getElementById('recoveryError').style.display='none';document.getElementById('recoverySuccess').style.display='none';setTimeout(()=>document.getElementById('recoveryEmail')?.focus(),50)}
+function closePasswordRecovery(){document.getElementById('passwordRecovery').style.display='none';openLogin()}
+function showPasswordReset(){document.getElementById('welcome').style.display='none';document.getElementById('app').classList.add('hide');document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('passwordRecovery').style.display='flex';document.getElementById('recoveryForm').style.display='none';document.getElementById('resetPasswordForm').style.display='block';document.getElementById('recoveryTitle').textContent='Imposta nuova password';document.getElementById('recoveryDescription').textContent='Scegli una nuova password di almeno 6 caratteri.'}
 function togglePassword(id,btn){const input=document.getElementById(id);if(!input)return;const visible=input.type==='text';input.type=visible?'password':'text';btn.classList.toggle('visible',!visible);btn.setAttribute('aria-label',visible?'Mostra password':'Nascondi password');btn.textContent=visible?'MOSTRA':'NASCONDI'}
 function openRegister(){document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('register').style.display='flex';setTimeout(()=>document.getElementById('registerName')?.focus(),50)}
 function closeRegister(){document.getElementById('register').style.display='none';document.getElementById('welcome').style.display='flex'}
@@ -4023,7 +4027,67 @@ async function login(e){e.preventDefault();const er=document.getElementById('err
 async function logout(){await db.auth.signOut();location.reload()}
 document.getElementById('loginForm').addEventListener('submit',login);
 document.getElementById('registerForm').addEventListener('submit',register);
-(async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}})();
+document.getElementById('recoveryForm').addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('recoveryError'),ok=document.getElementById('recoverySuccess');er.style.display='none';ok.style.display='none';const email=document.getElementById('recoveryEmail').value.trim().toLowerCase();const btn=document.querySelector('#recoveryForm button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Invio in corso...'}try{const redirectTo='https://app.kleosfit.it/?password_recovery=1';const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});if(error)throw error;ok.textContent='Se l’indirizzo è associato a un account, riceverai un’email con il link per reimpostare la password. Controlla anche la cartella Spam.';ok.style.display='block'}catch(err){er.textContent=err?.message||'Impossibile inviare il link di recupero.';er.style.display='block'}finally{if(btn){btn.disabled=false;btn.textContent='Invia link di recupero'}}});
+document.getElementById('resetPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('resetError'),ok=document.getElementById('resetSuccess');er.style.display='none';ok.style.display='none';const password=document.getElementById('newPassword').value,confirm=document.getElementById('confirmNewPassword').value;if(password.length<6){er.textContent='La password deve contenere almeno 6 caratteri.';er.style.display='block';return}if(password!==confirm){er.textContent='Le password non coincidono.';er.style.display='block';return}const btn=document.querySelector('#resetPasswordForm button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Salvataggio...'}try{const {error}=await db.auth.updateUser({password});if(error)throw error;ok.textContent='Password aggiornata correttamente. Ora puoi accedere con la nuova password.';ok.style.display='block';document.getElementById('newPassword').value='';document.getElementById('confirmNewPassword').value='';if(btn)btn.textContent='Password salvata';setTimeout(()=>{document.getElementById('passwordRecovery').style.display='none';openLogin()},1800)}catch(err){er.textContent=err?.message||'Impossibile aggiornare la password. Richiedi un nuovo link di recupero.';er.style.display='block'}finally{if(btn&&btn.textContent==='Salvataggio...'){btn.disabled=false;btn.textContent='Salva nuova password'}}});
+let passwordRecoveryActive=false;
+db.auth.onAuthStateChange((event, session)=>{
+ if(event==='PASSWORD_RECOVERY'){
+   passwordRecoveryActive=true;
+   if(session?.user) currentUser=session.user;
+   showPasswordReset();
+ }
+});
+(async()=>{
+ const hashParams=new URLSearchParams((window.location.hash||'').replace(/^#/,'').replace(/^\?/,'').replace(/^\//,''));
+ const params=new URLSearchParams(window.location.search);
+ const code=params.get('code');
+ const hasRecoveryMarker=params.get('password_recovery')==='1';
+ const hashType=hashParams.get('type');
+ const recoveryFromHash=hashType==='recovery';
+ const hasAccessToken=!!hashParams.get('access_token');
+ const hasRefreshToken=!!hashParams.get('refresh_token');
+ // Alcuni template Supabase restituiscono i token nell'hash senza type=recovery.
+ // Se sono presenti token di sessione nel link email, privilegia il flusso di reset
+ // invece di aprire automaticamente una sessione/dashboard già memorizzata.
+ const recoveryIntent=hasRecoveryMarker || recoveryFromHash || (hasAccessToken && hasRefreshToken);
+ if(recoveryIntent){
+   passwordRecoveryActive=true;
+   // Assicura che il token del link email venga acquisito prima di mostrare il modulo.
+   let {data,error}=await db.auth.getSession();
+   if(!data?.session && hasAccessToken && hasRefreshToken){
+     const restored=await db.auth.setSession({access_token:hashParams.get('access_token'),refresh_token:hashParams.get('refresh_token')});
+     data=restored.data; error=restored.error;
+   }
+   if(!data?.session && code){
+     const exchanged=await db.auth.exchangeCodeForSession(code);
+     data=exchanged.data; error=exchanged.error;
+     if(!data?.session){const retry=await db.auth.getSession();if(retry.data?.session){data=retry.data;error=null;}}
+   }
+   showPasswordReset();
+   if(!data?.session){
+     const er=document.getElementById('resetError');
+     er.textContent='Il link di recupero non è valido o è scaduto. Richiedi una nuova email dalla dashboard app.kleosfit.it.';
+     er.style.display='block';
+   }else{
+     currentUser=data.session.user;
+   }
+   return;
+ }
+ if(code){
+   const {data:sessionData}=await db.auth.getSession();
+   if(sessionData?.session){
+     currentUser=sessionData.session.user;
+     document.getElementById('welcome').style.display='none';
+     document.getElementById('login').style.display='none';
+     document.getElementById('passwordRecovery').style.display='none';
+     document.getElementById('app').classList.remove('hide');
+     await loadProfile();
+     return;
+   }
+ }
+ const {data}=await db.auth.getSession();
+ if(data.session){currentUser=data.session.user;document.getElementById('welcome').style.display='none';document.getElementById('login').style.display='none';document.getElementById('passwordRecovery').style.display='none';document.getElementById('app').classList.remove('hide');await loadProfile()}
+})();;
 </script><div id="pwaInstall" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;background:#171a20;border:1px solid #2a2f38;border-radius:14px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.45);color:#fff"><div style="font-weight:800;margin-bottom:5px">Installa KLEOSFIT come app</div><div style="font-size:12px;color:#9299a5;margin-bottom:10px">Aprila senza la barra del browser.</div><button id="pwaInstallBtn" style="background:#d7ff3f;border:0;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer">INSTALLA APP</button> <button id="pwaCloseBtn" style="background:#1e222a;color:#fff;border:1px solid #2a2f38;border-radius:9px;padding:10px 14px;cursor:pointer">Chiudi</button></div><script>(function(){let deferred=null;const box=document.getElementById('pwaInstall'),btn=document.getElementById('pwaInstallBtn'),close=document.getElementById('pwaCloseBtn');const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){}});window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!standalone())box.style.display='block'});btn?.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(_e){}deferred=null;box.style.display='none'});close?.addEventListener('click',()=>box.style.display='none');window.addEventListener('appinstalled',()=>box.style.display='none')})();
 /* ===== SLOT STANDARD — GESTIONE RICORRENTE ===== */
 let editingStandardGroup=null;

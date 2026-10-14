@@ -1364,9 +1364,9 @@ function computeSubscriptionActive(from,to){
  return f<=today && today<=t;
 }
 function clientQrValue(p){
- // subscription_active viene calcolato dall'app in base al periodo dell'abbonamento.
- const active=computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
- return JSON.stringify({id:String(p.id),attivo:active?"SI":"NO",subscription_active:active});
+ // I clienti OPEN sono sempre autorizzati, indipendentemente dalle date.
+ const active=isSubscriptionOpen(p)||computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
+ return JSON.stringify({id:String(p.id),attivo:active?"SI":"NO",subscription_active:active,subscription_open:isSubscriptionOpen(p)});
 }
 async function regenerateClientQr(id){
  if(!isSuperuserRole())return;

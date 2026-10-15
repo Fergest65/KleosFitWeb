@@ -1426,6 +1426,7 @@ function openClientSheet(id){
  openModal(`<div class="modalhead"><h2>Scheda cliente</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="clientSheet">
   <div class="clientSheetSection"><h3><span>●</span> Dati anagrafici</h3><div class="clientSheetGrid"><div><label>Nome completo</label><input id="cpFullName" value="${esc(full||'')}"></div><div><label>Data di nascita</label><input id="cpBirth" type="date" value="${esc(dateInputValue(p.birth_date))}"></div><div class="wide"><label>Codice fiscale</label><input id="cpFiscal" value="${esc(p.fiscal_code||'')}"></div></div></div>
+  <div class="clientSheetSection"><h3><span>●</span> Obiettivo</h3><div class="clientSheetGrid"><div><label for="cpGoal">Obiettivo</label><select id="cpGoal"><option value="">— Seleziona obiettivo —</option><option value="Dimagrimento" ${p.goal==='Dimagrimento'?'selected':''}>Dimagrimento</option><option value="Potenziamento" ${p.goal==='Potenziamento'?'selected':''}>Potenziamento</option><option value="Posturale" ${p.goal==='Posturale'?'selected':''}>Posturale</option><option value="Correttiva" ${p.goal==='Correttiva'?'selected':''}>Correttiva</option><option value="Riabilitativa" ${p.goal==='Riabilitativa'?'selected':''}>Riabilitativa</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Stato abbonamento</h3><div class="clientSheetGrid"><div><label>Abbonamento attivo</label><div id="cpClientActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(subscriptionFrom,subscriptionTo)?'ATTIVO':'NON ATTIVO'} — calcolato dalle date</div></div><div><label>Stato contabile</label><div class="inputLike" style="padding:10px 12px;font-weight:700">${p.subscription_active===true?'ATTIVO':'NON ATTIVO'}</div></div><div><label>Abbonamento OPEN</label><select id="cpOpen"><option value="false" ${!p.subscription_open?'selected':''}>NO</option><option value="true" ${p.subscription_open?'selected':''}>SÌ — OPEN</option></select></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Contatti</h3><div class="clientSheetGrid"><div><label>Email</label><input id="cpEmail" value="${esc(p.email||'')}"></div><div><label>Telefono</label><input id="cpPhone" value="${esc(p.phone||'')}"></div><div><label>Indirizzo</label><input id="cpAddress" value="${esc(p.address||'')}"></div><div><label>Città</label><input id="cpCity" value="${esc(p.city||'')}"></div></div></div>
   <div class="clientSheetSection"><h3><span>●</span> Tessera e abbonamento</h3><div class="clientSheetGrid"><div><label>Numero tessera</label><div style="display:flex;gap:8px;align-items:center"><input id="cpCard" value="${esc(card)}" inputmode="numeric" style="flex:1"><button class="btn secondary mini" type="button" onclick="generateClientCardNumber()">Genera numero</button></div></div><div class="wide"><label>Tipo abbonamento</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="cpSubType" style="flex:1;min-width:240px"><option value="">— Seleziona tipo abbonamento —</option></select><button class="btn mini" type="button" onclick="openSubscriptionRenewal('${p.id}')">Abbonamento</button></div><div class="muted" style="margin-top:6px">Il tipo abbonamento resta il riferimento principale della scheda. Corsi Plus, supplementi e periodo vengono gestiti dal pulsante “Abbonamento”.</div></div></div></div>
@@ -1731,7 +1732,7 @@ function printMinorRegistrationForm(){
 async function saveClientSheet(id){
  const msg=document.getElementById('cpMsg');
  if(msg){msg.textContent='Salvataggio...';msg.className='';msg.style.display='block'}
- const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
+ const payload={full_name:valOrNull('cpFullName'),birth_date:valOrNull('cpBirth'),fiscal_code:valOrNull('cpFiscal'),goal:valOrNull('cpGoal'),email:valOrNull('cpEmail'),phone:valOrNull('cpPhone'),address:valOrNull('cpAddress'),city:valOrNull('cpCity'),member_card_number:valOrNull('cpCard'),subscription_type:valOrNull('cpSubType'),subscription_open:document.getElementById('cpOpen')?.value==='true',medical_certificate_type:valOrNull('cpMedType'),medical_certificate_expiry_date:valOrNull('cpMedExpiry'),insurance_type:valOrNull('cpInsuranceType'),insurance_expiry_date:valOrNull('cpInsuranceExpiry')};
  const r=await db.from('profiles').update(payload).eq('id',id).select('*').maybeSingle();
  if(r.error){if(msg){msg.textContent='Errore salvataggio: '+r.error.message;msg.className='error';msg.style.display='block'}return}
  if(!r.data){if(msg){msg.textContent='Salvataggio non autorizzato: nessun dato è stato modificato. Verifica i permessi del profilo.';msg.className='error';msg.style.display='block'}return}
@@ -2763,6 +2764,7 @@ function progressChange(latest,previous,label){
 // Non usare nomi generici (arm, waist, ecc.): Supabase deve ricevere esattamente questi nomi.
 const progressDefs=[
  ['Peso',['weight_kg','weight','peso','body_weight'],' kg'],
+ ['Altezza',['height'],' cm'],
  ['Vita',['waist_cm','waist','vita'],' cm'],
  ['Petto',['chest_cm','chest','petto'],' cm'],
  ['Fianchi',['hips_cm','hips','fianchi','hip'],' cm'],
@@ -2802,7 +2804,7 @@ async function openProgressAdminClient(id){
  if(!isSuperuserRole())return;
  const p=(progressAdminClientsData||[]).find(x=>String(x.id)===String(id));
  const box=document.getElementById('progressAdminDetail'); if(!box||!p)return;
- box.innerHTML=`<div class="card"><div class="top" style="margin-bottom:16px"><div><div class="title" style="font-size:22px">${esc(profileDisplayName(p)||'Cliente')}</div><div class="sub">Storico misurazioni corporee</div></div><button class="btn" type="button" onclick="openProgressEditor('${p.id}')">＋ Nuova misurazione</button></div><div id="progressAdminError" class="error"></div><div id="progressAdminCount" class="muted">Caricamento...</div><div id="progressAdminCards" class="progressGrid" style="margin-top:14px"></div><div style="margin-top:18px"><h2>Storico misurazioni</h2><div id="progressAdminTable" class="progressTableWrap">Caricamento...</div></div></div>`;
+ box.innerHTML=`<div class="card"><div class="top" style="margin-bottom:16px"><div><div class="title" style="font-size:22px">${esc(profileDisplayName(p)||'Cliente')}</div><div class="sub">Storico misurazioni corporee</div></div><div class="toolbar"><button class="btn secondary" type="button" onclick="exportProgressHistoryTxt('${p.id}')">Esporta storico TXT</button><button class="btn" type="button" onclick="openProgressEditor('${p.id}')">＋ Nuova misurazione</button></div></div><div id="progressAdminError" class="error"></div><div id="progressAdminCount" class="muted">Caricamento...</div><div id="progressAdminCards" class="progressGrid" style="margin-top:14px"></div><div style="margin-top:18px"><h2>Storico misurazioni</h2><div id="progressAdminTable" class="progressTableWrap">Caricamento...</div></div></div>`;
  box.scrollIntoView({behavior:'smooth',block:'start'});
  const err=document.getElementById('progressAdminError'),count=document.getElementById('progressAdminCount'),cards=document.getElementById('progressAdminCards'),table=document.getElementById('progressAdminTable');
  const r=await db.from('progress_entries').select('*').eq('user_id',String(id)).limit(200);
@@ -2817,6 +2819,26 @@ async function openProgressAdminClient(id){
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend ${progressTrendClass(progressTrend(v,pv,label).status)}">${progressTrend(v,pv,label).arrow}</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
  const cols=['Data',...progressDefs.map(x=>x[0]),'Note','Azioni'];
  table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,idx)=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names),older=idx>0?rows[idx-1]:null,pv=older?progressField(older,names):null,t=progressTrend(v,pv,label),arrowGlyph=progressArrowFromValues(v,pv,label),arrow=(idx===0||!arrowGlyph)?'':` <span class="${progressTrendClass(t.status)}" title="Confronto con la rilevazione precedente" style="font-size:15px;font-weight:900;margin-left:5px">${arrowGlyph}</span>`;return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit+arrow}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td><td><button class="btn mini secondary" type="button" onclick="openProgressEditor('${id}','${esc(String(progressEntryId(r)||''))}',${rows.indexOf(r)})">Modifica</button> <button class="btn mini" type="button" style="background:#c62828;color:#fff" onclick="deleteProgressEntry('${r.id}','${id}')">Elimina</button></td></tr>`).join('')+'</tbody></table>';
+}
+
+async function exportProgressHistoryTxt(clientId){
+ if(!isSuperuserRole()){alert('Esportazione disponibile solo per amministratore/superuser.');return;}
+ const profile=(progressAdminClientsData||[]).find(x=>String(x.id)===String(clientId));
+ if(!profile){alert('Cliente non trovato. Ricarica l’elenco e riprova.');return;}
+ const result=await db.from('progress_entries').select('*').eq('user_id',String(clientId)).limit(2000);
+ if(result.error){alert('Impossibile esportare lo storico: '+result.error.message);return;}
+ const rows=(result.data||[]).slice().sort((a,b)=>new Date(progressDate(a)||0).getTime()-new Date(progressDate(b)||0).getTime());
+ if(!rows.length){alert('Nessuna rilevazione presente nello storico.');return;}
+ const lines=['STORICO MISURAZIONI KLEOSFIT','Cliente: '+String(profileDisplayName(profile)||'Cliente'),'Email: '+String(profileEmail(profile)||''),'Rilevazioni: '+rows.length,''];
+ for(const [index,row] of rows.entries()){
+  lines.push('RILEVAZIONE '+(index+1),'Data: '+String(fmtDate(progressDate(row))||'—'));
+  for(const [label,names,unit] of progressDefs){const value=progressField(row,names);lines.push(label+': '+(value===null?'—':String(value).replace('.',',')+unit));}
+  lines.push('Note: '+String(firstVal(row,['notes','note'],'')||'—'),'');
+ }
+ const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');
+ const safeName=String(profileDisplayName(profile)||'cliente').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'')||'cliente';
+ link.href=url;link.download='storico_progressi_'+safeName+'.txt';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
 }
 
 async function openProgressEditor(clientId, entryId='', rowIndex=-1){

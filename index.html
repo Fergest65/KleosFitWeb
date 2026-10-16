@@ -2132,7 +2132,7 @@ async function editNutritionRequestCompletion(id){
   hydration:['Scarsa','Bassa','Media','Buona','Elevata','Da valutare'],
   recovery:['Ottimo','Buono','Nella norma','Scarso','Stress elevato','Recupero insufficiente','Sonno insufficiente','Da valutare']
  };
- const reqInput=(label,key,type)=>{const v=x[key];const value=Array.isArray(v)?v.join(', '):(v??'');const options=reqOptions[key];if(options){const all=[...new Set([...(value&&!options.includes(String(value))?[String(value)]:[]),...options])];return `<div><label>${label}</label><select id="nrq_${key}"><option value="">— Seleziona —</option>${all.map(o=>`<option value="${esc(o)}" ${String(value)===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}const guidance={
+ const reqInput=(label,key,type)=>{const v=(x[key]!==null&&x[key]!==undefined)?x[key]:(x.admin_completion?.client_data?.[key]??'');const value=Array.isArray(v)?v.join(', '):(v??'');const options=reqOptions[key];if(options){const all=[...new Set([...(value&&!options.includes(String(value))?[String(value)]:[]),...options])];return `<div><label>${label}</label><select id="nrq_${key}"><option value="">— Seleziona —</option>${all.map(o=>`<option value="${esc(o)}" ${String(value)===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}const guidance={
  cooking_storage:'Descrivi tempo disponibile per cucinare, abilità, attrezzatura, pasti preparati in anticipo, frigorifero/freezer, possibilità di riscaldare e conservare gli alimenti.',
  budget_constraints:'Budget indicativo giornaliero o settimanale, spesa massima, alimenti da limitare per costo, vincoli di lavoro, turni, viaggi o accesso alla cucina.',
  medical_conditions:'Riportare solo condizioni diagnosticate o riferite dal cliente, chi le ha diagnosticate se noto e le eventuali indicazioni ricevute. Non formulare diagnosi.',
@@ -2250,9 +2250,16 @@ async function saveNutritionRequestClientData(id){
  if(current.error){alert('Impossibile leggere il prospetto esistente: '+current.error.message);return;}
  const completion={...(current.data?.admin_completion||{}),client_data:{...((current.data?.admin_completion||{}).client_data||{}),...extra}};
  patch.admin_completion=completion;
- const r=await db.from('nutrition_plan_requests').update(patch).eq('id',id);
+ // Richiedi la riga aggiornata: Supabase può non restituire errore se RLS impedisce l'UPDATE o nessuna riga è stata modificata.
+ const r=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,weight_kg,height_cm,age_years,sex,admin_completion').maybeSingle();
  if(r.error){alert('Modifiche ai dati cliente non salvate: '+r.error.message);return;}
- alert('Dati della richiesta e misurazioni importate salvati nelle colonne dedicate; lo storico Progressi originale non è stato modificato.');
+ if(!r.data){alert('Nessuna riga aggiornata. I dati NON sono stati salvati. Verifica le policy RLS UPDATE di nutrition_plan_requests e che l’utente amministratore abbia i permessi.');return;}
+ const expected=['weight_kg','height_cm','age_years','sex'];
+ const missingSaved=expected.filter(k=>patch[k]!==undefined && patch[k]!==null && String(patch[k]).trim()!=='' && (r.data[k]===null||r.data[k]===undefined||String(r.data[k]).trim()===''));
+ if(missingSaved.length){alert('Salvataggio incompleto: Supabase non ha restituito questi campi: '+missingSaved.join(', ')+'. Controlla le policy RLS e ricarica la richiesta.');return;}
+ // Aggiorna anche la cache amministrativa, così l'elenco non mostra i vecchi valori dopo la chiusura del modulo.
+ if(Array.isArray(nutritionData)){const idx=nutritionData.findIndex(v=>String(v.id)===String(id));if(idx>=0)nutritionData[idx]={...nutritionData[idx],...r.data};}
+ alert('Dati della richiesta e misurazioni salvati e verificati su Supabase. Lo storico Progressi originale non è stato modificato.');
 }
 
 async function generateNutritionDraft(id){

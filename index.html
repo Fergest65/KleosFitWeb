@@ -1413,30 +1413,32 @@ function computeSubscriptionActive(from,to){
  return f<=today && today<=t;
 }
 function clientQrValue(p){
- // I clienti OPEN sono sempre autorizzati, indipendentemente dalle date.
- const active=isSubscriptionOpen(p)||computeSubscriptionActive(p?.subscription_paid_from,p?.subscription_paid_to);
+ // Autorizza se OPEN oppure se una delle date di abbonamento associate al cliente è valida oggi.
+ const active=isSubscriptionOpen(p)||subscriptionPeriodsForList(p).some(x=>computeSubscriptionActive(x.from,x.to));
  return JSON.stringify({id:String(p.id),attivo:active?"SI":"NO",subscription_active:active,subscription_open:isSubscriptionOpen(p)});
 }
 async function regenerateClientQr(id){
  if(!isSuperuserRole())return;
- let p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
- if(!p)return;
  if(!confirm('Generare nuovamente il QR Code del cliente?'))return;
- // Rileggi il profilo da Supabase: le liste in memoria possono contenere date abbonamento obsolete.
- const fresh=await db.from('profiles').select('*').eq('id',id).maybeSingle();
- if(fresh.error){alert('Impossibile aggiornare il QR: '+fresh.error.message);return;}
- if(!fresh.data){alert('Profilo cliente non trovato su Supabase. QR non modificato.');return;}
- p={...p,...fresh.data};
- for(const arr of [activeSubscriptionsData,clientsData,anagraficaData]){
-   if(Array.isArray(arr)){const i=arr.findIndex(x=>String(x.id)===String(id));if(i>=0)arr[i]={...arr[i],...fresh.data};}
- }
  const safeId=String(id).replace(/[^a-zA-Z0-9_-]/g,'');
+ // Rileggi sempre i dati correnti dal database: non usare il profilo in memoria, che può essere obsoleto.
+ const pr=await db.from('profiles').select('*').eq('id',id).maybeSingle();
+ if(pr.error){alert('Impossibile aggiornare il QR: errore lettura profilo. '+pr.error.message);return;}
+ if(!pr.data){alert('Impossibile aggiornare il QR: cliente non trovato.');return;}
+ const pay=await db.from('subscription_payment_history').select('*').eq('profile_id',id).order('created_at',{ascending:false}).limit(5000);
+ if(pay.error){alert('Impossibile verificare i periodi pagati per il QR: '+pay.error.message);return;}
+ const p={...pr.data,_payments:pay.data||[]};
  const qrValue=clientQrValue(p);
+ // Aggiorna anche le cache locali, così scheda e QR mostrano lo stesso stato.
+ for(const arr of [activeSubscriptionsData,clientsData,anagraficaData]){
+   if(Array.isArray(arr)){const i=arr.findIndex(x=>String(x.id)===String(id));if(i>=0)arr[i]={...arr[i],...p};}
+ }
  const box=document.getElementById('sheetQr_'+safeId) || document.getElementById('adminQr_'+safeId);
  if(box){
    drawQrInto(box,p);
    const token=box.parentElement?.querySelector('.qrTokenText');
    if(token)token.textContent=qrValue;
+   alert('QR aggiornato. Stato abbonamento: '+(JSON.parse(qrValue).attivo==='SI'?'ATTIVO':'NON ATTIVO')+'.');
    return;
  }
  openClientSheet(id);

@@ -2269,11 +2269,14 @@ async function saveNutritionRequestClientData(id){
  for(const key of keys){
    const el=document.getElementById('nrq_'+key);
    if(!el)continue;
-   let value=key==='meals_included'?[...el.selectedOptions].map(o=>o.value):String(el.value??'').trim();
+   let value=key==='meals_included'?String(el.value??'').trim():String(el.value??'').trim();
    if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){
      value=value===''?null:Number(String(value).replace(',','.'));
      if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);el.focus();return;}
    }else if(key==='meals_included'){
+     const three=['Colazione','Pranzo','Cena'];
+     const six=['Colazione','Spuntino mattina','Pranzo','Spuntino pomeriggio','Cena','Spuntino serale'];
+     value=value==='6'?six:value==='3'?three:value.split(',').map(v=>v.trim()).filter(Boolean);
      if(!value.length){alert('Seleziona almeno un momento alimentare.');el.focus();return;}
    }else if(value==='')value=null;
    if(dbColumns.has(key))patch[key]=value;else extra[key]=value;
@@ -2398,15 +2401,33 @@ async function generateNutritionDraft(id){
  if(!generated.includes('Lunedì')||!generated.includes('Domenica')||generated.includes('STRUTTURA MENU DA COMPLETARE/VALIDARE')){alert('Generazione non valida: non salvo il testo segnaposto.');return;}
  ta.value=generated;
  const vis=document.getElementById('nrc_visibility');if(vis)vis.value='blocked';
- // Corregge anche nel database i vecchi valori meals_included salvati come ["3"] o ["6"].
+ // Salva menu, valori stimati e pasti canonici nella stessa operazione; verifica poi la rilettura da Supabase.
  const mealsToPersist=meals;
  const currentRequest=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();
- if(currentRequest.error){alert('Menu generato ma non salvato: impossibile rileggere il completamento ('+currentRequest.error.message+').');return;}
+ if(currentRequest.error){alert('Menu generato ma NON salvato: impossibile rileggere il completamento ('+currentRequest.error.message+').');return;}
  const baseCompletion=currentRequest.data?.admin_completion||{};
- const saveResult=await db.from('nutrition_plan_requests').update({meals_included:mealsToPersist}).eq('id',id);
- if(saveResult.error){alert('Menu generato, ma non è stato possibile correggere i pasti selezionati: '+saveResult.error.message+'\nIl testo resta nel modulo; usa Salva completamento dopo aver verificato i permessi.');return;}
- alert('Menu settimanale generato con i pasti corretti. Salvataggio automatico in corso; la visibilità resta BLOCCATA.');
- await saveNutritionRequestCompletion(id);
+ const completion={...baseCompletion,
+   title:nutritionCompletionValue('title')||'Bozza piano alimentare KleosFit',
+   issue_date:nutritionCompletionValue('issue_date')||new Date().toISOString().slice(0,10),
+   calories:kcal,protein_g:protein,carbs_g:carbs,fats_g:fats,
+   water_l:num(nutritionCompletionValue('water_l')),
+   visibility:'blocked',meal_structure:generated,
+   completed_at:new Date().toISOString(),completed_by:currentUser?.id||baseCompletion.completed_by||null
+ };
+ const saveResult=await db.from('nutrition_plan_requests').update({meals_included:mealsToPersist,meals_per_day:mealsToPersist.length,admin_completion:completion}).eq('id',id).select('id,meals_included,admin_completion').maybeSingle();
+ if(saveResult.error){alert('Menu generato nel modulo ma SALVATAGGIO FALLITO: '+saveResult.error.message+'\nIl piano non è stato salvato su Supabase.');return;}
+ if(!saveResult.data){alert('Menu generato nel modulo ma Supabase non ha aggiornato alcuna riga. Il piano NON è salvato. Verifica ID e policy UPDATE.');return;}
+ const verify=await db.from('nutrition_plan_requests').select('id,meals_included,admin_completion').eq('id',id).single();
+ if(verify.error){alert('Aggiornamento inviato, ma verifica del salvataggio fallita: '+verify.error.message+'\nControlla il JSON prima di procedere.');return;}
+ const saved=verify.data;
+ if(!String(saved.admin_completion?.meal_structure||'').includes('Domenica')||String(saved.admin_completion?.visibility||'')!=='blocked'){
+   alert('ATTENZIONE: Supabase non conferma il menu completo o lo stato BLOCCATO. Non pubblicare il piano.');return;
+ }
+ if(!Array.isArray(saved.meals_included)||saved.meals_included.join('|')!==mealsToPersist.join('|')){
+   alert('Il menu è stato salvato ma i pasti non corrispondono ai valori attesi. Verifica la richiesta prima di continuare.');return;
+ }
+ alert('VERIFICATO SU SUPABASE: menu settimanale salvato in admin_completion.meal_structure; pasti corretti salvati come '+JSON.stringify(saved.meals_included)+'. Visibilità: BLOCCATA.');
+ await loadNutritionRequests();
 }
 function nutritionCompletionValue(k){return document.getElementById('nrc_'+k)?.value?.trim()||'';}
 async function saveNutritionRequestCompletion(id){

@@ -2143,15 +2143,17 @@ async function editNutritionRequestCompletion(id){
   ['Obiettivo','goal','text'],['Età','age_years','number'],['Sesso','sex','text'],['Peso (kg)','weight_kg','number'],['Altezza (cm)','height_cm','number'],['Attività quotidiana','activity_level','text'],['Allenamento','training','textarea'],['Orari giornalieri','daily_schedule','textarea'],['Andamento peso','weight_trend','text'],['Attività quotidiana (passi/ore seduto)','daily_activity','textarea'],['Ore/qualità del sonno','sleep_hours','text'],['Stress e recupero','recovery','textarea'],['Appetito e digestione','digestion','textarea'],['Idratazione','hydration','text'],['Composizione corporea','body_composition','textarea'],['Stile alimentare','diet_style','text'],['Alimenti graditi','foods_liked','textarea'],['Alimenti da evitare','foods_avoid','textarea'],['Allergie/intolleranze','allergies_intolerances','textarea'],['Pasti desiderati','meals_included','textarea'],['Numero pasti al giorno','meals_per_day','number'],['Cucina/conservazione','cooking_storage','textarea'],['Budget/vincoli','budget_constraints','textarea'],['Condizioni riferite','medical_conditions','textarea'],['Sintomi/limitazioni','limitations','textarea'],['Storia del peso/rapporto col cibo','weight_history','textarea'],['Parametri professionali','professional_measures','textarea'],['Farmaci/integratori','medications_supplements','textarea'],['Indicazioni medico/dietista','professional_advice','textarea'],['Altre note sanitarie','other_health_notes','textarea']
  ];
  const reqOptions={
+  activity_level:['Bassa','Moderata','Alta'],
   sex:['Maschio','Femmina','Altro','Preferisco non indicarlo'],
   goal:['Dimagrimento','Massa muscolare','Potenziamento','Ricomp. corporea','Mantenimento','Posturale','Correttiva','Riabilitativa','Altro'],
   digestion:['Regolare','Appetito scarso','Appetito normale','Appetito elevato','Gonfiore','Digestione lenta','Stipsi','Diarrea','Reflusso','Alternanza stipsi/diarrea','Da approfondire'],
   diet_style:['Mediterranea','Onnivora','Vegetariana','Vegana','Pescetariana','Low-carb','Chetogenica','Senza lattosio','Senza glutine (solo se necessario)','Altro'],
   body_composition:['Non misurata','Normopeso','Sovrappeso','Obesità riferita da professionista','Massa grassa da ridurre','Massa muscolare da aumentare','Ricomp. corporea','Misurazione disponibile'],
   hydration:['Scarsa','Bassa','Media','Buona','Elevata','Da valutare'],
-  recovery:['Ottimo','Buono','Nella norma','Scarso','Stress elevato','Recupero insufficiente','Sonno insufficiente','Da valutare']
+  recovery:['Ottimo','Buono','Nella norma','Scarso','Stress elevato','Recupero insufficiente','Sonno insufficiente','Da valutare'],
+  sleep_quality:['Ottima','Buona','Discreta','Scarsa','Da verificare']
  };
- const reqInput=(label,key,type)=>{const cv=x.admin_completion?.client_data?.[key];const v=(x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!=='')?x[key]:(cv!==null&&cv!==undefined?cv:'');const value=Array.isArray(v)?v.join(', '):(v??'');const options=reqOptions[key];if(options){const all=[...new Set([...(value&&!options.includes(String(value))?[String(value)]:[]),...options])];return `<div><label>${label}</label><select id="nrq_${key}"><option value="">— Seleziona —</option>${all.map(o=>`<option value="${esc(o)}" ${String(value)===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}const guidance={
+ const reqInput=(label,key,type)=>{const cv=x.admin_completion?.client_data?.[key];const v=(x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!=='')?x[key]:(cv!==null&&cv!==undefined?cv:'');const value=Array.isArray(v)?v.join(', '):(v??'');if(key==='meals_per_day'||key==='meals_included'){const selectedCount=Array.isArray(x.meals_included)&&x.meals_included.length===6?6:(Number(x.meals_per_day)===6?6:3);const isCount=key==='meals_per_day';return `<div><label>${label}</label><select id="nrq_${key}" onchange="syncNutritionMealSelection('${id}','${key}')"><option value="3" ${selectedCount===3?'selected':''}>3 pasti principali (colazione, pranzo, cena)</option><option value="6" ${selectedCount===6?'selected':''}>6 momenti alimentari (inclusi gli spuntini)</option></select><div class="muted" style="font-size:12px;margin-top:4px">I due campi restano sincronizzati.</div></div>`;}const options=reqOptions[key];if(options){const selectValue=(key==='activity_level'&&!options.includes(String(value)))?'':String(value);const all=key==='activity_level'?options:[...new Set([...(value&&!options.includes(String(value))?[String(value)]:[]),...options])];return `<div><label>${label}</label><select id="nrq_${key}"><option value="">— Seleziona —</option>${all.map(o=>`<option value="${esc(o)}" ${selectValue===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}const guidance={
  cooking_storage:'Descrivi tempo disponibile per cucinare, abilità, attrezzatura, pasti preparati in anticipo, frigorifero/freezer, possibilità di riscaldare e conservare gli alimenti.',
  budget_constraints:'Budget indicativo giornaliero o settimanale, spesa massima, alimenti da limitare per costo, vincoli di lavoro, turni, viaggi o accesso alla cucina.',
  medical_conditions:'Riportare solo condizioni diagnosticate o riferite dal cliente, chi le ha diagnosticate se noto e le eventuali indicazioni ricevute. Non formulare diagnosi.',
@@ -2258,6 +2260,8 @@ async function importSelectedNutritionProgress(requestId){
  target.textContent='Selezionate '+selected.length+' rilevazioni. Correggi i valori qui sotto e poi inseriscili nel prospetto.';
 }
 
+function syncNutritionMealSelection(requestId,changedKey){const countEl=document.getElementById('nrq_meals_per_day');const includedEl=document.getElementById('nrq_meals_included');if(!countEl||!includedEl)return;const changed=document.getElementById('nrq_'+changedKey);const value=changed?.value==='6'?'6':'3';countEl.value=value;includedEl.value=value;}
+
 async function saveNutritionRequestClientData(id){
  if(!isSuperuserRole()){alert('Salvataggio non autorizzato: sessione amministratore non riconosciuta.');return;}
  const keys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
@@ -2271,7 +2275,7 @@ async function saveNutritionRequestClientData(id){
      value=value===''?null:Number(value.replace(',','.'));
      if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);el.focus();return;}
    }else if(key==='meals_included'){
-     value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];
+     value=value==='6'?['Colazione','Spuntino mattina','Pranzo','Spuntino pomeriggio','Cena','Spuntino serale']:['Colazione','Pranzo','Cena'];
    }else if(value==='')value=null;
    if(dbColumns.has(key))patch[key]=value;else extra[key]=value;
  }

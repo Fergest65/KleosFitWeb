@@ -2242,11 +2242,17 @@ async function importSelectedNutritionProgress(requestId){
 async function saveNutritionRequestClientData(id){
  if(!isSuperuserRole())return;
  const keys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
- const patch={};
- for(const key of keys){const el=document.getElementById('nrq_'+key);if(!el)continue;let value=el.value.trim();if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){value=value===''?null:Number(value);if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);return;}}else if(key==='meals_included'){value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];}else if(value==='')value=null;patch[key]=value;}
+ const patch={},extra={};
+ // Colonne presenti nella tabella nutrition_plan_requests, confermate dallo schema Supabase.
+ const dbColumns=new Set(['goal','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
+ for(const key of keys){const el=document.getElementById('nrq_'+key);if(!el)continue;let value=el.value.trim();if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){value=value===''?null:Number(value);if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);return;}}else if(key==='meals_included'){value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];}else if(value==='')value=null;if(dbColumns.has(key))patch[key]=value;else extra[key]=value;}
+ const current=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();
+ if(current.error){alert('Impossibile leggere il prospetto esistente: '+current.error.message);return;}
+ const completion={...(current.data?.admin_completion||{}),client_data:{...((current.data?.admin_completion||{}).client_data||{}),...extra}};
+ patch.admin_completion=completion;
  const r=await db.from('nutrition_plan_requests').update(patch).eq('id',id);
  if(r.error){alert('Modifiche ai dati cliente non salvate: '+r.error.message);return;}
- alert('Dati della richiesta aggiornati. I campi modificati saranno utilizzati per la generazione della bozza.');
+ alert('Dati della richiesta e misurazioni importate salvati. Età e sesso sono archiviati in admin_completion; lo storico Progressi originale non è stato modificato.');
 }
 
 async function generateNutritionDraft(id){
@@ -2260,10 +2266,10 @@ async function generateNutritionDraft(id){
  const num=(v)=>{if(v===null||v===undefined||String(v).trim()==='')return NaN;return Number(String(v).replace(',','.'));};
  const progressRows=((window.__nutritionProgressRows||{})[String(id)]||[]).slice().sort((a,b)=>new Date(progressDate(b)||b.created_at||0)-new Date(progressDate(a)||a.created_at||0));
  const latest=progressRows[0]||{};
- const w=num(x.weight_kg)||num(readAdmin('weight_kg'))||progressField(latest,['weight_kg','weight','peso','body_weight']);
- const h=num(x.height_cm)||num(readAdmin('height_cm'))||progressField(latest,['height_cm','height','altezza']);
- const age=num(x.age_years??x.age)||num(readAdmin('age_years'));
- const sex=String(x.sex||x.gender||readAdmin('sex')||'').toLowerCase();
+ const w=num(x.weight_kg)||num(x.admin_completion?.weight_kg)||num(x.admin_completion?.client_data?.weight_kg)||num(readAdmin('weight_kg'))||progressField(latest,['weight_kg','weight','peso','body_weight']);
+ const h=num(x.height_cm)||num(x.admin_completion?.height_cm)||num(x.admin_completion?.client_data?.height_cm)||num(readAdmin('height_cm'))||progressField(latest,['height_cm','height','altezza']);
+ const age=num(x.age_years??x.age)||num(x.admin_completion?.client_data?.age_years)||num(x.admin_completion?.age_years)||num(readAdmin('age_years'));
+ const sex=String(x.sex||x.gender||x.admin_completion?.client_data?.sex||x.admin_completion?.sex||readAdmin('sex')||'').toLowerCase();
  const missing=[];
  if(!(w>0))missing.push('peso');
  if(!(h>0))missing.push('altezza');

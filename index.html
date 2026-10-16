@@ -1419,9 +1419,17 @@ function clientQrValue(p){
 }
 async function regenerateClientQr(id){
  if(!isSuperuserRole())return;
- const p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
+ let p=(activeSubscriptionsData||[]).find(x=>String(x.id)===String(id)) || (clientsData||[]).find(x=>String(x.id)===String(id)) || (anagraficaData||[]).find(x=>String(x.id)===String(id));
  if(!p)return;
  if(!confirm('Generare nuovamente il QR Code del cliente?'))return;
+ // Rileggi il profilo da Supabase: le liste in memoria possono contenere date abbonamento obsolete.
+ const fresh=await db.from('profiles').select('*').eq('id',id).maybeSingle();
+ if(fresh.error){alert('Impossibile aggiornare il QR: '+fresh.error.message);return;}
+ if(!fresh.data){alert('Profilo cliente non trovato su Supabase. QR non modificato.');return;}
+ p={...p,...fresh.data};
+ for(const arr of [activeSubscriptionsData,clientsData,anagraficaData]){
+   if(Array.isArray(arr)){const i=arr.findIndex(x=>String(x.id)===String(id));if(i>=0)arr[i]={...arr[i],...fresh.data};}
+ }
  const safeId=String(id).replace(/[^a-zA-Z0-9_-]/g,'');
  const qrValue=clientQrValue(p);
  const box=document.getElementById('sheetQr_'+safeId) || document.getElementById('adminQr_'+safeId);

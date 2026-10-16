@@ -2132,7 +2132,7 @@ async function editNutritionRequestCompletion(id){
   hydration:['Scarsa','Bassa','Media','Buona','Elevata','Da valutare'],
   recovery:['Ottimo','Buono','Nella norma','Scarso','Stress elevato','Recupero insufficiente','Sonno insufficiente','Da valutare']
  };
- const reqInput=(label,key,type)=>{const v=(x[key]!==null&&x[key]!==undefined)?x[key]:(x.admin_completion?.client_data?.[key]??'');const value=Array.isArray(v)?v.join(', '):(v??'');const options=reqOptions[key];if(options){const all=[...new Set([...(value&&!options.includes(String(value))?[String(value)]:[]),...options])];return `<div><label>${label}</label><select id="nrq_${key}"><option value="">— Seleziona —</option>${all.map(o=>`<option value="${esc(o)}" ${String(value)===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}const guidance={
+ const reqInput=(label,key,type)=>{const cv=x.admin_completion?.client_data?.[key];const v=(x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!=='')?x[key]:(cv!==null&&cv!==undefined?cv:'');const value=Array.isArray(v)?v.join(', '):(v??'');const options=reqOptions[key];if(options){const all=[...new Set([...(value&&!options.includes(String(value))?[String(value)]:[]),...options])];return `<div><label>${label}</label><select id="nrq_${key}"><option value="">— Seleziona —</option>${all.map(o=>`<option value="${esc(o)}" ${String(value)===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}const guidance={
  cooking_storage:'Descrivi tempo disponibile per cucinare, abilità, attrezzatura, pasti preparati in anticipo, frigorifero/freezer, possibilità di riscaldare e conservare gli alimenti.',
  budget_constraints:'Budget indicativo giornaliero o settimanale, spesa massima, alimenti da limitare per costo, vincoli di lavoro, turni, viaggi o accesso alla cucina.',
  medical_conditions:'Riportare solo condizioni diagnosticate o riferite dal cliente, chi le ha diagnosticate se noto e le eventuali indicazioni ricevute. Non formulare diagnosi.',
@@ -2246,6 +2246,9 @@ async function saveNutritionRequestClientData(id){
  // Colonne presenti nella tabella nutrition_plan_requests, confermate dallo schema Supabase.
  const dbColumns=new Set(['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
  for(const key of keys){const el=document.getElementById('nrq_'+key);if(!el)continue;let value=el.value.trim();if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){value=value===''?null:Number(value);if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);return;}}else if(key==='meals_included'){value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];}else if(value==='')value=null;if(dbColumns.has(key))patch[key]=value;else extra[key]=value;}
+ // Conserva sempre i quattro dati anagrafici anche nel JSON, oltre alle colonne dedicate,
+ // così il modulo può recuperarli anche in caso di problemi di schema/cache.
+ for(const key of ['age_years','sex','weight_kg','height_cm']){if(patch[key]!==undefined)extra[key]=patch[key];}
  const current=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();
  if(current.error){alert('Impossibile leggere il prospetto esistente: '+current.error.message);return;}
  const completion={...(current.data?.admin_completion||{}),client_data:{...((current.data?.admin_completion||{}).client_data||{}),...extra}};
@@ -2255,11 +2258,11 @@ async function saveNutritionRequestClientData(id){
  if(r.error){alert('Modifiche ai dati cliente non salvate: '+r.error.message);return;}
  if(!r.data){alert('Nessuna riga aggiornata. I dati NON sono stati salvati. Verifica le policy RLS UPDATE di nutrition_plan_requests e che l’utente amministratore abbia i permessi.');return;}
  const expected=['weight_kg','height_cm','age_years','sex'];
- const missingSaved=expected.filter(k=>patch[k]!==undefined && patch[k]!==null && String(patch[k]).trim()!=='' && (r.data[k]===null||r.data[k]===undefined||String(r.data[k]).trim()===''));
+ const missingSaved=expected.filter(k=>patch[k]!==undefined && patch[k]!==null && String(patch[k]).trim()!=='' && ((r.data[k]===null||r.data[k]===undefined||String(r.data[k]).trim()==='') && (r.data.admin_completion?.client_data?.[k]===null||r.data.admin_completion?.client_data?.[k]===undefined||String(r.data.admin_completion.client_data[k]).trim()==='')));
  if(missingSaved.length){alert('Salvataggio incompleto: Supabase non ha restituito questi campi: '+missingSaved.join(', ')+'. Controlla le policy RLS e ricarica la richiesta.');return;}
  // Aggiorna anche la cache amministrativa, così l'elenco non mostra i vecchi valori dopo la chiusura del modulo.
  if(Array.isArray(nutritionData)){const idx=nutritionData.findIndex(v=>String(v.id)===String(id));if(idx>=0)nutritionData[idx]={...nutritionData[idx],...r.data};}
- alert('Dati della richiesta e misurazioni salvati e verificati su Supabase. Lo storico Progressi originale non è stato modificato.');
+ alert('Dati salvati e riletti da Supabase. I dati anagrafici sono conservati sia nelle colonne dedicate sia in admin_completion.client_data. Lo storico Progressi originale non è stato modificato.');
 }
 
 async function generateNutritionDraft(id){

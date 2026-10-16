@@ -2119,6 +2119,19 @@ async function editNutritionRequestCompletion(id){
  const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();
  if(r.error){alert('Impossibile aprire la richiesta: '+r.error.message);return;}
  const x=r.data||{},a=x.admin_completion||{};
+ // Recupera i dati disponibili dalle fonti reali al momento dell'apertura del modulo.
+ // Non dedurre il sesso dal nome e non importare pesi palesemente anomali.
+ const prof=await db.from('profiles').select('birth_date,goal').eq('id',x.user_id).maybeSingle();
+ if(prof.error)console.warn('Lettura profilo cliente:',prof.error.message);
+ const progress=await db.from('progress_entries').select('weight_kg,height').eq('user_id',x.user_id).order('created_at',{ascending:false}).limit(100);
+ if(progress.error)console.warn('Lettura progressi cliente:',progress.error.message);
+ const validRows=(progress.data||[]).filter(p=>((Number(p.weight_kg)>=20&&Number(p.weight_kg)<=350)||(Number(p.height)>=100&&Number(p.height)<=250)));
+ const validWeight=validRows.find(p=>Number(p.weight_kg)>=20&&Number(p.weight_kg)<=350)?.weight_kg;
+ const validHeight=validRows.find(p=>Number(p.height)>=100&&Number(p.height)<=250)?.height;
+ if((x.weight_kg===null||x.weight_kg===undefined)&&validWeight!==undefined)x.weight_kg=validWeight;
+ if((x.height_cm===null||x.height_cm===undefined)&&validHeight!==undefined)x.height_cm=validHeight;
+ if((x.goal===null||!String(x.goal).trim())&&prof.data?.goal)x.goal=prof.data.goal;
+ if((x.age_years===null||x.age_years===undefined)&&prof.data?.birth_date){const bd=new Date(prof.data.birth_date+'T00:00:00');const now=new Date();let age=now.getFullYear()-bd.getFullYear();if(now.getMonth()<bd.getMonth()||(now.getMonth()===bd.getMonth()&&now.getDate()<bd.getDate()))age--;if(age>=0&&age<=120)x.age_years=age;}
  const field=(label,key,type='text',placeholder='')=>`<div><label>${label}</label><input id="nrc_${key}" type="${type}" value="${esc(a[key]??'')}" placeholder="${placeholder}"></div>`;
  const reqFields=[
   ['Obiettivo','goal','text'],['Età','age_years','number'],['Sesso','sex','text'],['Peso (kg)','weight_kg','number'],['Altezza (cm)','height_cm','number'],['Attività quotidiana','activity_level','text'],['Allenamento','training','textarea'],['Orari giornalieri','daily_schedule','textarea'],['Andamento peso','weight_trend','text'],['Attività quotidiana (passi/ore seduto)','daily_activity','textarea'],['Ore/qualità del sonno','sleep_hours','text'],['Stress e recupero','recovery','textarea'],['Appetito e digestione','digestion','textarea'],['Idratazione','hydration','text'],['Composizione corporea','body_composition','textarea'],['Stile alimentare','diet_style','text'],['Alimenti graditi','foods_liked','textarea'],['Alimenti da evitare','foods_avoid','textarea'],['Allergie/intolleranze','allergies_intolerances','textarea'],['Pasti desiderati','meals_included','textarea'],['Numero pasti al giorno','meals_per_day','number'],['Cucina/conservazione','cooking_storage','textarea'],['Budget/vincoli','budget_constraints','textarea'],['Condizioni riferite','medical_conditions','textarea'],['Sintomi/limitazioni','limitations','textarea'],['Storia del peso/rapporto col cibo','weight_history','textarea'],['Parametri professionali','professional_measures','textarea'],['Farmaci/integratori','medications_supplements','textarea'],['Indicazioni medico/dietista','professional_advice','textarea'],['Altre note sanitarie','other_health_notes','textarea']
@@ -2144,7 +2157,7 @@ async function editNutritionRequestCompletion(id){
  other_health_notes:'Altre informazioni sanitarie pertinenti non già riportate. Indicare fonte e data quando disponibili; evitare dati non necessari.'
  };const help=guidance[key]||'';return `<div><label>${label}</label>${type==='textarea'?`${help?`<div class="muted" style="font-size:12px;margin:3px 0 6px">${help}</div>`:''}<textarea id="nrq_${key}" rows="4" placeholder="${help}">${esc(value)}</textarea>`:`<input id="nrq_${key}" type="${type}" value="${esc(value)}">`}</div>`;};
  openModal(`<div class="modalhead"><div><h2 style="margin:0">Completa prospetto nutrizionale</h2><div class="sub">Puoi consultare e correggere i dati inviati dal cliente, poi completare il piano.</div></div><button class="close" onclick="closeModal()">Chiudi</button></div>
- <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="formgrid">${reqFields.map(([label,key,type])=>reqInput(label,key,type)).join('')}</div><div class="actions"><button class="btn secondary" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
+ <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="formgrid">${reqFields.map(([label,key,type])=>reqInput(label,key,type)).join('')}</div><div class="actions"><button class="btn secondary" type="button" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
  <div class="detailSection"><h3>Parametri professionali — Progressi del cliente</h3><div class="muted">Seleziona una o più rilevazioni dello storico del cliente. Puoi importare solo quelle utili al piano; i dati saranno aggiunti al campo Parametri professionali e resteranno modificabili.</div><div class="actions"><button class="btn secondary" type="button" onclick="loadNutritionClientProgress('${id}')">Carica elenco Progressi</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',true)">Seleziona tutti</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',false)">Deseleziona tutti</button><button class="btn" type="button" onclick="importSelectedNutritionProgress('${id}')">Importa selezionati</button></div><div id="nrq_progress_import_${id}" style="margin-top:10px"></div><div style="margin-top:14px"><h4 style="margin:0 0 8px">Misurazioni importate — modificabili</h4><div class="muted">Dopo l'importazione puoi correggere direttamente i valori selezionati. Le modifiche saranno inserite nel campo Parametri professionali e usate per la bozza quando pertinenti.</div><div id="nrq_progress_edit_${id}" style="margin-top:8px"></div></div></div>
  <div class="detailSection"><h3>5. Impostazioni del piano KleosFit</h3><div class="muted">Usa il pulsante di generazione per stimare calorie e macronutrienti e preparare una bozza modificabile. I valori sono stime da verificare prima della pubblicazione.</div><div class="actions"><button class="btn" onclick="generateNutritionDraft('${id}')">Calcola valori e genera bozza</button></div><div class="formgrid">
  ${field('Titolo del piano','title')}${field('Data emissione','issue_date','date')}${field('Valido dal','valid_from','date')}${field('Valido al','valid_to','date')}${field('Calorie (kcal)','calories','number')}${field('Proteine (g)','protein_g','number')}${field('Carboidrati (g)','carbs_g','number')}${field('Grassi (g)','fats_g','number')}${field('Acqua (L)','water_l','number')}
@@ -2240,31 +2253,43 @@ async function importSelectedNutritionProgress(requestId){
 }
 
 async function saveNutritionRequestClientData(id){
- if(!isSuperuserRole())return;
+ if(!isSuperuserRole()){alert('Salvataggio non autorizzato: sessione amministratore non riconosciuta.');return;}
  const keys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
- const patch={},extra={};
- // Colonne presenti nella tabella nutrition_plan_requests, confermate dallo schema Supabase.
  const dbColumns=new Set(['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
- for(const key of keys){const el=document.getElementById('nrq_'+key);if(!el)continue;let value=el.value.trim();if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){value=value===''?null:Number(value);if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);return;}}else if(key==='meals_included'){value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];}else if(value==='')value=null;if(dbColumns.has(key))patch[key]=value;else extra[key]=value;}
- // Conserva sempre i quattro dati anagrafici anche nel JSON, oltre alle colonne dedicate,
- // così il modulo può recuperarli anche in caso di problemi di schema/cache.
- for(const key of ['age_years','sex','weight_kg','height_cm']){if(patch[key]!==undefined)extra[key]=patch[key];}
+ const patch={},extra={};
+ for(const key of keys){
+   const el=document.getElementById('nrq_'+key);
+   if(!el)continue;
+   let value=String(el.value??'').trim();
+   if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){
+     value=value===''?null:Number(value.replace(',','.'));
+     if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);el.focus();return;}
+   }else if(key==='meals_included'){
+     value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];
+   }else if(value==='')value=null;
+   if(dbColumns.has(key))patch[key]=value;else extra[key]=value;
+ }
+ const required=['age_years','sex','weight_kg','height_cm'];
+ const captured=required.map(k=>k+': '+(patch[k]===null||patch[k]===undefined||patch[k]===''?'VUOTO':String(patch[k]))).join('\n');
+ if(!Object.keys(patch).length){alert('Nessun campo del modulo è stato letto. Chiudi e riapri il prospetto dalla versione aggiornata di index.html.');return;}
  const current=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();
- if(current.error){alert('Impossibile leggere il prospetto esistente: '+current.error.message);return;}
- const completion={...(current.data?.admin_completion||{}),client_data:{...((current.data?.admin_completion||{}).client_data||{}),...extra}};
+ if(current.error){alert('Impossibile leggere la richiesta prima del salvataggio: '+current.error.message);return;}
+ const oldCompletion=current.data?.admin_completion||{};
+ for(const k of required){if(patch[k]!==undefined)extra[k]=patch[k];}
+ const completion={...oldCompletion,client_data:{...(oldCompletion.client_data||{}),...extra}};
  patch.admin_completion=completion;
- // Richiedi la riga aggiornata: Supabase può non restituire errore se RLS impedisce l'UPDATE o nessuna riga è stata modificata.
- const r=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,weight_kg,height_cm,age_years,sex,admin_completion').maybeSingle();
- if(r.error){alert('Modifiche ai dati cliente non salvate: '+r.error.message);return;}
- if(!r.data){alert('Nessuna riga aggiornata. I dati NON sono stati salvati. Verifica le policy RLS UPDATE di nutrition_plan_requests e che l’utente amministratore abbia i permessi.');return;}
- const expected=['weight_kg','height_cm','age_years','sex'];
- const missingSaved=expected.filter(k=>patch[k]!==undefined && patch[k]!==null && String(patch[k]).trim()!=='' && ((r.data[k]===null||r.data[k]===undefined||String(r.data[k]).trim()==='') && (r.data.admin_completion?.client_data?.[k]===null||r.data.admin_completion?.client_data?.[k]===undefined||String(r.data.admin_completion.client_data[k]).trim()==='')));
- if(missingSaved.length){alert('Salvataggio incompleto: Supabase non ha restituito questi campi: '+missingSaved.join(', ')+'. Controlla le policy RLS e ricarica la richiesta.');return;}
- // Aggiorna anche la cache amministrativa, così l'elenco non mostra i vecchi valori dopo la chiusura del modulo.
- if(Array.isArray(nutritionData)){const idx=nutritionData.findIndex(v=>String(v.id)===String(id));if(idx>=0)nutritionData[idx]={...nutritionData[idx],...r.data};}
- alert('Dati salvati e riletti da Supabase. I dati anagrafici sono conservati sia nelle colonne dedicate sia in admin_completion.client_data. Lo storico Progressi originale non è stato modificato.');
+ const result=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,goal,weight_kg,height_cm,age_years,sex,admin_completion').maybeSingle();
+ if(result.error){alert('SALVATAGGIO FALLITO: '+result.error.message+'\n\nValori letti dal modulo:\n'+captured);return;}
+ if(!result.data){alert('SUPABASE NON HA AGGIORNATO NESSUNA RIGA. I dati non sono stati salvati.\nVerifica l’ID richiesta e la policy UPDATE.\n\nValori letti dal modulo:\n'+captured);return;}
+ const verify=await db.from('nutrition_plan_requests').select('id,goal,weight_kg,height_cm,age_years,sex,admin_completion').eq('id',id).single();
+ if(verify.error){alert('La richiesta è stata aggiornata, ma la rilettura di verifica è fallita: '+verify.error.message+'\n\nValori letti dal modulo:\n'+captured);return;}
+ const saved=verify.data;
+ const actual=k=>saved[k]!==null&&saved[k]!==undefined&&String(saved[k]).trim()!==''?saved[k]:(saved.admin_completion?.client_data?.[k]??null);
+ const notPersisted=required.filter(k=>patch[k]!==undefined&&patch[k]!==null&&String(patch[k]).trim()!==''&&(actual(k)===null||String(actual(k)).trim()===''));
+ if(notPersisted.length){alert('SALVATAGGIO INCOMPLETO. Supabase non conserva: '+notPersisted.join(', ')+'.\n\nValori letti dal modulo:\n'+captured);return;}
+ if(Array.isArray(nutritionData)){const idx=nutritionData.findIndex(v=>String(v.id)===String(id));if(idx>=0)nutritionData[idx]={...nutritionData[idx],...saved};}
+ alert('Verifica completata: dati riletti da Supabase.\n\nValori letti dal modulo:\n'+captured+'\n\nValori confermati nel database:\n'+required.map(k=>k+': '+(actual(k)??'VUOTO')).join('\n'));
 }
-
 async function generateNutritionDraft(id){
  if(!isSuperuserRole())return;
  const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();

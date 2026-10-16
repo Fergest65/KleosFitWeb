@@ -2382,7 +2382,7 @@ async function generateNutritionDraft(id){
  ];
  const ta=document.getElementById('nrc_meal_structure');if(ta)ta.value=lines.join('\n');
  const vis=document.getElementById('nrc_visibility');if(vis)vis.value='blocked';
- // Salva immediatamente la bozza generata, così non resta soltanto nel campo del modulo.
+ alert('Bozza settimanale generata. Salvataggio automatico in corso; la visibilità resta BLOCCATA. Verificare menu, quantità e valori nutrizionali con il professionista prima della pubblicazione.');
  await saveNutritionRequestCompletion(id);
 }
 function nutritionCompletionValue(k){return document.getElementById('nrc_'+k)?.value?.trim()||'';}

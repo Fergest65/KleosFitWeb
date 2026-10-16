@@ -2177,12 +2177,11 @@ async function editNutritionRequestCompletion(id){
  openModal(`<div class="modalhead"><div><h2 style="margin:0">Completa prospetto nutrizionale</h2><div class="sub">Puoi consultare e correggere i dati inviati dal cliente, poi completare il piano.</div></div><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="formgrid">${reqFields.map(([label,key,type])=>reqInput(label,key,type)).join('')}</div><div class="actions"><button class="btn secondary" type="button" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
  <div class="detailSection"><h3>Parametri professionali — Progressi del cliente</h3><div class="muted">Seleziona una o più rilevazioni dello storico del cliente. Puoi importare solo quelle utili al piano; i dati saranno aggiunti al campo Parametri professionali e resteranno modificabili.</div><div class="actions"><button class="btn secondary" type="button" onclick="loadNutritionClientProgress('${id}')">Carica elenco Progressi</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',true)">Seleziona tutti</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',false)">Deseleziona tutti</button><button class="btn" type="button" onclick="importSelectedNutritionProgress('${id}')">Importa selezionati</button></div><div id="nrq_progress_import_${id}" style="margin-top:10px"></div><div style="margin-top:14px"><h4 style="margin:0 0 8px">Misurazioni importate — modificabili</h4><div class="muted">Dopo l'importazione puoi correggere direttamente i valori selezionati. Le modifiche saranno inserite nel campo Parametri professionali e usate per la bozza quando pertinenti.</div><div id="nrq_progress_edit_${id}" style="margin-top:8px"></div></div></div>
- <div class="detailSection"><h3>5. Impostazioni del piano KleosFit</h3><div class="muted">Usa il pulsante di generazione per stimare calorie e macronutrienti e preparare una bozza modificabile. I valori sono stime da verificare prima della pubblicazione.</div><div class="actions"><button class="btn" onclick="generateNutritionDraft('${id}')">Calcola valori e genera bozza</button></div><div class="formgrid">
- ${field('Titolo del piano','title')}${field('Data emissione','issue_date','date')}${field('Valido dal','valid_from','date')}${field('Valido al','valid_to','date')}${field('Calorie (kcal)','calories','number')}${field('Proteine (g)','protein_g','number')}${field('Carboidrati (g)','carbs_g','number')}${field('Grassi (g)','fats_g','number')}${field('Acqua (L)','water_l','number')}
+ <div class="detailSection"><h3>5. Preparazione del piano con AI</h3><div class="muted">In questa schermata si raccolgono e si salvano soltanto i dati della richiesta cliente. La struttura pasti, il JSON del piano e i valori nutrizionali NON vengono generati né caricati qui. Dopo aver copiato i dati e averli caricati nell’AI, genera il piano completo in JSON e importalo successivamente dalla funzione «Importa piano generato da ChatGPT» nella sezione Nutrizione. Il piano importato resta non visibile al cliente finché non viene revisionato.</div>
+ <div class="formgrid">${field('Titolo del piano','title')}${field('Data emissione','issue_date','date')}${field('Valido dal','valid_from','date')}${field('Valido al','valid_to','date')}
  <div><label>Visibilità iniziale al cliente</label><select id="nrc_visibility"><option value="blocked" ${(a.visibility||'blocked')==='blocked'?'selected':''}>Bloccata — in revisione</option><option value="visible" ${a.visibility==='visible'?'selected':''}>Visibile</option></select></div>
  </div><div style="margin-top:10px"><label>Note per la preparazione</label><textarea id="nrc_notes" rows="3">${esc(a.notes||'')}</textarea></div></div>
- <div class="detailSection"><h3>6. Struttura dei pasti</h3><div class="muted">La bozza viene compilata dal generatore come punto di partenza. Verificare allergie, condizioni cliniche, quantità e valori nutrizionali. Le alternative non vanno sommate tra loro.</div><label>Struttura pasti / JSON del piano</label><textarea id="nrc_meal_structure" rows="9" placeholder="Giorno; pasto; variante; ingredienti; grammi; valori nutrizionali per 100 g…">${esc(a.meal_structure||'')}</textarea></div>
- <div class="detailSection"><h3>7. Prompt riutilizzabile</h3><p>La richiesta cliente e i dati raccolti saranno utilizzati come base; non inventare informazioni mancanti e segnalare le domande necessarie. Il piano resta bloccato fino alla revisione del professionista.</p><div class="actions"><button class="btn secondary" onclick="copyNutritionRequestPrompt('${id}')">Copia prompt</button><button class="btn secondary" onclick="copyNutritionRequestJson('${id}')">Copia dati richiesta in JSON</button></div></div>
+ <div class="detailSection"><h3>6. Esporta i dati da elaborare con AI</h3><p>Copia il prompt oppure i dati della richiesta in JSON. In questa fase vengono esportati i dati del cliente, non la struttura dei pasti o un piano nutrizionale già calcolato.</p><div class="actions"><button class="btn secondary" onclick="copyNutritionRequestPrompt('${id}')">Copia prompt AI</button><button class="btn secondary" onclick="copyNutritionRequestJson('${id}')">Copia dati richiesta in JSON</button></div></div>
  <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionRequestCompletion('${id}')">Salva completamento</button></div>`);
 }
 
@@ -2312,138 +2311,11 @@ async function saveNutritionRequestClientData(id){
  if(Array.isArray(nutritionData)){const idx=nutritionData.findIndex(v=>String(v.id)===String(id));if(idx>=0)nutritionData[idx]={...nutritionData[idx],...saved};}
  alert('Verifica completata: dati riletti da Supabase.\n\nValori letti dal modulo:\n'+captured+'\n\nValori confermati nel database:\n'+required.map(k=>k+': '+(actual(k)??'VUOTO')).join('\n'));
 }
-async function generateNutritionDraft(id){
- if(!isSuperuserRole())return;
- const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();
- if(r.error){alert('Impossibile leggere la richiesta: '+r.error.message);return;}
- const x=r.data||{};
- // Compatibilità con vecchi record che salvavano il numero di pasti ("3"/"6") al posto dei nomi.
- const normalizeMeals=value=>{
-   const three=['Colazione','Pranzo','Cena'];
-   const six=['Colazione','Spuntino mattina','Pranzo','Spuntino pomeriggio','Cena','Spuntino serale'];
-   if(!Array.isArray(value))value=value==null?[]:[value];
-   const vals=value.map(v=>String(v??'').trim()).filter(Boolean);
-   if(vals.length===1&&vals[0]==='3')return three;
-   if(vals.length===1&&vals[0]==='6')return six;
-   const canonical=new Map([...three,...six].map(v=>[v.toLowerCase(),v]));
-   return vals.map(v=>canonical.get(v.toLowerCase())||v).filter(v=>[...six].includes(v));
- };
- x.meals_included=normalizeMeals(x.meals_included);
- // Controllo preliminare: non generare una bozza nutrizionale se i dati essenziali sono assenti o ambigui.
- const preflight=[];
- const txt=v=>String(v??'').trim();
- if(!txt(x.goal))preflight.push('Obiettivo nutrizionale');
- if(!txt(x.activity_level)||/^(studnte|e|-)$/i.test(txt(x.activity_level))||!/(sedent|bass|legger|moder|alt|intens|molto)/i.test(txt(x.activity_level)))preflight.push('Livello di attività quotidiana da chiarire');
- if(!txt(x.training)||/^(e|-)$/i.test(txt(x.training))||!(/\d/.test(txt(x.training))))preflight.push('Allenamento: durata, frequenza e tipo');
- if(!txt(x.foods_liked)||/^(e|-)$/i.test(txt(x.foods_liked)))preflight.push('Alimenti graditi');
- if(!txt(x.foods_avoid)||/^(e|-)$/i.test(txt(x.foods_avoid)))preflight.push('Alimenti da evitare');
- if(!txt(x.allergies_intolerances)||/^(e|-)$/i.test(txt(x.allergies_intolerances)))preflight.push('Conferma esplicita di allergie/intolleranze assenti o elenco presente');
- if(!Array.isArray(x.meals_included)||!x.meals_included.length)preflight.push('Pasti da includere');
- if(!txt(x.medical_conditions)||/^(e|-)$/i.test(txt(x.medical_conditions)))preflight.push('Conferma delle condizioni cliniche');
- if(!txt(x.professional_advice))preflight.push('Indicazioni del professionista responsabile');
- if(preflight.length){
-   alert('GENERAZIONE SOSPESA: mancano informazioni necessarie o ci sono dati da chiarire.\n\nCompleta o correggi questi campi nella richiesta, salva e riprova:\n• '+preflight.join('\n• ')+'\n\nNon è stato generato né pubblicato alcun piano.');
-   return;
- }
- // Usa prima i dati salvati nella richiesta, poi i campi modificabili del modulo amministrativo.
- // Per peso/altezza può usare la rilevazione più recente importata dallo storico Progressi.
- const readAdmin=(key)=>{const el=document.getElementById('nrq_'+key);return el?el.value.trim():'';};
- const num=(v)=>{if(v===null||v===undefined||String(v).trim()==='')return NaN;return Number(String(v).replace(',','.'));};
- const progressRows=((window.__nutritionProgressRows||{})[String(id)]||[]).slice().sort((a,b)=>new Date(progressDate(b)||b.created_at||0)-new Date(progressDate(a)||a.created_at||0));
- const latest=progressRows[0]||{};
- const savedWeight=num(x.weight_kg)||num(x.admin_completion?.weight_kg)||num(x.admin_completion?.client_data?.weight_kg)||num(readAdmin('weight_kg'));
- const progressWeight=progressField(latest,['weight_kg','weight','peso','body_weight']);
- // Non usare automaticamente misure palesemente anomale dallo storico (es. 5 kg per un cliente adulto).
- const w=(savedWeight>0?savedWeight:(progressWeight>=20&&progressWeight<=350?progressWeight:NaN));
- const savedHeight=num(x.height_cm)||num(x.admin_completion?.height_cm)||num(x.admin_completion?.client_data?.height_cm)||num(readAdmin('height_cm'));
- const progressHeight=progressField(latest,['height_cm','height','altezza']);
- const h=(savedHeight>0?savedHeight:(progressHeight>=100&&progressHeight<=250?progressHeight:NaN));
- const age=num(x.age_years??x.age)||num(x.admin_completion?.client_data?.age_years)||num(x.admin_completion?.age_years)||num(readAdmin('age_years'));
- const sex=String(x.sex||x.gender||x.admin_completion?.client_data?.sex||x.admin_completion?.sex||readAdmin('sex')||'').toLowerCase();
- const missing=[];
- if(!(w>0))missing.push('peso');
- if(!(h>0))missing.push('altezza');
- if(!(age>0))missing.push('età');
- if(!sex)missing.push('sesso');
- if(missing.length){alert('Per calcolare la bozza mancano: '+missing.join(', ')+'. Inseriscili nei campi della richiesta e premi «Salva modifiche ai dati cliente», poi riprova. Peso e altezza possono essere recuperati dall’ultimo Progressi solo se presenti nei dati caricati.');return;}
- const bmr=10*w+6.25*h-5*age+(sex.includes('masch')||sex==='m'?5:sex.includes('femmin')||sex==='f'?-161:-78);
- const activity=String(x.activity_level||'').toLowerCase();
- const factor=/molto|intens|alta/.test(activity)?1.65:/moder/.test(activity)?1.5:/legger|bassa/.test(activity)?1.35:1.2;
- let kcal=Math.round(bmr*factor/50)*50;
- const goal=String(x.goal||'').toLowerCase();
- if(/dimagr|perdere peso|calo peso/.test(goal))kcal=Math.max(1200,Math.round((kcal-300)/50)*50);
- else if(/massa|potenziamento|aument/.test(goal))kcal=Math.round((kcal+200)/50)*50;
- const protein=Math.round(w*(/massa|potenziamento/.test(goal)?1.6:1.4));
- const fats=Math.round(kcal*.28/9);
- const carbs=Math.max(0,Math.round((kcal-protein*4-fats*9)/4));
- const put=(k,v)=>{const el=document.getElementById('nrc_'+k);if(el)el.value=v;};
- put('title','Bozza piano alimentare KleosFit');put('issue_date',new Date().toISOString().slice(0,10));
- put('calories',kcal);put('protein_g',protein);put('carbs_g',carbs);put('fats_g',fats);
- if(!nutritionCompletionValue('water_l'))put('water_l',(Math.round(w*0.035*10)/10).toFixed(1));
- const meals=Array.isArray(x.meals_included)&&x.meals_included.length?x.meals_included:['Colazione','Pranzo','Cena'];
- const liked=String(x.foods_liked||'').toLowerCase();
- const avoid=String(x.foods_avoid||'').trim()||'non indicati';
- const diet=String(x.diet_style||'').trim()||'da chiarire';
- const days=[
-  ['Lunedì',['Yogurt bianco naturale 200 g, fiocchi d’avena 40 g, una mela','Pasta 80 g (peso a crudo) con pomodoro, olio EVO 10 g; petto di pollo 150 g; verdure 200 g','Orata o altro pesce 180 g; pane integrale 60 g; verdure 200 g; olio EVO 10 g']],
-  ['Martedì',['Due uova, pane integrale 60 g, un frutto','Riso 80 g (peso a crudo), ceci cotti 120 g, verdure 200 g, olio EVO 10 g','Tacchino 160 g, patate 250 g, verdure 200 g, olio EVO 10 g']],
-  ['Mercoledì',['Latte o bevanda non zuccherata 200 ml, pane integrale 60 g, ricotta 80 g','Pasta 80 g con zucchine e tonno al naturale sgocciolato 100 g, olio EVO 10 g','Salmone 150 g, pane integrale 50 g, verdure 200 g']],
-  ['Giovedì',['Yogurt bianco naturale 200 g, avena 40 g, una pera','Farro 80 g (peso a crudo), fagioli cotti 120 g, verdure 200 g, olio EVO 10 g','Pollo 160 g, riso 60 g (peso a crudo), verdure 200 g, olio EVO 10 g']],
-  ['Venerdì',['Due uova, pane integrale 60 g, un frutto','Riso 80 g (peso a crudo) con gamberi 150 g e verdure 200 g, olio EVO 10 g','Manzo magro 150 g, patate 200 g, verdure 200 g, olio EVO 10 g']],
-  ['Sabato',['Yogurt bianco naturale 200 g, muesli semplice 40 g, un frutto','Pasta 80 g con lenticchie cotte 150 g e pomodoro, olio EVO 10 g','Pesce bianco 180 g, pane integrale 60 g, verdure 200 g, olio EVO 10 g']],
-  ['Domenica',['Ricotta 100 g, pane integrale 60 g, un frutto','Riso 80 g (peso a crudo), pollo 150 g, verdure 200 g, olio EVO 10 g','Frittata di due uova con verdure, patate 200 g, insalata e olio EVO 10 g']]
- ];
- const selected=meals.map(m=>String(m).toLowerCase());
- const lines=[
- 'BOZZA SETTIMANALE AUTOMATICA — BLOCCATA, DA REVISIONARE PROFESSIONALMENTE',
- `Stima energetica indicativa: ${kcal} kcal/die; proteine ${protein} g; carboidrati ${carbs} g; grassi ${fats} g. Valori non verificati sul menu e non costituiscono prescrizione.`,
- `Obiettivo: ${x.goal||'da chiarire'}. Stile alimentare selezionato: ${diet}. Attività: ${x.activity_level||'da chiarire'}. Allenamento: ${x.training||'da chiarire'}.`,
- `Preferenze dichiarate: ${x.foods_liked||'non indicate'}. Alimenti da evitare: ${avoid}. Allergie/intolleranze dichiarate: ${x.allergies_intolerances||'da verificare'}.`,
- 'Le quantità sotto sono esempi orientativi; pasta/riso/farro pesati a crudo, legumi indicati cotti e sgocciolati. Verificare e adattare le porzioni prima dell’uso.',
- 'Non sono state inserite merende perché la richiesta seleziona tre pasti: '+meals.join(', ')+'.',
- ...days.map(([day,menu])=>`${day}\n${meals.map((m,i)=>`${m}: ${menu[/colazione/i.test(m)?0:/pranzo/i.test(m)?1:/cena/i.test(m)?2:i%3]}`).join('\n')}`),
- '',
- 'Prima dell’approvazione: controllare allergie/intolleranze, compatibilità con le preferenze e gli alimenti da evitare, grammature, energia e macro effettivi del menu. Sono riferiti due stent e uso di Cardioaspirina/omega-3: far verificare il piano dal medico o dietista responsabile. Non pubblicare finché non è stato approvato.'
- ];
- const ta=document.getElementById('nrc_meal_structure');
- if(!ta){alert('Campo menu non trovato: apri il pannello di completamento e riprova.');return;}
- const generated=lines.join('\n');
- if(!generated.includes('Lunedì')||!generated.includes('Domenica')||generated.includes('STRUTTURA MENU DA COMPLETARE/VALIDARE')){alert('Generazione non valida: non salvo il testo segnaposto.');return;}
- ta.value=generated;
- const vis=document.getElementById('nrc_visibility');if(vis)vis.value='blocked';
- // Salva menu, valori stimati e pasti canonici nella stessa operazione; verifica poi la rilettura da Supabase.
- const mealsToPersist=meals;
- const currentRequest=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();
- if(currentRequest.error){alert('Menu generato ma NON salvato: impossibile rileggere il completamento ('+currentRequest.error.message+').');return;}
- const baseCompletion=currentRequest.data?.admin_completion||{};
- const completion={...baseCompletion,
-   title:nutritionCompletionValue('title')||'Bozza piano alimentare KleosFit',
-   issue_date:nutritionCompletionValue('issue_date')||new Date().toISOString().slice(0,10),
-   calories:kcal,protein_g:protein,carbs_g:carbs,fats_g:fats,
-   water_l:num(nutritionCompletionValue('water_l')),
-   visibility:'blocked',meal_structure:generated,
-   completed_at:new Date().toISOString(),completed_by:currentUser?.id||baseCompletion.completed_by||null
- };
- const saveResult=await db.from('nutrition_plan_requests').update({meals_included:mealsToPersist,meals_per_day:mealsToPersist.length,admin_completion:completion}).eq('id',id).select('id,meals_included,admin_completion').maybeSingle();
- if(saveResult.error){alert('Menu generato nel modulo ma SALVATAGGIO FALLITO: '+saveResult.error.message+'\nIl piano non è stato salvato su Supabase.');return;}
- if(!saveResult.data){alert('Menu generato nel modulo ma Supabase non ha aggiornato alcuna riga. Il piano NON è salvato. Verifica ID e policy UPDATE.');return;}
- const verify=await db.from('nutrition_plan_requests').select('id,meals_included,admin_completion').eq('id',id).single();
- if(verify.error){alert('Aggiornamento inviato, ma verifica del salvataggio fallita: '+verify.error.message+'\nControlla il JSON prima di procedere.');return;}
- const saved=verify.data;
- if(!String(saved.admin_completion?.meal_structure||'').includes('Domenica')||String(saved.admin_completion?.visibility||'')!=='blocked'){
-   alert('ATTENZIONE: Supabase non conferma il menu completo o lo stato BLOCCATO. Non pubblicare il piano.');return;
- }
- if(!Array.isArray(saved.meals_included)||saved.meals_included.join('|')!==mealsToPersist.join('|')){
-   alert('Il menu è stato salvato ma i pasti non corrispondono ai valori attesi. Verifica la richiesta prima di continuare.');return;
- }
- alert('VERIFICATO SU SUPABASE: menu settimanale salvato in admin_completion.meal_structure; pasti corretti salvati come '+JSON.stringify(saved.meals_included)+'. Visibilità: BLOCCATA.');
- await loadNutritionRequests();
-}
 function nutritionCompletionValue(k){return document.getElementById('nrc_'+k)?.value?.trim()||'';}
 async function saveNutritionRequestCompletion(id){
  if(!isSuperuserRole()){alert('Salvataggio non autorizzato: sessione amministratore non riconosciuta.');return;}
  const num=k=>{const v=nutritionCompletionValue(k);if(!v)return null;const n=Number(v);return Number.isFinite(n)?n:null;};
- const data={title:nutritionCompletionValue('title'),issue_date:nutritionCompletionValue('issue_date')||null,valid_from:nutritionCompletionValue('valid_from')||null,valid_to:nutritionCompletionValue('valid_to')||null,calories:num('calories'),protein_g:num('protein_g'),carbs_g:num('carbs_g'),fats_g:num('fats_g'),water_l:num('water_l'),visibility:document.getElementById('nrc_visibility')?.value||'blocked',notes:nutritionCompletionValue('notes'),meal_structure:nutritionCompletionValue('meal_structure'),completed_at:new Date().toISOString(),completed_by:currentUser.id};
+ const data={title:nutritionCompletionValue('title'),issue_date:nutritionCompletionValue('issue_date')||null,valid_from:nutritionCompletionValue('valid_from')||null,valid_to:nutritionCompletionValue('valid_to')||null,visibility:document.getElementById('nrc_visibility')?.value||'blocked',notes:nutritionCompletionValue('notes'),completed_at:new Date().toISOString(),completed_by:currentUser.id};
  const old=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(old.error){alert('Impossibile leggere la richiesta prima del salvataggio: '+old.error.message);return;}
  const x=old.data||{};const clientPatch={};const clientExtra={};
  const numericKeys=new Set(['age_years','weight_kg','height_cm','meals_per_day','sleep_hours']);
@@ -2481,10 +2353,11 @@ async function saveNutritionRequestCompletion(id){
  if(missing.length){alert('Completamento salvato, ma questi campi non risultano persistiti: '+missing.join(', '));return;}
  closeModal();await loadNutritionRequests();alert('Completamento e dati cliente salvati e riletti da Supabase.');
 }
+async function nutritionRequestInputPayload(x){const keys=['id','user_id','plan_mode','goal','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','weight_kg','height_cm','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes','age_years','sex','created_at','updated_at'];const out={};for(const k of keys)if(x[k]!==undefined)out[k]=x[k];return out;}
 async function copyNutritionRequestPrompt(id){
- const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(r.error){alert(r.error.message);return;}const x=r.data||{};const prompt=`Prepara una bozza di piano nutrizionale usando esclusivamente i dati della richiesta KleosFit qui sotto. Non inventare informazioni mancanti: elenca le domande necessarie. Distingui i dati forniti dai calcoli stimati. Organizza i pasti richiesti e le alternative non sommabili, con ingredienti e quantità in grammi e valori nutrizionali per 100 g verificati. Gli obiettivi e il piano devono essere verificati dal professionista responsabile. Non rendere il piano visibile al cliente finché non è revisionato.\n\nDATI RICHIESTA:\n${JSON.stringify(x,null,2)}`;await navigator.clipboard.writeText(prompt);alert('Prompt copiato.');
+ const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(r.error){alert(r.error.message);return;}const x=await nutritionRequestInputPayload(r.data||{});const prompt=`Usa i dati della richiesta KleosFit qui sotto per elaborare DOPO questa fase un piano nutrizionale completo in JSON, compatibile con l'importazione dell'app. Non generare un menu prima di aver letto tutti i dati. Non inventare informazioni mancanti: elenca le domande necessarie. Calcola calorie e macronutrienti dagli alimenti e dalle grammature effettive usando valori nutrizionali verificabili; distingui i dati forniti dai risultati calcolati e segnala ogni valore non verificabile. Rispetta pasti richiesti, preferenze, alimenti esclusi, allergie e condizioni cliniche. Il piano deve restare bloccato e non visibile al cliente fino alla revisione e approvazione del professionista responsabile.\n\nDATI DELLA RICHIESTA CLIENTE:\n${JSON.stringify(x,null,2)}`;await navigator.clipboard.writeText(prompt);alert('Prompt AI copiato. I dati sono pronti per essere caricati nell’AI; il menu non è stato generato né salvato nel modulo.');
 }
-async function copyNutritionRequestJson(id){const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(r.error){alert(r.error.message);return;}await navigator.clipboard.writeText(JSON.stringify(r.data,null,2));alert('Dati della richiesta copiati in JSON.');}
+async function copyNutritionRequestJson(id){const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(r.error){alert(r.error.message);return;}const payload=await nutritionRequestInputPayload(r.data||{});await navigator.clipboard.writeText(JSON.stringify(payload,null,2));alert('JSON dei soli dati della richiesta copiato. Non contiene la struttura pasti o il piano nutrizionale.');}
 async function updateNutritionRequestStatus(id){if(!isSuperuserRole())return;const status=document.getElementById('nrs_'+id)?.value;if(!status)return;const r=await db.from('nutrition_plan_requests').update({status,reviewed_at:new Date().toISOString(),reviewed_by:currentUser.id}).eq('id',id);if(r.error){alert('Stato non aggiornato: '+r.error.message);return;}await loadNutritionRequests();}
 
 async function loadNutrition(){

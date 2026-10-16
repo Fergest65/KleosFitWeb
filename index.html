@@ -2145,6 +2145,7 @@ async function editNutritionRequestCompletion(id){
  };const help=guidance[key]||'';return `<div><label>${label}</label>${type==='textarea'?`${help?`<div class="muted" style="font-size:12px;margin:3px 0 6px">${help}</div>`:''}<textarea id="nrq_${key}" rows="4" placeholder="${help}">${esc(value)}</textarea>`:`<input id="nrq_${key}" type="${type}" value="${esc(value)}">`}</div>`;};
  openModal(`<div class="modalhead"><div><h2 style="margin:0">Completa prospetto nutrizionale</h2><div class="sub">Puoi consultare e correggere i dati inviati dal cliente, poi completare il piano.</div></div><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="formgrid">${reqFields.map(([label,key,type])=>reqInput(label,key,type)).join('')}</div><div class="actions"><button class="btn secondary" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
+ <div class="detailSection"><h3>Parametri professionali — Progressi del cliente</h3><div class="muted">Seleziona una o più rilevazioni dello storico del cliente. Puoi importare solo quelle utili al piano; i dati saranno aggiunti al campo Parametri professionali e resteranno modificabili.</div><div class="actions"><button class="btn secondary" type="button" onclick="loadNutritionClientProgress('${id}')">Carica elenco Progressi</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',true)">Seleziona tutti</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',false)">Deseleziona tutti</button><button class="btn" type="button" onclick="importSelectedNutritionProgress('${id}')">Importa selezionati</button></div><div id="nrq_progress_import_${id}" style="margin-top:10px"></div></div>
  <div class="detailSection"><h3>5. Impostazioni del piano KleosFit</h3><div class="muted">Usa il pulsante di generazione per stimare calorie e macronutrienti e preparare una bozza modificabile. I valori sono stime da verificare prima della pubblicazione.</div><div class="actions"><button class="btn" onclick="generateNutritionDraft('${id}')">Calcola valori e genera bozza</button></div><div class="formgrid">
  ${field('Titolo del piano','title')}${field('Data emissione','issue_date','date')}${field('Valido dal','valid_from','date')}${field('Valido al','valid_to','date')}${field('Calorie (kcal)','calories','number')}${field('Proteine (g)','protein_g','number')}${field('Carboidrati (g)','carbs_g','number')}${field('Grassi (g)','fats_g','number')}${field('Acqua (L)','water_l','number')}
  <div><label>Visibilità iniziale al cliente</label><select id="nrc_visibility"><option value="blocked" ${(a.visibility||'blocked')==='blocked'?'selected':''}>Bloccata — in revisione</option><option value="visible" ${a.visibility==='visible'?'selected':''}>Visibile</option></select></div>
@@ -2152,6 +2153,59 @@ async function editNutritionRequestCompletion(id){
  <div class="detailSection"><h3>6. Struttura dei pasti</h3><div class="muted">La bozza viene compilata dal generatore come punto di partenza. Verificare allergie, condizioni cliniche, quantità e valori nutrizionali. Le alternative non vanno sommate tra loro.</div><label>Struttura pasti / JSON del piano</label><textarea id="nrc_meal_structure" rows="9" placeholder="Giorno; pasto; variante; ingredienti; grammi; valori nutrizionali per 100 g…">${esc(a.meal_structure||'')}</textarea></div>
  <div class="detailSection"><h3>7. Prompt riutilizzabile</h3><p>La richiesta cliente e i dati raccolti saranno utilizzati come base; non inventare informazioni mancanti e segnalare le domande necessarie. Il piano resta bloccato fino alla revisione del professionista.</p><div class="actions"><button class="btn secondary" onclick="copyNutritionRequestPrompt('${id}')">Copia prompt</button><button class="btn secondary" onclick="copyNutritionRequestJson('${id}')">Copia dati richiesta in JSON</button></div></div>
  <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionRequestCompletion('${id}')">Salva completamento</button></div>`);
+}
+
+
+async function loadNutritionClientProgress(requestId){
+ if(!isSuperuserRole())return;
+ const target=document.getElementById('nrq_progress_import_'+requestId);
+ if(!target)return;
+ target.textContent='Caricamento misurazioni del cliente…';
+ const q=await db.from('nutrition_plan_requests').select('user_id').eq('id',requestId).maybeSingle();
+ if(q.error||!q.data?.user_id){target.textContent='Impossibile identificare il cliente della richiesta: '+(q.error?.message||'user_id mancante');return;}
+ const r=await db.from('progress_entries').select('*').eq('user_id',q.data.user_id).order('created_at',{ascending:false}).limit(200);
+ if(r.error){target.textContent='Storico Progressi non disponibile: '+r.error.message;return;}
+ const rows=(r.data||[]).slice().sort((a,b)=>new Date(progressDate(b)||b.created_at||0)-new Date(progressDate(a)||a.created_at||0));
+ if(!rows.length){target.textContent='Nessuna misurazione trovata in Progressi per questo cliente.';return;}
+ window.__nutritionProgressRows=window.__nutritionProgressRows||{};
+ window.__nutritionProgressRows[String(requestId)]=rows;
+ const defs=Array.isArray(progressDefs)?progressDefs:[];
+ target.innerHTML='';
+ const intro=document.createElement('div');intro.className='muted';intro.textContent=rows.length+' rilevazioni trovate. Seleziona quelle da importare:';target.appendChild(intro);
+ const list=document.createElement('div');list.style.cssText='display:grid;gap:8px;margin-top:8px';
+ rows.forEach((row,i)=>{
+  const label=document.createElement('label');label.style.cssText='display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px solid var(--border,#ddd);border-radius:8px;cursor:pointer';
+  const cb=document.createElement('input');cb.type='checkbox';cb.className='nrq-progress-select';cb.dataset.requestId=String(requestId);cb.value=String(i);cb.style.marginTop='3px';
+  const content=document.createElement('span');
+  const date=progressDate(row)||row.created_at||'';
+  const vals=defs.map(([name,names,unit])=>{const v=progressField(row,names);return v===null||v===undefined?'':name+': '+Number(v).toLocaleString('it-IT',{maximumFractionDigits:2})+unit;}).filter(Boolean);
+  const notes=firstVal(row,['notes','note'],'');
+  content.textContent=(date?fmtDate(date)+' — ':'')+(vals.join(' · ')||'Nessun valore misurato')+(notes?' — Note: '+notes:'');
+  label.append(cb,content);list.appendChild(label);
+ });
+ target.appendChild(list);
+}
+function selectAllNutritionProgress(requestId,checked){
+ document.querySelectorAll('.nrq-progress-select').forEach(cb=>{if(cb.dataset.requestId===String(requestId))cb.checked=!!checked;});
+}
+async function importSelectedNutritionProgress(requestId){
+ if(!isSuperuserRole())return;
+ const target=document.getElementById('nrq_progress_import_'+requestId);
+ const field=document.getElementById('nrq_professional_measures');
+ if(!target||!field)return;
+ const rows=(window.__nutritionProgressRows||{})[String(requestId)]||[];
+ const selected=[...document.querySelectorAll('.nrq-progress-select')].filter(cb=>cb.dataset.requestId===String(requestId)&&cb.checked).map(cb=>rows[Number(cb.value)]).filter(Boolean);
+ if(!selected.length){const msg=document.createElement('div');msg.className='muted';msg.textContent='Seleziona almeno una rilevazione prima di importare.';target.appendChild(msg);return;}
+ const defs=Array.isArray(progressDefs)?progressDefs:[];
+ const lines=selected.map(row=>{
+  const date=progressDate(row)||row.created_at||'';
+  const vals=defs.map(([label,names,unit])=>{const v=progressField(row,names);return v===null||v===undefined?'':label+': '+Number(v).toLocaleString('it-IT',{maximumFractionDigits:2})+unit;}).filter(Boolean);
+  const note=firstVal(row,['notes','note'],'');
+  return [date?'Data: '+fmtDate(date):'',...vals,note?'Note: '+note:''].filter(Boolean).join(' · ');
+ }).filter(Boolean);
+ const imported='Misurazioni importate dalla sezione Progressi ('+selected.length+' rilevazioni selezionate):\n'+lines.join('\n');
+ field.value=[field.value.trim(),imported].filter(Boolean).join('\n\n');
+ const msg=document.createElement('div');msg.className='muted';msg.textContent='Importate '+selected.length+' rilevazioni. Controlla il campo Parametri professionali, poi salva le modifiche.';target.appendChild(msg);
 }
 
 async function saveNutritionRequestClientData(id){

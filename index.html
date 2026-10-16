@@ -2298,6 +2298,23 @@ async function generateNutritionDraft(id){
  const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();
  if(r.error){alert('Impossibile leggere la richiesta: '+r.error.message);return;}
  const x=r.data||{};
+ // Controllo preliminare: non generare una bozza nutrizionale se i dati essenziali sono assenti o ambigui.
+ const preflight=[];
+ const txt=v=>String(v??'').trim();
+ if(!txt(x.goal))preflight.push('Obiettivo nutrizionale');
+ if(!txt(x.activity_level)||/^(studnte|e|-)$/i.test(txt(x.activity_level))||!/(sedent|bass|legger|moder|alt|intens|molto)/i.test(txt(x.activity_level)))preflight.push('Livello di attività quotidiana da chiarire');
+ if(!txt(x.training)||/^(e|-)$/i.test(txt(x.training))||!(/\d/.test(txt(x.training))))preflight.push('Allenamento: durata, frequenza e tipo');
+ if(!txt(x.foods_liked)||/^(e|-)$/i.test(txt(x.foods_liked)))preflight.push('Alimenti graditi');
+ if(!txt(x.foods_avoid)||/^(e|-)$/i.test(txt(x.foods_avoid)))preflight.push('Alimenti da evitare');
+ if(!txt(x.allergies_intolerances)||/^(e|-)$/i.test(txt(x.allergies_intolerances)))preflight.push('Conferma esplicita di allergie/intolleranze assenti o elenco presente');
+ if(!Array.isArray(x.meals_included)||!x.meals_included.length)preflight.push('Pasti da includere');
+ if(Number(x.meals_per_day)>0&&Array.isArray(x.meals_included)&&x.meals_included.length!==Number(x.meals_per_day))preflight.push('Incongruenza tra numero pasti al giorno e momenti alimentari selezionati');
+ if(!txt(x.medical_conditions)||/^(e|-)$/i.test(txt(x.medical_conditions)))preflight.push('Conferma delle condizioni cliniche');
+ if(!txt(x.professional_advice))preflight.push('Indicazioni del professionista responsabile');
+ if(preflight.length){
+   alert('GENERAZIONE SOSPESA: mancano informazioni necessarie o ci sono dati da chiarire.\n\nCompleta o correggi questi campi nella richiesta, salva e riprova:\n• '+preflight.join('\n• ')+'\n\nNon è stato generato né pubblicato alcun piano.');
+   return;
+ }
  // Usa prima i dati salvati nella richiesta, poi i campi modificabili del modulo amministrativo.
  // Per peso/altezza può usare la rilevazione più recente importata dallo storico Progressi.
  const readAdmin=(key)=>{const el=document.getElementById('nrq_'+key);return el?el.value.trim():'';};
@@ -4896,7 +4913,7 @@ async function importNutritionJson(){
  const user=document.getElementById('niUser')?.value,raw=document.getElementById('niJson')?.value||'',btn=document.getElementById('niImportBtn');
  if(!user){notice('niMsg','Seleziona il cliente destinatario.');return;}
  let data;try{data=JSON.parse(raw);}catch(e){notice('niMsg','JSON non valido: '+e.message);return;}
- const errors=nutritionValidateImport(data);if(errors.length){notice('niMsg','Correggi questi punti prima di importare:<br>'+errors.map(esc).join('<br>'));return;}
+ const errors=nutritionValidateImport(data);if(errors.length){notice('niMsg','Correggi questi punti prima di importare:\n• '+errors.join('\n• '));return;}
  if(!confirm('Creare un nuovo piano per '+nutritionClientLabel(user)+'? I piani esistenti non verranno modificati.'))return;
  if(btn){btn.disabled=true;btn.textContent='Importazione in corso…';}
  const fail=async(message,planId)=>{if(btn){btn.disabled=false;btn.textContent='Importa e crea piano';}notice('niMsg',message+(planId?' Il piano è stato creato (ID '+planId+'), ma l’importazione è incompleta: apri il piano e completa i dati mancanti.':' Gestione annullata; nessun altro dato è stato importato.'));};

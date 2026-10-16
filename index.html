@@ -2356,20 +2356,33 @@ async function generateNutritionDraft(id){
  put('calories',kcal);put('protein_g',protein);put('carbs_g',carbs);put('fats_g',fats);
  if(!nutritionCompletionValue('water_l'))put('water_l',(Math.round(w*0.035*10)/10).toFixed(1));
  const meals=Array.isArray(x.meals_included)&&x.meals_included.length?x.meals_included:['Colazione','Pranzo','Cena'];
+ const liked=String(x.foods_liked||'').toLowerCase();
+ const avoid=String(x.foods_avoid||'').trim()||'non indicati';
+ const diet=String(x.diet_style||'').trim()||'da chiarire';
+ const days=[
+  ['Lunedì',['Yogurt bianco naturale 200 g, fiocchi d’avena 40 g, una mela','Pasta 80 g (peso a crudo) con pomodoro, olio EVO 10 g; petto di pollo 150 g; verdure 200 g','Orata o altro pesce 180 g; pane integrale 60 g; verdure 200 g; olio EVO 10 g']],
+  ['Martedì',['Due uova, pane integrale 60 g, un frutto','Riso 80 g (peso a crudo), ceci cotti 120 g, verdure 200 g, olio EVO 10 g','Tacchino 160 g, patate 250 g, verdure 200 g, olio EVO 10 g']],
+  ['Mercoledì',['Latte o bevanda non zuccherata 200 ml, pane integrale 60 g, ricotta 80 g','Pasta 80 g con zucchine e tonno al naturale sgocciolato 100 g, olio EVO 10 g','Salmone 150 g, pane integrale 50 g, verdure 200 g']],
+  ['Giovedì',['Yogurt bianco naturale 200 g, avena 40 g, una pera','Farro 80 g (peso a crudo), fagioli cotti 120 g, verdure 200 g, olio EVO 10 g','Pollo 160 g, riso 60 g (peso a crudo), verdure 200 g, olio EVO 10 g']],
+  ['Venerdì',['Due uova, pane integrale 60 g, un frutto','Riso 80 g (peso a crudo) con gamberi 150 g e verdure 200 g, olio EVO 10 g','Manzo magro 150 g, patate 200 g, verdure 200 g, olio EVO 10 g']],
+  ['Sabato',['Yogurt bianco naturale 200 g, muesli semplice 40 g, un frutto','Pasta 80 g con lenticchie cotte 150 g e pomodoro, olio EVO 10 g','Pesce bianco 180 g, pane integrale 60 g, verdure 200 g, olio EVO 10 g']],
+  ['Domenica',['Ricotta 100 g, pane integrale 60 g, un frutto','Riso 80 g (peso a crudo), pollo 150 g, verdure 200 g, olio EVO 10 g','Frittata di due uova con verdure, patate 200 g, insalata e olio EVO 10 g']]
+ ];
+ const selected=meals.map(m=>String(m).toLowerCase());
  const lines=[
- 'BOZZA AUTOMATICA — DA REVISIONARE, NON PUBBLICARE SENZA VERIFICA',
- `Stima energetica: ${kcal} kcal/die; proteine ${protein} g; carboidrati ${carbs} g; grassi ${fats} g.`,
- 'I valori sono stime basate su formula predittiva e dati disponibili, non una prescrizione clinica.',
- `Obiettivo dichiarato: ${x.goal||'da chiarire'}. Stile alimentare: ${x.diet_style||'da chiarire'}.`,
- `Allergie/intolleranze da controllare prima di usare il menu: ${x.allergies_intolerances||'non indicate'}. Alimenti da evitare: ${x.foods_avoid||'non indicati'}.`,
+ 'BOZZA SETTIMANALE AUTOMATICA — BLOCCATA, DA REVISIONARE PROFESSIONALMENTE',
+ `Stima energetica indicativa: ${kcal} kcal/die; proteine ${protein} g; carboidrati ${carbs} g; grassi ${fats} g. Valori non verificati sul menu e non costituiscono prescrizione.`,
+ `Obiettivo: ${x.goal||'da chiarire'}. Stile alimentare selezionato: ${diet}. Attività: ${x.activity_level||'da chiarire'}. Allenamento: ${x.training||'da chiarire'}.`,
+ `Preferenze dichiarate: ${x.foods_liked||'non indicate'}. Alimenti da evitare: ${avoid}. Allergie/intolleranze dichiarate: ${x.allergies_intolerances||'da verificare'}.`,
+ 'Le quantità sotto sono esempi orientativi; pasta/riso/farro pesati a crudo, legumi indicati cotti e sgocciolati. Verificare e adattare le porzioni prima dell’uso.',
+ 'Non sono state inserite merende perché la richiesta seleziona tre pasti: '+meals.join(', ')+'.',
+ ...days.map(([day,menu])=>`${day}\n${meals.map((m,i)=>`${m}: ${menu[/colazione/i.test(m)?0:/pranzo/i.test(m)?1:/cena/i.test(m)?2:i%3]}`).join('\n')}`),
  '',
- 'STRUTTURA MENU DA COMPLETARE/VALIDARE',
- ...meals.map(m=>`${m}: scegliere alimenti compatibili con preferenze e allergie; definire ingredienti e grammature pesate, indicando se a crudo o cotto. Inserire un’alternativa equivalente non sommabile.`),
- '',
- 'Prima dell’approvazione: verificare età/sesso, attività, obiettivo, farmaci, condizioni riferite, allergie, adeguatezza energetica e valori nutrizionali da fonte affidabile. Se i dati clinici sono incompleti, chiedere chiarimenti al cliente.'
+ 'Prima dell’approvazione: controllare allergie/intolleranze, compatibilità con le preferenze e gli alimenti da evitare, grammature, energia e macro effettivi del menu. Sono riferiti due stent e uso di Cardioaspirina/omega-3: far verificare il piano dal medico o dietista responsabile. Non pubblicare finché non è stato approvato.'
  ];
  const ta=document.getElementById('nrc_meal_structure');if(ta)ta.value=lines.join('\n');
- alert('Stima e struttura preliminare inserite. Il menu non contiene ancora grammature validate: completare e verificare la bozza prima di approvarla.');
+ const vis=document.getElementById('nrc_visibility');if(vis)vis.value='blocked';
+ alert('Bozza settimanale con pasti e porzioni indicative generata usando i dati salvati. La visibilità è stata mantenuta su BLOCCATA: verificare menu, quantità e valori nutrizionali con il professionista prima della pubblicazione.');
 }
 function nutritionCompletionValue(k){return document.getElementById('nrc_'+k)?.value?.trim()||'';}
 async function saveNutritionRequestCompletion(id){

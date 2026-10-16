@@ -2348,13 +2348,27 @@ async function generateNutritionDraft(id){
 }
 function nutritionCompletionValue(k){return document.getElementById('nrc_'+k)?.value?.trim()||'';}
 async function saveNutritionRequestCompletion(id){
- if(!isSuperuserRole())return;
+ if(!isSuperuserRole()){alert('Salvataggio non autorizzato: sessione amministratore non riconosciuta.');return;}
  const num=k=>{const v=nutritionCompletionValue(k);if(!v)return null;const n=Number(v);return Number.isFinite(n)?n:null;};
  const data={title:nutritionCompletionValue('title'),issue_date:nutritionCompletionValue('issue_date')||null,valid_from:nutritionCompletionValue('valid_from')||null,valid_to:nutritionCompletionValue('valid_to')||null,calories:num('calories'),protein_g:num('protein_g'),carbs_g:num('carbs_g'),fats_g:num('fats_g'),water_l:num('water_l'),visibility:document.getElementById('nrc_visibility')?.value||'blocked',notes:nutritionCompletionValue('notes'),meal_structure:nutritionCompletionValue('meal_structure'),completed_at:new Date().toISOString(),completed_by:currentUser.id};
- const old=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();if(old.error){alert('Impossibile leggere il completamento: '+old.error.message);return;}
- const merged={...(old.data?.admin_completion||{}),...data};const res=await db.from('nutrition_plan_requests').update({admin_completion:merged}).eq('id',id);
- if(res.error){alert('Salvataggio non riuscito: '+res.error.message+'. Verifica la migrazione SQL admin_completion.');return;}
- closeModal();await loadNutritionRequests();alert('Completamento amministratore salvato.');
+ const old=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(old.error){alert('Impossibile leggere la richiesta prima del salvataggio: '+old.error.message);return;}
+ const x=old.data||{};const clientPatch={};const clientExtra={};
+ const numericKeys=new Set(['age_years','weight_kg','height_cm','meals_per_day','sleep_hours']);
+ const arrayKeys=new Set(['meals_included']);
+ const clientKeys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
+ for(const key of clientKeys){const el=document.getElementById('nrq_'+key);if(!el)continue;let raw=String(el.value??'').trim();if(raw==='')continue;let value=raw;if(numericKeys.has(key)){value=Number(raw.replace(',','.'));if(!Number.isFinite(value)){alert('Valore numerico non valido: '+key);el.focus();return;}}else if(arrayKeys.has(key)){value=raw.split(',').map(v=>v.trim()).filter(Boolean);}if(['age_years','sex','weight_kg','height_cm'].includes(key))clientExtra[key]=value;else clientPatch[key]=value;}
+ const oldCompletion=x.admin_completion||{};const merged={...oldCompletion,...data,client_data:{...(oldCompletion.client_data||{}),...clientExtra}};
+ const patch={...clientPatch,admin_completion:merged};
+ // Persisti i quattro campi anche nelle colonne dedicate; i campi vuoti non cancellano valori già salvati.
+ for(const key of ['age_years','sex','weight_kg','height_cm'])if(clientExtra[key]!==undefined)patch[key]=clientExtra[key];
+ const res=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,weight_kg,height_cm,age_years,sex,admin_completion').maybeSingle();
+ if(res.error){alert('Salvataggio non riuscito: '+res.error.message);return;}
+ if(!res.data){alert('Supabase non ha aggiornato alcuna riga. Verifica ID richiesta e autorizzazioni UPDATE.');return;}
+ const verify=await db.from('nutrition_plan_requests').select('id,weight_kg,height_cm,age_years,sex,admin_completion').eq('id',id).single();
+ if(verify.error){alert('Salvato, ma verifica non riuscita: '+verify.error.message);return;}
+ const saved=verify.data;const missing=['age_years','sex','weight_kg','height_cm'].filter(k=>clientExtra[k]!==undefined&&String(saved[k]??saved.admin_completion?.client_data?.[k]??'').trim()==='');
+ if(missing.length){alert('Completamento salvato, ma questi campi non risultano persistiti: '+missing.join(', '));return;}
+ closeModal();await loadNutritionRequests();alert('Completamento e dati cliente salvati e riletti da Supabase.');
 }
 async function copyNutritionRequestPrompt(id){
  const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();if(r.error){alert(r.error.message);return;}const x=r.data||{};const prompt=`Prepara una bozza di piano nutrizionale usando esclusivamente i dati della richiesta KleosFit qui sotto. Non inventare informazioni mancanti: elenca le domande necessarie. Distingui i dati forniti dai calcoli stimati. Organizza i pasti richiesti e le alternative non sommabili, con ingredienti e quantità in grammi e valori nutrizionali per 100 g verificati. Gli obiettivi e il piano devono essere verificati dal professionista responsabile. Non rendere il piano visibile al cliente finché non è revisionato.\n\nDATI RICHIESTA:\n${JSON.stringify(x,null,2)}`;await navigator.clipboard.writeText(prompt);alert('Prompt copiato.');

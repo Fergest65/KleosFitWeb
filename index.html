@@ -234,7 +234,7 @@ workout:`<div class="top"><div><div class="title">Workout</div><div class="sub">
 <div class="card"><div class="inputrow"><input id="workoutSearch" placeholder="Cerca scheda o esercizio" oninput="filterWorkouts()"><select id="workoutUserFilter" style="max-width:280px" onchange="filterWorkouts()"><option value="">Tutti gli utenti</option></select><button class="btn" onclick="loadWorkouts()">Aggiorna</button></div>
 <div class="muted" style="margin:4px 0 14px">Ogni scheda viene collegata al cliente tramite <b>user_id</b> di Supabase.</div><div id="workoutError" class="error"></div><div id="workoutCount" class="muted">Caricamento...</div><div id="workoutList" style="margin-top:12px">Caricamento schede...</div></div>`,
 nutrition:`<div class="top"><div><div class="title">Nutrizione</div><div class="sub">Piani, alimenti, varianti e calcoli nutrizionali</div></div></div>
-<div class="card nutritionToolbar"><div class="inputrow"><div id="nutritionSearchWrap" style="flex:1"><input id="nutritionSearch" placeholder="Cerca piano, descrizione o cliente" oninput="filterNutrition()"></div><button class="btn secondary" onclick="loadNutrition()">Aggiorna</button></div><div class="rowactions" id="nutritionAdminActions"><button class="btn" onclick="openCreateNutritionPlan()">+ Nuovo piano</button><button class="btn secondary" onclick="toggleNutritionFoods()">Catalogo alimenti</button></div></div>
+<div class="card nutritionToolbar"><div class="inputrow"><div id="nutritionSearchWrap" style="flex:1"><input id="nutritionSearch" placeholder="Cerca piano, descrizione o cliente" oninput="filterNutrition()"></div><button class="btn secondary" onclick="loadNutrition()">Aggiorna</button></div><div class="rowactions" id="nutritionAdminActions"><button class="btn" onclick="openCreateNutritionPlan()">+ Nuovo piano</button><button class="btn" onclick="openNutritionImport()">Importa piano ChatGPT</button><button class="btn secondary" onclick="downloadNutritionTemplate()">Scarica modello</button><button class="btn secondary" onclick="toggleNutritionFoods()">Catalogo alimenti</button></div></div>
 <div id="nutritionError" class="error"></div><div id="nutritionCount" class="muted" style="margin-top:12px">Caricamento...</div><div id="nutritionList" style="margin-top:12px">Caricamento piani...</div>
 <div id="nutritionFoodsPanel" class="card" style="display:none;margin-top:18px"><div class="nutritionPanelHead"><div><h2 style="margin:0">Catalogo alimenti</h2><div class="muted">Valori nutrizionali riferiti a 100 g. Per ora sono supportati solo alimenti pesati in grammi.</div></div><button class="btn secondary mini" onclick="toggleNutritionFoods(false)">Chiudi</button></div><div class="rowactions" id="nutritionFoodAdminActions" style="margin:14px 0"><button class="btn" onclick="openNutritionFoodForm()">+ Nuovo alimento</button><button class="btn secondary" onclick="loadNutritionFoods()">Aggiorna catalogo</button></div><div id="nutritionFoodError" class="error"></div><div id="nutritionFoodList" class="muted">Apri il catalogo per caricare gli alimenti.</div></div>`,
 booking:`<div class="top"><div><div class="title">Prenotazioni</div><div class="sub">${isClientRole()?'Prenota le tue lezioni disponibili':'Lezioni, slot e prenotazioni reali'}</div></div></div>
@@ -4509,6 +4509,81 @@ async function loadNutritionDaySummary(p,day){
  el.innerHTML=`<div class="nutritionMacroGrid"><div><span>Calorie</span><b>${nutritionFmt(x.calories_actual)} / ${nutritionFmt(x.calories_target)} kcal</b><div class="nutritionDiff">Differenza ${nutritionFmt(nutritionNumber(x.calories_actual)-nutritionNumber(x.calories_target))} kcal</div></div><div><span>Proteine</span><b>${nutritionFmt(x.protein_actual)} / ${nutritionFmt(x.protein_target)} g</b><div class="nutritionDiff">Differenza ${nutritionFmt(nutritionNumber(x.protein_actual)-nutritionNumber(x.protein_target))} g</div></div><div><span>Carboidrati</span><b>${nutritionFmt(x.carbs_actual)} / ${nutritionFmt(x.carbs_target)} g</b><div class="nutritionDiff">Differenza ${nutritionFmt(nutritionNumber(x.carbs_actual)-nutritionNumber(x.carbs_target))} g</div></div><div><span>Grassi</span><b>${nutritionFmt(x.fats_actual)} / ${nutritionFmt(x.fats_target)} g</b><div class="nutritionDiff">Differenza ${nutritionFmt(nutritionNumber(x.fats_actual)-nutritionNumber(x.fats_target))} g</div></div></div><div class="nutritionSmall" style="margin-top:7px">Acqua obiettivo: ${nutritionFmt(x.water_target_liters)} L</div>`;
 }
 function filterNutrition(){const q=(document.getElementById('nutritionSearch')?.value||'').toLowerCase().trim();renderNutrition(!q?nutritionData:nutritionData.filter(p=>JSON.stringify(p).toLowerCase().includes(q)||nutritionClientLabel(p.user_id).toLowerCase().includes(q)));}
+function nutritionImportTemplate(){
+ return {
+  schema_version:1,
+  plan:{title:"Piano nutrizionale",description:"",mode:"single",issue_date:"",valid_from:"",valid_to:"",visible:false,active:true,targets:{calories:0,protein_g:0,carbs_g:0,fats_g:0,water_liters:2.5}},
+  days:[{day_of_week:null,meals:[
+   {meal_type:"Colazione",name:"Colazione",description:"",selected_variant:"Alternativa 1",variants:[{name:"Alternativa 1",description:"",foods:[{name:"Nome alimento",category:"Altro",quantity_g:100,calories_per_100g:0,protein_per_100g:0,carbs_per_100g:0,fats_per_100g:0}]}]},
+   {meal_type:"Spuntino mattina",name:"Spuntino mattina",description:"",selected_variant:"Alternativa 1",variants:[]},
+   {meal_type:"Pranzo",name:"Pranzo",description:"",selected_variant:"Alternativa 1",variants:[]},
+   {meal_type:"Spuntino pomeriggio",name:"Spuntino pomeriggio",description:"",selected_variant:"Alternativa 1",variants:[]},
+   {meal_type:"Cena",name:"Cena",description:"",selected_variant:"Alternativa 1",variants:[]},
+   {meal_type:"Spuntino serale",name:"Spuntino serale",description:"",selected_variant:"Alternativa 1",variants:[]}
+  ]}],
+  supplements:[{name:"",dosage:"",timing:"",notes:""}]
+ };
+}
+function downloadNutritionTemplate(){
+ if(!canEditNutrition())return;
+ const blob=new Blob([JSON.stringify(nutritionImportTemplate(),null,2)],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='modello_import_piano_nutrizionale_kleosfit.json';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+async function openNutritionImport(){
+ if(!canEditNutrition())return;
+ if(!nutritionProfiles.length){const pr=await db.from('profiles').select('id,full_name,email,role').limit(1000);if(pr.error){alert('Impossibile leggere i clienti: '+pr.error.message);return;}nutritionProfiles=pr.data||[];}
+ const clients=nutritionProfiles.filter(u=>!['admin','administrator','amministratore','superuser','coach'].includes(String(u.role||'').toLowerCase()));
+ const opts=clients.map(u=>`<option value="${esc(u.id)}">${esc(u.full_name||u.email||u.id)}${u.email?' — '+esc(u.email):''}</option>`).join('');
+ openModal(`<div class="modalhead"><h2>Importa piano generato da ChatGPT</h2><button class="close" onclick="closeModal()">Chiudi</button></div><p class="muted">Seleziona il cliente e incolla il JSON del piano. Puoi anche scaricare il modello riutilizzabile dalla pagina Nutrizione. L'importazione crea un nuovo piano e non sovrascrive piani esistenti.</p><div class="formgrid"><div class="wide"><label>Cliente destinatario</label><select id="niUser"><option value="">Seleziona cliente</option>${opts}</select></div><div class="wide"><label>JSON del piano</label><textarea id="niJson" rows="14" style="width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:#101217;color:white;font:12px ui-monospace,monospace" placeholder="Incolla qui il JSON prodotto da ChatGPT"></textarea></div><div class="wide"><label style="display:flex;gap:8px;align-items:center"><input id="niVisible" type="checkbox" style="width:auto"> Rendi visibile al cliente subito dopo l'importazione</label><div class="nutritionSmall">Per sicurezza il piano resta nascosto al cliente se questa casella non è selezionata.</div></div></div><div id="niMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="downloadNutritionTemplate()">Scarica modello JSON</button><button class="btn secondary" onclick="closeModal()">Annulla</button><button id="niImportBtn" class="btn" onclick="importNutritionJson()">Importa e crea piano</button></div>`);
+}
+function nutritionValidateImport(data){
+ const errors=[];
+ if(!data||typeof data!=='object')return ['Il JSON deve contenere un oggetto.'];
+ if(Number(data.schema_version)!==1)errors.push('schema_version deve essere 1.');
+ const p=data.plan||{};if(!String(p.title||'').trim())errors.push('Manca plan.title.');
+ if(!['single','weekly'].includes(p.mode))errors.push('plan.mode deve essere single oppure weekly.');
+ const t=p.targets||{};['calories','protein_g','carbs_g','fats_g','water_liters'].forEach(k=>{if(!Number.isFinite(Number(t[k]))||Number(t[k])<0)errors.push('Obiettivo non valido: '+k+'.');});
+ if(!Array.isArray(data.days)||!data.days.length)errors.push('days deve contenere almeno un giorno.');
+ const validDays=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+ (data.days||[]).forEach((d,di)=>{if(p.mode==='weekly'&&!validDays.includes(d.day_of_week))errors.push('Giorno settimanale non valido alla posizione '+(di+1)+'.');if(p.mode==='single'&&d.day_of_week!==null&&d.day_of_week!==undefined)errors.push('Nel piano single day_of_week deve essere null.');if(!Array.isArray(d.meals))errors.push('days['+di+'].meals deve essere un elenco.');(d.meals||[]).forEach((m,mi)=>{if(!nutritionMealTypes.includes(m.meal_type))errors.push('Tipo pasto non riconosciuto: '+m.meal_type+'.');if(!Array.isArray(m.variants))errors.push('Le varianti del pasto '+m.meal_type+' devono essere un elenco.');(m.variants||[]).forEach(v=>{if(!String(v.name||'').trim())errors.push('Una variante non ha nome.');if(!Array.isArray(v.foods))errors.push('Gli alimenti della variante '+v.name+' devono essere un elenco.');(v.foods||[]).forEach(f=>{if(!String(f.name||'').trim())errors.push('Un alimento non ha nome.');if(!Number.isFinite(Number(f.quantity_g))||Number(f.quantity_g)<=0)errors.push('Quantità in grammi non valida per '+(f.name||'alimento')+'.');['calories_per_100g','protein_per_100g','carbs_per_100g','fats_per_100g'].forEach(k=>{if(!Number.isFinite(Number(f[k]))||Number(f[k])<0)errors.push(k+' non valido per '+(f.name||'alimento')+'.');});});});if(m.selected_variant&&!((m.variants||[]).some(v=>v.name===m.selected_variant)))errors.push('La variante selezionata non corrisponde a una variante del pasto '+m.meal_type+'.');});});
+ if(p.mode==='weekly'&&data.days.length!==7)errors.push('Il piano settimanale deve contenere esattamente 7 giorni.');
+ if(p.mode==='single'&&data.days.length!==1)errors.push('Il piano giornaliero deve contenere esattamente 1 giorno.');
+ if(data.supplements!==undefined&&!Array.isArray(data.supplements))errors.push('supplements deve essere un elenco.');
+ return [...new Set(errors)];
+}
+async function importNutritionJson(){
+ if(!canEditNutrition())return;
+ const user=document.getElementById('niUser')?.value,raw=document.getElementById('niJson')?.value||'',btn=document.getElementById('niImportBtn');
+ if(!user){notice('niMsg','Seleziona il cliente destinatario.');return;}
+ let data;try{data=JSON.parse(raw);}catch(e){notice('niMsg','JSON non valido: '+e.message);return;}
+ const errors=nutritionValidateImport(data);if(errors.length){notice('niMsg','Correggi questi punti prima di importare:<br>'+errors.map(esc).join('<br>'));return;}
+ if(!confirm('Creare un nuovo piano per '+nutritionClientLabel(user)+'? I piani esistenti non verranno modificati.'))return;
+ if(btn){btn.disabled=true;btn.textContent='Importazione in corso…';}
+ const fail=async(message,planId)=>{if(btn){btn.disabled=false;btn.textContent='Importa e crea piano';}notice('niMsg',message+(planId?' Il piano è stato creato (ID '+planId+'), ma l’importazione è incompleta: apri il piano e completa i dati mancanti.':' Gestione annullata; nessun altro dato è stato importato.'));};
+ const catalog=await db.from('nutrition_foods').select('id,name,default_unit,is_active').limit(1000);if(catalog.error){notice('niMsg','Impossibile leggere il catalogo alimenti: '+catalog.error.message);if(btn){btn.disabled=false;btn.textContent='Importa e crea piano';}return;}nutritionFoodData=catalog.data||[];
+ const pp=data.plan,targets=pp.targets||{};
+ const planPayload={user_id:user,title:String(pp.title).trim(),description:pp.description||'',issue_date:pp.issue_date||new Date().toISOString().slice(0,10),valid_from:pp.valid_from||null,valid_to:pp.valid_to||null,plan_mode:pp.mode,calories_target:Number(targets.calories),protein_target:Number(targets.protein_g),carbs_target:Number(targets.carbs_g),fats_target:Number(targets.fats_g),water_target_liters:Number(targets.water_liters),is_visible:document.getElementById('niVisible').checked&&pp.visible!==false,is_active:pp.active!==false};
+ const pr=await db.from('nutrition_plans').insert(planPayload).select('id').single();if(pr.error){await fail('Errore creazione piano: '+pr.error.message);return;}const planId=pr.data.id;
+ for(const day of data.days){
+  for(let mi=0;mi<day.meals.length;mi++){
+   const meal=day.meals[mi];const mr=await db.from('nutrition_meals').insert({plan_id:planId,meal_type:meal.meal_type,name:meal.name||meal.meal_type,description:meal.description||'',sort_order:mi,day_of_week:pp.mode==='weekly'?day.day_of_week:null}).select('id').single();
+   if(mr.error){await fail('Errore creazione pasto '+meal.meal_type+': '+mr.error.message,planId);return;}const mealId=mr.data.id;let selectedId=null;
+   for(let vi=0;vi<meal.variants.length;vi++){
+    const variant=meal.variants[vi];const vr=await db.from('nutrition_meal_variants').insert({meal_id:mealId,name:variant.name,description:variant.description||'',sort_order:vi}).select('id').single();
+    if(vr.error){await fail('Errore creazione variante '+variant.name+': '+vr.error.message,planId);return;}const variantId=vr.data.id;if(variant.name===meal.selected_variant)selectedId=variantId;
+    for(let fi=0;fi<variant.foods.length;fi++){
+     const food=variant.foods[fi],name=String(food.name).trim();let existing=nutritionFoodData.find(f=>String(f.name||'').trim().toLowerCase()===name.toLowerCase());
+     if(!existing){const fr=await db.from('nutrition_foods').insert({name,category:food.category||'Altro',default_unit:'g',calories_per_100g:Number(food.calories_per_100g),protein_per_100g:Number(food.protein_per_100g),carbs_per_100g:Number(food.carbs_per_100g),fats_per_100g:Number(food.fats_per_100g),notes:food.notes||'',is_active:true,updated_at:new Date().toISOString()}).select('id,name,default_unit,is_active').single();if(fr.error){await fail('Errore inserimento alimento '+name+': '+fr.error.message,planId);return;}existing=fr.data;nutritionFoodData.push(existing);}
+     const vf=await db.from('nutrition_variant_foods').insert({variant_id:variantId,food_id:existing.id,quantity:Number(food.quantity_g),unit:'g',sort_order:fi,notes:food.notes||''});if(vf.error){await fail('Errore inserimento alimento nella variante '+name+': '+vf.error.message,planId);return;}
+    }
+   }
+   if(selectedId){const sr=await db.from('nutrition_meals').update({selected_variant_id:selectedId}).eq('id',mealId);if(sr.error){await fail('Errore selezione variante del pasto '+meal.meal_type+': '+sr.error.message,planId);return;}}
+  }
+ }
+ for(let i=0;i<(data.supplements||[]).length;i++){const x=data.supplements[i];if(!String(x.name||'').trim())continue;const sr=await db.from('nutrition_supplements').insert({plan_id:planId,name:String(x.name).trim(),dosage:x.dosage||'',timing:x.timing||'',notes:x.notes||'',sort_order:i});if(sr.error){await fail('Errore inserimento integratore '+x.name+': '+sr.error.message,planId);return;}}
+ if(btn){btn.disabled=false;btn.textContent='Importa e crea piano';}closeModal();await loadNutrition();alert('Piano importato correttamente e assegnato a '+nutritionClientLabel(user)+'.');
+}
+
 async function openCreateNutritionPlan(){
  if(!canEditNutrition())return;
  if(!nutritionProfiles.length){const r=await db.from('profiles').select('id,full_name,email,role').limit(1000);if(r.error){alert('Impossibile leggere i clienti: '+r.error.message);return;}nutritionProfiles=r.data||[];}

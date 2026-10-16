@@ -2244,7 +2244,7 @@ async function saveNutritionRequestClientData(id){
  const keys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
  const patch={},extra={};
  // Colonne presenti nella tabella nutrition_plan_requests, confermate dallo schema Supabase.
- const dbColumns=new Set(['goal','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
+ const dbColumns=new Set(['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
  for(const key of keys){const el=document.getElementById('nrq_'+key);if(!el)continue;let value=el.value.trim();if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){value=value===''?null:Number(value);if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);return;}}else if(key==='meals_included'){value=value?value.split(',').map(v=>v.trim()).filter(Boolean):[];}else if(value==='')value=null;if(dbColumns.has(key))patch[key]=value;else extra[key]=value;}
  const current=await db.from('nutrition_plan_requests').select('admin_completion').eq('id',id).single();
  if(current.error){alert('Impossibile leggere il prospetto esistente: '+current.error.message);return;}
@@ -2252,7 +2252,7 @@ async function saveNutritionRequestClientData(id){
  patch.admin_completion=completion;
  const r=await db.from('nutrition_plan_requests').update(patch).eq('id',id);
  if(r.error){alert('Modifiche ai dati cliente non salvate: '+r.error.message);return;}
- alert('Dati della richiesta e misurazioni importate salvati. Età e sesso sono archiviati in admin_completion; lo storico Progressi originale non è stato modificato.');
+ alert('Dati della richiesta e misurazioni importate salvati nelle colonne dedicate; lo storico Progressi originale non è stato modificato.');
 }
 
 async function generateNutritionDraft(id){
@@ -2266,14 +2266,20 @@ async function generateNutritionDraft(id){
  const num=(v)=>{if(v===null||v===undefined||String(v).trim()==='')return NaN;return Number(String(v).replace(',','.'));};
  const progressRows=((window.__nutritionProgressRows||{})[String(id)]||[]).slice().sort((a,b)=>new Date(progressDate(b)||b.created_at||0)-new Date(progressDate(a)||a.created_at||0));
  const latest=progressRows[0]||{};
- const w=num(x.weight_kg)||num(x.admin_completion?.weight_kg)||num(x.admin_completion?.client_data?.weight_kg)||num(readAdmin('weight_kg'))||progressField(latest,['weight_kg','weight','peso','body_weight']);
- const h=num(x.height_cm)||num(x.admin_completion?.height_cm)||num(x.admin_completion?.client_data?.height_cm)||num(readAdmin('height_cm'))||progressField(latest,['height_cm','height','altezza']);
+ const savedWeight=num(x.weight_kg)||num(x.admin_completion?.weight_kg)||num(x.admin_completion?.client_data?.weight_kg)||num(readAdmin('weight_kg'));
+ const progressWeight=progressField(latest,['weight_kg','weight','peso','body_weight']);
+ // Non usare automaticamente misure palesemente anomale dallo storico (es. 5 kg per un cliente adulto).
+ const w=(savedWeight>0?savedWeight:(progressWeight>=20&&progressWeight<=350?progressWeight:NaN));
+ const savedHeight=num(x.height_cm)||num(x.admin_completion?.height_cm)||num(x.admin_completion?.client_data?.height_cm)||num(readAdmin('height_cm'));
+ const progressHeight=progressField(latest,['height_cm','height','altezza']);
+ const h=(savedHeight>0?savedHeight:(progressHeight>=100&&progressHeight<=250?progressHeight:NaN));
  const age=num(x.age_years??x.age)||num(x.admin_completion?.client_data?.age_years)||num(x.admin_completion?.age_years)||num(readAdmin('age_years'));
  const sex=String(x.sex||x.gender||x.admin_completion?.client_data?.sex||x.admin_completion?.sex||readAdmin('sex')||'').toLowerCase();
  const missing=[];
  if(!(w>0))missing.push('peso');
  if(!(h>0))missing.push('altezza');
  if(!(age>0))missing.push('età');
+ if(!sex)missing.push('sesso');
  if(missing.length){alert('Per calcolare la bozza mancano: '+missing.join(', ')+'. Inseriscili nei campi della richiesta e premi «Salva modifiche ai dati cliente», poi riprova. Peso e altezza possono essere recuperati dall’ultimo Progressi solo se presenti nei dati caricati.');return;}
  const bmr=10*w+6.25*h-5*age+(sex.includes('masch')||sex==='m'?5:sex.includes('femmin')||sex==='f'?-161:-78);
  const activity=String(x.activity_level||'').toLowerCase();

@@ -2121,13 +2121,51 @@ async function editNutritionRequestCompletion(id){
  const x=r.data||{},a=x.admin_completion||{};
  const field=(label,key,type='text',placeholder='')=>`<div><label>${label}</label><input id="nrc_${key}" type="${type}" value="${esc(a[key]??'')}" placeholder="${placeholder}"></div>`;
  openModal(`<div class="modalhead"><div><h2 style="margin:0">Completa prospetto nutrizionale</h2><div class="sub">Sezione amministratore · completa i campi restanti del Word</div></div><button class="close" onclick="closeModal()">Chiudi</button></div>
- <div class="detailSection"><h3>5. Impostazioni del piano KleosFit</h3><div class="formgrid">
+ <div class="detailSection"><h3>5. Impostazioni del piano KleosFit</h3><div class="muted">Usa il pulsante di generazione per stimare calorie e macronutrienti e preparare una bozza modificabile. I valori sono stime da verificare prima della pubblicazione.</div><div class="actions"><button class="btn" onclick="generateNutritionDraft('${id}')">Calcola valori e genera bozza</button></div><div class="formgrid">
  ${field('Titolo del piano','title')}${field('Data emissione','issue_date','date')}${field('Valido dal','valid_from','date')}${field('Valido al','valid_to','date')}${field('Calorie (kcal)','calories','number')}${field('Proteine (g)','protein_g','number')}${field('Carboidrati (g)','carbs_g','number')}${field('Grassi (g)','fats_g','number')}${field('Acqua (L)','water_l','number')}
  <div><label>Visibilità iniziale al cliente</label><select id="nrc_visibility"><option value="blocked" ${(a.visibility||'blocked')==='blocked'?'selected':''}>Bloccata — in revisione</option><option value="visible" ${a.visibility==='visible'?'selected':''}>Visibile</option></select></div>
  </div><div style="margin-top:10px"><label>Note per la preparazione</label><textarea id="nrc_notes" rows="3">${esc(a.notes||'')}</textarea></div></div>
- <div class="detailSection"><h3>6. Struttura dei pasti da compilare</h3><div class="muted">Inserire la struttura giornaliera/settimanale, alternative, ingredienti e quantità. Le alternative non vanno sommate tra loro. Per un piano strutturato, si può incollare il JSON valido del modello KleosFit.</div><label>Struttura pasti / JSON del piano</label><textarea id="nrc_meal_structure" rows="9" placeholder="Giorno; pasto; variante; ingredienti; grammi; valori nutrizionali per 100 g…">${esc(a.meal_structure||'')}</textarea></div>
+ <div class="detailSection"><h3>6. Struttura dei pasti</h3><div class="muted">La bozza viene compilata dal generatore come punto di partenza. Verificare allergie, condizioni cliniche, quantità e valori nutrizionali. Le alternative non vanno sommate tra loro.</div><label>Struttura pasti / JSON del piano</label><textarea id="nrc_meal_structure" rows="9" placeholder="Giorno; pasto; variante; ingredienti; grammi; valori nutrizionali per 100 g…">${esc(a.meal_structure||'')}</textarea></div>
  <div class="detailSection"><h3>7. Prompt riutilizzabile</h3><p>La richiesta cliente e i dati raccolti saranno utilizzati come base; non inventare informazioni mancanti e segnalare le domande necessarie. Il piano resta bloccato fino alla revisione del professionista.</p><div class="actions"><button class="btn secondary" onclick="copyNutritionRequestPrompt('${id}')">Copia prompt</button><button class="btn secondary" onclick="copyNutritionRequestJson('${id}')">Copia dati richiesta in JSON</button></div></div>
  <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionRequestCompletion('${id}')">Salva completamento</button></div>`);
+}
+
+async function generateNutritionDraft(id){
+ if(!isSuperuserRole())return;
+ const r=await db.from('nutrition_plan_requests').select('*').eq('id',id).single();
+ if(r.error){alert('Impossibile leggere la richiesta: '+r.error.message);return;}
+ const x=r.data||{};
+ const w=Number(x.weight_kg),h=Number(x.height_cm),age=Number(x.age_years??x.age),sex=String(x.sex||x.gender||'').toLowerCase();
+ if(!(w>0&&h>0&&age>0)){alert('Per calcolare una stima servono peso, altezza ed età validi nella richiesta. Non invento i dati mancanti.');return;}
+ const bmr=10*w+6.25*h-5*age+(sex.includes('masch')||sex==='m'?5:sex.includes('femmin')||sex==='f'?-161:-78);
+ const activity=String(x.activity_level||'').toLowerCase();
+ const factor=/molto|intens|alta/.test(activity)?1.65:/moder/.test(activity)?1.5:/legger|bassa/.test(activity)?1.35:1.2;
+ let kcal=Math.round(bmr*factor/50)*50;
+ const goal=String(x.goal||'').toLowerCase();
+ if(/dimagr|perdere peso|calo peso/.test(goal))kcal=Math.max(1200,Math.round((kcal-300)/50)*50);
+ else if(/massa|potenziamento|aument/.test(goal))kcal=Math.round((kcal+200)/50)*50;
+ const protein=Math.round(w*(/massa|potenziamento/.test(goal)?1.6:1.4));
+ const fats=Math.round(kcal*.28/9);
+ const carbs=Math.max(0,Math.round((kcal-protein*4-fats*9)/4));
+ const put=(k,v)=>{const el=document.getElementById('nrc_'+k);if(el)el.value=v;};
+ put('title','Bozza piano alimentare KleosFit');put('issue_date',new Date().toISOString().slice(0,10));
+ put('calories',kcal);put('protein_g',protein);put('carbs_g',carbs);put('fats_g',fats);
+ if(!nutritionCompletionValue('water_l'))put('water_l',(Math.round(w*0.035*10)/10).toFixed(1));
+ const meals=Array.isArray(x.meals_included)&&x.meals_included.length?x.meals_included:['Colazione','Pranzo','Cena'];
+ const lines=[
+ 'BOZZA AUTOMATICA — DA REVISIONARE, NON PUBBLICARE SENZA VERIFICA',
+ `Stima energetica: ${kcal} kcal/die; proteine ${protein} g; carboidrati ${carbs} g; grassi ${fats} g.`,
+ 'I valori sono stime basate su formula predittiva e dati disponibili, non una prescrizione clinica.',
+ `Obiettivo dichiarato: ${x.goal||'da chiarire'}. Stile alimentare: ${x.diet_style||'da chiarire'}.`,
+ `Allergie/intolleranze da controllare prima di usare il menu: ${x.allergies_intolerances||'non indicate'}. Alimenti da evitare: ${x.foods_avoid||'non indicati'}.`,
+ '',
+ 'STRUTTURA MENU DA COMPLETARE/VALIDARE',
+ ...meals.map(m=>`${m}: scegliere alimenti compatibili con preferenze e allergie; definire ingredienti e grammature pesate, indicando se a crudo o cotto. Inserire un’alternativa equivalente non sommabile.`),
+ '',
+ 'Prima dell’approvazione: verificare età/sesso, attività, obiettivo, farmaci, condizioni riferite, allergie, adeguatezza energetica e valori nutrizionali da fonte affidabile. Se i dati clinici sono incompleti, chiedere chiarimenti al cliente.'
+ ];
+ const ta=document.getElementById('nrc_meal_structure');if(ta)ta.value=lines.join('\n');
+ alert('Stima e struttura preliminare inserite. Il menu non contiene ancora grammature validate: completare e verificare la bozza prima di approvarla.');
 }
 function nutritionCompletionValue(k){return document.getElementById('nrc_'+k)?.value?.trim()||'';}
 async function saveNutritionRequestCompletion(id){

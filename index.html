@@ -212,37 +212,36 @@ if(n==="nr_liked"||n==="nr_avoid"){
 }
 if(n==="nr_conditions"||n==="nr_limits"){const none=n==="nr_conditions"?"Nessuna condizione riferita":"Nessuna limitazione riferita";if(t.checked&&t.value===none)document.querySelectorAll('input[name="'+n+'"]').forEach(x=>{if(x!==t)x.checked=false;});else if(t.checked){const q=document.querySelector('input[name="'+n+'"][value="'+none+'"]');if(q)q.checked=false;}toggleNutritionManualField(n,n+"_manual_wrap");}
 if(n==="nr_allergies_multi"){const none="Nessuna, confermato";if(t.checked&&t.value===none)document.querySelectorAll('input[name="nr_allergies_multi"]').forEach(x=>{if(x!==t)x.checked=false;});else if(t.checked){const q=document.querySelector('input[name="nr_allergies_multi"][value="'+none+'"]');if(q)q.checked=false;}}
-});</script><style id="kleosfit-nutrition-layout">
-/* KleosFit Nutrition Request — visual layout matching the 9-section reference */
-#nutritionRequestForm{--nr-lime:#c4ff3d;--nr-card:#121920;--nr-border:#293743;max-width:100%;}
-#nutritionRequestForm>.formgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 12px;margin-top:14px!important;align-items:start}
-#nutritionRequestForm .nr-layout-section{grid-column:1/-1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 12px;margin:0 0 16px;padding:0 16px 14px;border:1px solid var(--nr-border);border-radius:12px;background:linear-gradient(145deg,#141b21,#11161c);min-width:0}
-#nutritionRequestForm .nr-layout-heading{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:0 -16px 8px;padding:12px 16px 10px;border-bottom:1px solid #26313b;font-size:16px;font-weight:850;color:#f5f7fa}
-#nutritionRequestForm .nr-layout-number{width:30px;height:30px;flex:0 0 30px;display:inline-grid;place-items:center;border-radius:50%;background:var(--nr-lime);color:#11170a;font-size:16px;font-weight:900}
-#nutritionRequestForm .nr-layout-section>.nr-layout-field{grid-column:span 6;min-width:0;padding:0 0 7px}
-#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-wide{grid-column:1/-1}
-#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-third{grid-column:span 4}
-#nutritionRequestForm .nr-layout-section label{margin:7px 0 6px;color:#d9e0e8;font-size:12px;line-height:1.35}
-#nutritionRequestForm input:not([type=checkbox]):not([type=radio]),#nutritionRequestForm select,#nutritionRequestForm textarea{width:100%;min-width:0;max-width:100%;background:#0c1117;color:#f5f7fa;border:1px solid #34414d;border-radius:7px;padding:10px 11px;font:inherit;font-size:13px}
-#nutritionRequestForm input:focus,#nutritionRequestForm select:focus,#nutritionRequestForm textarea:focus{outline:1px solid var(--nr-lime);border-color:var(--nr-lime)}
-#nutritionRequestForm .checkrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-#nutritionRequestForm .checkrow>label:not(.foodChoice){display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #33404b;border-radius:8px;background:#0d1319}
-#nutritionRequestForm .foodChoice{display:flex!important;align-items:center;gap:8px!important;margin:0!important;padding:7px 8px;border:1px solid #303b46;border-radius:7px;background:#10161d;color:#e7ebf0!important;font-size:12px!important;line-height:1.3;min-width:0}
-#nutritionRequestForm .foodChoice input[type=checkbox]{width:17px!important;height:17px!important;min-width:17px;flex:0 0 17px;margin:0;accent-color:#1684ff}
-#nutritionRequestForm #nr_liked_group,#nutritionRequestForm #nr_avoid_group,#nutritionRequestForm [id^=nrq_group_allergies_intolerances],#nutritionRequestForm [id^=nrq_group_medical_conditions],#nutritionRequestForm [id^=nrq_group_limitations]{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important}
-#nutritionRequestForm .nr-food-panel{grid-column:span 4!important;border:1px solid #33404b;border-radius:10px;padding:0 10px 10px!important;background:rgba(9,14,19,.35);min-width:0}
-#nutritionRequestForm .nr-food-panel>label:first-child{display:block;margin:0 -10px 9px!important;padding:11px 10px;border-radius:9px 9px 0 0;font-size:14px!important;font-weight:850;color:#eaf0f5!important;background:#1a252e}
-#nutritionRequestForm .nr-food-panel.nr-liked>label:first-child{background:#263d2a;color:#c4ff3d!important}
-#nutritionRequestForm .nr-food-panel.nr-avoid>label:first-child{background:#482326;color:#ff9a9a!important}
-#nutritionRequestForm .nr-food-panel.nr-allergies>label:first-child{background:#10364b;color:#54d7ff!important}
-#nutritionRequestForm .nr-food-panel .muted{font-size:11px;line-height:1.4;margin-top:7px}
-#nutritionRequestForm .nr-layout-section .wide{grid-column:1/-1}
-#nutritionRequestForm .nr-layout-section .actions{grid-column:1/-1}
-#nutritionRequestForm .nr-consent{grid-column:1/-1!important;padding:10px 12px;border:1px solid #35434f;border-radius:8px;background:#0e141a}
-#nutritionRequestForm button.btn{border-radius:8px;font-weight:800}
-@media(max-width:900px){#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-third{grid-column:span 6}#nutritionRequestForm .nr-food-panel{grid-column:span 6!important}}
-@media(max-width:620px){#nutritionRequestForm>.formgrid{grid-template-columns:minmax(0,1fr)}#nutritionRequestForm .nr-layout-section{grid-template-columns:minmax(0,1fr);padding:0 11px 12px;margin-bottom:12px}#nutritionRequestForm .nr-layout-heading{margin:0 -11px 8px;padding:10px 11px}#nutritionRequestForm .nr-layout-section>.nr-layout-field,#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-third,#nutritionRequestForm .nr-food-panel{grid-column:1/-1!important}#nutritionRequestForm #nr_liked_group,#nutritionRequestForm #nr_avoid_group,#nutritionRequestForm [id^=nrq_group_allergies_intolerances],#nutritionRequestForm [id^=nrq_group_medical_conditions],#nutritionRequestForm [id^=nrq_group_limitations]{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
+});</script><style id="kleosfit-nutrition-layout-v2">
+#nutritionRequestForm{max-width:1200px;margin-inline:auto;color:#f4f6f8}
+#nutritionRequestForm>.formgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:16px!important;align-items:stretch}
+#nutritionRequestForm .nr-layout-section{grid-column:1/-1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px 14px;margin:0;padding:0 16px 16px;border:1px solid #303944;border-radius:15px;background:linear-gradient(145deg,#171c22,#11151a);box-shadow:0 8px 24px #0002;min-width:0}
+#nutritionRequestForm .nr-layout-heading{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:0 -16px 3px;padding:13px 16px;border-bottom:1px solid #303944;border-radius:14px 14px 0 0;background:#20262e;font-size:15px;font-weight:850;color:#f5f7fa;letter-spacing:.2px}
+#nutritionRequestForm .nr-layout-number{display:inline-grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:10px;background:#c4ff3d;color:#11170a;font-size:16px;font-weight:950}
+#nutritionRequestForm .nr-layout-field{grid-column:span 6;min-width:0;padding:0!important;margin:0!important}
+#nutritionRequestForm .nr-layout-field.nr-third{grid-column:span 4}
+#nutritionRequestForm .nr-layout-field.nr-wide{grid-column:1/-1}
+#nutritionRequestForm .nr-layout-field>label,#nutritionRequestForm .nr-layout-section>div>label{display:block;margin:4px 0 7px;color:#dce2e9;font-size:12px;font-weight:750;line-height:1.4}
+#nutritionRequestForm input:not([type=checkbox]):not([type=radio]),#nutritionRequestForm select,#nutritionRequestForm textarea{width:100%;min-width:0;max-width:100%;min-height:42px;padding:10px 12px;background:#0b1015;color:#f5f7fa;border:1px solid #37424e;border-radius:8px;font:inherit;font-size:13px}
+#nutritionRequestForm textarea{min-height:78px;resize:vertical}
+#nutritionRequestForm input:focus,#nutritionRequestForm select:focus,#nutritionRequestForm textarea:focus{outline:2px solid #c4ff3d55;border-color:#c4ff3d}
+#nutritionRequestForm .checkrow{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px!important;margin-top:6px}
+#nutritionRequestForm .foodChoice,#nutritionRequestForm .checkrow>label{display:flex!important;align-items:center;gap:8px!important;min-width:0;min-height:38px;margin:0!important;padding:8px 9px!important;border:1px solid #303b46;border-radius:8px;background:#0e141a;color:#e7ebf0!important;font-size:12px!important;line-height:1.35}
+#nutritionRequestForm .foodChoice input[type=checkbox],#nutritionRequestForm .checkrow input[type=checkbox],#nutritionRequestForm input[type=radio]{width:17px!important;height:17px!important;min-width:17px;flex:0 0 17px;margin:0!important;accent-color:#c4ff3d}
+#nutritionRequestForm .nr-food-panel{grid-column:span 4!important;min-width:0;padding:0 10px 10px!important;border:1px solid #303b46;border-radius:11px;background:#0b1015}
+#nutritionRequestForm .nr-food-panel>label:first-child{display:block;margin:0 -10px 9px!important;padding:12px 10px;border-radius:10px 10px 0 0;background:#202a32;color:#f2f5f8!important;font-size:13px!important;font-weight:900}
+#nutritionRequestForm .nr-food-panel.nr-liked>label:first-child{background:#263c28;color:#c4ff3d!important}
+#nutritionRequestForm .nr-food-panel.nr-avoid>label:first-child{background:#482326;color:#ffaaaa!important}
+#nutritionRequestForm .nr-food-panel.nr-allergies>label:first-child{background:#123648;color:#70dfff!important}
+#nutritionRequestForm .nr-food-panel .muted{font-size:11px;line-height:1.45;margin-top:8px}
+#nutritionRequestForm .nr-consent{grid-column:1/-1!important;padding:12px;border:1px solid #35434f;border-radius:9px;background:#0d1319}
+#nutritionRequestForm .actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:6px}
+#nutritionRequestForm .actions .btn{min-height:44px;border-radius:9px;font-weight:850}
+#nutritionRequestForm #nutritionRequestMsg{grid-column:1/-1}
+@media(max-width:900px){#nutritionRequestForm .checkrow{grid-template-columns:repeat(2,minmax(0,1fr))}#nutritionRequestForm .nr-food-panel{grid-column:span 6!important}}
+@media(max-width:620px){#nutritionRequestForm>.formgrid{grid-template-columns:minmax(0,1fr);gap:11px}#nutritionRequestForm .nr-layout-section{grid-template-columns:minmax(0,1fr);padding:0 11px 12px;gap:9px;margin-bottom:0}#nutritionRequestForm .nr-layout-heading{margin:0 -11px 3px;padding:11px;font-size:14px}#nutritionRequestForm .nr-layout-field,#nutritionRequestForm .nr-layout-field.nr-third,#nutritionRequestForm .nr-food-panel{grid-column:1/-1!important}#nutritionRequestForm .checkrow{grid-template-columns:repeat(2,minmax(0,1fr))}#nutritionRequestForm .actions{display:grid;grid-template-columns:1fr}#nutritionRequestForm .actions .btn{width:100%}}
+</style>
+</head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:12px;text-align:center"><button class="btn secondary mini" type="button" onclick="openPasswordRecovery()">Password dimenticata?</button></div><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
@@ -1818,7 +1817,8 @@ async function loadMinorRegistrationForms(profileId){
 async function readSavedMinorRegistration(path){const r=await db.storage.from('client-documents').download(path);if(r.error)throw r.error;return JSON.parse(await r.data.text());}
 function minorRegistrationHtml(d){const escv=v=>esc(v==null?'':String(v));return `<div id="minorSavedPrint" style="background:#fff;color:#111;padding:22px;border-radius:8px"><h2 style="text-align:center">KLEOSFIT — MODULO DI ISCRIZIONE MINORENNE</h2><h3>Dati del minore</h3><p><b>Nome e cognome:</b> ${escv(d.minor?.name)}</p><p><b>Data di nascita:</b> ${escv(d.minor?.birth_date)}</p><p><b>Codice fiscale:</b> ${escv(d.minor?.fiscal_code)}</p><h3>Dati del genitore / tutore</h3><p><b>Nome e cognome:</b> ${escv(d.guardian?.name)}</p><p><b>Relazione:</b> ${escv(d.guardian?.relation)}</p><p><b>Codice fiscale:</b> ${escv(d.guardian?.fiscal_code)}</p><p><b>Telefono:</b> ${escv(d.guardian?.phone)}</p><p><b>Email:</b> ${escv(d.guardian?.email)}</p><h3>Dichiarazione e autorizzazione</h3><p>${escv(d.declaration)}</p><p><b>Luogo e data:</b> ${escv(d.place_date)}</p><h3>Firma del genitore / tutore / referente</h3>${d.signature_data_url?`<img alt="Firma" src="${d.signature_data_url}" style="display:block;max-width:100%;width:600px;height:140px;object-fit:contain;border:1px solid #888">`:'<p>Firma non presente</p>'}<p style="font-size:12px">Salvato il: ${escv(d.saved_at?new Date(d.saved_at).toLocaleString('it-IT'):'')}</p></div>`;}
 async function viewMinorRegistrationForm(path){try{const d=await readSavedMinorRegistration(path);openModal(`<div class="modalhead"><h2>Modulo iscrizione salvato</h2><button class="close" onclick="closeModal()">Chiudi</button></div>${minorRegistrationHtml(d)}<div class="actions" style="justify-content:flex-end;margin-top:12px"><button class="btn" onclick="printSavedMinorRegistrationForm('${esc(path)}')">Stampa / Salva PDF</button></div>`);}catch(e){alert('Impossibile visualizzare il modulo: '+(e?.message||e));}}
-async function printSavedMinorRegistrationForm(path){try{const d=await readSavedMinorRegistration(path);const w=window.open('','_blank');if(!w){alert('Consenti i popup per stampare il modulo.');return;}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Modulo iscrizione minorenne</title><style>body{font:14px Arial;margin:24px;color:#111}h2,h3{margin:14px 0 8px}p{line-height:1.45}</style></head><body>'+minorRegistrationHtml(d)+'<script>window.onload=()=>window.print()<\\/script></body></html>');w.document.close();}catch(e){alert('Impossibile stampare il modulo: '+(e?.message||e));}}
+async function printSavedMinorRegistrationForm(path){try{const d=await readSavedMinorRegistration(path);const w=window.open('','_blank');if(!w){alert('Consenti i popup per stampare il modulo.');return;}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Modulo iscrizione minorenne</title><style>body{font:14px Arial;margin:24px;color:#111}h2,h3{margin:14px 0 8px}p{line-height:1.45}</style></head><body>'+minorRegistrationHtml(d)+'<script>window.onload=()=>window.print()<\\/script>
+</body></html>');w.document.close();}catch(e){alert('Impossibile stampare il modulo: '+(e?.message||e));}}
 function printMinorRegistrationForm(){
  const root=document.getElementById('minorFormPrint');if(!root)return;
  const clone=root.cloneNode(true);
@@ -5350,4 +5350,67 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
  function start(){if(document.body)observer.observe(document.body,{childList:true,subtree:true});enhance();}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
-</script></body></html>
+</script><script id="kleosfit-nutrition-layout-structure">
+(()=>{
+ const sectionDefs=[
+  {title:'1. Obiettivo e dati personali',test:t=>/tipo di piano|obiettivo|attività quotidiana|livello di attività|allenamento|peso attuale|altezza|sesso|età/.test(t)},
+  {title:'2. Attività quotidiana e allenamento',test:t=>/orari della giornata|risveglio|lavoro\/scuola|coricamento|risvegli notturni|ore di allenamento|durata allenamento|allenamento settimanale/.test(t)},
+  {title:'3. Stile di vita, sonno e recupero',test:t=>/andamento del peso|attività \(passi|sonno:|qualità del sonno|stress e recupero|appetito, digestione|idratazione|composizione corporea/.test(t)},
+  {title:'4. Misure e preferenze alimentari',test:t=>/stile alimentare|alimenti graditi|alimenti non graditi|quali pasti vuoi includere|numero totale pasti|storia del peso|variazioni importanti del peso/.test(t)},
+  {title:'5. Allergie e intolleranze',test:t=>/allergie e intolleranze/.test(t)},
+  {title:'6. Cucina e organizzazione dei pasti',test:t=>/possibilità di cucinare|conservazione e trasporto|budget|vincoli/.test(t)},
+  {title:'7. Condizioni mediche riferite',test:t=>/condizioni mediche rilevanti|patologie riferite/.test(t)},
+  {title:'8. Sintomi e limitazioni',test:t=>/sintomi|limitazioni|attività fisica da evitare/.test(t)},
+  {title:'9. Parametri e note professionali',test:t=>/parametri professionali|misurazioni da progressi|farmaci o integratori|indicazioni del medico|altre condizioni|altre note sanitarie|consensi obbligatori/.test(t)}
+ ];
+ function arrange(){
+  const form=document.getElementById('nutritionRequestForm'); if(!form||form.dataset.nrLayoutBuilt==='yes')return;
+  const grid=form.querySelector(':scope > .formgrid'); if(!grid)return;
+  const children=Array.from(grid.children); if(children.length<8)return;
+  const groups=sectionDefs.map(d=>({...d,items:[]})); const leftovers=[];
+  for(const el of children){
+   const label=el.querySelector('label');
+   const text=((label?label.textContent:'')+' '+el.textContent).replace(/\s+/g,' ').trim().toLowerCase();
+   let idx=sectionDefs.findIndex(d=>d.test(text));
+   // Force food preference fields into their own dedicated section.
+   if(/alimenti graditi|alimenti non graditi o da evitare/.test(text))idx=3;
+   if(/allergie e intolleranze/.test(text))idx=4;
+   if(/condizioni mediche rilevanti/.test(text))idx=6;
+   if(/sintomi|limitazioni/.test(text))idx=7;
+   if(/consensi obbligatori|farmaci o integratori|indicazioni del medico|parametri professionali|misurazioni da progressi/.test(text))idx=8;
+   if(idx<0)leftovers.push(el);else groups[idx].items.push(el);
+  }
+  const populated=groups.filter(g=>g.items.length);
+  if(populated.length<5)return;
+  for(const g of populated){
+   const section=document.createElement('section');section.className='nr-layout-section';
+   const heading=document.createElement('h3');heading.className='nr-layout-heading';
+   const num=document.createElement('span');num.className='nr-layout-number';num.textContent=g.title.match(/^\d+/)?.[0]||'';
+   const title=document.createElement('span');title.textContent=g.title.replace(/^\d+\.\s*/, '');heading.append(num,title);section.appendChild(heading);
+   for(const el of g.items){
+    el.classList.add('nr-layout-field');
+    const txt=((el.querySelector('label')||{}).textContent||'').toLowerCase();
+    if(/alimenti graditi|alimenti non graditi|quali pasti vuoi includere|allergie e intolleranze|condizioni mediche rilevanti|sintomi|limitazioni|consensi obbligatori|parametri professionali|misurazioni da progressi/.test(txt))el.classList.add('nr-wide');
+    if(/peso attuale|altezza|sonno: ore|qualità del sonno|stress e recupero|idratazione/.test(txt))el.classList.add('nr-third');
+    const first=el.querySelector('label');
+    if(first&&/alimenti graditi/i.test(first.textContent)){el.classList.add('nr-food-panel','nr-liked');}
+    if(first&&/alimenti non graditi o da evitare/i.test(first.textContent)){el.classList.add('nr-food-panel','nr-avoid');}
+    if(first&&/allergie e intolleranze/i.test(first.textContent)){el.classList.add('nr-food-panel','nr-allergies');}
+    if(/consensi obbligatori/.test(txt))el.classList.add('nr-consent');
+    section.appendChild(el);
+   }
+   grid.appendChild(section);
+  }
+  leftovers.forEach(el=>{el.classList.add('nr-layout-field','nr-wide');grid.appendChild(el)});
+  // Keep status/actions at the end of the form and visible across the full width.
+  const msg=form.querySelector('#nutritionRequestMsg'),actions=form.querySelector('.actions');
+  if(msg){msg.style.gridColumn='1/-1';grid.appendChild(msg)}
+  if(actions){actions.style.gridColumn='1/-1';grid.appendChild(actions)}
+  form.dataset.nrLayoutBuilt='yes';
+ }
+ const observer=new MutationObserver(()=>arrange());
+ function start(){arrange();observer.observe(document.body,{childList:true,subtree:true});}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+</body></html>

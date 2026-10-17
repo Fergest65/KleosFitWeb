@@ -213,39 +213,37 @@ if(n==="nr_liked"||n==="nr_avoid"){
 if(n==="nr_conditions"||n==="nr_limits"){const none=n==="nr_conditions"?"Nessuna condizione riferita":"Nessuna limitazione riferita";if(t.checked&&t.value===none)document.querySelectorAll('input[name="'+n+'"]').forEach(x=>{if(x!==t)x.checked=false;});else if(t.checked){const q=document.querySelector('input[name="'+n+'"][value="'+none+'"]');if(q)q.checked=false;}toggleNutritionManualField(n,n+"_manual_wrap");}
 if(n==="nr_allergies_multi"){const none="Nessuna, confermato";if(t.checked&&t.value===none)document.querySelectorAll('input[name="nr_allergies_multi"]').forEach(x=>{if(x!==t)x.checked=false;});else if(t.checked){const q=document.querySelector('input[name="nr_allergies_multi"][value="'+none+'"]');if(q)q.checked=false;}}
 });</script>
-<style id="kleosfit-nutrition-form-layout">
-/* Layout ordinato del modulo richiesta nutrizionale: solo presentazione, nessuna modifica ai dati o alle funzioni */
-#nutritionClientRequestCard{width:100%;max-width:1180px;margin:16px auto!important;padding:clamp(14px,2.2vw,28px)!important}
-#nutritionClientRequestCard>.top{align-items:flex-start;margin-bottom:18px;gap:14px}
-#nutritionClientRequestCard>.top h2{font-size:clamp(20px,2vw,27px);letter-spacing:-.35px}
-#nutritionRequestForm{width:100%}
-#nutritionRequestForm .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
-#nutritionRequestForm .formgrid>.wide{grid-column:1/-1;min-width:0}
-#nutritionRequestForm .formgrid>div{min-width:0}
-#nutritionRequestForm label{font-size:13px;line-height:1.4;margin:7px 0 8px;color:#d9dee7}
-#nutritionRequestForm input:not([type=checkbox]):not([type=radio]),#nutritionRequestForm select,#nutritionRequestForm textarea{width:100%;min-width:0;max-width:100%;min-height:43px;padding:10px 12px;border:1px solid #343c48;border-radius:9px;background:#10141a;color:#f4f5f7;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
-#nutritionRequestForm textarea{min-height:78px;resize:vertical;line-height:1.45}
-#nutritionRequestForm input:focus,#nutritionRequestForm select:focus,#nutritionRequestForm textarea:focus{outline:none;border-color:#c4ff3d;box-shadow:0 0 0 2px rgba(196,255,61,.12)}
-#nutritionRequestForm .checkrow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px!important;margin-top:8px}
-#nutritionRequestForm .foodChoice{flex:0 1 auto;min-height:36px;padding:8px 10px!important;border:1px solid #303743;border-radius:9px;background:#11161d;color:#dce2eb;font-size:12px!important;line-height:1.3;transition:border-color .15s,background .15s;cursor:pointer}
-#nutritionRequestForm .foodChoice input[type=checkbox]{appearance:auto;width:16px!important;height:16px!important;min-width:16px;flex:0 0 16px;margin:0!important;accent-color:#c4ff3d}
-#nutritionRequestForm .foodChoice:has(input:checked){border-color:#9ecb31;background:#202a15;color:#f6ffd9}
-#nutritionRequestForm #nr_liked_group{padding:12px;border:1px solid #35502a;border-radius:12px;background:linear-gradient(120deg,rgba(112,165,43,.10),rgba(17,20,25,.65))}
-#nutritionRequestForm #nr_avoid_group{padding:12px;border:1px solid #65363a;border-radius:12px;background:linear-gradient(120deg,rgba(190,62,72,.10),rgba(17,20,25,.65))}
-#nutritionRequestForm #nr_allergies_group{padding:12px;border:1px solid #244e68;border-radius:12px;background:linear-gradient(120deg,rgba(27,135,191,.10),rgba(17,20,25,.65))}
-#nutritionRequestForm #nr_conditions_group,#nutritionRequestForm #nr_limits_group{padding:12px;border:1px solid #303743;border-radius:12px;background:#11161d}
-#nutritionRequestForm #nr_liked_group:before{content:'PREFERENZE';display:block;flex:0 0 100%;font-size:10px;font-weight:800;letter-spacing:1.2px;color:#b9ed68;margin-bottom:2px}
-#nutritionRequestForm #nr_avoid_group:before{content:'ESCLUSIONI';display:block;flex:0 0 100%;font-size:10px;font-weight:800;letter-spacing:1.2px;color:#ff9ca4;margin-bottom:2px}
-#nutritionRequestForm #nr_allergies_group:before{content:'SICUREZZA ALIMENTARE';display:block;flex:0 0 100%;font-size:10px;font-weight:800;letter-spacing:1.2px;color:#77d6ff;margin-bottom:2px}
+
+<style id="kleosfit-nutrition-layout-v2">
+/* Layout effettivo della richiesta nutrizionale: modal largo, gerarchia visiva e griglia responsiva */
+#modal:has(#nutritionClientRequestCard){align-items:flex-start;overflow-y:auto;padding:clamp(8px,2vh,24px)}
+#modal .modalbox:has(#nutritionClientRequestCard){width:min(1120px,96vw);max-width:1120px;max-height:96vh;padding:clamp(14px,2vw,26px);overflow:auto;border-radius:18px;background:#171a20;border-color:#39414d;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+#nutritionClientRequestCard{width:100%;max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#nutritionClientRequestCard>.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:0 0 16px;margin:0 0 18px!important;border-bottom:1px solid #343b46}
+#nutritionClientRequestCard>.top h2{font-size:clamp(22px,2vw,30px)!important;line-height:1.2;color:#fff}
+#nutritionClientRequestCard>.top .sub{max-width:760px;font-size:13px;line-height:1.55}
+#nutritionRequestForm{width:100%;max-width:none}
+#nutritionRequestForm .formgrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px 20px!important;align-items:start}
+#nutritionRequestForm .formgrid>.wide{grid-column:1/-1!important}
+#nutritionRequestForm .formgrid>div{min-width:0;padding:0}
+#nutritionRequestForm label{display:block;font-size:13px!important;line-height:1.4;margin:0 0 7px!important;color:#d9dee7}
+#nutritionRequestForm input:not([type=checkbox]):not([type=radio]),#nutritionRequestForm select,#nutritionRequestForm textarea{width:100%;min-width:0;max-width:100%;min-height:44px;padding:11px 12px;border:1px solid #343c48;border-radius:10px;background:#10141a;color:#f4f5f7}
+#nutritionRequestForm textarea{min-height:88px;resize:vertical;line-height:1.5}
+#nutritionRequestForm .checkrow{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;margin-top:8px}
+#nutritionRequestForm .foodChoice,#nutritionRequestForm .checkrow>label:not(.foodChoice){display:flex!important;align-items:flex-start;gap:8px!important;min-width:0;min-height:40px;padding:10px!important;margin:0!important;border:1px solid #303743;border-radius:10px;background:#11161d;color:#dce2eb;font-size:12px!important;line-height:1.4;white-space:normal}
+#nutritionRequestForm .foodChoice input[type=checkbox],#nutritionRequestForm .checkrow>label:not(.foodChoice) input[type=checkbox]{appearance:auto;flex:0 0 16px;width:16px!important;height:16px!important;min-width:16px;margin:1px 0 0!important;accent-color:#c4ff3d}
+#nutritionRequestForm .foodChoice:has(input:checked),#nutritionRequestForm .checkrow>label:not(.foodChoice):has(input:checked){border-color:#9ecb31;background:#202a15;color:#f6ffd9}
+#nutritionRequestForm #nr_liked_group,#nutritionRequestForm #nr_avoid_group,#nutritionRequestForm #nr_allergies_group,#nutritionRequestForm #nr_conditions_group,#nutritionRequestForm #nr_limits_group{padding:14px!important;border-radius:13px;margin:0;min-width:0}
+#nutritionRequestForm #nr_liked_group{border:1px solid #35502a;background:rgba(112,165,43,.07)}
+#nutritionRequestForm #nr_avoid_group{border:1px solid #65363a;background:rgba(190,62,72,.07)}
+#nutritionRequestForm #nr_allergies_group{border:1px solid #244e68;background:rgba(27,135,191,.07)}
+#nutritionRequestForm #nr_conditions_group,#nutritionRequestForm #nr_limits_group{border:1px solid #303743;background:#11161d}
 #nutritionRequestForm .muted{font-size:11px;line-height:1.45;margin-top:7px}
-#nutritionRequestForm .actions{position:sticky;bottom:0;z-index:2;padding:12px 0 2px;background:linear-gradient(180deg,rgba(23,26,32,0),#171a20 25%);flex-wrap:wrap}
-#nutritionRequestForm .actions .btn{min-height:42px}
-#nutritionRequestForm input[type=checkbox],#nutritionRequestForm input[type=radio]{accent-color:#c4ff3d}
-#nutritionRequestForm .checkrow>label:not(.foodChoice){display:inline-flex;align-items:center;gap:8px;padding:8px 11px;margin:0;border:1px solid #303743;border-radius:9px;background:#11161d}
-#nutritionRequestForm .checkrow>label:not(.foodChoice) input{width:16px;height:16px;margin:0}
-#nutritionRequestMsg{padding:10px 12px;border-radius:9px;background:#26191c;border:1px solid #63363c}
-@media(min-width:1100px){#nutritionRequestForm .formgrid{column-gap:20px;row-gap:14px}}
-@media(max-width:760px){#nutritionClientRequestCard{padding:14px!important}#nutritionRequestForm .formgrid{grid-template-columns:minmax(0,1fr);gap:10px}#nutritionRequestForm .formgrid>.wide{grid-column:auto}#nutritionRequestForm .foodChoice{font-size:12px!important;padding:8px!important}#nutritionRequestForm .actions{position:static;background:none}}
+#nutritionRequestForm .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:22px;padding:14px 0 0;border-top:1px solid #343b46;background:#171a20}
+#nutritionRequestForm .actions .btn{min-height:44px;padding-inline:18px}
+@media(min-width:1000px){#nutritionRequestForm .checkrow{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){#modal:has(#nutritionClientRequestCard){padding:6px;align-items:flex-start}#modal .modalbox:has(#nutritionClientRequestCard){width:100%;max-width:100%;max-height:98vh;padding:14px;border-radius:14px}#nutritionRequestForm .formgrid{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}#nutritionRequestForm .formgrid>.wide{grid-column:auto!important}#nutritionRequestForm .checkrow{grid-template-columns:repeat(2,minmax(0,1fr))!important}#nutritionRequestForm .actions{position:static}}
+@media(max-width:380px){#nutritionRequestForm .checkrow{grid-template-columns:minmax(0,1fr)!important}}
 </style>
 </head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>

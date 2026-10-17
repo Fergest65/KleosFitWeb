@@ -2244,7 +2244,7 @@ if(key==='sleep_hours'){const hours=Array.from({length:29},(_,i)=>i*0.5);return 
  allergies_intolerances:['Nessuna, confermato','Lattosio','Glutine/celiachia riferita','Frutta a guscio','Uova','Pesce','Crostacei e molluschi','Soia','Arachidi','Altro / da specificare'],
  limitations:['Nessuna limitazione riferita','Dolore articolare','Mal di schiena','Affaticamento','Fiato corto','Problemi di equilibrio','Limitazioni nei movimenti','Intolleranza allo sforzo','Sintomi gastrointestinali','Altro / da specificare']
 };
-if(multiOptions[key]){const selected=String(value||'').split(',').map(s=>s.trim()).filter(Boolean);return `<div><label>${label}</label><select id="nrq_${key}" multiple size="5" style="min-height:120px">${multiOptions[key].map(o=>`<option value="${esc(o)}" ${selected.includes(o)?'selected':''}>${esc(o)}</option>`).join('')}</select><div class="muted" style="font-size:11px;margin-top:4px">Selezione multipla: Ctrl (Windows) o Cmd (Mac).</div></div>`;}
+if(multiOptions[key]){const selected=String(value||'').split(',').map(s=>s.trim()).filter(Boolean);return `<div><label>${label}</label><div class="nrq-checkbox-grid" id="nrq_group_${key}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:6px">${multiOptions[key].map((o,i)=>`<label style="display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border:1px solid var(--border,#444);border-radius:6px;font-size:12px;cursor:pointer"><input type="checkbox" name="nrq_multi_${key}" value="${esc(o)}" ${selected.includes(o)?'checked':''} style="width:auto;min-width:auto;margin-top:2px"><span>${esc(o)}</span></label>`).join('')}</div><div class="muted" style="font-size:11px;margin-top:4px">Seleziona le voci desiderate senza usare Ctrl.</div></div>`;}
 const help=guidance[key]||'';return `<div><label>${label}</label>${type==='textarea'?`${help?`<div class="muted" style="font-size:12px;margin:3px 0 6px">${help}</div>`:''}<textarea id="nrq_${key}" rows="4" placeholder="${help}">${esc(value)}</textarea>`:`<input id="nrq_${key}" type="${type}" value="${esc(value)}">`}</div>`;};
  openModal(`<div class="modalhead"><div><h2 style="margin:0">Completa prospetto nutrizionale</h2><div class="sub">Puoi consultare e correggere i dati inviati dal cliente, poi completare il piano.</div></div><button class="close" onclick="closeModal()">Chiudi</button></div>
  <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="formgrid">${reqFields.map(([label,key,type])=>reqInput(label,key,type)).join('')}</div><div class="actions"><button class="btn secondary" type="button" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
@@ -2348,9 +2348,33 @@ async function saveNutritionRequestClientData(id){
  const dbColumns=new Set(['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
  const patch={},extra={};
  for(const key of keys){
+   const group=document.querySelectorAll('input[name="nrq_multi_'+key+'"]');
    const el=document.getElementById('nrq_'+key);
-   if(!el)continue;
-   let value=el.multiple?[...el.selectedOptions].map(o=>o.value).join(', '):String(el.value??'').trim();
+   if(group.length){
+     let selected=[...group].filter(cb=>cb.checked).map(cb=>cb.value);
+     if(['foods_liked','foods_avoid','allergies_intolerances','medical_conditions','limitations'].includes(key)){
+       const none=selected.some(v=>v.startsWith('Nessuna')||v.startsWith('Nessun alimento'));
+       if(none&&selected.length>1){alert('La voce “Nessuna/Nessun” non può essere selezionata insieme ad altre opzioni: '+key+'.');return;}
+     }
+     if(key==='foods_liked'||key==='foods_avoid'){
+       const likedGroup=[...document.querySelectorAll('input[name="nrq_multi_foods_liked"]')];
+       const avoidGroup=[...document.querySelectorAll('input[name="nrq_multi_foods_avoid"]')];
+       const conflicts=[
+         [['Carne rossa'],['Carne rossa']], [['Carne bianca'],['Carne bianca']], [['Pesce'],['Pesce']], [['Uova'],['Uova']],
+         [['Latte e yogurt','Formaggi'],['Latte e latticini']], [['Pane e cereali','Pasta e riso'],['Glutine / cereali con glutine']], [['Legumi'],['Legumi']], [['Verdure'],['Verdure specifiche']], [['Frutta'],['Frutta specifica']]
+       ];
+       if(key==='foods_liked'){
+         for(const [lk,ak] of conflicts) if(selected.some(v=>lk.includes(v))) avoidGroup.filter(cb=>ak.includes(cb.value)).forEach(cb=>cb.checked=false);
+       } else {
+         for(const [lk,ak] of conflicts) if(selected.some(v=>ak.includes(v))) likedGroup.filter(cb=>lk.includes(cb.value)).forEach(cb=>cb.checked=false);
+       }
+       selected=[...document.querySelectorAll('input[name="nrq_multi_'+key+'"]')].filter(cb=>cb.checked).map(cb=>cb.value);
+     }
+     value=selected.join(', ')||null;
+   }else{
+     if(!el)continue;
+     value=String(el.value??'').trim();
+   }
    if(key==='daily_schedule'){
      const pairs=[['Risveglio','wake_time'],['Lavoro/scuola','work_schedule'],['Allenamento','training_schedule'],['Pasti','meal_schedule'],['Coricamento','bedtime'],['Risvegli notturni','night_waking']];
      value=pairs.map(([lab,id])=>{const v=document.getElementById('nrq_sched_'+id)?.value||'';return v?lab+': '+v:''}).filter(Boolean).join('\n')||null;

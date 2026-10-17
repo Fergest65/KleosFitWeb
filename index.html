@@ -212,10 +212,37 @@ if(n==="nr_liked"||n==="nr_avoid"){
 }
 if(n==="nr_conditions"||n==="nr_limits"){const none=n==="nr_conditions"?"Nessuna condizione riferita":"Nessuna limitazione riferita";if(t.checked&&t.value===none)document.querySelectorAll('input[name="'+n+'"]').forEach(x=>{if(x!==t)x.checked=false;});else if(t.checked){const q=document.querySelector('input[name="'+n+'"][value="'+none+'"]');if(q)q.checked=false;}toggleNutritionManualField(n,n+"_manual_wrap");}
 if(n==="nr_allergies_multi"){const none="Nessuna, confermato";if(t.checked&&t.value===none)document.querySelectorAll('input[name="nr_allergies_multi"]').forEach(x=>{if(x!==t)x.checked=false;});else if(t.checked){const q=document.querySelector('input[name="nr_allergies_multi"][value="'+none+'"]');if(q)q.checked=false;}}
-});</script>
-
-
-</head><body><div id="welcome" class="welcome"><div class="welcomeContent">
+});</script><style id="kleosfit-nutrition-layout">
+/* KleosFit Nutrition Request — visual layout matching the 9-section reference */
+#nutritionRequestForm{--nr-lime:#c4ff3d;--nr-card:#121920;--nr-border:#293743;max-width:100%;}
+#nutritionRequestForm>.formgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 12px;margin-top:14px!important;align-items:start}
+#nutritionRequestForm .nr-layout-section{grid-column:1/-1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 12px;margin:0 0 16px;padding:0 16px 14px;border:1px solid var(--nr-border);border-radius:12px;background:linear-gradient(145deg,#141b21,#11161c);min-width:0}
+#nutritionRequestForm .nr-layout-heading{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:0 -16px 8px;padding:12px 16px 10px;border-bottom:1px solid #26313b;font-size:16px;font-weight:850;color:#f5f7fa}
+#nutritionRequestForm .nr-layout-number{width:30px;height:30px;flex:0 0 30px;display:inline-grid;place-items:center;border-radius:50%;background:var(--nr-lime);color:#11170a;font-size:16px;font-weight:900}
+#nutritionRequestForm .nr-layout-section>.nr-layout-field{grid-column:span 6;min-width:0;padding:0 0 7px}
+#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-wide{grid-column:1/-1}
+#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-third{grid-column:span 4}
+#nutritionRequestForm .nr-layout-section label{margin:7px 0 6px;color:#d9e0e8;font-size:12px;line-height:1.35}
+#nutritionRequestForm input:not([type=checkbox]):not([type=radio]),#nutritionRequestForm select,#nutritionRequestForm textarea{width:100%;min-width:0;max-width:100%;background:#0c1117;color:#f5f7fa;border:1px solid #34414d;border-radius:7px;padding:10px 11px;font:inherit;font-size:13px}
+#nutritionRequestForm input:focus,#nutritionRequestForm select:focus,#nutritionRequestForm textarea:focus{outline:1px solid var(--nr-lime);border-color:var(--nr-lime)}
+#nutritionRequestForm .checkrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+#nutritionRequestForm .checkrow>label:not(.foodChoice){display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #33404b;border-radius:8px;background:#0d1319}
+#nutritionRequestForm .foodChoice{display:flex!important;align-items:center;gap:8px!important;margin:0!important;padding:7px 8px;border:1px solid #303b46;border-radius:7px;background:#10161d;color:#e7ebf0!important;font-size:12px!important;line-height:1.3;min-width:0}
+#nutritionRequestForm .foodChoice input[type=checkbox]{width:17px!important;height:17px!important;min-width:17px;flex:0 0 17px;margin:0;accent-color:#1684ff}
+#nutritionRequestForm #nr_liked_group,#nutritionRequestForm #nr_avoid_group,#nutritionRequestForm [id^=nrq_group_allergies_intolerances],#nutritionRequestForm [id^=nrq_group_medical_conditions],#nutritionRequestForm [id^=nrq_group_limitations]{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important}
+#nutritionRequestForm .nr-food-panel{grid-column:span 4!important;border:1px solid #33404b;border-radius:10px;padding:0 10px 10px!important;background:rgba(9,14,19,.35);min-width:0}
+#nutritionRequestForm .nr-food-panel>label:first-child{display:block;margin:0 -10px 9px!important;padding:11px 10px;border-radius:9px 9px 0 0;font-size:14px!important;font-weight:850;color:#eaf0f5!important;background:#1a252e}
+#nutritionRequestForm .nr-food-panel.nr-liked>label:first-child{background:#263d2a;color:#c4ff3d!important}
+#nutritionRequestForm .nr-food-panel.nr-avoid>label:first-child{background:#482326;color:#ff9a9a!important}
+#nutritionRequestForm .nr-food-panel.nr-allergies>label:first-child{background:#10364b;color:#54d7ff!important}
+#nutritionRequestForm .nr-food-panel .muted{font-size:11px;line-height:1.4;margin-top:7px}
+#nutritionRequestForm .nr-layout-section .wide{grid-column:1/-1}
+#nutritionRequestForm .nr-layout-section .actions{grid-column:1/-1}
+#nutritionRequestForm .nr-consent{grid-column:1/-1!important;padding:10px 12px;border:1px solid #35434f;border-radius:8px;background:#0e141a}
+#nutritionRequestForm button.btn{border-radius:8px;font-weight:800}
+@media(max-width:900px){#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-third{grid-column:span 6}#nutritionRequestForm .nr-food-panel{grid-column:span 6!important}}
+@media(max-width:620px){#nutritionRequestForm>.formgrid{grid-template-columns:minmax(0,1fr)}#nutritionRequestForm .nr-layout-section{grid-template-columns:minmax(0,1fr);padding:0 11px 12px;margin-bottom:12px}#nutritionRequestForm .nr-layout-heading{margin:0 -11px 8px;padding:10px 11px}#nutritionRequestForm .nr-layout-section>.nr-layout-field,#nutritionRequestForm .nr-layout-section>.nr-layout-field.nr-third,#nutritionRequestForm .nr-food-panel{grid-column:1/-1!important}#nutritionRequestForm #nr_liked_group,#nutritionRequestForm #nr_avoid_group,#nutritionRequestForm [id^=nrq_group_allergies_intolerances],#nutritionRequestForm [id^=nrq_group_medical_conditions],#nutritionRequestForm [id^=nrq_group_limitations]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>
 </div></div>
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:12px;text-align:center"><button class="btn secondary mini" type="button" onclick="openPasswordRecovery()">Password dimenticata?</button></div><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
@@ -2569,11 +2596,7 @@ function exportNutritionPlanPdf(planId){
  const supplements=p.nutrition_supplements||[];
  const supplementsHtml=`<section class="day"><h2>Integratori</h2>${supplements.length?`<ul>${supplements.map(x=>`<li><b>${esc(x.name)}</b>${x.dosage?' — '+esc(x.dosage):''}${x.timing?' · '+esc(x.timing):''}${x.notes?' — '+esc(x.notes):''}</li>`).join('')}</ul>`:'<p>Nessun integratore associato.</p>'}</section>`;
  const win=window.open('','_blank');if(!win){alert('Il browser ha bloccato la finestra PDF. Consenti i popup per questo sito e riprova.');return;}
- win.document.open();win.document.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title||'Piano nutrizionale')}</title><style>body{font-family:Arial,sans-serif;color:#20242a;margin:28px;font-size:12px;line-height:1.45}h1{font-size:23px;margin:0 0 5px}h2{font-size:17px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid #333}h3{font-size:14px;margin:0 0 5px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}.meta div,.targets,.meal,.variant{border:1px solid #d5d9df;border-radius:6px;padding:8px}.targets{margin:10px 0;background:#f5f6f7}.day{break-inside:avoid;margin-top:14px}.meal{margin:7px 0;break-inside:avoid}.variant{margin-top:6px;background:#fafafa}p{margin:4px 0}ul{margin:5px 0;padding-left:20px}li{margin:3px 0}.muted{color:#666}.notice{font-size:10px;color:#555;margin-top:20px;border-top:1px solid #ddd;padding-top:8px}.print{margin-bottom:15px;padding:8px 12px}@media print{body{margin:12mm}.print{display:none}.day{break-inside:auto}.meal,.variant{break-inside:avoid}} </style>
-
-
-
-</head><body><button class="print" onclick="window.print()">Stampa / Salva come PDF</button><h1>${esc(p.title||'Piano nutrizionale')}</h1><p>${esc(cleanDesc||'Piano nutrizionale')}</p><div class="meta"><div><b>Cliente:</b> ${esc(client)}</div><div><b>Modalità:</b> ${weekly?'Settimanale':'Giornaliera'}</div><div><b>Emissione:</b> ${esc(p.issue_date||'—')}</div><div><b>Validità:</b> ${esc(p.valid_from||'—')} → ${esc(p.valid_to||'—')}</div><div><b>Stato:</b> ${p.is_active===false?'Non attivo':'Attivo'}</div><div><b>Accesso cliente:</b> ${p.is_visible===false?'Bloccato per il cliente':'Visibile al cliente'}</div></div><div class="targets"><b>Obiettivi giornalieri:</b> ${esc(targets)}</div>${dayHtml}${supplementsHtml}<div class="notice">Documento esportato da KleosFit Coach Pro. Gli eventuali valori e indicazioni nutrizionali devono essere verificati dal professionista responsabile. L'esportazione non equivale ad approvazione clinica.</div><script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
+ win.document.open();win.document.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title||'Piano nutrizionale')}</title><style>body{font-family:Arial,sans-serif;color:#20242a;margin:28px;font-size:12px;line-height:1.45}h1{font-size:23px;margin:0 0 5px}h2{font-size:17px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid #333}h3{font-size:14px;margin:0 0 5px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}.meta div,.targets,.meal,.variant{border:1px solid #d5d9df;border-radius:6px;padding:8px}.targets{margin:10px 0;background:#f5f6f7}.day{break-inside:avoid;margin-top:14px}.meal{margin:7px 0;break-inside:avoid}.variant{margin-top:6px;background:#fafafa}p{margin:4px 0}ul{margin:5px 0;padding-left:20px}li{margin:3px 0}.muted{color:#666}.notice{font-size:10px;color:#555;margin-top:20px;border-top:1px solid #ddd;padding-top:8px}.print{margin-bottom:15px;padding:8px 12px}@media print{body{margin:12mm}.print{display:none}.day{break-inside:auto}.meal,.variant{break-inside:avoid}} </style></head><body><button class="print" onclick="window.print()">Stampa / Salva come PDF</button><h1>${esc(p.title||'Piano nutrizionale')}</h1><p>${esc(cleanDesc||'Piano nutrizionale')}</p><div class="meta"><div><b>Cliente:</b> ${esc(client)}</div><div><b>Modalità:</b> ${weekly?'Settimanale':'Giornaliera'}</div><div><b>Emissione:</b> ${esc(p.issue_date||'—')}</div><div><b>Validità:</b> ${esc(p.valid_from||'—')} → ${esc(p.valid_to||'—')}</div><div><b>Stato:</b> ${p.is_active===false?'Non attivo':'Attivo'}</div><div><b>Accesso cliente:</b> ${p.is_visible===false?'Bloccato per il cliente':'Visibile al cliente'}</div></div><div class="targets"><b>Obiettivi giornalieri:</b> ${esc(targets)}</div>${dayHtml}${supplementsHtml}<div class="notice">Documento esportato da KleosFit Coach Pro. Gli eventuali valori e indicazioni nutrizionali devono essere verificati dal professionista responsabile. L'esportazione non equivale ad approvazione clinica.</div><script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
 }
 
 function renderNutrition(rows){
@@ -5273,96 +5296,58 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
 .nutritionPlanDetailsBody>.nutritionDayBlock:first-child{margin-top:0}
 @media(max-width:600px){.nutritionPlanDetails>summary{padding:12px;font-size:13px}}
 </style>
-<style id="kleosfit-nutrition-layout-v4">
-/* Layout richiesta nutrizionale KleosFit: sezioni reali, griglie responsive e pannelli coerenti. Observer persistente: applica il layout anche quando il modulo viene aperto dopo il login. */
-#modal:has(#nutritionClientRequestCard){align-items:flex-start!important;overflow-y:auto!important;padding:12px!important}
-#modal .modalbox:has(#nutritionClientRequestCard){width:min(1240px,97vw)!important;max-width:1240px!important;max-height:96vh!important;overflow:auto!important;padding:clamp(14px,2vw,28px)!important;border-radius:18px!important;background:#0b1014!important;border:1px solid #293943!important;box-shadow:0 24px 80px #0009!important}
-#nutritionClientRequestCard{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
-#nutritionClientRequestCard>.top{padding:0 0 16px!important;margin:0 0 18px!important;border-bottom:1px solid #2b3944!important}
-#nutritionClientRequestCard>.top h2{font-size:clamp(22px,2vw,30px)!important;color:#fff!important}
-#nutritionRequestForm{width:100%!important;max-width:none!important}
-#nutritionRequestForm>.formgrid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important;margin-top:12px!important}
-#nutritionRequestForm .nutritionSection{box-sizing:border-box;min-width:0;padding:14px 16px 16px;border:1px solid #2a3a46;border-radius:13px;background:linear-gradient(145deg,rgba(23,34,43,.96),rgba(17,24,31,.96));box-shadow:0 5px 18px #0002}
-#nutritionRequestForm .nutritionSectionTitle{display:flex;align-items:center;gap:12px;margin:0 0 13px;padding:0 0 10px;border-bottom:1px solid #2a3a46}
-#nutritionRequestForm .nutritionSectionTitle>span{display:flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#b9f23b;color:#17210b;font-size:16px;font-weight:800}
-#nutritionRequestForm .nutritionSectionTitle h3{margin:0;color:#f5f7fa;font-size:16px;font-weight:750;line-height:1.25}
-#nutritionRequestForm .nutritionSectionGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px 14px;align-items:start}
-#nutritionRequestForm .nutritionSectionGrid>div{min-width:0;margin:0!important}
-#nutritionRequestForm .nutritionSectionGrid>.wide{grid-column:1/-1!important}
-#nutritionRequestForm label{display:block;font-size:12px!important;line-height:1.4;margin:0 0 6px!important;color:#dfe6ed!important}
-#nutritionRequestForm input:not([type=checkbox]):not([type=radio]),#nutritionRequestForm select,#nutritionRequestForm textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:39px;padding:9px 11px;border:1px solid #34434f;border-radius:7px;background:#0c1116;color:#f5f7fa;font:inherit}
-#nutritionRequestForm textarea{min-height:76px;resize:vertical;line-height:1.45}
-#nutritionRequestForm .checkrow{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px!important;margin-top:7px}
-#nutritionRequestForm .foodChoice,#nutritionRequestForm .checkrow>label:not(.foodChoice){display:flex!important;align-items:center;gap:8px!important;min-width:0;min-height:34px;padding:7px 9px!important;margin:0!important;border:1px solid #2b3944;border-radius:7px;background:#0e151b;color:#e1e7ed;font-size:12px!important;line-height:1.35;white-space:normal}
-#nutritionRequestForm .foodChoice input[type=checkbox],#nutritionRequestForm .checkrow>label input[type=checkbox],#nutritionRequestForm .checkrow>label input[type=radio]{appearance:auto;flex:0 0 17px;width:17px!important;height:17px!important;min-width:17px;margin:0!important;accent-color:#1685ff}
-#nutritionRequestForm .foodChoice:has(input:checked),#nutritionRequestForm .checkrow>label:has(input:checked){border-color:#8dbf31;background:#202b18;color:#f5ffd9}
-#nutritionRequestForm #nr_liked_group{border:1px solid #426a36;background:rgba(112,165,43,.07);padding:10px!important;border-radius:9px}
-#nutritionRequestForm #nr_avoid_group{border:1px solid #754047;background:rgba(190,62,72,.07);padding:10px!important;border-radius:9px}
-#nutritionRequestForm #nr_allergies_group{border:1px solid #285d7c;background:rgba(27,135,191,.07);padding:10px!important;border-radius:9px}
-#nutritionRequestForm .muted{font-size:11px;line-height:1.45;margin-top:6px}
-#nutritionRequestForm .nutritionFoodCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
-#nutritionRequestForm .nutritionFoodCards>div{min-width:0}
-#nutritionRequestForm .nutritionFoodCards>div>label:first-child{font-weight:750;font-size:13px!important}
-#nutritionRequestForm .nutritionFoodCards #nr_liked_group label{border-color:#426a36}
-#nutritionRequestForm .nutritionFoodCards #nr_avoid_group label{border-color:#754047}
-#nutritionRequestForm .nutritionFoodCards #nr_allergies_group label{border-color:#285d7c}
-#nutritionRequestForm .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:2px;padding:12px 0 0;border-top:1px solid #2a3742;background:transparent}
-#nutritionRequestForm .actions .btn{min-height:44px;padding:0 18px}
-@media(max-width:1050px){#nutritionRequestForm .nutritionSectionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}#nutritionRequestForm .nutritionSectionGrid>.wide{grid-column:1/-1!important}#nutritionRequestForm .nutritionFoodCards{grid-template-columns:1fr}#nutritionRequestForm .nutritionFoodCards .checkrow{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:640px){#modal:has(#nutritionClientRequestCard){padding:5px!important}#modal .modalbox:has(#nutritionClientRequestCard){width:100%!important;max-width:100%!important;max-height:98vh!important;padding:10px!important;border-radius:12px!important}#nutritionRequestForm .nutritionSection{padding:11px}#nutritionRequestForm .nutritionSectionGrid{grid-template-columns:minmax(0,1fr)}#nutritionRequestForm .nutritionSectionGrid>.wide{grid-column:auto!important}#nutritionRequestForm .nutritionFoodCards{grid-template-columns:minmax(0,1fr)}#nutritionRequestForm .checkrow{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:360px){#nutritionRequestForm .checkrow{grid-template-columns:minmax(0,1fr)!important}}
-</style>
-<script id="kleosfit-nutrition-layout-v4">
+<script id="kleosfit-nutrition-layout-script">
+/* Structure the request form into stable visual sections after each modal render. */
 (function(){
-  const sectionDefs=[
-    {n:'1',title:'Dati personali',ids:['nr_plan_mode','nr_weight','nr_height'],match:/tipo di piano richiesto|peso attuale|altezza/i},
-    {n:'2',title:'Obiettivo e stile di vita',ids:['nr_goal','nr_goal_other','nr_style','nr_style_other','nr_budget'],match:/obiettivo principale|stile alimentare|budget/i},
-    {n:'3',title:'Attività e routine',ids:['nr_activity','nr_training','nr_wake_time','nr_work_schedule','nr_training_schedule','nr_meal_schedule','nr_bedtime','nr_night_waking','nr_weight_trend','nr_daily_activity','nr_sleep_hours','nr_sleep_quality','nr_recovery','nr_digestion','nr_hydration','nr_bodycomp'],match:/attività quotidiana|durata allenamento|orari abituali|orario di risveglio|orario di lavoro|orario di allenamento|orari dei pasti|coricamento|risvegli notturni|andamento del peso|livello di attività|sonno:|qualità del sonno|stress e recupero|appetito, digestione|idratazione|composizione corporea/i},
-    {n:'4',title:'Storia del peso / rapporto col cibo',ids:['nr_weight_history','nr_weight_history_choice','nr_weight_history_notes'],match:/storia del peso|rapporto col cibo|variazioni importanti del peso/i},
-    {n:'5',title:'Preferenze alimentari',ids:['nr_liked_group','nr_avoid_group','nr_allergies_group','nr_style'],match:/alimenti graditi|alimenti non graditi|alimenti da evitare|allergie e intolleranze|allergie\/intolleranze/i},
-    {n:'6',title:'Pasti desiderati',ids:['nr_meal_schedule'],match:/quali pasti vuoi includere|pasti da includere/i},
-    {n:'7',title:'Cucina e conservazione',ids:['nr_cooking','nr_cooking_storage'],match:/possibilità di cucinare|cucina\/conservazione|conservazione e trasporto/i},
-    {n:'8',title:'Condizioni di salute e farmaci',ids:['nr_medical_conditions','nr_limitations','nr_medications','nr_professional_advice','nr_other_health_notes'],match:/condizioni mediche rilevanti|sintomi o limitazioni|farmaci o integratori|indicazioni o restrizioni|altre note sanitarie/i},
-    {n:'9',title:'Misurazioni corporee e note',ids:['nr_professional_measures','nr_consent','nr_privacy'],match:/misurazioni|misure professionali|consenso|privacy/i}
-  ];
-  function labelText(node){const l=node.querySelector(':scope > label');return (l?.textContent||node.textContent||'').replace(/\s+/g,' ').trim();}
-  function build(form){
-    const grid=form.querySelector(':scope > .formgrid');
-    if(!grid||grid.dataset.sectionsBuilt==='v4')return;
-    const children=[...grid.children];
-    const actions=children.find(n=>n.classList.contains('actions'))||null;
-    const content=children.filter(n=>n!==actions);
-    const sections=sectionDefs.map(d=>{const el=document.createElement('section');el.className='nutritionSection';el.innerHTML='<div class="nutritionSectionTitle"><span>'+d.n+'</span><h3>'+d.title+'</h3></div><div class="nutritionSectionGrid"></div>';return {d,el,body:el.querySelector('.nutritionSectionGrid')}});
-    const used=new Set();
-    for(const node of content){
-      const ids=[node.id,...node.querySelectorAll('[id]')].filter(Boolean);
-      const txt=labelText(node);
-      let target=sections.find(s=>ids.some(id=>s.d.ids.includes(id)));
-      if(!target)target=sections.find(s=>s.d.match.test(txt));
-      if(!target){
-        if(/farmaci|integratori|condizioni mediche|sintomi|limitazioni|allergie|intolleranze/i.test(txt))target=sections[7];
-        else if(/alimenti graditi|alimenti non graditi|alimenti da evitare/i.test(txt))target=sections[4];
-        else if(/pasti/i.test(txt))target=sections[5];
-        else if(/cucin|conservazione/i.test(txt))target=sections[6];
-        else if(/misurazioni|parametri professionali|note/i.test(txt))target=sections[8];
-        else target=sections[2];
-      }
-      target.body.appendChild(node);used.add(node);
-    }
-    const foodSection=sections[4];
-    const foodNodes=['nr_liked_group','nr_avoid_group','nr_allergies_group'].map(id=>grid.querySelector('#'+id)?.closest('.nutritionSectionGrid > div')).filter(Boolean);
-    if(foodNodes.length===3){
-      const cards=document.createElement('div');cards.className='nutritionFoodCards';
-      foodNodes.forEach(node=>{node.classList.remove('wide');cards.appendChild(node)});
-      foodSection.body.appendChild(cards);
-    }
-    grid.replaceChildren(...sections.filter(s=>s.body.children.length).map(s=>s.el));
-    if(actions)grid.appendChild(actions);
-    grid.dataset.sectionsBuilt='v4';
+ const rules=[
+  {title:'Obiettivo e dati di base',test:t=>/tipo di piano richiesto|obiettivo principale/i.test(t)},
+  {title:'Attività e routine',test:t=>/orari abituali|orario di risveglio/i.test(t)},
+  {title:'Storia del peso e recupero',test:t=>/andamento del peso negli ultimi|livello di attività \(passi/i.test(t)},
+  {title:'Preferenze alimentari',test:t=>/stile alimentare \/ preferenze culturali/i.test(t)},
+  {title:'Pasti desiderati',test:t=>/quali pasti vuoi includere nel piano/i.test(t)},
+  {title:'Cucina e conservazione',test:t=>/possibilità di cucinare/i.test(t)},
+  {title:'Condizioni di salute e farmaci',test:t=>/condizioni mediche rilevanti riferite/i.test(t)},
+  {title:'Sintomi e limitazioni',test:t=>/sintomi o limitazioni per alimentazione/i.test(t)},
+  {title:'Note e conferme finali',test:t=>/variazioni importanti del peso o rapporto problematico/i.test(t)}
+ ];
+ function firstLabel(el){const l=el.querySelector(':scope > label');return (l?.innerText||l?.textContent||'').replace(/\s+/g,' ').trim();}
+ function enhance(){
+  const form=document.getElementById('nutritionRequestForm');const grid=form?.querySelector(':scope > .formgrid');
+  if(!grid||grid.dataset.nrLayoutDone==='1')return;
+  const children=Array.from(grid.children);if(children.length<10)return;
+  const sections=[];let current=null,idx=0;
+  for(const el of children){
+   const label=firstLabel(el);let ruleIndex=-1;
+   for(let i=0;i<rules.length;i++){if(rules[i].test(label)){ruleIndex=i;break;}}
+   if(!current||ruleIndex>=0){
+    if(ruleIndex>=0)idx=ruleIndex;
+    else if(!current)idx=0;
+    current={idx,title:rules[idx].title,fields:[]};sections.push(current);
+   }
+   current.fields.push(el);
   }
-  function scan(){document.querySelectorAll('#nutritionRequestForm').forEach(build);}
-  function start(){scan();if(document.body){const obs=new MutationObserver(()=>scan());obs.observe(document.body,{childList:true,subtree:true});window.__kleosfitNutritionLayoutObserver=obs;}}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  const fragment=document.createDocumentFragment();
+  sections.forEach((s,i)=>{
+   const box=document.createElement('section');box.className='nr-layout-section';
+   const heading=document.createElement('h3');heading.className='nr-layout-heading';
+   const num=document.createElement('span');num.className='nr-layout-number';num.textContent=String(i+1);
+   const title=document.createElement('span');title.textContent=s.title;heading.append(num,title);box.appendChild(heading);
+   s.fields.forEach(el=>{
+    el.classList.add('nr-layout-field');
+    const t=firstLabel(el);
+    if(el.classList.contains('wide')||/tipo di piano richiesto|orari abituali|orari dei pasti|stile alimentare|alimenti graditi|alimenti non graditi|quali pasti vuoi includere|allergie e intolleranze|condizioni mediche|sintomi o limitazioni|confermo che le informazioni|dichiaro di aver letto/i.test(t))el.classList.add('nr-wide');
+    if(/alimenti graditi/i.test(t)){el.classList.add('nr-food-panel','nr-liked');}
+    if(/alimenti non graditi/i.test(t)){el.classList.add('nr-food-panel','nr-avoid');}
+    if(/allergie e intolleranze/i.test(t)){el.classList.add('nr-food-panel','nr-allergies');}
+    if(/confermo che le informazioni|dichiaro di aver letto/i.test(t))el.classList.add('nr-consent');
+    box.appendChild(el);
+   });
+   fragment.appendChild(box);
+  });
+  grid.appendChild(fragment);grid.dataset.nrLayoutDone='1';
+ }
+ const observer=new MutationObserver(enhance);
+ function start(){if(document.body)observer.observe(document.body,{childList:true,subtree:true});enhance();}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
-</script>
-</body></html>
+</script></body></html>

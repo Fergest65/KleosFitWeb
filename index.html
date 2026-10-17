@@ -5274,7 +5274,7 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
 @media(max-width:600px){.nutritionPlanDetails>summary{padding:12px;font-size:13px}}
 </style>
 <style id="kleosfit-nutrition-layout-v4">
-/* Layout richiesta nutrizionale KleosFit: sezioni reali, griglie responsive e pannelli coerenti. */
+/* Layout richiesta nutrizionale KleosFit: sezioni reali, griglie responsive e pannelli coerenti. Observer persistente: applica il layout anche quando il modulo viene aperto dopo il login. */
 #modal:has(#nutritionClientRequestCard){align-items:flex-start!important;overflow-y:auto!important;padding:12px!important}
 #modal .modalbox:has(#nutritionClientRequestCard){width:min(1240px,97vw)!important;max-width:1240px!important;max-height:96vh!important;overflow:auto!important;padding:clamp(14px,2vw,28px)!important;border-radius:18px!important;background:#0b1014!important;border:1px solid #293943!important;box-shadow:0 24px 80px #0009!important}
 #nutritionClientRequestCard{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
@@ -5361,7 +5361,7 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
     grid.dataset.sectionsBuilt='v4';
   }
   function scan(){document.querySelectorAll('#nutritionRequestForm').forEach(build);}
-  function start(){scan();if(document.body){const obs=new MutationObserver(scan);obs.observe(document.body,{childList:true,subtree:true});setTimeout(()=>obs.disconnect(),30000);}}
+  function start(){scan();if(document.body){const obs=new MutationObserver(()=>scan());obs.observe(document.body,{childList:true,subtree:true});window.__kleosfitNutritionLayoutObserver=obs;}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>

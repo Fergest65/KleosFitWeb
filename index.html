@@ -2342,6 +2342,33 @@ async function importSelectedNutritionProgress(requestId){
 }
 
 
+// Gestione immediata delle opzioni incompatibili nei gruppi a selezione multipla.
+document.addEventListener('change',function(event){
+ const cb=event.target;
+ if(!(cb instanceof HTMLInputElement)||cb.type!=='checkbox'||!cb.name.startsWith('nrq_multi_'))return;
+ const key=cb.name.slice('nrq_multi_'.length);
+ const group=[...document.querySelectorAll('input[name="nrq_multi_'+key+'"]')];
+ const isNone=v=>v.startsWith('Nessuna')||v.startsWith('Nessun alimento');
+ if(cb.checked){
+   if(isNone(cb.value))group.forEach(other=>{if(other!==cb)other.checked=false;});
+   else group.forEach(other=>{if(isNone(other.value))other.checked=false;});
+ }
+ if(key==='foods_liked'||key==='foods_avoid'){
+   const liked=[...document.querySelectorAll('input[name="nrq_multi_foods_liked"]')];
+   const avoid=[...document.querySelectorAll('input[name="nrq_multi_foods_avoid"]')];
+   const conflicts=[
+     [['Carne rossa'],['Carne rossa']], [['Carne bianca'],['Carne bianca']], [['Pesce'],['Pesce']], [['Uova'],['Uova']],
+     [['Latte e yogurt','Formaggi'],['Latte e latticini']], [['Pane e cereali','Pasta e riso'],['Glutine / cereali con glutine']],
+     [['Legumi'],['Legumi']], [['Verdure'],['Verdure specifiche']], [['Frutta'],['Frutta specifica']]
+   ];
+   if(cb.checked&&key==='foods_liked'){
+     for(const [lk,ak] of conflicts)if(lk.includes(cb.value))avoid.filter(x=>ak.includes(x.value)).forEach(x=>x.checked=false);
+   }else if(cb.checked&&key==='foods_avoid'){
+     for(const [lk,ak] of conflicts)if(ak.includes(cb.value))liked.filter(x=>lk.includes(x.value)).forEach(x=>x.checked=false);
+   }
+ }
+});
+
 async function saveNutritionRequestClientData(id){
  if(!isSuperuserRole()){alert('Salvataggio non autorizzato: sessione amministratore non riconosciuta.');return;}
  const keys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
@@ -2353,8 +2380,11 @@ async function saveNutritionRequestClientData(id){
    if(group.length){
      let selected=[...group].filter(cb=>cb.checked).map(cb=>cb.value);
      if(['foods_liked','foods_avoid','allergies_intolerances','medical_conditions','limitations'].includes(key)){
-       const none=selected.some(v=>v.startsWith('Nessuna')||v.startsWith('Nessun alimento'));
-       if(none&&selected.length>1){alert('La voce “Nessuna/Nessun” non può essere selezionata insieme ad altre opzioni: '+key+'.');return;}
+       const noneValues=selected.filter(v=>v.startsWith('Nessuna')||v.startsWith('Nessun alimento'));
+       if(noneValues.length&&selected.length>1){
+         selected=selected.filter(v=>!(v.startsWith('Nessuna')||v.startsWith('Nessun alimento')));
+         group.forEach(cb=>{if(cb.value.startsWith('Nessuna')||cb.value.startsWith('Nessun alimento'))cb.checked=false;});
+       }
      }
      if(key==='foods_liked'||key==='foods_avoid'){
        const likedGroup=[...document.querySelectorAll('input[name="nrq_multi_foods_liked"]')];
@@ -2399,8 +2429,8 @@ async function saveNutritionRequestClientData(id){
      if(!value.length){alert('Seleziona almeno un momento alimentare.');el.focus();return;}
      patch.meals_per_day=value.length;
    }else if(['foods_liked','foods_avoid','medical_conditions','limitations','allergies_intolerances'].includes(key)){
-     const selected=value?value.split(', ').filter(Boolean):[];
-     if(selected.some(v=>v.startsWith('Nessuna'))&&selected.length>1){alert('La voce Nessuna non può essere selezionata insieme ad altre opzioni in '+key+'.');el.focus();return;}
+     let selected=value?value.split(', ').filter(Boolean):[];
+     if(selected.length>1)selected=selected.filter(v=>!v.startsWith('Nessuna')&&!v.startsWith('Nessun alimento'));
      value=selected.length?selected.join(', '):null;
    }else if(value==='')value=null;
    if(dbColumns.has(key))patch[key]=value;else extra[key]=value;

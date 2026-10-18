@@ -2704,8 +2704,23 @@ function nutritionDetailedMealDescription(m){
  return hasFoods&&text.startsWith('Ingredienti e quantità')&&text.includes(marker)?'Preparazione: '+text.split(marker).slice(1).join(marker):text;
 }
 
-function exportNutritionPlanPdf(planId){
+async function nutritionFreshPdfDates(plan){
+ const result=await db.from('nutrition_plans').select('id,user_id,description,issue_date,valid_from,valid_to').eq('id',plan.id).single();
+ if(result.error)throw result.error;
+ if(!result.data)throw new Error('Piano non trovato nel database.');
+ const stored=result.data;
+ const tag=String(stored.description||'').match(/\[KLEOSFIT_REQUEST_ID:([^\]]+)\]/i);
+ if(!tag)return nutritionCompletionDates(null,stored);
+ const request=await db.from('nutrition_plan_requests').select('id,admin_completion').eq('id',tag[1]).eq('user_id',stored.user_id).maybeSingle();
+ if(request.error)throw request.error;
+ return nutritionCompletionDates(request.data?.admin_completion,stored);
+}
+async function exportNutritionPlanPdf(planId){
  const p=nutritionData.find(x=>String(x.id)===String(planId));if(!p){alert('Piano nutrizionale non trovato.');return;}
+ const win=window.open('','_blank');if(!win){alert('Il browser ha bloccato la finestra PDF. Consenti i popup per questo sito e riprova.');return;}
+ win.document.body.textContent='Caricamento delle date aggiornate…';
+ try{Object.assign(p,await nutritionFreshPdfDates(p));}catch(error){win.close();alert('PDF non generato: impossibile verificare le date aggiornate. '+(error.message||String(error)));return;}
+
  const meals=[...(p.nutrition_meals||[])].sort((a,b)=>(a.sort_order??0)-(b.sort_order??0));
  const weekly=nutritionIsWeekly(p),days=weekly?nutritionDays:[null];
  const client=nutritionClientLabel(p.user_id);
@@ -2714,7 +2729,7 @@ function exportNutritionPlanPdf(planId){
  const dayHtml=days.map(day=>{const dayMeals=meals.filter(m=>weekly?m.day_of_week===day:!m.day_of_week);return `<section class="day"><h2>${esc(nutritionDayLabel(day))}</h2>${dayMeals.length?dayMeals.map(m=>{const variants=m.nutrition_meal_variants||[];return `<div class="meal"><h3>${esc(m.meal_type||'Pasto')}${m.name&&m.name!==m.meal_type?' — '+esc(m.name):''}</h3>${variants.length?variants.map(v=>`<div class="variant"><b>${esc(v.name||'Variante')}</b>${nutritionDetailedFoodTable(v)}</div>`).join(''):'<p class="muted">Nessuna variante configurata.</p>'}</div>`}).join(''):'<p>Nessun pasto configurato.</p>'}</section>`}).join('');
  const supplements=p.nutrition_supplements||[];
  const supplementsHtml=`<section class="day"><h2>Integratori</h2>${supplements.length?`<ul>${supplements.map(x=>`<li><b>${esc(x.name)}</b>${x.dosage?' — '+esc(x.dosage):''}${x.timing?' · '+esc(x.timing):''}${x.notes?' — '+esc(x.notes):''}</li>`).join('')}</ul>`:'<p>Nessun integratore associato.</p>'}</section>`;
- const win=window.open('','_blank');if(!win){alert('Il browser ha bloccato la finestra PDF. Consenti i popup per questo sito e riprova.');return;}
+
  win.document.open();win.document.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title||'Piano nutrizionale')}</title><style>body{font-family:Arial,sans-serif;color:#20242a;margin:28px;font-size:12px;line-height:1.45}h1{font-size:23px;margin:0 0 5px}h2{font-size:17px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid #333}h3{font-size:14px;margin:0 0 5px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}.meta div,.targets,.meal,.variant{border:1px solid #d5d9df;border-radius:6px;padding:8px}.targets{margin:10px 0;background:#f5f6f7}.day{break-inside:avoid;margin-top:14px}.meal{margin:7px 0;break-inside:avoid}.variant{margin-top:6px;background:#fafafa}p{margin:4px 0}ul{margin:5px 0;padding-left:20px}li{margin:3px 0}.muted{color:#666}.notice{font-size:10px;color:#555;margin-top:20px;border-top:1px solid #ddd;padding-top:8px}.print{margin-bottom:15px;padding:8px 12px}@media print{body{margin:12mm}.print{display:none}.day{break-inside:auto}.meal,.variant{break-inside:avoid}} </style></head><body><button class="print" onclick="window.print()">Stampa / Salva come PDF</button><h1>${esc(p.title||'Piano nutrizionale')}</h1><div class="meta"><div><b>Cliente:</b> ${esc(client)}</div><div><b>Modalità:</b> ${weekly?'Settimanale':'Giornaliera'}</div><div><b>Emissione:</b> ${esc(fmtDateIT(p.issue_date))}</div><div><b>Validità:</b> ${esc(fmtDateIT(p.valid_from))} → ${esc(fmtDateIT(p.valid_to))}</div><div><b>Stato:</b> ${p.is_active===false?'Non attivo':'Attivo'}</div><div><b>Accesso cliente:</b> ${p.is_visible===false?'Bloccato per il cliente':'Visibile al cliente'}</div></div><div class="targets"><b>Obiettivi giornalieri:</b> ${esc(targets)}</div>${dayHtml}${supplementsHtml}<div class="notice">Documento esportato da KleosFit Coach Pro. Gli eventuali valori e indicazioni nutrizionali devono essere verificati dal professionista responsabile. L'esportazione non equivale ad approvazione clinica.</div><script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
 }
 

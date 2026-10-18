@@ -5459,4 +5459,8 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
 .modalbox:has(.nutritionProspectScroll) .nutritionRequestSaveBar .btn{min-height:52px!important;font-size:15px!important;white-space:normal}
 .modalbox:has(.nutritionProspectScroll) .nutritionRequestSaveBar .nutritionRequestSavePrimary{min-height:60px!important;font-size:18px!important;font-weight:900!important;background:#bcff39!important;color:#111900!important;border:2px solid #e0ff9b!important;box-shadow:0 0 0 2px #bcff3926,0 4px 16px #0005;letter-spacing:.03em}
 @media(max-width:600px){.modalbox:has(.nutritionProspectScroll) .nutritionRequestSaveBar{grid-template-columns:1fr 1fr;padding-top:10px!important;gap:8px}.modalbox:has(.nutritionProspectScroll) .nutritionRequestSavePrimary{grid-column:1/-1;grid-row:1}.modalbox:has(.nutritionProspectScroll) .nutritionRequestSaveBar .btn{min-width:0!important}.modalbox:has(.nutritionProspectScroll)>#modalContent{height:calc(94dvh - 30px)}}
+</style><style id="nutrition-prospect-above-navigation">
+/* The fixed navigation uses z-index 50; the prospect must cover it. */
+#modal.open:has(.nutritionProspectScroll){z-index:1000!important;isolation:isolate}
+#modal.open:has(.nutritionProspectScroll) .nutritionRequestSaveBar{padding-bottom:max(4px,env(safe-area-inset-bottom))!important}
 </style></body></html>

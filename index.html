@@ -2222,7 +2222,7 @@ async function editNutritionRequestCompletion(id){
  if((x.age_years===null||x.age_years===undefined)&&prof.data?.birth_date){const bd=new Date(prof.data.birth_date+'T00:00:00');const now=new Date();let age=now.getFullYear()-bd.getFullYear();if(now.getMonth()<bd.getMonth()||(now.getMonth()===bd.getMonth()&&now.getDate()<bd.getDate()))age--;if(age>=0&&age<=120)x.age_years=age;}
  const field=(label,key,type='text',placeholder='')=>`<div><label>${label}</label><input id="nrc_${key}" type="${type}" value="${esc(a[key]??'')}" placeholder="${placeholder}"></div>`;
  const reqFields=[
-  ['Obiettivo','goal','text'],['Età','age_years','number'],['Sesso','sex','text'],['Peso (kg)','weight_kg','number'],['Altezza (cm)','height_cm','number'],['Attività quotidiana','activity_level','text'],['Durata allenamento','training','textarea'],['Orari giornalieri','daily_schedule','textarea'],['Andamento peso','weight_trend','text'],['Attività quotidiana (passi/ore seduto)','daily_activity','textarea'],['Ore di sonno per notte','sleep_hours','number'],['Qualità del sonno','sleep_quality','text'],['Stress e recupero','recovery','textarea'],['Appetito e digestione','digestion','textarea'],['Idratazione','hydration','text'],['Composizione corporea','body_composition','textarea'],['Stile alimentare','diet_style','text'],['Alimenti graditi','foods_liked','textarea'],['Alimenti da evitare','foods_avoid','textarea'],['Allergie/intolleranze','allergies_intolerances','textarea'],['Pasti desiderati','meals_included','textarea'],['Cucina/conservazione','cooking_storage','textarea'],['Budget/vincoli','budget_constraints','textarea'],['Condizioni riferite','medical_conditions','textarea'],['Sintomi/limitazioni','limitations','textarea'],['Storia del peso/rapporto col cibo','weight_history','textarea'],['Parametri professionali','professional_measures','textarea'],['Farmaci/integratori','medications_supplements','textarea'],['Indicazioni medico/dietista','professional_advice','textarea'],['Altre note sanitarie','other_health_notes','textarea']
+  ['Tipo di piano','plan_mode','text'],['Obiettivo','goal','text'],['Età','age_years','number'],['Sesso','sex','text'],['Peso (kg)','weight_kg','number'],['Altezza (cm)','height_cm','number'],['Attività quotidiana','activity_level','text'],['Durata allenamento','training','textarea'],['Orari giornalieri','daily_schedule','textarea'],['Andamento peso','weight_trend','text'],['Attività quotidiana (passi/ore seduto)','daily_activity','textarea'],['Ore di sonno per notte','sleep_hours','number'],['Qualità del sonno','sleep_quality','text'],['Stress e recupero','recovery','textarea'],['Appetito e digestione','digestion','textarea'],['Idratazione','hydration','text'],['Composizione corporea','body_composition','textarea'],['Stile alimentare','diet_style','text'],['Alimenti graditi','foods_liked','textarea'],['Alimenti da evitare','foods_avoid','textarea'],['Allergie/intolleranze','allergies_intolerances','textarea'],['Pasti desiderati','meals_included','textarea'],['Cucina/conservazione','cooking_storage','textarea'],['Budget/vincoli','budget_constraints','textarea'],['Condizioni riferite','medical_conditions','textarea'],['Sintomi/limitazioni','limitations','textarea'],['Storia del peso/rapporto col cibo','weight_history','textarea'],['Parametri professionali','professional_measures','textarea'],['Farmaci/integratori','medications_supplements','textarea'],['Indicazioni medico/dietista','professional_advice','textarea'],['Altre note sanitarie','other_health_notes','textarea']
  ];
  const reqOptions={
   activity_level:['Bassa','Moderata','Alta'],
@@ -2239,6 +2239,7 @@ async function editNutritionRequestCompletion(id){
   cooking_storage:['Cucina semplice ogni giorno','Preparo i pasti in anticipo','Meal prep per 2-3 giorni','Meal prep settimanale','Ho poco tempo per cucinare','Uso microonde','Disponibili frigorifero e freezer','Senza cucina attrezzata','Posso conservare e riscaldare i pasti','Altro / da specificare'],
  };
  const reqInput=(label,key,type)=>{const cv=x.admin_completion?.client_data?.[key];const v=(x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!=='')?x[key]:(cv!==null&&cv!==undefined?cv:'');const value=Array.isArray(v)?v.join(', '):(v??'');
+if(key==='plan_mode'){const mode=String(value||'');return `<div><label>Tipo di piano *</label><select id="nrq_plan_mode" required><option value="" ${!['single','weekly'].includes(mode)?'selected':''}>Seleziona il tipo di piano</option><option value="single" ${mode==='single'?'selected':''}>Giornaliero</option><option value="weekly" ${mode==='weekly'?'selected':''}>Settimanale</option></select></div>`;}
 if(key==='weight_history'){
  const raw=String(value||'').trim();
  const options=['Peso stabile','Aumento graduale','Diminuzione graduale','Variazioni frequenti del peso','Precedenti diete ripetute','Difficoltà a mantenere il peso raggiunto','Appetito spesso scarso','Appetito spesso elevato','Fame emotiva o legata allo stress','Alimentazione irregolare per orari di lavoro','Preferisco parlarne con il professionista','Nessuna informazione da riferire','Altro / da specificare'];
@@ -2297,14 +2298,14 @@ if(key==='sleep_hours'){const hours=Array.from({length:29},(_,i)=>i*0.5);return 
 if(multiOptions[key]){const selectionValue=key==='allergies_intolerances'?String(value||'').replace(/Nessuna,\s*confermato/gi,'Nessuna'):String(value||'');const selected=selectionValue.split(',').map(s=>s.trim()).filter(Boolean);return `<div><label>${label}</label><div class="nrq-checkbox-grid" id="nrq_group_${key}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:6px">${multiOptions[key].map((o,i)=>`<label style="display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border:1px solid var(--border,#444);border-radius:6px;font-size:12px;cursor:pointer"><input type="checkbox" name="nrq_multi_${key}" value="${esc(o)}" ${selected.includes(o)?'checked':''} style="width:auto;min-width:auto;margin-top:2px"><span>${esc(o)}</span></label>`).join('')}</div><div class="muted" style="font-size:11px;margin-top:4px">Seleziona le voci desiderate senza usare Ctrl.</div></div>`;}
 const help=guidance[key]||'';return `<div><label>${label}</label>${type==='textarea'?`${help?`<div class="muted" style="font-size:12px;margin:3px 0 6px">${help}</div>`:''}<textarea id="nrq_${key}" rows="4" placeholder="${help}">${esc(value)}</textarea>`:`<input id="nrq_${key}" type="${type}" value="${esc(value)}">`}</div>`;};
  openModal(`<div class="modalhead"><div><h2 style="margin:0">Completa prospetto nutrizionale</h2><div class="sub">Puoi consultare e correggere i dati inviati dal cliente, poi completare il piano.</div></div><button class="close" onclick="closeModal()">Chiudi</button></div>
- <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="nr-admin-layout">${[["Dati personali",["age_years","sex","weight_kg","height_cm"]],["Obiettivo e stile di vita",["goal","diet_style","budget_constraints"]],["Attività e routine",["activity_level","training","daily_schedule","daily_activity","sleep_hours","sleep_quality","recovery","digestion","hydration"]],["Storia del peso / rapporto col cibo",["weight_history","weight_trend"]],["Preferenze alimentari",["foods_liked","foods_avoid","allergies_intolerances"]],["Pasti desiderati",["meals_included"]],["Cucina e conservazione",["cooking_storage"]],["Condizioni di salute e farmaci",["medical_conditions","medications_supplements","other_health_notes","limitations","professional_advice"]],["Misurazioni corporee (facoltativo)",["professional_measures","body_composition"]]].map(([title,keys],i)=>`<section class="nr-admin-section nr-admin-section-${i+1}"><h3><span>${i+1}</span>${title}</h3><div class="nr-admin-panel">${keys.map(key=>{const def=reqFields.find(f=>f[1]===key);return def?reqInput(...def):'';}).join('')}</div></section>`).join('')}</div><div class="actions"><button class="btn secondary" type="button" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
+ <div class="detailSection"><h3>Dati originali della richiesta — modificabili</h3><div class="muted">Le modifiche vengono salvate nella richiesta del cliente. Verifica con attenzione allergie, farmaci e informazioni sanitarie.</div><div class="nr-admin-layout">${[["Dati personali",["age_years","sex","weight_kg","height_cm"]],["Obiettivo e stile di vita",["plan_mode","goal","diet_style","budget_constraints"]],["Attività e routine",["activity_level","training","daily_schedule","daily_activity","sleep_hours","sleep_quality","recovery","digestion","hydration"]],["Storia del peso / rapporto col cibo",["weight_history","weight_trend"]],["Preferenze alimentari",["foods_liked","foods_avoid","allergies_intolerances"]],["Pasti desiderati",["meals_included"]],["Cucina e conservazione",["cooking_storage"]],["Condizioni di salute e farmaci",["medical_conditions","medications_supplements","other_health_notes","limitations","professional_advice"]],["Misurazioni corporee (facoltativo)",["professional_measures","body_composition"]]].map(([title,keys],i)=>`<section class="nr-admin-section nr-admin-section-${i+1}"><h3><span>${i+1}</span>${title}</h3><div class="nr-admin-panel">${keys.map(key=>{const def=reqFields.find(f=>f[1]===key);return def?reqInput(...def):'';}).join('')}</div></section>`).join('')}</div><div class="actions"><button class="btn secondary" type="button" onclick="saveNutritionRequestClientData('${id}')">Salva modifiche ai dati cliente</button></div></div>
  <div class="detailSection"><h3>Parametri professionali — Progressi del cliente</h3><div class="muted">Seleziona una o più rilevazioni dello storico del cliente. Puoi importare solo quelle utili al piano; i dati saranno aggiunti al campo Parametri professionali e resteranno modificabili.</div><div class="actions"><button class="btn secondary" type="button" onclick="loadNutritionClientProgress('${id}')">Carica elenco Progressi</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',true)">Seleziona tutti</button><button class="btn secondary" type="button" onclick="selectAllNutritionProgress('${id}',false)">Deseleziona tutti</button><button class="btn" type="button" onclick="importSelectedNutritionProgress('${id}')">Importa selezionati</button></div><div id="nrq_progress_import_${id}" style="margin-top:10px"></div><div style="margin-top:14px"><h4 style="margin:0 0 8px">Misurazioni importate — modificabili</h4><div class="muted">Dopo l'importazione puoi correggere direttamente i valori selezionati. Le modifiche saranno inserite nel campo Parametri professionali e usate per la bozza quando pertinenti.</div><div id="nrq_progress_edit_${id}" style="margin-top:8px"></div></div></div>
  <div class="detailSection"><h3>5. Preparazione del piano con AI</h3><div class="muted">In questa schermata si raccolgono e si salvano soltanto i dati della richiesta cliente. La struttura pasti, il JSON del piano e i valori nutrizionali NON vengono generati né caricati qui. Dopo aver copiato i dati e averli caricati nell’AI, genera il piano completo in JSON e importalo successivamente dalla funzione «Importa piano generato da ChatGPT» nella sezione Nutrizione. Il piano importato resta non visibile al cliente finché non viene revisionato.</div>
  <div class="formgrid">${field('Titolo del piano','title')}${field('Data emissione','issue_date','date')}${field('Valido dal','valid_from','date')}${field('Valido al','valid_to','date')}
  <div><label>Visibilità iniziale al cliente</label><select id="nrc_visibility"><option value="blocked" ${(a.visibility||'blocked')==='blocked'?'selected':''}>Bloccata — in revisione</option><option value="visible" ${a.visibility==='visible'?'selected':''}>Visibile</option></select></div>
  </div><div style="margin-top:10px"><label>Note per la preparazione</label><textarea id="nrc_notes" rows="3">${esc(a.notes||'')}</textarea></div></div>
  <div class="detailSection"><h3>6. Esporta i dati da elaborare con AI</h3><p>Copia il prompt oppure i dati della richiesta in JSON. In questa fase vengono esportati i dati del cliente, non la struttura dei pasti o un piano nutrizionale già calcolato.</p><div class="actions"><button class="btn secondary" onclick="copyNutritionRequestPrompt('${id}')">Copia prompt AI</button><button class="btn secondary" onclick="copyNutritionRequestJson('${id}')">Copia dati richiesta in JSON</button></div></div>
- <div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveNutritionRequestCompletion('${id}')">Salva completamento</button></div>`);
+ <div class="actions nutritionRequestSaveBar"><button class="btn secondary" type="button" onclick="closeModal()">Chiudi</button><button class="btn secondary" type="button" onclick="saveNutritionRequestCompletion('${id}')">Salva completamento</button><button class="btn nutritionRequestSavePrimary" type="button" onclick="saveNutritionRequestClientData('${id}')">Salva dati richiesta</button></div>`);
 }
 
 
@@ -2340,6 +2341,53 @@ async function loadNutritionClientProgress(requestId){
 function selectAllNutritionProgress(requestId,checked){
  document.querySelectorAll('.nrq-progress-select').forEach(cb=>{if(cb.dataset.requestId===String(requestId))cb.checked=!!checked;});
 }
+
+function nutritionMeasureFieldPairs(){return [['Data','progress_date'],['Peso','progress_weight'],['Vita','progress_waist'],['Petto','progress_chest'],['Fianchi','progress_hips'],['Braccio','progress_arm'],['Coscia','progress_thigh'],['Polpaccio','progress_calf'],['Avambraccio','progress_forearm'],['Polso','progress_wrist']];}
+function applyNutritionImportedMeasures(lines){
+ const marker='MISURAZIONI DA PROGRESSI — MODIFICABILI';
+ const field=document.getElementById('nrq_professional_measures');
+ const raw=document.getElementById('nrq_professional_measures_progress_raw');
+ if(!field||!raw)throw new Error('Campi delle misurazioni non disponibili: riaprire il prospetto.');
+ const base=field.value.split('\n\n').filter(part=>!part.startsWith(marker)).filter(Boolean).join('\n\n');
+ const first=String(lines[0]||'');
+ const cells=first.split(' · ');
+ nutritionMeasureFieldPairs().forEach(([label,id])=>{
+  const el=document.getElementById('nrq_'+id);if(!el)return;
+  const cell=cells.find(t=>t.startsWith(label+':'));
+  let value=cell?cell.slice(label.length+1).trim().replace(/\s*(kg|cm)$/,'').trim():'';
+  if(id!=='progress_date')value=value.replace(',','.');
+  el.value=value;
+ });
+ const note=document.getElementById('nrq_progress_notes');
+ const noteStart=cells.findIndex(t=>t.startsWith('Note:'));
+ if(note)note.value=noteStart<0?'':cells.slice(noteStart).join(' · ').slice(5).trim();
+ field.value=base;
+ raw.value=lines.length?marker+'\n'+lines.join('\n'):'';
+}
+function nutritionProfessionalMeasuresFromForm(){
+ const marker='MISURAZIONI DA PROGRESSI — MODIFICABILI';
+ const field=document.getElementById('nrq_professional_measures');
+ const raw=document.getElementById('nrq_professional_measures_progress_raw');
+ const chunks=String(field?.value||'').split('\n\n');
+ const embedded=chunks.find(part=>part.startsWith(marker))||'';
+ const base=chunks.filter(part=>!part.startsWith(marker)).filter(Boolean).join('\n\n');
+ const previous=String(raw?.value||embedded).split('\n').slice(1).filter(Boolean);
+ const pairs=nutritionMeasureFieldPairs();
+ // Preserve imported measurements without dedicated inputs, such as height and glutes.
+ const known=new Set(pairs.map(p=>p[0]).concat('Note'));
+ const extra=String(previous[0]||'').split(' · ').filter(t=>t.includes(':')&&!known.has(t.slice(0,t.indexOf(':')).trim()));
+ const values=pairs.map(([label,id])=>{
+  const v=String(document.getElementById('nrq_'+id)?.value||'').trim();
+  return v?label+': '+v+(id==='progress_date'?'':id==='progress_weight'?' kg':' cm'):'';
+ }).filter(Boolean);
+ const notes=String(document.getElementById('nrq_progress_notes')?.value||'').trim();
+ const first=[...values,...extra,notes?'Note: '+notes:''].filter(Boolean).join(' · ');
+ const lines=[first,...previous.slice(1)].filter(Boolean);
+ const structured=lines.length?marker+'\n'+lines.join('\n'):'';
+ if(raw)raw.value=structured;
+ return [base,structured].filter(Boolean).join('\n\n')||null;
+}
+
 async function importSelectedNutritionProgress(requestId){
  if(!isSuperuserRole())return;
  const target=document.getElementById('nrq_progress_import_'+requestId);
@@ -2382,10 +2430,9 @@ async function importSelectedNutritionProgress(requestId){
    const note=card.querySelector('.nrq-edit-progress-note')?.value.trim()||'';
    return ['Data: '+date,...vals,note?'Note: '+note:''].filter(Boolean).join(' · ');
   });
-  const marker='MISURAZIONI DA PROGRESSI — MODIFICABILI';
-  const existing=field.value.split('\n\n').filter(part=>!part.startsWith(marker));
-  field.value=[...existing.filter(Boolean),marker+'\n'+lines.join('\n')].join('\n\n');
-  target.textContent='Misurazioni inserite nel campo Parametri professionali. Puoi modificarle ancora lì e poi salvare le modifiche ai dati cliente.';
+  applyNutritionImportedMeasures(lines);
+  target.textContent='Misurazioni inserite nella sezione 9. Premi Salva modifiche ai dati cliente oppure Salva completamento per conservarle.';
+  document.getElementById('nrq_progress_date')?.scrollIntoView({behavior:'smooth',block:'center'});
  };
  editor.appendChild(confirm);
  target.textContent='Selezionate '+selected.length+' rilevazioni. Correggi i valori qui sotto e poi inseriscili nel prospetto.';
@@ -2419,12 +2466,27 @@ document.addEventListener('change',function(event){
  }
 });
 
+
+function nutritionDailyScheduleFromForm(){
+ const pairs=[['Risveglio','wake_time'],['Lavoro/scuola','work_schedule'],['Allenamento','training_schedule'],['Pasti','meal_schedule'],['Coricamento','bedtime'],['Risvegli notturni','night_waking']];
+ const controls=pairs.map(([label,key])=>[label,document.getElementById('nrq_sched_'+key)]);
+ const hidden=document.getElementById('nrq_daily_schedule');
+ if(!controls.some(([,el])=>el))return hidden?.value?.trim()||null;
+ const value=controls.map(([label,el])=>{const v=String(el?.value??'').trim();return v?label+': '+v:'';}).filter(Boolean).join('\n')||null;
+ if(hidden)hidden.value=value||'';
+ return value;
+}
+document.addEventListener('change',function(event){
+ if(String(event.target?.id||'').startsWith('nrq_sched_'))nutritionDailyScheduleFromForm();
+});
+
 async function saveNutritionRequestClientData(id){
  if(!isSuperuserRole()){alert('Salvataggio non autorizzato: sessione amministratore non riconosciuta.');return;}
- const keys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
- const dbColumns=new Set(['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
+ const keys=['plan_mode','goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
+ const dbColumns=new Set(['plan_mode','goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes']);
  const patch={},extra={};
  for(const key of keys){
+   let value;
    const group=document.querySelectorAll('input[name="nrq_multi_'+key+'"]');
    const el=document.getElementById('nrq_'+key);
    if(group.length){
@@ -2460,20 +2522,9 @@ async function saveNutritionRequestClientData(id){
      const notes=document.getElementById('nrq_weight_history_notes')?.value.trim()||'';
      value=[choice,notes?('Dettagli: '+notes):''].filter(Boolean).join(' — ')||null;
    }
-   if(key==='daily_schedule'){
-     const pairs=[['Risveglio','wake_time'],['Lavoro/scuola','work_schedule'],['Allenamento','training_schedule'],['Pasti','meal_schedule'],['Coricamento','bedtime'],['Risvegli notturni','night_waking']];
-     value=pairs.map(([lab,id])=>{const v=document.getElementById('nrq_sched_'+id)?.value||'';return v?lab+': '+v:''}).filter(Boolean).join('\n')||null;
-   }
-   if(key==='professional_measures'){
-     const raw=document.getElementById('nrq_professional_measures')?.value.trim()||'';
-     const rawProgress=document.getElementById('nrq_professional_measures_progress_raw')?.value.trim()||'';
-     const pairs=[['Data','progress_date'],['Peso','progress_weight'],['Vita','progress_waist'],['Petto','progress_chest'],['Fianchi','progress_hips'],['Braccio','progress_arm'],['Coscia','progress_thigh'],['Polpaccio','progress_calf'],['Avambraccio','progress_forearm'],['Polso','progress_wrist']];
-     const vals=pairs.map(([lab,id])=>{const v=document.getElementById('nrq_'+id)?.value.trim()||'';return v?lab+': '+v+(id==='progress_weight'?' kg':id==='progress_date'?'':' cm'):''}).filter(Boolean);
-     const note=document.getElementById('nrq_progress_notes')?.value.trim()||'';if(note)vals.push('Note: '+note);
-     const marker='MISURAZIONI DA PROGRESSI — MODIFICABILI';
-     const structured=vals.length?marker+'\n'+vals.join(' · '):rawProgress;
-     value=[raw,structured].filter(Boolean).join('\n\n')||null;
-   }
+   if(key==='plan_mode'&&!['single','weekly'].includes(value)){alert('Seleziona Giornaliero oppure Settimanale.');el?.focus();return;}
+   if(key==='daily_schedule')value=nutritionDailyScheduleFromForm();
+   if(key==='professional_measures')value=nutritionProfessionalMeasuresFromForm();
    if(['age_years','weight_kg','height_cm','meals_per_day'].includes(key)){
      value=value===''?null:Number(String(value).replace(',','.'));
      if(value!==null&&!Number.isFinite(value)){alert('Valore numerico non valido: '+key);el.focus();return;}
@@ -2499,12 +2550,15 @@ async function saveNutritionRequestClientData(id){
  for(const k of required){if(patch[k]!==undefined)extra[k]=patch[k];}
  const completion={...oldCompletion,client_data:{...(oldCompletion.client_data||{}),...extra}};
  patch.admin_completion=completion;
- const result=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,goal,weight_kg,height_cm,age_years,sex,admin_completion').maybeSingle();
+ const result=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,plan_mode,goal,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').maybeSingle();
  if(result.error){alert('SALVATAGGIO FALLITO: '+result.error.message+'\n\nValori letti dal modulo:\n'+captured);return;}
  if(!result.data){alert('SUPABASE NON HA AGGIORNATO NESSUNA RIGA. I dati non sono stati salvati.\nVerifica l’ID richiesta e la policy UPDATE.\n\nValori letti dal modulo:\n'+captured);return;}
- const verify=await db.from('nutrition_plan_requests').select('id,goal,weight_kg,height_cm,age_years,sex,admin_completion').eq('id',id).single();
+ const verify=await db.from('nutrition_plan_requests').select('id,plan_mode,goal,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').eq('id',id).single();
  if(verify.error){alert('La richiesta è stata aggiornata, ma la rilettura di verifica è fallita: '+verify.error.message+'\n\nValori letti dal modulo:\n'+captured);return;}
  const saved=verify.data;
+ if(patch.plan_mode!==undefined&&saved.plan_mode!==patch.plan_mode){alert('Tipo di piano non salvato correttamente.');return;}
+ if(patch.daily_schedule!==undefined&&(saved.daily_schedule||null)!==(patch.daily_schedule||null)){alert('Gli orari riletti non corrispondono alle scelte. Riapri il prospetto e verifica.');return;}
+ if(patch.professional_measures!==undefined&&(saved.professional_measures||null)!==(patch.professional_measures||null)){alert('Le misurazioni non corrispondono ai valori inviati. Riapri il prospetto e verifica prima di procedere.');return;}
  const actual=k=>saved[k]!==null&&saved[k]!==undefined&&String(saved[k]).trim()!==''?saved[k]:(saved.admin_completion?.client_data?.[k]??null);
  const notPersisted=required.filter(k=>patch[k]!==undefined&&patch[k]!==null&&String(patch[k]).trim()!==''&&(actual(k)===null||String(actual(k)).trim()===''));
  if(notPersisted.length){alert('SALVATAGGIO INCOMPLETO. Supabase non conserva: '+notPersisted.join(', ')+'.\n\nValori letti dal modulo:\n'+captured);return;}
@@ -2520,11 +2574,12 @@ async function saveNutritionRequestCompletion(id){
  const x=old.data||{};const clientPatch={};const clientExtra={};
  const numericKeys=new Set(['age_years','weight_kg','height_cm','meals_per_day','sleep_hours']);
  const arrayKeys=new Set(['meals_included']);
- const clientKeys=['goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
+ const clientKeys=['plan_mode','goal','age_years','sex','weight_kg','height_cm','activity_level','training','daily_schedule','weight_trend','daily_activity','sleep_hours','sleep_quality','recovery','digestion','hydration','body_composition','diet_style','foods_liked','foods_avoid','allergies_intolerances','meals_included','meals_per_day','cooking_storage','budget_constraints','medical_conditions','limitations','weight_history','professional_measures','medications_supplements','professional_advice','other_health_notes'];
  for(const key of clientKeys){
    const el=document.getElementById('nrq_'+key);if(!el)continue;
    let raw=String(el.value??'').trim();
    let value=raw;
+   if(key==='plan_mode'&&!['single','weekly'].includes(value)){alert('Seleziona Giornaliero oppure Settimanale.');el.focus();return;}
    if(key==='meals_included'){
      const selected=el.selectedOptions?[...el.selectedOptions].map(o=>String(o.value??o.textContent??'').trim()).filter(Boolean):[];
      const chosen=selected.length?selected:(raw?raw.split(',').map(v=>v.trim()).filter(Boolean):[]);
@@ -2540,16 +2595,22 @@ async function saveNutritionRequestCompletion(id){
    else if(raw===''&&key!=='sleep_quality')continue;
    if(['age_years','sex','weight_kg','height_cm'].includes(key))clientExtra[key]=value;else clientPatch[key]=value;
  }
+ if(document.getElementById('nrq_daily_schedule'))clientPatch.daily_schedule=nutritionDailyScheduleFromForm();
+ if(document.getElementById('nrq_professional_measures'))clientPatch.professional_measures=nutritionProfessionalMeasuresFromForm();
  const oldCompletion=x.admin_completion||{};const merged={...oldCompletion,...data,client_data:{...(oldCompletion.client_data||{}),...clientExtra}};
  const patch={...clientPatch,admin_completion:merged};
  // Persisti i quattro campi anche nelle colonne dedicate; i campi vuoti non cancellano valori già salvati.
  for(const key of ['age_years','sex','weight_kg','height_cm'])if(clientExtra[key]!==undefined)patch[key]=clientExtra[key];
- const res=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,weight_kg,height_cm,age_years,sex,admin_completion').maybeSingle();
+ const res=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,plan_mode,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').maybeSingle();
  if(res.error){alert('Salvataggio non riuscito: '+res.error.message);return;}
  if(!res.data){alert('Supabase non ha aggiornato alcuna riga. Verifica ID richiesta e autorizzazioni UPDATE.');return;}
- const verify=await db.from('nutrition_plan_requests').select('id,weight_kg,height_cm,age_years,sex,admin_completion').eq('id',id).single();
+ const verify=await db.from('nutrition_plan_requests').select('id,plan_mode,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').eq('id',id).single();
  if(verify.error){alert('Salvato, ma verifica non riuscita: '+verify.error.message);return;}
- const saved=verify.data;const missing=['age_years','sex','weight_kg','height_cm'].filter(k=>clientExtra[k]!==undefined&&String(saved[k]??saved.admin_completion?.client_data?.[k]??'').trim()==='');
+ const saved=verify.data;
+ if(clientPatch.plan_mode!==undefined&&saved.plan_mode!==clientPatch.plan_mode){alert('Tipo di piano non salvato correttamente.');return;}
+ if(clientPatch.daily_schedule!==undefined&&(saved.daily_schedule||null)!==(clientPatch.daily_schedule||null)){alert('Gli orari riletti non corrispondono alle scelte. Riapri il prospetto e verifica.');return;}
+ if(clientPatch.professional_measures!==undefined&&(saved.professional_measures||null)!==(clientPatch.professional_measures||null)){alert('Le misurazioni non corrispondono ai valori inviati. Riapri il prospetto e verifica.');return;}
+ const missing=['age_years','sex','weight_kg','height_cm'].filter(k=>clientExtra[k]!==undefined&&String(saved[k]??saved.admin_completion?.client_data?.[k]??'').trim()==='');
  if(missing.length){alert('Completamento salvato, ma questi campi non risultano persistiti: '+missing.join(', '));return;}
  closeModal();await loadNutritionRequests();alert('Completamento e dati cliente salvati e riletti da Supabase.');
 }
@@ -5365,4 +5426,9 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
 #nutritionRequestForm select,.nr-admin-layout select{color-scheme:dark;color:#f4f5f7;background-color:#10161b}
 #nutritionRequestForm select option,.nr-admin-layout select option{color:#f4f5f7!important;background:#10161b!important;font-size:14px}
 #nutritionRequestForm select optgroup,.nr-admin-layout select optgroup{color:#f4f5f7!important;background:#10161b!important}
+</style><style id="nutrition-request-save-visibility">
+.modalbox:has(.nr-admin-layout) .nutritionRequestSaveBar{position:sticky;bottom:-22px;z-index:5;margin:22px -22px -22px;padding:14px 22px;background:#10191f;border-top:2px solid #b7f344;box-shadow:0 -8px 24px #0006;align-items:center}
+.modalbox:has(.nr-admin-layout) .nutritionRequestSavePrimary{background:#b7f344!important;color:#101804!important;font-weight:850!important;min-height:48px!important;min-width:210px;font-size:16px!important}
+.modalbox:has(.nr-admin-layout) .nutritionRequestSavePrimary:hover{filter:brightness(1.08)}
+@media(max-width:520px){.modalbox:has(.nr-admin-layout) .nutritionRequestSaveBar{bottom:-14px;margin:18px -14px -14px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr}.modalbox:has(.nr-admin-layout) .nutritionRequestSavePrimary{grid-column:1/-1;min-width:0;width:100%}}
 </style></body></html>

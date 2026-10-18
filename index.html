@@ -2238,7 +2238,7 @@ async function editNutritionRequestCompletion(id){
   recovery:['Ottimo','Buono','Nella norma','Scarso','Stress elevato','Recupero insufficiente','Sonno insufficiente','Da valutare'],
   cooking_storage:['Cucina semplice ogni giorno','Preparo i pasti in anticipo','Meal prep per 2-3 giorni','Meal prep settimanale','Ho poco tempo per cucinare','Uso microonde','Disponibili frigorifero e freezer','Senza cucina attrezzata','Posso conservare e riscaldare i pasti','Altro / da specificare'],
  };
- const reqInput=(label,key,type)=>{const cv=x.admin_completion?.client_data?.[key];const v=(x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!=='')?x[key]:(cv!==null&&cv!==undefined?cv:'');const value=Array.isArray(v)?v.join(', '):(v??'');
+ const reqInput=(label,key,type)=>{const cv=x.admin_completion?.client_data?.[key];const v=key==='medications_supplements'&&Object.prototype.hasOwnProperty.call(x,key)?(x[key]??''):(x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!=='')?x[key]:(cv!==null&&cv!==undefined?cv:'');const value=Array.isArray(v)?v.join(', '):(v??'');
 if(key==='plan_mode'){const mode=String(value||'');return `<div><label>Tipo di piano *</label><select id="nrq_plan_mode" required><option value="" ${!['single','weekly'].includes(mode)?'selected':''}>Seleziona il tipo di piano</option><option value="single" ${mode==='single'?'selected':''}>Giornaliero</option><option value="weekly" ${mode==='weekly'?'selected':''}>Settimanale</option></select></div>`;}
 if(key==='weight_history'){
  const raw=String(value||'').trim();
@@ -2548,14 +2548,16 @@ async function saveNutritionRequestClientData(id){
  if(current.error){alert('Impossibile leggere la richiesta prima del salvataggio: '+current.error.message);return;}
  const oldCompletion=current.data?.admin_completion||{};
  for(const k of required){if(patch[k]!==undefined)extra[k]=patch[k];}
+ if(Object.prototype.hasOwnProperty.call(patch,'medications_supplements'))extra.medications_supplements=patch.medications_supplements;
  const completion={...oldCompletion,client_data:{...(oldCompletion.client_data||{}),...extra}};
  patch.admin_completion=completion;
- const result=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,plan_mode,goal,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').maybeSingle();
+ const result=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,plan_mode,goal,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,medications_supplements,admin_completion').maybeSingle();
  if(result.error){alert('SALVATAGGIO FALLITO: '+result.error.message+'\n\nValori letti dal modulo:\n'+captured);return;}
  if(!result.data){alert('SUPABASE NON HA AGGIORNATO NESSUNA RIGA. I dati non sono stati salvati.\nVerifica l’ID richiesta e la policy UPDATE.\n\nValori letti dal modulo:\n'+captured);return;}
- const verify=await db.from('nutrition_plan_requests').select('id,plan_mode,goal,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').eq('id',id).single();
+ const verify=await db.from('nutrition_plan_requests').select('id,plan_mode,goal,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,medications_supplements,admin_completion').eq('id',id).single();
  if(verify.error){alert('La richiesta è stata aggiornata, ma la rilettura di verifica è fallita: '+verify.error.message+'\n\nValori letti dal modulo:\n'+captured);return;}
  const saved=verify.data;
+ if(Object.prototype.hasOwnProperty.call(patch,'medications_supplements')&&(saved.medications_supplements||null)!==(patch.medications_supplements||null)){alert('Farmaci/integratori non corrispondono al modulo. Il salvataggio non è confermato.');return;}
  if(patch.plan_mode!==undefined&&saved.plan_mode!==patch.plan_mode){alert('Tipo di piano non salvato correttamente.');return;}
  if(patch.daily_schedule!==undefined&&(saved.daily_schedule||null)!==(patch.daily_schedule||null)){alert('Gli orari riletti non corrispondono alle scelte. Riapri il prospetto e verifica.');return;}
  if(patch.professional_measures!==undefined&&(saved.professional_measures||null)!==(patch.professional_measures||null)){alert('Le misurazioni non corrispondono ai valori inviati. Riapri il prospetto e verifica prima di procedere.');return;}
@@ -2606,21 +2608,24 @@ async function saveNutritionRequestCompletion(id){
      value=Number(raw.replace(',','.'));
      if(!Number.isFinite(value)){alert('Valore numerico non valido: '+key);el.focus();return;}
    } else if(arrayKeys.has(key)) value=raw.split(',').map(v=>v.trim()).filter(Boolean);
-   else if(raw===''&&key!=='sleep_quality')continue;
+   else if(raw===''&&key!=='sleep_quality'&&key!=='medications_supplements')continue;
+   if(key==='medications_supplements'&&raw==='')value=null;
    if(['age_years','sex','weight_kg','height_cm'].includes(key))clientExtra[key]=value;else clientPatch[key]=value;
  }
  if(document.getElementById('nrq_daily_schedule'))clientPatch.daily_schedule=nutritionDailyScheduleFromForm();
  if(document.getElementById('nrq_professional_measures'))clientPatch.professional_measures=nutritionProfessionalMeasuresFromForm();
  const oldCompletion=x.admin_completion||{};const merged={...oldCompletion,...data,client_data:{...(oldCompletion.client_data||{}),...clientExtra}};
+ if(Object.prototype.hasOwnProperty.call(clientPatch,'medications_supplements'))merged.client_data.medications_supplements=clientPatch.medications_supplements;
  const patch={...clientPatch,admin_completion:merged};
  // Persisti i quattro campi anche nelle colonne dedicate; i campi vuoti non cancellano valori già salvati.
  for(const key of ['age_years','sex','weight_kg','height_cm'])if(clientExtra[key]!==undefined)patch[key]=clientExtra[key];
- const res=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,plan_mode,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').maybeSingle();
+ const res=await db.from('nutrition_plan_requests').update(patch).eq('id',id).select('id,plan_mode,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,medications_supplements,admin_completion').maybeSingle();
  if(res.error){alert('Salvataggio non riuscito: '+res.error.message);return;}
  if(!res.data){alert('Supabase non ha aggiornato alcuna riga. Verifica ID richiesta e autorizzazioni UPDATE.');return;}
- const verify=await db.from('nutrition_plan_requests').select('id,plan_mode,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,admin_completion').eq('id',id).single();
+ const verify=await db.from('nutrition_plan_requests').select('id,plan_mode,weight_kg,height_cm,age_years,sex,daily_schedule,professional_measures,medications_supplements,admin_completion').eq('id',id).single();
  if(verify.error){alert('Salvato, ma verifica non riuscita: '+verify.error.message);return;}
  const saved=verify.data;
+ if(Object.prototype.hasOwnProperty.call(clientPatch,'medications_supplements')&&(saved.medications_supplements||null)!==(clientPatch.medications_supplements||null)){alert('Farmaci/integratori non corrispondono al modulo. Il salvataggio non è confermato.');return;}
  if(clientPatch.plan_mode!==undefined&&saved.plan_mode!==clientPatch.plan_mode){alert('Tipo di piano non salvato correttamente.');return;}
  if(clientPatch.daily_schedule!==undefined&&(saved.daily_schedule||null)!==(clientPatch.daily_schedule||null)){alert('Gli orari riletti non corrispondono alle scelte. Riapri il prospetto e verifica.');return;}
  if(clientPatch.professional_measures!==undefined&&(saved.professional_measures||null)!==(clientPatch.professional_measures||null)){alert('Le misurazioni non corrispondono ai valori inviati. Riapri il prospetto e verifica.');return;}

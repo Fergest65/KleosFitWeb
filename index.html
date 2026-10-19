@@ -265,6 +265,7 @@ if(n==="nr_allergies_multi"){const none="Nessuna";if(t.checked&&t.value===none)d
 .nutritionClientGroupBody .nutritionPlanListItem{margin-top:10px}
 @media(max-width:600px){.nutritionClientGroup>summary,.nutritionRequestListItem>summary{padding:12px;gap:8px}.nutritionClientGroupBody{padding:0 8px 8px}.nutritionClientOpenHint{display:none}.nutritionRequestListBody{padding:0 8px 8px}.nutritionRequestListItem>summary{flex-wrap:wrap}.nutritionRequestHeading{flex-basis:65%}.nutritionClientName{font-size:15px}}
 </style>
+<style>.nutritionIngredientScroll{max-width:100%;overflow-x:auto}.nutritionIngredientTable tfoot{border-top:2px solid #77828c}.nutritionIngredientTable th:first-child{min-width:130px}@media print{.nutritionIngredientScroll{overflow:visible}.nutritionIngredientTable{font-size:10px}.nutritionIngredientTable th:first-child{min-width:0}.nutritionIngredientTable thead{display:table-header-group}.nutritionIngredientTable tfoot{display:table-row-group}}</style>
 </head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>
 </div></div>
@@ -2724,11 +2725,32 @@ function nutritionFoodDisplayName(value){
   .replace(/\s+/g,' ').trim();
 }
 
+function nutritionFoodPortionValues(row){
+ const unit=String(row.unit||'g').trim().toLowerCase();
+ const factor=({g:1,gr:1,kg:1000,mg:0.001})[unit];
+ const quantity=row.quantity===null||row.quantity===undefined||row.quantity===''?NaN:Number(row.quantity);
+ const grams=Number.isFinite(quantity)&&quantity>=0&&factor!==undefined?quantity*factor:null;
+ return ['calories','protein','carbs','fats'].map(key=>{
+  const raw=row.food?.[key+'_per_100g'];
+  const number=raw===null||raw===undefined||raw===''?NaN:Number(raw);
+  return grams!==null&&Number.isFinite(number)&&number>=0?grams*number/100:null;
+ });
+}
 function nutritionDetailedFoodTable(v){
  const rows=v.nutrition_variant_foods||[];
  if(!rows.length)return '<div class="muted">Ingredienti non disponibili per questa variante.</div>';
- return '<table class="nutritionIngredientTable" style="width:100%;border-collapse:collapse;margin:10px 0"><thead><tr><th style="text-align:left;padding:7px;border-bottom:1px solid #77828c">Alimento e tipologia</th><th style="text-align:right;padding:7px;border-bottom:1px solid #77828c">Quantità</th></tr></thead><tbody>'+rows.map(x=>'<tr><td style="padding:7px;border-bottom:1px solid #77828c55">'+esc(nutritionFoodDisplayName(x.food?.name))+'</td><td style="padding:7px;text-align:right;white-space:nowrap;border-bottom:1px solid #77828c55"><strong>'+nutritionFmt(x.quantity)+' '+esc(x.unit||'g')+'</strong></td></tr>').join('')+'</tbody></table>';
+ const totals=[0,0,0,0],complete=[true,true,true,true];
+ const number=value=>value===null?'—':nutritionFmt(value);
+ const numericStyle='padding:7px;text-align:right;white-space:nowrap;border-bottom:1px solid #77828c55';
+ const body=rows.map(row=>{
+  const values=nutritionFoodPortionValues(row);
+  values.forEach((value,i)=>{if(value===null)complete[i]=false;else totals[i]+=value;});
+  return '<tr><td style="padding:7px;border-bottom:1px solid #77828c55">'+esc(nutritionFoodDisplayName(row.food?.name))+'</td><td style="'+numericStyle+'"><strong>'+nutritionFmt(row.quantity)+' '+esc(row.unit||'g')+'</strong></td>'+values.map(value=>'<td style="'+numericStyle+'">'+number(value)+'</td>').join('')+'</tr>';
+ }).join('');
+ const headers=['Alimento e tipologia','Quantità','Kcal','Proteine (g)','Carboidrati (g)','Grassi (g)'];
+ return '<div class="nutritionIngredientScroll"><table class="nutritionIngredientTable" style="width:100%;border-collapse:collapse;margin:10px 0"><caption style="text-align:left;padding:4px 7px;font-size:11px">Valori nutrizionali per la quantità indicata</caption><thead><tr>'+headers.map((label,i)=>'<th scope="col" style="text-align:'+(i?'right':'left')+';padding:7px;border-bottom:1px solid #77828c">'+label+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody><tfoot><tr><th scope="row" colspan="2" style="text-align:left;padding:9px 7px">Totale alternativa</th>'+totals.map((value,i)=>'<td style="text-align:right;white-space:nowrap;padding:9px 7px"><strong>'+number(complete[i]?value:null)+'</strong></td>').join('')+'</tr></tfoot></table>'+(!complete.every(Boolean)?'<div class="nutritionSmall">— = dato non disponibile o quantità non convertibile in grammi; totale della colonna non calcolabile.</div>':'')+'</div>';
 }
+
 function nutritionDetailedMealDescription(m){
  const text=String(m.description||'');
  const hasFoods=(m.nutrition_meal_variants||[]).some(v=>(v.nutrition_variant_foods||[]).length);
@@ -2762,7 +2784,7 @@ async function exportNutritionPlanPdf(planId){
  const supplements=p.nutrition_supplements||[];
  const supplementsHtml=`<section class="day"><h2>Integratori</h2>${supplements.length?`<ul>${supplements.map(x=>`<li><b>${esc(x.name)}</b>${x.dosage?' — '+esc(x.dosage):''}${x.timing?' · '+esc(x.timing):''}${x.notes?' — '+esc(x.notes):''}</li>`).join('')}</ul>`:'<p>Nessun integratore associato.</p>'}</section>`;
 
- win.document.open();win.document.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title||'Piano nutrizionale')}</title><style>body{font-family:Arial,sans-serif;color:#20242a;margin:28px;font-size:12px;line-height:1.45}h1{font-size:23px;margin:0 0 5px}h2{font-size:17px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid #333}h3{font-size:14px;margin:0 0 5px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}.meta div,.targets,.meal,.variant{border:1px solid #d5d9df;border-radius:6px;padding:8px}.targets{margin:10px 0;background:#f5f6f7}.day{break-inside:avoid;margin-top:14px}.meal{margin:7px 0;break-inside:avoid}.variant{margin-top:6px;background:#fafafa}p{margin:4px 0}ul{margin:5px 0;padding-left:20px}li{margin:3px 0}.muted{color:#666}.notice{font-size:10px;color:#555;margin-top:20px;border-top:1px solid #ddd;padding-top:8px}.print{margin-bottom:15px;padding:8px 12px}@media print{body{margin:12mm}.print{display:none}.day{break-inside:auto}.meal,.variant{break-inside:avoid}} </style></head><body><button class="print" onclick="window.print()">Stampa / Salva come PDF</button><h1>${esc(p.title||'Piano nutrizionale')}</h1><div class="meta"><div><b>Cliente:</b> ${esc(client)}</div><div><b>Modalità:</b> ${weekly?'Settimanale':'Giornaliera'}</div><div><b>Emissione:</b> ${esc(fmtDateIT(p.issue_date))}</div><div><b>Validità:</b> ${esc(fmtDateIT(p.valid_from))} → ${esc(fmtDateIT(p.valid_to))}</div><div><b>Stato:</b> ${p.is_active===false?'Non attivo':'Attivo'}</div><div><b>Accesso cliente:</b> ${p.is_visible===false?'Bloccato per il cliente':'Visibile al cliente'}</div></div><div class="targets"><b>Obiettivi giornalieri:</b> ${esc(targets)}</div>${dayHtml}${supplementsHtml}<div class="notice">Documento esportato da KleosFit Coach Pro. Gli eventuali valori e indicazioni nutrizionali devono essere verificati dal professionista responsabile. L'esportazione non equivale ad approvazione clinica.</div><script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
+ win.document.open();win.document.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title||'Piano nutrizionale')}</title><style>body{font-family:Arial,sans-serif;color:#20242a;margin:28px;font-size:12px;line-height:1.45}h1{font-size:23px;margin:0 0 5px}h2{font-size:17px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid #333}h3{font-size:14px;margin:0 0 5px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}.meta div,.targets,.meal,.variant{border:1px solid #d5d9df;border-radius:6px;padding:8px}.targets{margin:10px 0;background:#f5f6f7}.day{break-inside:avoid;margin-top:14px}.meal{margin:7px 0;break-inside:avoid}.variant{margin-top:6px;background:#fafafa}p{margin:4px 0}ul{margin:5px 0;padding-left:20px}li{margin:3px 0}.muted{color:#666}.notice{font-size:10px;color:#555;margin-top:20px;border-top:1px solid #ddd;padding-top:8px}.nutritionIngredientScroll{max-width:100%}.nutritionIngredientTable{font-size:10px}.nutritionIngredientTable tfoot{border-top:2px solid #77828c}.nutritionIngredientTable thead{display:table-header-group}.print{margin-bottom:15px;padding:8px 12px}@media print{body{margin:12mm}.print{display:none}.day{break-inside:auto}.meal,.variant{break-inside:avoid}} </style></head><body><button class="print" onclick="window.print()">Stampa / Salva come PDF</button><h1>${esc(p.title||'Piano nutrizionale')}</h1><div class="meta"><div><b>Cliente:</b> ${esc(client)}</div><div><b>Modalità:</b> ${weekly?'Settimanale':'Giornaliera'}</div><div><b>Emissione:</b> ${esc(fmtDateIT(p.issue_date))}</div><div><b>Validità:</b> ${esc(fmtDateIT(p.valid_from))} → ${esc(fmtDateIT(p.valid_to))}</div><div><b>Stato:</b> ${p.is_active===false?'Non attivo':'Attivo'}</div><div><b>Accesso cliente:</b> ${p.is_visible===false?'Bloccato per il cliente':'Visibile al cliente'}</div></div><div class="targets"><b>Obiettivi giornalieri:</b> ${esc(targets)}</div>${dayHtml}${supplementsHtml}<div class="notice">Documento esportato da KleosFit Coach Pro. Gli eventuali valori e indicazioni nutrizionali devono essere verificati dal professionista responsabile. L'esportazione non equivale ad approvazione clinica.</div><script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
 }
 
 function renderNutrition(rows){

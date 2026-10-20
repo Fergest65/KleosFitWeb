@@ -1440,9 +1440,18 @@ async function toggleClientAccount(id,suspended){
  closeModal();
 }
 async function deleteClientCompletely(id){
- const p=(clientsData||[]).find(x=>String(x.id)===String(id));
- if(!p){alert('Cliente non trovato nella lista.');return;}
  if(!isSuperuserRole()){alert('Operazione riservata ad Administrator/Superuser. Ruolo rilevato: '+String(profile?.role||'nessuno'));return;}
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id||''))){alert('ID cliente non valido.');return;}
+ let p;
+ try{
+  const result=await db.from('profiles').select('id,full_name,email,role').eq('id',String(id)).maybeSingle();
+  if(result.error)throw result.error;
+  p=result.data;
+ }catch(error){alert('Impossibile verificare il cliente sul server: '+(error.message||String(error)));return;}
+ if(!p){alert('Il cliente non risulta presente nel database. Aggiorna la lista e riapri la scheda.');return;}
+ if(String(p.id)!==String(id)){alert('Il cliente restituito dal server non corrisponde alla scheda. Operazione annullata.');return;}
+ if(String(id)===String(currentUser?.id)){alert('Non puoi eliminare il tuo account da questa funzione.');return;}
+ if(String(p.role||'').toLowerCase()!=='client'){alert('Questa funzione può eliminare soltanto account con ruolo client.');return;}
  const name=profileDisplayName(p)||p.email||'questo cliente';
  const ok=confirm('ATTENZIONE: stai per eliminare definitivamente '+name+'.\n\nVerranno eliminati il profilo, i dati collegati e l’account di autenticazione.\n\nQUESTA OPERAZIONE NON È REVERSIBILE.\n\nContinuare?');
  if(!ok)return;

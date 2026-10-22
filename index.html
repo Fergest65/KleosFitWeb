@@ -2118,9 +2118,11 @@ function renderWorkouts(rows){
  const name=group.key==='unassigned'?'Schede non assegnate':group.user?profileDisplayName(group.user):'Cliente '+group.key;
  const email=profileEmail(group.user);
  const plans=group.plans.slice().sort((a,b)=>Number(b.is_active!==false)-Number(a.is_active!==false)||String(b.created_at||'').localeCompare(String(a.created_at||'')));
- return `<details class="workoutClientGroup" data-workout-client="${esc(group.key)}" ${searching||previous.get(group.key)?'open':''}><summary><span class="workoutClientName"><strong>${esc(name)}</strong>${email?`<span class="muted">${esc(email)}</span>`:''}</span><span class="pill">${plans.length} ${plans.length===1?'scheda':'schede'}</span></summary><div class="workoutCompactPlans">${plans.map(p=>`<div class="workoutCompactRow"><div class="workoutCompactInfo"><b>${esc(p.title||'Scheda senza titolo')}</b>${p.description?`<div class="muted workoutCompactDescription">${esc(p.description)}</div>`:''}<div class="muted">${(p.workout_exercises||[]).length} esercizi${p.created_at&&!isNaN(Date.parse(p.created_at))?' · '+new Date(p.created_at).toLocaleDateString('it-IT'):''}</div></div><div class="rowactions"><span class="pill ${p.is_active!==false?'workoutActive':''}">${p.is_active===false?'Non attiva':'Attiva'}</span><button type="button" class="btn secondary mini" data-workout-open="${esc(p.id)}">Apri</button>${canEditWorkout()?`<button type="button" class="btn secondary mini" data-workout-edit="${esc(p.id)}">Modifica</button>`:''}</div></div>`).join('')}</div></details>`;
+ return `<details class="workoutClientGroup" data-workout-client="${esc(group.key)}" ${searching||previous.get(group.key)?'open':''}><summary><span class="workoutClientName"><strong>${esc(name)}</strong>${email?`<span class="muted">${esc(email)}</span>`:''}</span><span class="pill">${plans.length} ${plans.length===1?'scheda':'schede'}</span></summary><div class="workoutCompactPlans">${plans.map(p=>`<div class="workoutCompactRow"><div class="workoutCompactInfo"><b>${esc(p.title||'Scheda senza titolo')}</b>${p.description?`<div class="muted workoutCompactDescription">${esc(p.description)}</div>`:''}<div class="muted">${(p.workout_exercises||[]).length} esercizi${p.created_at&&!isNaN(Date.parse(p.created_at))?' · '+new Date(p.created_at).toLocaleDateString('it-IT'):''}</div></div><div class="rowactions"><span class="pill ${p.is_active!==false?'workoutActive':''}">${p.is_active===false?'Non attiva':'Attiva'}</span><button type="button" class="btn secondary mini" data-workout-open="${esc(p.id)}">Apri</button><button type="button" class="btn mini" data-workout-run="${esc(p.id)}">Esegui</button><button type="button" class="btn secondary mini" data-workout-print="${esc(p.id)}">Stampa</button>${canEditWorkout()?`<button type="button" class="btn secondary mini" data-workout-edit="${esc(p.id)}">Modifica</button>`:''}</div></div>`).join('')}</div></details>`;
  }).join('');
  list.querySelectorAll('[data-workout-open]').forEach(button=>button.addEventListener('click',()=>showWorkoutDetail(button.dataset.workoutOpen)));
+ list.querySelectorAll('[data-workout-run]').forEach(button=>button.addEventListener('click',()=>startWorkoutExecution(button.dataset.workoutRun)));
+ list.querySelectorAll('[data-workout-print]').forEach(button=>button.addEventListener('click',()=>printWorkoutPlan(button.dataset.workoutPrint)));
  list.querySelectorAll('[data-workout-edit]').forEach(button=>button.addEventListener('click',()=>editWorkoutPlan(button.dataset.workoutEdit)));
 }
 
@@ -2172,7 +2174,7 @@ function showWorkoutDetail(id){
     <div><span class="label">Stato</span><strong>${p.is_active===false?'Non attiva':'Attiva'}</strong></div>
     <div><span class="label">Esercizi</span><strong>${ex.length}</strong></div>
   </div>
-  <div class="detailSection"><h3>Programma di allenamento</h3>${rows}</div>
+  <div class="toolbar"><button class="btn" onclick="startWorkoutExecution('${id}')">▶ Esegui scheda</button><button class="btn secondary" onclick="printWorkoutPlan('${id}')">Stampa / PDF</button></div><div class="detailSection"><h3>Programma di allenamento</h3>${rows}</div>
   <div class="actions"><button class="btn secondary" onclick="closeModal()">Chiudi</button>${canEditWorkout()?`<button class="btn" onclick="closeModal();editWorkoutPlan('${id}')">Modifica scheda</button>`:''}</div>
  `);
 }
@@ -5776,6 +5778,33 @@ function renderWorkoutCreateArchive(){
  box.innerHTML=rows.map(({e,index})=>`<button type="button" class="archiveItem" onclick="addWorkoutCreateExercise(${index})"><b>+ ${esc(e.name)}</b><span>${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</span></button>`).join('')||'<p class="muted">Nessun esercizio trovato. Usa l’inserimento manuale.</p>';
 }
 function addWorkoutCreateExercise(index,silent=false){
+ if(silent)return insertWorkoutCreateExercise(index,true);
+ const exercise=exerciseLibraryData[index];
+ if(!exercise){
+ const dialog=document.createElement('dialog');dialog.style.cssText='width:min(430px,90vw);padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text)';
+ const form=document.createElement('form');const label=document.createElement('label');label.textContent='Nome del nuovo esercizio';
+ const input=document.createElement('input');input.required=true;input.maxLength=200;label.appendChild(input);
+ const actions=document.createElement('div');actions.className='actions';const cancel=document.createElement('button');cancel.type='button';cancel.className='btn secondary';cancel.textContent='Annulla';cancel.onclick=()=>dialog.close();
+ const next=document.createElement('button');next.type='submit';next.className='btn';next.textContent='Continua';actions.append(cancel,next);form.append(label,actions);dialog.appendChild(form);document.body.appendChild(dialog);
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ form.onsubmit=event=>{event.preventDefault();const name=input.value.trim();if(!name){input.setCustomValidity('Inserisci il nome dell’esercizio.');input.reportValidity();return;}dialog.close();confirmWorkoutExerciseInsert(name,()=>{insertWorkoutCreateExercise(index,false);const card=document.getElementById('wcExercises').lastElementChild;card.querySelector('[data-field="name"]').value=name;const notice=document.getElementById('wcExerciseNotice');if(notice)notice.textContent='Nuovo esercizio aggiunto: '+name+'. Ricorda di salvare la scheda.';});};input.oninput=()=>input.setCustomValidity('');dialog.showModal();input.focus();return;
+ }
+ confirmWorkoutExerciseInsert(exercise.name,()=>insertWorkoutCreateExercise(index,false));
+}
+function confirmWorkoutExerciseInsert(name,onYes){
+ if(document.getElementById('wcConfirmExercise'))return;
+ const dialog=document.createElement('dialog');dialog.id='wcConfirmExercise';
+ dialog.style.cssText='width:min(430px,90vw);padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text)';
+ const title=document.createElement('h3');title.textContent='Conferma inserimento';title.style.marginTop='0';title.id='wcConfirmExerciseTitle';dialog.setAttribute('aria-labelledby',title.id);
+ const message=document.createElement('p');message.textContent='Vuoi inserire l’esercizio “'+name+'” nella scheda?';
+ const actions=document.createElement('div');actions.className='actions';
+ const no=document.createElement('button');no.type='button';no.className='btn secondary';no.textContent='No';
+ const yes=document.createElement('button');yes.type='button';yes.className='btn';yes.textContent='Sì';
+ no.onclick=()=>dialog.close();yes.onclick=()=>{dialog.close();onYes();};
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ actions.append(no,yes);dialog.append(title,message,actions);document.body.appendChild(dialog);dialog.showModal();no.focus();
+}
+function insertWorkoutCreateExercise(index,silent=false){
  const e=exerciseLibraryData[index]||{};const card=document.createElement('fieldset');card.className='archiveBox wcExercise';card.style.marginBottom='14px';
  const field=(key,label,value='',type='text')=>`<div><label>${label}<input data-field="${key}" type="${type}" value="${esc(value??'')}" ${type==='number'?'min="0" max="86400" step="1"':''} ${key==='name'?'required maxlength="200"':''}></label></div>`;
  card.innerHTML=`<legend>Esercizio</legend><div class="toolbar"><button type="button" class="btn secondary mini" onclick="moveWorkoutCreateExercise(this,-1)" aria-label="Sposta su">↑</button><button type="button" class="btn secondary mini" onclick="moveWorkoutCreateExercise(this,1)" aria-label="Sposta giù">↓</button><button type="button" class="btn secondary mini" onclick="this.closest('fieldset').remove()">Rimuovi</button></div><div class="formgrid">
@@ -5835,3 +5864,54 @@ function filterWorkoutCreateClients(){
 .workoutCompactInfo{min-width:0;flex:1}.workoutCompactInfo>b{font-size:14px;overflow-wrap:anywhere}.workoutCompactInfo .muted{font-size:12px;margin-top:3px}.workoutCompactDescription{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:650px}.workoutActive{color:var(--accent)}
 @media(max-width:600px){.workoutCompactRow{align-items:flex-start;flex-direction:column;gap:8px}.workoutClientName{gap:3px;flex-direction:column}.workoutClientName .muted{overflow-wrap:anywhere;max-width:100%}.workoutCompactDescription{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.workoutCompactRow .rowactions{width:100%}}
 </style>
+<script>
+let workoutRunner=null;
+async function workoutExecutionPlan(id){
+ const plan=(workoutsData||[]).find(p=>String(p.id)===String(id));if(!plan)throw Error('Scheda non trovata.');
+ if(isClientRole()&&String(plan.user_id)!==String(currentUser?.id))throw Error('Scheda non disponibile.');
+ const r=await db.from('workout_exercises').select('*').eq('plan_id',id).order('sort_order',{ascending:true});if(r.error)throw r.error;
+ return {...plan,workout_exercises:r.data||[]};
+}
+async function printWorkoutPlan(id){
+ try{const p=await workoutExecutionPlan(id);const old=document.getElementById('workoutPrintFrame');if(old)old.remove();
+ const frame=document.createElement('iframe');frame.id='workoutPrintFrame';frame.title='Stampa scheda';frame.style.cssText='position:fixed;width:1px;height:1px;bottom:0;border:0';document.body.appendChild(frame);
+ const doc=frame.contentDocument;doc.open();doc.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><title>${esc(p.title||'Scheda allenamento')}</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;color:#111;font-size:11px}h1{font-size:23px}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{border:1px solid #ccc;padding:6px;vertical-align:top;overflow-wrap:anywhere}th{background:#eee}thead{display:table-header-group}tr{break-inside:avoid}img{width:52px;height:52px;object-fit:contain}p{white-space:pre-wrap}.meta{margin-bottom:20px;color:#444}</style></head><body><b>KLEOS FITCOACH PRO</b><h1>${esc(p.title||'Scheda allenamento')}</h1><div class="meta">Cliente: ${esc(profileDisplayName(p.user_profile||(usersData||[]).find(u=>u.id===p.user_id)))} · ${new Date().toLocaleDateString('it-IT')}</div><p>${esc(p.description||'')}</p><table><thead><tr><th style="width:56px">Foto</th><th style="width:27%">Esercizio</th><th>Serie</th><th>Rip./tempo</th><th>Carico</th><th>Inizio / sec. per rip.</th><th>Rec.</th></tr></thead><tbody>${p.workout_exercises.map(e=>`<tr><td>${getExerciseImageUrl(e)?`<img src="${esc(getExerciseImageUrl(e))}" alt="">`:''}</td><td><b>${esc(e.name||'')}</b><p>${esc([e.muscle_group,e.equipment,e.focus].filter(Boolean).join(' · '))}</p></td><td>${esc(e.sets??'')}</td><td>${esc(e.work_type==='time'?(e.duration_seconds||0)+' s':e.reps||'')}</td><td>${esc(e.weight||'')}</td><td>${esc(e.initial_seconds??0)} s / ${esc(e.rep_seconds??0)} s</td><td>${esc(e.rest_seconds??0)} s</td></tr>`).join('')||'<tr><td colspan="7">Nessun esercizio</td></tr>'}</tbody></table></body></html>`);doc.close();
+ await Promise.all([...doc.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;setTimeout(resolve,5000)})));
+ frame.contentWindow.focus();frame.contentWindow.print();
+ }catch(e){alert('Stampa non disponibile: '+(e.message||e));}
+}
+async function startWorkoutExecution(id){
+ try{const plan=await workoutExecutionPlan(id);if(!plan.workout_exercises.length){alert('Inserisci almeno un esercizio nella scheda.');return;}if(workoutRunner)closeWorkoutRunner();
+ const dialog=document.createElement('dialog');dialog.id='workoutRunnerDialog';dialog.className='workoutRunnerDialog';document.body.appendChild(dialog);
+ workoutRunner={plan,index:0,set:1,done:0,phase:'ready',remaining:0,deadline:0,paused:false,interval:null,saving:false,completed:false};
+ dialog.addEventListener('cancel',e=>{e.preventDefault();closeWorkoutRunner()});dialog.showModal();renderWorkoutRunner();
+ }catch(e){alert('Impossibile avviare la scheda: '+(e.message||e));}
+}
+function runnerSetCount(e){return Math.max(1,Math.min(100,parseInt(e.sets,10)||1));}
+function runnerSeconds(v){return Math.max(0,Math.min(86400,Number(v)||0));}
+function renderWorkoutRunner(){
+ const r=workoutRunner,dialog=document.getElementById('workoutRunnerDialog');if(!r||!dialog)return;
+ const ex=r.plan.workout_exercises,e=ex[r.index],total=ex.reduce((sum,e)=>sum+runnerSetCount(e),0);const image=getExerciseImageUrl(e);
+ dialog.innerHTML=`<div class="modalhead"><div><div class="muted">KLEOS · ESECUZIONE SCHEDA</div><h2>${esc(r.plan.title||'Allenamento')}</h2></div><button class="close" onclick="closeWorkoutRunner()">Esci</button></div><p class="muted">${esc(profileDisplayName(r.plan.user_profile))} · Esercizio ${r.index+1} di ${ex.length}</p><progress max="${total}" value="${r.done}" style="width:100%;accent-color:var(--accent)"></progress><p class="muted">${r.done} / ${total} serie completate</p><div class="runnerHero">${image?`<img src="${esc(image)}" alt="${esc(e.name)}" onerror="this.style.display='none'">`:''}<div><h2>${esc(e.name)}</h2><p class="muted">${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</p><strong>Serie ${Math.min(r.set,runnerSetCount(e))} / ${runnerSetCount(e)}</strong><p>${esc(e.work_type==='time'?(e.duration_seconds||0)+' secondi':e.reps||'')} · ${esc(e.weight||'A corpo libero')}</p><p>${esc(e.focus||'')}</p><p class="muted">Recupero: ${esc(e.rest_seconds??0)} s · Attesa iniziale: ${esc(e.initial_seconds??0)} s</p></div></div><div id="runnerPhase" class="runnerPhase" aria-live="polite"></div><div id="runnerTime" class="runnerTime" role="timer"></div><div id="runnerControls" class="rampTimerActions"></div><div id="runnerMessage" role="status" class="muted" style="text-align:center;margin-top:14px"></div><details style="margin-top:24px"><summary>Programma completo</summary>${ex.map((item,i)=>`<p ${i===r.index?'style="color:var(--accent)"':''}>${i+1}. ${esc(item.name)} · ${esc(item.sets)} × ${esc(item.work_type==='time'?(item.duration_seconds||0)+' s':item.reps||'')}</p>`).join('')}</details>`;
+ updateWorkoutRunner();
+}
+function updateWorkoutRunner(){
+ const r=workoutRunner;if(!r)return;const phase=document.getElementById('runnerPhase'),time=document.getElementById('runnerTime'),controls=document.getElementById('runnerControls');if(!phase)return;
+ phase.textContent=({ready:'Pronto per la serie',initial:'Preparazione',work:'Esegui la serie',rest:'Recupero',finished:'Allenamento completato'})[r.phase]+(r.paused?' · In pausa':'');
+ const seconds=Math.ceil(r.remaining);time.textContent=['initial','work','rest'].includes(r.phase)&&r.deadline?String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0'):(r.phase==='finished'?'✓':'—');
+ if(r.phase==='ready')controls.innerHTML='<button class="btn" onclick="beginWorkoutRunnerSet()">Avvia serie</button>';
+ else if(r.phase==='finished')controls.innerHTML=r.completed?'<span class="pill">Sessione salvata</span>':`<button class="btn" onclick="completeWorkoutRunner()" ${r.saving?'disabled':''}>${r.saving?'Salvataggio…':String(r.plan.user_id)===String(currentUser?.id)?'Salva allenamento completato':'Concludi anteprima'}</button>`;
+ else controls.innerHTML=(r.deadline?`<button class="btn secondary" onclick="pauseWorkoutRunner()">${r.paused?'Riprendi':'Pausa'}</button>`:'')+(r.phase==='work'?'<button class="btn" onclick="finishWorkoutRunnerSet()">Serie completata</button>':'<button class="btn secondary" onclick="advanceWorkoutRunnerPhase()">'+(r.phase==='rest'?'Termina recupero':'Inizia subito')+'</button>');
+}
+function beginWorkoutRunnerSet(){const r=workoutRunner;if(!r||r.phase!=='ready')return;const initial=runnerSeconds(r.plan.workout_exercises[r.index].initial_seconds);if(initial)runWorkoutRunnerTimer('initial',initial);else startWorkoutRunnerWork();}
+function startWorkoutRunnerWork(){const r=workoutRunner;if(!r)return;const e=r.plan.workout_exercises[r.index];const reps=/^\d+$/.test(String(e.reps||'').trim())?Number(e.reps):0;const duration=e.work_type==='time'?runnerSeconds(e.duration_seconds):runnerSeconds(e.rep_seconds)*reps;if(duration)runWorkoutRunnerTimer('work',duration);else{r.phase='work';r.deadline=0;r.remaining=0;updateWorkoutRunner();}}
+function runWorkoutRunnerTimer(phase,seconds){const r=workoutRunner;if(!r)return;clearInterval(r.interval);r.phase=phase;r.paused=false;r.remaining=seconds;r.deadline=Date.now()+seconds*1000;updateWorkoutRunner();r.interval=setInterval(()=>{if(!workoutRunner||r.paused)return;r.remaining=Math.max(0,(r.deadline-Date.now())/1000);if(r.remaining<=0){clearInterval(r.interval);advanceWorkoutRunnerPhase();}else{const el=document.getElementById('runnerTime'),s=Math.ceil(r.remaining);if(el)el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}},200);}
+function pauseWorkoutRunner(){const r=workoutRunner;if(!r||!r.deadline)return;if(r.paused){r.deadline=Date.now()+r.remaining*1000;r.paused=false;}else{r.remaining=Math.max(0,(r.deadline-Date.now())/1000);r.paused=true;}updateWorkoutRunner();}
+function advanceWorkoutRunnerPhase(){const r=workoutRunner;if(!r)return;clearInterval(r.interval);r.deadline=0;r.paused=false;if(r.phase==='initial')startWorkoutRunnerWork();else if(r.phase==='work')finishWorkoutRunnerSet();else if(r.phase==='rest')nextWorkoutRunnerSet();}
+function finishWorkoutRunnerSet(){const r=workoutRunner;if(!r||r.phase!=='work')return;clearInterval(r.interval);r.done++;const rest=runnerSeconds(r.plan.workout_exercises[r.index].rest_seconds);if(rest)runWorkoutRunnerTimer('rest',rest);else nextWorkoutRunnerSet();}
+function nextWorkoutRunnerSet(){const r=workoutRunner;if(!r)return;clearInterval(r.interval);r.deadline=0;r.remaining=0;r.paused=false;if(r.set<runnerSetCount(r.plan.workout_exercises[r.index]))r.set++;else if(r.index<r.plan.workout_exercises.length-1){r.index++;r.set=1;}else r.phase='finished';if(r.phase!=='finished')r.phase='ready';renderWorkoutRunner();}
+async function completeWorkoutRunner(){const r=workoutRunner;if(!r||r.phase!=='finished'||r.saving||r.completed)return;if(String(r.plan.user_id)!==String(currentUser?.id)){closeWorkoutRunner();return;}r.saving=true;updateWorkoutRunner();try{const result=await db.from('workout_sessions').insert({user_id:currentUser.id,workout_title:r.plan.title});if(result.error)throw result.error;r.completed=true;if(workoutRunner===r){updateWorkoutRunner();document.getElementById('runnerMessage').textContent='Allenamento salvato.';}}catch(e){if(workoutRunner===r)document.getElementById('runnerMessage').textContent='Sessione non salvata: '+(e.message||e);}finally{r.saving=false;if(workoutRunner===r)updateWorkoutRunner();}}
+function closeWorkoutRunner(){if(workoutRunner?.saving)return;if(workoutRunner){clearInterval(workoutRunner.interval);workoutRunner=null;}const dialog=document.getElementById('workoutRunnerDialog');if(dialog){dialog.close();dialog.remove();}}
+
+</script>
+<style>.workoutRunnerDialog{width:min(920px,96vw);max-height:94vh;overflow:auto;border:1px solid var(--line);border-radius:18px;padding:24px;background:var(--bg);color:var(--text)}.workoutRunnerDialog::backdrop{background:rgba(0,0,0,.85)}.runnerHero{display:flex;align-items:center;gap:24px;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--panel)}.runnerHero img{width:220px;height:220px;object-fit:contain;border-radius:12px;background:#101217}.runnerPhase{text-align:center;margin-top:22px;font-size:21px;color:var(--accent);font-weight:800}.runnerTime{text-align:center;font-size:clamp(60px,12vw,100px);font-variant-numeric:tabular-nums;font-weight:900}.workoutRunnerDialog .rampTimerActions button{min-width:140px}@media(max-width:600px){.workoutRunnerDialog{padding:16px}.runnerHero{flex-direction:column;align-items:stretch;gap:10px}.runnerHero img{width:100%;height:200px}.workoutRunnerDialog .modalhead h2{font-size:20px}}</style>

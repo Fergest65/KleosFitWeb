@@ -3643,15 +3643,17 @@ async function openProgressEditor(clientId, entryId='', rowIndex=-1){
  const c=document.getElementById('modalContent'); if(!c){alert('Finestra modifica non disponibile.');return;}
  const val=names=>{const v=firstVal(row,names,'');return v==null?'':String(v).replace('.',',')};
  const dateVal=String(progressDate(row)||'').slice(0,10)||isoLocal(new Date());
- c.innerHTML=`<div class="top"><div><div class="title">${entryId?'Modifica':'Nuova'} misurazione</div><div class="sub">${esc(profileDisplayName(p)||'Cliente')}</div></div><button class="btn secondary" type="button" onclick="closeModal()">Chiudi</button></div><div id="progressEditorError" class="error"></div><div class="inputrow" style="margin-top:14px"><div style="flex:1"><label>Data rilevazione</label><input id="progressEditDate" type="date" value="${esc(dateVal)}"></div></div><div class="clientSheetGrid" style="margin-top:14px">${progressDefs.map(([label,names,unit])=>`<div><label>${esc(label)} ${unit}</label><input id="progressEdit_${names[0]}" inputmode="decimal" placeholder="—" value="${esc(val(names))}"></div>`).join('')}<div class="wide"><label>Note</label><textarea id="progressEditNotes" rows="3" placeholder="Note sulla rilevazione">${esc(firstVal(row,['notes','note'],''))}</textarea></div><div class="wide"><label>Foto dei progressi (JPG, PNG o WebP; massimo 8 MB ciascuna)</label><input id="progressEditPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="previewProgressPhotos()"><div class="muted" style="margin-top:6px">Puoi allegare più foto alla rilevazione. Le foto già caricate vengono mantenute quando modifichi i dati.</div><div id="progressPhotoPreview" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div></div></div><div class="rowactions" style="margin-top:18px"><button class="btn" type="button" onclick="saveProgressEntry('${clientId}','${entryId}')">Salva misurazione</button><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button></div>`;
+ c.innerHTML=`<div class="top"><div><div class="title">${entryId?'Modifica':'Nuova'} misurazione</div><div class="sub">${esc(profileDisplayName(p)||'Cliente')}</div></div><button class="btn secondary" type="button" onclick="closeModal()">Chiudi</button></div><div id="progressEditorError" class="error"></div><div class="inputrow" style="margin-top:14px"><div style="flex:1"><label>Data rilevazione</label><input id="progressEditDate" type="date" value="${esc(dateVal)}"></div></div><div class="clientSheetGrid" style="margin-top:14px">${progressDefs.map(([label,names,unit])=>`<div><label>${esc(label)} ${unit}</label><input id="progressEdit_${names[0]}" inputmode="decimal" placeholder="—" value="${esc(val(names))}"></div>`).join('')}<div class="wide"><label>Note</label><textarea id="progressEditNotes" rows="3" placeholder="Note sulla rilevazione">${esc(firstVal(row,['notes','note'],''))}</textarea></div><div class="wide"><label>Foto dei progressi (JPG, PNG o WebP; massimo 8 MB ciascuna)</label><input id="progressEditPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="previewProgressPhotos()"><div class="muted" style="margin-top:6px">Puoi allegare più foto alla rilevazione. Usa Elimina foto per rimuovere una foto già salvata. L’eliminazione è immediata, anche senza salvare le altre modifiche.</div><div id="progressPhotoPreview" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div><div id="progressNewPhotoPreview" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div></div></div><div class="rowactions" style="margin-top:18px"><button id="progressPhotoSaveButton" class="btn" type="button" onclick="saveProgressEntry('${clientId}','${entryId}')">Salva misurazione</button><button class="btn secondary" type="button" onclick="closeModal()">Annulla</button></div>`;
  const modal=document.getElementById('modal');
  modal.classList.add('open');
  modal.style.display='grid';
  modal.style.zIndex='999999';
- renderProgressPhotoGallery(document.getElementById('progressPhotoPreview'),row.photo_paths||[]);
+ const photoBox=document.getElementById('progressPhotoPreview');
+ photoBox._progressEditor={clientId:String(clientId),entryId:String(entryId||'')};
+ renderProgressPhotoGallery(photoBox,row.photo_paths||[]);
 }
 function previewProgressPhotos(){
- const box=document.getElementById('progressPhotoPreview');if(!box)return;box.innerHTML='';
+ const box=document.getElementById('progressNewPhotoPreview');if(!box)return;box.innerHTML='';
  const files=Array.from(document.getElementById('progressEditPhotos')?.files||[]);
  files.forEach(file=>{const wrap=document.createElement('div');wrap.style.cssText='width:100px;font-size:11px;color:var(--muted)';const img=document.createElement('img');img.src=URL.createObjectURL(file);img.style.cssText='width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--line)';const name=document.createElement('div');name.textContent=file.name;wrap.append(img,name);box.appendChild(wrap)});
 }
@@ -3669,11 +3671,50 @@ async function uploadProgressPhotos(clientId,entryId,existingPaths=[]){
  return paths;
 }
 async function renderProgressPhotoGallery(container,paths){
- if(!container)return;container.innerHTML='';const valid=Array.isArray(paths)?paths:[];
- if(!valid.length)return;container.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:10px';
- for(const path of valid){try{const r=await db.storage.from('progress-photos').createSignedUrl(path,300);if(r.error||!r.data?.signedUrl)continue;const a=document.createElement('a');a.href=r.data.signedUrl;a.target='_blank';a.rel='noopener';const img=document.createElement('img');img.src=r.data.signedUrl;img.alt='Foto progressi';img.style.cssText='width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line)';a.appendChild(img);container.appendChild(a)}catch(e){console.warn('Foto progressi non disponibile',e)}}
+ if(!container)return;
+ const token={};container._galleryToken=token;container.innerHTML='';
+ const valid=Array.isArray(paths)?paths:[];
+ container.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:10px';
+ for(const path of valid){
+  if(container._galleryToken!==token||!container.isConnected)return;
+  const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;gap:7px;width:120px';
+  try{
+   const r=await db.storage.from('progress-photos').createSignedUrl(path,300);
+   if(container._galleryToken!==token||!container.isConnected)return;
+   if(r.error||!r.data?.signedUrl)throw new Error('Anteprima non disponibile');
+   const a=document.createElement('a');a.href=r.data.signedUrl;a.target='_blank';a.rel='noopener';
+   const img=document.createElement('img');img.src=r.data.signedUrl;img.alt='Foto progressi';img.style.cssText='width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line)';a.appendChild(img);wrap.appendChild(a);
+  }catch(e){const unavailable=document.createElement('span');unavailable.textContent='Anteprima non disponibile';unavailable.className='muted';wrap.appendChild(unavailable)}
+  const editor=container._progressEditor;
+  if(editor?.entryId&&isSuperuserRole()){
+   const button=document.createElement('button');button.type='button';button.className='btn mini';button.textContent='Elimina foto';button.style.cssText='background:#c62828;color:#fff';
+   button.addEventListener('click',()=>deleteProgressPhoto(editor.clientId,editor.entryId,path,container,button));wrap.appendChild(button);
+  }
+  container.appendChild(wrap);
+ }
+}
+let progressPhotoDeletionBusy=false;
+async function deleteProgressPhoto(clientId,entryId,path,container,button){
+ if(!isSuperuserRole()||progressPhotoDeletionBusy)return;
+ if(!confirm('Eliminare definitivamente questa foto dai progressi? Le misurazioni verranno mantenute.'))return;
+ progressPhotoDeletionBusy=true;button.disabled=true;button.textContent='Eliminazione...';
+ const saveButton=document.getElementById('progressPhotoSaveButton');if(saveButton)saveButton.disabled=true;
+ try{
+  const current=await db.from('progress_entries').select('id,photo_paths').eq('id',String(entryId)).eq('user_id',String(clientId)).single();
+  if(current.error)throw current.error;
+  const paths=Array.isArray(current.data?.photo_paths)?current.data.photo_paths:[];
+  const remaining=paths.filter(item=>item!==path);
+  const saved=await db.from('progress_entries').update({photo_paths:remaining}).eq('id',String(entryId)).eq('user_id',String(clientId)).select('id').single();
+  if(saved.error)throw saved.error;
+  if(progressAdminRowsById[String(entryId)])progressAdminRowsById[String(entryId)].photo_paths=remaining;
+  if(container.isConnected)await renderProgressPhotoGallery(container,remaining);
+  const removed=await db.storage.from('progress-photos').remove([path]);
+  if(removed.error)alert('Foto rimossa dalla rilevazione. Il file non è stato eliminato dall’archivio: '+removed.error.message);
+ }catch(e){alert('Eliminazione foto non completata: '+(e.message||String(e)))}
+ finally{progressPhotoDeletionBusy=false;if(button.isConnected){button.disabled=false;button.textContent='Elimina foto'}if(saveButton?.isConnected)saveButton.disabled=false;}
 }
 async function saveProgressEntry(clientId,entryId=''){
+ if(progressPhotoDeletionBusy){alert('Attendi il completamento dell’eliminazione della foto.');return;}
  if(!isSuperuserRole())return;
  const err=document.getElementById('progressEditorError');if(err){err.style.display='none';err.textContent=''}
  const date=document.getElementById('progressEditDate')?.value||'';if(!date){if(err){err.textContent='Inserisci la data della rilevazione.';err.style.display='block'}return}

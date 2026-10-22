@@ -1395,6 +1395,7 @@ async function loadClients(){
  clientsData=(r.data||[]).filter(p=>!isClientSuspended(p));renderClients(clientsData);
 }
 function renderClients(rows){
+ rows=(rows||[]).slice().sort((a,b)=>profileDisplayName(a).localeCompare(profileDisplayName(b),'it',{sensitivity:'base',numeric:true}));
  const list=document.getElementById('clientList'),count=document.getElementById('clientCount');if(!list)return;
  count.textContent=rows.length+' profili';
  if(!rows.length){list.innerHTML='<div class="muted">Nessun profilo trovato.</div>';return}
@@ -2106,19 +2107,23 @@ function populateWorkoutUserFilter(rows){
 
 function renderWorkouts(rows){
  const list=document.getElementById('workoutList'),count=document.getElementById('workoutCount');if(!list)return;
- count.textContent=rows.length+' schede';
- if(!rows.length){list.innerHTML='<div class="muted">Nessuna scheda trovata.</div>';return}
- list.innerHTML=rows.map(p=>{
-  const ex=p.workout_exercises||[];
-  const userName=profileDisplayName(p.user_profile);
-  const userEmail=profileEmail(p.user_profile);
-  const assignment = p.user_id
-    ? `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> ${esc(userName)}${userEmail?' · '+esc(userEmail):''}</div>`
-    : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
-  const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>'}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+ const previous=new Map([...list.querySelectorAll('details[data-workout-client]')].map(el=>[el.dataset.workoutClient,el.open]));
+ const groups=new Map();
+ for(const plan of rows){const key=String(plan.user_id||'unassigned');if(!groups.has(key)){const user=plan.user_profile||(usersData||[]).find(u=>String(u.id)===key);groups.set(key,{key,user,plans:[]});}groups.get(key).plans.push(plan);}
+ const clients=[...groups.values()].sort((a,b)=>{if(a.key==='unassigned')return 1;if(b.key==='unassigned')return -1;return profileDisplayName(a.user).localeCompare(profileDisplayName(b.user),'it',{sensitivity:'base',numeric:true});});
+ if(count)count.textContent=rows.length+' schede · '+clients.length+' '+(clients.length===1?'cliente':'clienti');
+ if(!rows.length){list.innerHTML='<div class="muted">Nessuna scheda trovata.</div>';return;}
+ const searching=!!document.getElementById('workoutSearch')?.value.trim()||!!document.getElementById('workoutUserFilter')?.value;
+ list.innerHTML=clients.map(group=>{
+ const name=group.key==='unassigned'?'Schede non assegnate':group.user?profileDisplayName(group.user):'Cliente '+group.key;
+ const email=profileEmail(group.user);
+ const plans=group.plans.slice().sort((a,b)=>Number(b.is_active!==false)-Number(a.is_active!==false)||String(b.created_at||'').localeCompare(String(a.created_at||'')));
+ return `<details class="workoutClientGroup" data-workout-client="${esc(group.key)}" ${searching||previous.get(group.key)?'open':''}><summary><span class="workoutClientName"><strong>${esc(name)}</strong>${email?`<span class="muted">${esc(email)}</span>`:''}</span><span class="pill">${plans.length} ${plans.length===1?'scheda':'schede'}</span></summary><div class="workoutCompactPlans">${plans.map(p=>`<div class="workoutCompactRow"><div class="workoutCompactInfo"><b>${esc(p.title||'Scheda senza titolo')}</b>${p.description?`<div class="muted workoutCompactDescription">${esc(p.description)}</div>`:''}<div class="muted">${(p.workout_exercises||[]).length} esercizi${p.created_at&&!isNaN(Date.parse(p.created_at))?' · '+new Date(p.created_at).toLocaleDateString('it-IT'):''}</div></div><div class="rowactions"><span class="pill ${p.is_active!==false?'workoutActive':''}">${p.is_active===false?'Non attiva':'Attiva'}</span><button type="button" class="btn secondary mini" data-workout-open="${esc(p.id)}">Apri</button>${canEditWorkout()?`<button type="button" class="btn secondary mini" data-workout-edit="${esc(p.id)}">Modifica</button>`:''}</div></div>`).join('')}</div></details>`;
  }).join('');
+ list.querySelectorAll('[data-workout-open]').forEach(button=>button.addEventListener('click',()=>showWorkoutDetail(button.dataset.workoutOpen)));
+ list.querySelectorAll('[data-workout-edit]').forEach(button=>button.addEventListener('click',()=>editWorkoutPlan(button.dataset.workoutEdit)));
 }
+
 function filterWorkouts(){
   const q=(document.getElementById('workoutSearch')?.value||'').toLowerCase().trim();
   const uid=document.getElementById('workoutUserFilter')?.value||'';
@@ -2145,7 +2150,7 @@ function showWorkoutDetail(id){
    const imgHtml=img?`<div class="apkExImageWrap"><img class="apkExImage" src="${esc(resolveExerciseImageUrl(img))}" alt="${esc(e.name||'Esercizio')}" loading="lazy" onerror="this.closest('.apkExImageWrap').innerHTML='<div class=&quot;apkExImageFallback&quot;>IMG</div>'"></div>`:`<div class="apkExImageWrap"><div class="apkExImageFallback">IMG</div></div>`;
    const meta=[e.muscle_group,e.equipment,e.focus].filter(Boolean).join(' · ');
    return `<div class="apkExerciseCard">
-     <div class="apkExTop"><div class="apkExNo">${i+1}</div>${imgHtml}<div class="apkExMain"><div class="apkExTitle">${esc(e.name||'Esercizio')}</div>${meta?`<div class="apkExMeta">${esc(meta)}</div>`:''}${e.work_type?`<div class="apkExType">${esc(e.work_type)}</div>`:''}${e.notes?`<div class="apkExNotes">${esc(e.notes)}</div>`:''}</div></div>
+     <div class="apkExTop"><div class="apkExNo">${i+1}</div>${imgHtml}<div class="apkExMain"><div class="apkExTitle">${esc(e.name||'Esercizio')}</div>${canEditWorkout()?`<button type="button" class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica esercizio</button>`:''}${meta?`<div class="apkExMeta">${esc(meta)}</div>`:''}${e.work_type?`<div class="apkExType">${esc(e.work_type)}</div>`:''}${e.notes?`<div class="apkExNotes">${esc(e.notes)}</div>`:''}</div></div>
      <div class="apkExStats">
        <div><span>Serie</span><b>${esc(fmtVal(e.sets))}</b></div>
        <div><span>Inizio</span><b>${esc(fmtSec(e.initial_seconds))}</b></div>
@@ -5729,11 +5734,11 @@ async function openCreateWorkoutPlan(){
  if(result.error)throw result.error;
  usersData=result.data||[];
  const archiveError=await loadExerciseLibrary();
- const clients=usersData.filter(u=>['client','cliente','user','utente'].includes(String(u.role||'client').toLowerCase()));
+ const clients=workoutCreateClients();
  if(!document.getElementById('modal')?.classList.contains('open'))return;
  openModal(`<div class="modalhead"><h2>Nuova scheda workout</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
  <form id="wcForm" onsubmit="event.preventDefault();saveCreatedWorkout()">
- <div class="formgrid"><div class="wide"><label for="wcUser">Cliente</label><select id="wcUser" required><option value="">Seleziona un cliente</option>${clients.map(u=>`<option value="${esc(u.id)}">${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('')}</select></div>
+ <div class="formgrid"><div class="wide"><label for="wcClientSearch">Cerca cliente</label><input id="wcClientSearch" type="search" placeholder="Nome, cognome o email…" oninput="filterWorkoutCreateClients()" autocomplete="off"><label for="wcUser">Cliente (ordine alfabetico)</label><select id="wcUser" required><option value="">Seleziona un cliente</option>${clients.map(u=>`<option value="${esc(u.id)}">${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('')}</select><div id="wcClientCount" class="muted" aria-live="polite">${clients.length} clienti</div></div>
  <div class="wide"><label for="wcTitle">Titolo scheda</label><input id="wcTitle" required maxlength="180" placeholder="Es. Allenamento A — Forza"></div>
  <div class="wide"><label for="wcDescription">Descrizione / indicazioni</label><input id="wcDescription" maxlength="4000"></div></div>
  <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="wcActive" checked style="width:18px">Imposta come scheda attiva</label><p class="muted">Se attiva, sostituisce la precedente scheda attiva del cliente.</p>
@@ -5774,4 +5779,32 @@ async function saveCreatedWorkout(){
  finally{workoutCreateBusy=false;if(document.contains(button)){form.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);form.querySelectorAll('select[data-field="work_type"]').forEach(toggleWorkoutCreateType);button.textContent='Crea scheda';}}
 }
 
+function workoutCreateClients(){
+ return (usersData||[]).filter(u=>['client','cliente','user','utente'].includes(String(u.role||'client').toLowerCase().trim())).slice().sort((a,b)=>profileDisplayName(a).localeCompare(profileDisplayName(b),'it',{sensitivity:'base',numeric:true}));
+}
+function filterWorkoutCreateClients(){
+ const select=document.getElementById('wcUser');if(!select)return;
+ const selected=select.value;
+ const query=normalizeExerciseKey(document.getElementById('wcClientSearch')?.value||'');
+ const all=workoutCreateClients();
+ const rows=all.filter(u=>normalizeExerciseKey([profileDisplayName(u),profileEmail(u),u.first_name,u.last_name].filter(Boolean).join(' ')).includes(query));
+ const selectedClient=all.find(u=>String(u.id)===selected);
+ const options=rows.slice();if(selectedClient&&!options.some(u=>String(u.id)===selected))options.push(selectedClient);
+ select.innerHTML='<option value="">Seleziona un cliente</option>'+options.map(u=>'<option value="'+esc(u.id)+'">'+esc(profileDisplayName(u))+(profileEmail(u)?' — '+esc(profileEmail(u)):'')+(selectedClient===u&&!rows.includes(u)?' (selezionato)':'')+'</option>').join('');
+ select.value=selected;
+ const count=document.getElementById('wcClientCount');if(count)count.textContent=rows.length?rows.length+' clienti trovati':'Nessun cliente trovato';
+}
+
 </script>
+<style>
+.workoutClientGroup{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-bottom:10px;overflow:hidden}
+.workoutClientGroup>summary{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;list-style:none}
+.workoutClientGroup>summary::-webkit-details-marker{display:none}
+.workoutClientGroup>summary:before{content:'▸';color:var(--accent);font-size:20px}
+.workoutClientGroup[open]>summary:before{content:'▾'}
+.workoutClientGroup>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.workoutClientName{display:flex;flex:1;min-width:0;gap:10px;align-items:baseline;flex-wrap:wrap}.workoutClientName strong{overflow-wrap:anywhere}
+.workoutCompactPlans{padding:0 15px}.workoutCompactRow{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:11px 0}
+.workoutCompactInfo{min-width:0;flex:1}.workoutCompactInfo>b{font-size:14px;overflow-wrap:anywhere}.workoutCompactInfo .muted{font-size:12px;margin-top:3px}.workoutCompactDescription{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:650px}.workoutActive{color:var(--accent)}
+@media(max-width:600px){.workoutCompactRow{align-items:flex-start;flex-direction:column;gap:8px}.workoutClientName{gap:3px;flex-direction:column}.workoutClientName .muted{overflow-wrap:anywhere;max-width:100%}.workoutCompactDescription{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.workoutCompactRow .rowactions{width:100%}}
+</style>

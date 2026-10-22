@@ -302,7 +302,7 @@ clients:`<div class="top"><div><div class="title">Utenti</div><div class="sub">G
 <div class="card"><div class="inputrow"><input id="clientSearch" placeholder="Cerca per nome, email, telefono o tessera" oninput="filterClients()"><button class="btn" onclick="loadClients()">Aggiorna</button></div>
 <div id="clientError" class="error"></div><div id="clientCount" class="muted">Caricamento...</div><div id="clientList" style="margin-top:12px">Caricamento clienti...</div></div>`,
 workout:`<div class="top"><div><div class="title">Workout</div><div class="sub">Schede ed esercizi reali</div></div></div>
-<div class="card"><div class="inputrow"><input id="workoutSearch" placeholder="Cerca scheda o esercizio" oninput="filterWorkouts()"><select id="workoutUserFilter" style="max-width:280px" onchange="filterWorkouts()"><option value="">Tutti gli utenti</option></select><button class="btn" onclick="loadWorkouts()">Aggiorna</button></div>
+<div class="card"><div class="inputrow"><input id="workoutSearch" placeholder="Cerca scheda o esercizio" oninput="filterWorkouts()"><select id="workoutUserFilter" style="max-width:280px" onchange="filterWorkouts()"><option value="">Tutti gli utenti</option></select><button class="btn" onclick="loadWorkouts()">Aggiorna</button>${canEditWorkout()?`<button class="btn" onclick="openCreateWorkoutPlan()">+ Nuova scheda</button>`:' '}</div>
 <div class="muted" style="margin:4px 0 14px">Ogni scheda viene collegata al cliente tramite <b>user_id</b> di Supabase.</div><div id="workoutError" class="error"></div><div id="workoutCount" class="muted">Caricamento...</div><div id="workoutList" style="margin-top:12px">Caricamento schede...</div></div>`,
 nutrition:`<div class="top"><div><div class="title">Nutrizione</div><div class="sub">Consigli alimentari, alimenti e valori nutrizionali</div></div></div>
 <div class="card nutritionToolbar"><div class="inputrow"><div id="nutritionSearchWrap" style="flex:1"><input id="nutritionSearch" placeholder="Cerca consigli, descrizione o cliente" oninput="filterNutrition()"></div><button class="btn secondary" onclick="loadNutrition()">Aggiorna</button></div><div class="rowactions" id="nutritionAdminActions"><button class="btn" onclick="openCreateNutritionPlan()">+ Nuovi consigli</button><button class="btn" onclick="openNutritionImport()">Importa consigli ChatGPT</button><button class="btn secondary" onclick="downloadNutritionTemplate()">Scarica modello</button><button class="btn secondary" onclick="toggleNutritionFoods()">Catalogo alimenti</button><button class="btn secondary" onclick="toggleNutritionSupplementCatalog()">Catalogo integratori</button></div></div>
@@ -2116,7 +2116,7 @@ function renderWorkouts(rows){
     ? `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> ${esc(userName)}${userEmail?' · '+esc(userEmail):''}</div>`
     : `<div class="targets" style="margin-top:10px"><b>Cliente assegnato:</b> <span class="danger">Nessuno</span></div>`;
   const editActions=canEditWorkout()?`<button class="btn secondary mini" onclick="editWorkoutPlan('${p.id}')">Modifica</button>`:'';
-  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>'}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
+  return `<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start"><div><h2 style="margin:0 0 6px;font-size:18px">${esc(p.title||'Scheda senza titolo')}</h2><div class="sub">${esc(p.description||'')}</div>${assignment}</div><div class="rowactions"><span class="pill">${p.is_active===false?'Non attiva':'Attiva'}</span><button class="btn secondary mini" onclick="showWorkoutDetail('${p.id}')">Dettaglio</button>${editActions}</div></div><div style="overflow:auto;margin-top:15px"><table class="table"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Carico</th><th>Recupero</th><th></th></tr></thead><tbody>${ex.length?ex.map(e=>`<tr><td>${e.image_url?`<img class="exImage" style="width:58px;height:58px;display:inline-block;vertical-align:middle;margin-right:10px" src="${esc(resolveExerciseImageUrl(e.image_url))}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<span style="display:inline-block;vertical-align:middle"><b>${esc(e.name||'—')}</b><div class="muted">${esc(e.muscle_group||e.exercise_type||'')}</div></span></td><td>${esc(e.sets??'—')}</td><td>${esc(e.reps??'—')}</td><td>${esc(e.weight??'—')}</td><td>${esc(e.rest_seconds??'—')}</td>${canEditWorkout()?`<td><button class="btn secondary mini" onclick="editWorkoutExercise('${e.id}')">Modifica</button></td>`:'<td></td>'}</tr>`).join(''):'<tr><td colspan="6" class="muted">Nessun esercizio associato.</td></tr>'}</tbody></table></div></div>`;
  }).join('');
 }
 function filterWorkouts(){
@@ -2125,7 +2125,7 @@ function filterWorkouts(){
   const rows=(workoutsData||[]).filter(w=>{
     const u=w.user_profile||workoutUsers?.[w.user_id]||{};
     const hay=[
-      w.name,w.title,w.description,w.notes,w.goal,
+      w.name,w.title,w.description,w.notes,w.goal,...(w.workout_exercises||[]).map(e=>e.name),
       u.first_name,u.last_name,u.email,u.nome,u.cognome
     ].filter(Boolean).join(' ').toLowerCase();
     return (!q||hay.includes(q))&&(!uid||String(w.user_id)===String(uid));
@@ -2164,7 +2164,7 @@ function showWorkoutDetail(id){
   </div>
   <div class="detailHero">
     <div><span class="label">Cliente</span><strong>${esc(client)}</strong>${email?`<div class="sub">${esc(email)}</div>`:''}</div>
-    <div><span class="label">Stato</span><strong>${p.active===false?'Non attiva':'Attiva'}</strong></div>
+    <div><span class="label">Stato</span><strong>${p.is_active===false?'Non attiva':'Attiva'}</strong></div>
     <div><span class="label">Esercizi</span><strong>${ex.length}</strong></div>
   </div>
   <div class="detailSection"><h3>Programma di allenamento</h3>${rows}</div>
@@ -3831,7 +3831,7 @@ function renderSubscriptionPrices(){
  if(status)status.textContent=rows.length+(rows.length===1?' prezzo predefinito':' prezzi predefiniti');
  if(!rows.length){list.innerHTML='<div class="muted">Nessun prezzo configurato. Premi “＋ Nuovo prezzo”.</div>';return}
  list.innerHTML='<div style="overflow:auto"><table class="table"><thead><tr><th>Nome</th><th>Piano</th><th>Durata</th><th>Descrizione</th><th>Prezzo base</th><th>Supplemento Plus</th><th>Totale</th><th>Stato</th><th></th></tr></thead><tbody>'+
- rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(subscriptionPresetDurationLabel(p))}</td><td>${esc(p.description||'—')}</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button type="button" class="btn secondary mini" data-edit-subscription-price="${esc(p.id)}">Modifica</button><button type="button" class="btn secondary mini" data-delete-subscription-price="${esc(p.id)}">Elimina</button></div></td></tr>`).join('')+
+ rows.map(p=>`<tr><td><b>${esc(p.name||'—')}</b></td><td>${esc(p.plan_type||'—')}</td><td>${esc(subscriptionPresetDurationLabel(p))}</td><td>${esc(p.description||'—')}</td><td>€ ${Number(p.price||0).toFixed(2).replace('.',',')}</td><td>${String(p.plan_type||'').toLowerCase()==='plus'?'€ '+subscriptionPresetExtra(p).toFixed(2).replace('.',','):'—'}</td><td><b>€ ${subscriptionPresetTotal(p).toFixed(2).replace('.',',')}</b></td><td><span class="pill">${p.is_active===false?'Disattivo':'Attivo'}</span></td><td><div class="rowactions"><button type="button" class="btn secondary mini" data-edit-subscription-price="${esc(p.id)}">Modifica</button><button type="button" class="btn secondary mini" data-delete-subscription-price="${esc(p.id)}">Elimina</button></div></td></tr>`).join('')+
  '</tbody></table></div>';
  list.querySelectorAll('[data-edit-subscription-price]').forEach(button=>button.addEventListener('click',()=>openSubscriptionPriceModal(button.getAttribute('data-edit-subscription-price'))));
  list.querySelectorAll('[data-delete-subscription-price]').forEach(button=>button.addEventListener('click',()=>deleteSubscriptionPrice(button.getAttribute('data-delete-subscription-price'))));
@@ -5718,3 +5718,60 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
 #modal.open:has(.nutritionProspectScroll){z-index:1000!important;isolation:isolate}
 #modal.open:has(.nutritionProspectScroll) .nutritionRequestSaveBar{padding-bottom:max(4px,env(safe-area-inset-bottom))!important}
 </style></body></html>
+
+<script>
+let workoutCreateBusy=false;
+async function openCreateWorkoutPlan(){
+ if(!canEditWorkout()||!currentUser?.id)return;
+ openModal('<div class="modalhead"><h2>Nuova scheda workout</h2><button class="close" onclick="closeModal()">Chiudi</button></div><p>Caricamento clienti e archivio esercizi...</p>');
+ try{
+ const result=await db.from('profiles').select('*').limit(1000);
+ if(result.error)throw result.error;
+ usersData=result.data||[];
+ const archiveError=await loadExerciseLibrary();
+ const clients=usersData.filter(u=>['client','cliente','user','utente'].includes(String(u.role||'client').toLowerCase()));
+ if(!document.getElementById('modal')?.classList.contains('open'))return;
+ openModal(`<div class="modalhead"><h2>Nuova scheda workout</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
+ <form id="wcForm" onsubmit="event.preventDefault();saveCreatedWorkout()">
+ <div class="formgrid"><div class="wide"><label for="wcUser">Cliente</label><select id="wcUser" required><option value="">Seleziona un cliente</option>${clients.map(u=>`<option value="${esc(u.id)}">${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('')}</select></div>
+ <div class="wide"><label for="wcTitle">Titolo scheda</label><input id="wcTitle" required maxlength="180" placeholder="Es. Allenamento A — Forza"></div>
+ <div class="wide"><label for="wcDescription">Descrizione / indicazioni</label><input id="wcDescription" maxlength="4000"></div></div>
+ <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="wcActive" checked style="width:18px">Imposta come scheda attiva</label><p class="muted">Se attiva, sostituisce la precedente scheda attiva del cliente.</p>
+ <div class="archiveBox"><h3>Archivio esercizi</h3><input id="wcSearch" placeholder="Cerca nome, muscolo o attrezzatura" oninput="renderWorkoutCreateArchive()"><div id="wcArchive" class="archiveList"></div>${archiveError?`<p class="danger">Archivio non disponibile: ${esc(archiveError)}. Puoi inserire esercizi manualmente.</p>`:''}</div>
+ <h3>Esercizi della scheda</h3><div id="wcExercises"></div><button type="button" class="btn secondary" onclick="addWorkoutCreateExercise()">+ Esercizio manuale</button>
+ <div id="wcMsg" class="error" role="status"></div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Annulla</button><button id="wcSave" class="btn" type="submit">Crea scheda</button></div></form>`);
+ renderWorkoutCreateArchive();
+ }catch(e){if(document.getElementById('modal')?.classList.contains('open'))openModal(`<div class="modalhead"><h2>Nuova scheda</h2><button class="close" onclick="closeModal()">Chiudi</button></div><p class="danger">${esc(e.message||String(e))}</p><button class="btn" onclick="openCreateWorkoutPlan()">Riprova</button>`);}
+}
+function renderWorkoutCreateArchive(){
+ const box=document.getElementById('wcArchive');if(!box)return;
+ const q=normalizeExerciseKey(document.getElementById('wcSearch').value);
+ const rows=exerciseLibraryData.map((e,index)=>({e,index})).filter(({e})=>normalizeExerciseKey([e.name,e.muscle_group,e.equipment].join(' ')).includes(q)).slice(0,40);
+ box.innerHTML=rows.map(({e,index})=>`<button type="button" class="archiveItem" onclick="addWorkoutCreateExercise(${index})"><b>+ ${esc(e.name)}</b><span>${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</span></button>`).join('')||'<p class="muted">Nessun esercizio trovato. Usa l’inserimento manuale.</p>';
+}
+function addWorkoutCreateExercise(index){
+ const e=exerciseLibraryData[index]||{};const card=document.createElement('fieldset');card.className='archiveBox wcExercise';card.style.marginBottom='14px';
+ const field=(key,label,value='',type='text')=>`<div><label>${label}<input data-field="${key}" type="${type}" value="${esc(value??'')}" ${type==='number'?'min="0" max="86400" step="1"':''} ${key==='name'?'required maxlength="200"':''}></label></div>`;
+ card.innerHTML=`<legend>Esercizio</legend><div class="toolbar"><button type="button" class="btn secondary mini" onclick="moveWorkoutCreateExercise(this,-1)" aria-label="Sposta su">↑</button><button type="button" class="btn secondary mini" onclick="moveWorkoutCreateExercise(this,1)" aria-label="Sposta giù">↓</button><button type="button" class="btn secondary mini" onclick="this.closest('fieldset').remove()">Rimuovi</button></div><div class="formgrid">
+ ${field('name','Nome esercizio',e.name)}${field('sets','Serie',e.default_sets||3)}
+ <div><label>Tipo<select data-field="work_type" onchange="toggleWorkoutCreateType(this)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></label></div>
+ ${field('reps','Ripetizioni (es. 8–12)',e.default_reps||10)}${field('duration_seconds','Durata (secondi)',e.default_duration_seconds||30,'number')}${field('weight','Carico / indicazioni','A corpo libero')}${field('rest_seconds','Recupero (secondi)',e.default_rest_seconds??90,'number')}${field('initial_seconds','Attesa iniziale (secondi)',0,'number')}${field('rep_seconds','Secondi per ripetizione',0,'number')}${field('muscle_group','Gruppo muscolare',e.muscle_group)}${field('equipment','Attrezzatura',e.equipment)}${field('focus','Focus / note',e.focus)}${field('image_url','URL immagine',getExerciseImageUrl(e))}</div>`;
+ document.getElementById('wcExercises').appendChild(card);const select=card.querySelector('select');select.value=e.work_type==='time'?'time':'reps';toggleWorkoutCreateType(select);
+}
+function toggleWorkoutCreateType(select){const c=select.closest('fieldset');for(const key of ['reps','duration_seconds']){const input=c.querySelector(`[data-field="${key}"]`);input.disabled=(key==='reps')===(select.value==='time');input.closest('div').style.display=input.disabled?'none':'';}}
+function moveWorkoutCreateExercise(button,direction){const card=button.closest('fieldset');const other=direction<0?card.previousElementSibling:card.nextElementSibling;if(other)card.parentNode.insertBefore(direction<0?card:other,direction<0?other:card);}
+async function saveCreatedWorkout(){
+ if(workoutCreateBusy||!currentUser?.id||!canEditWorkout())return;
+ const form=document.getElementById('wcForm');if(!form?.reportValidity())return;
+ const title=document.getElementById('wcTitle').value.trim();if(!title){notice('wcMsg','Inserisci il titolo della scheda.');return;}
+ const cards=[...document.querySelectorAll('#wcExercises .wcExercise')];if(!cards.length){notice('wcMsg','Aggiungi almeno un esercizio.');return;}
+ const exercises=[];
+ for(const card of cards){const e={};card.querySelectorAll('[data-field]').forEach(input=>{e[input.dataset.field]=input.disabled?null:input.value.trim()});if(!e.name||!e.sets||!Number.isInteger(Number(e.sets))||Number(e.sets)<1){notice('wcMsg','Ogni esercizio richiede un nome e un numero intero di serie maggiore di zero.');return;}if(e.work_type==='time'&&Number(e.duration_seconds)<=0||e.work_type==='reps'&&!e.reps){notice('wcMsg','Indica ripetizioni o durata per ogni esercizio.');return;}for(const key of ['initial_seconds','rep_seconds','duration_seconds','rest_seconds'])e[key]=e[key]===null||e[key]===''?null:Number(e[key]);exercises.push(e);}
+ workoutCreateBusy=true;const button=document.getElementById('wcSave');button.disabled=true;button.textContent='Salvataggio...';form.querySelectorAll('button,input,select').forEach(el=>el.disabled=true);
+ let saved=false;
+ try{const r=await db.rpc('coach_save_workout_plan',{p_plan_id:null,p_user_id:document.getElementById('wcUser').value,p_title:title,p_description:document.getElementById('wcDescription').value.trim(),p_exercises:exercises,p_make_active:document.getElementById('wcActive').checked});if(r.error)throw r.error;saved=true;closeModal();await loadWorkouts();}
+ catch(e){if(!saved)notice('wcMsg','Scheda non salvata: '+(e.message||String(e)));}
+ finally{workoutCreateBusy=false;if(document.contains(button)){form.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);form.querySelectorAll('select[data-field="work_type"]').forEach(toggleWorkoutCreateType);button.textContent='Crea scheda';}}
+}
+
+</script>

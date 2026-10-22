@@ -4751,13 +4751,7 @@ function filterAdmin(){const q=(document.getElementById('adminSearch')?.value||'
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('open')}
 function closeModal(){const m=document.getElementById('modal');if(!m)return;m.classList.remove('open');m.style.display='';m.style.zIndex='';const c=document.getElementById('modalContent');if(c)c.innerHTML=''}
 function notice(id,msg,ok=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.className=ok?'success':'error';e.style.display='block'}}
-async function editWorkoutPlan(id){
- if(!canEditWorkout()){alert('La scheda workout è in sola visualizzazione per il cliente.');return;}
- const p=workoutsData.find(x=>x.id===id);if(!p)return;
- const clients=(usersData||[]).filter(u=>String(pick(u,['role'])||'client').toLowerCase()==='client');
- const opts='<option value="">— Nessun cliente —</option>'+clients.map(u=>`<option value="${esc(u.id)}" ${p.user_id===u.id?'selected':''}>${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('');
- openModal(`<div class="modalhead"><h2>Modifica scheda</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="formgrid"><div class="wide"><label>Cliente / Utente assegnato</label><select id="wpUser">${opts}</select></div><div class="wide"><label>Titolo</label><input id="wpTitle" value="${esc(p.title||'')}"></div><div class="wide"><label>Descrizione</label><input id="wpDesc" value="${esc(p.description||'')}"></div></div><div class="checkrow"><label><input id="wpActive" type="checkbox" ${p.is_active!==false?'checked':''}> Attiva</label><label><input id="wpVisible" type="checkbox" ${p.is_visible!==false?'checked':''}> Visibile</label></div><div id="wpMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveWorkoutPlan('${id}')">Salva</button></div>`)
-}
+async function editWorkoutPlan(id){return openCreateWorkoutPlan(id);}
 async function saveWorkoutPlan(id){
  if(!canEditWorkout()){alert('Operazione non consentita: il cliente non può modificare la scheda workout.');return;}
  const uid=document.getElementById('wpUser').value||null;
@@ -5726,10 +5720,18 @@ async function deleteNutritionSupplement(id,planId){if(!confirm('Eliminare quest
 
 <script>
 let workoutCreateBusy=false;
-async function openCreateWorkoutPlan(){
+async function openCreateWorkoutPlan(planId=null){
  if(!canEditWorkout()||!currentUser?.id)return;
  openModal('<div class="modalhead"><h2>Nuova scheda workout</h2><button class="close" onclick="closeModal()">Chiudi</button></div><p>Caricamento clienti e archivio esercizi...</p>');
  try{
+ const existing=planId?(workoutsData||[]).find(p=>String(p.id)===String(planId)):null;
+ if(planId&&!existing)throw new Error('Scheda non trovata. Aggiorna l’elenco e riprova.');
+ let existingExercises=[];
+ if(existing){
+ const er=await db.from('workout_exercises').select('*').eq('plan_id',planId).order('sort_order',{ascending:true});
+ if(er.error)throw er.error;
+ existingExercises=er.data||[];
+ }
  const result=await db.from('profiles').select('*').limit(1000);
  if(result.error)throw result.error;
  usersData=result.data||[];
@@ -5746,6 +5748,25 @@ async function openCreateWorkoutPlan(){
  <h3>Esercizi della scheda</h3><div id="wcExercises"></div><button type="button" class="btn secondary" onclick="addWorkoutCreateExercise()">+ Esercizio manuale</button>
  <div id="wcMsg" class="error" role="status"></div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Annulla</button><button id="wcSave" class="btn" type="submit">Crea scheda</button></div></form>`);
  renderWorkoutCreateArchive();
+ const form=document.getElementById('wcForm');
+ if(existing){
+ form.dataset.planId=String(existing.id);form.dataset.userId=String(existing.user_id||'');
+ document.querySelector('#modalContent h2').textContent='Modifica scheda ed esercizi';
+ document.getElementById('wcTitle').value=existing.title||'';
+ document.getElementById('wcDescription').value=existing.description||'';
+ const userSelect=document.getElementById('wcUser');
+ if(existing.user_id&&![...userSelect.options].some(o=>o.value===String(existing.user_id))){const option=document.createElement('option');option.value=existing.user_id;option.textContent=profileDisplayName(existing.user_profile)||existing.user_id;userSelect.appendChild(option);}
+ userSelect.value=existing.user_id||'';userSelect.disabled=true;
+ document.getElementById('wcClientSearch').disabled=true;
+ document.getElementById('wcActive').checked=existing.is_active!==false;
+ document.getElementById('wcSave').textContent='Salva modifiche';
+ existingExercises.forEach(e=>{
+ addWorkoutCreateExercise();
+ const card=document.getElementById('wcExercises').lastElementChild;
+ card.querySelectorAll('[data-field]').forEach(input=>{const value=e[input.dataset.field];input.value=value==null?'':String(value);});
+ const type=card.querySelector('[data-field="work_type"]');type.value=e.work_type==='time'?'time':'reps';toggleWorkoutCreateType(type);
+ });
+ }
  }catch(e){if(document.getElementById('modal')?.classList.contains('open'))openModal(`<div class="modalhead"><h2>Nuova scheda</h2><button class="close" onclick="closeModal()">Chiudi</button></div><p class="danger">${esc(e.message||String(e))}</p><button class="btn" onclick="openCreateWorkoutPlan()">Riprova</button>`);}
 }
 function renderWorkoutCreateArchive(){
@@ -5774,9 +5795,9 @@ async function saveCreatedWorkout(){
  for(const card of cards){const e={};card.querySelectorAll('[data-field]').forEach(input=>{e[input.dataset.field]=input.disabled?null:input.value.trim()});if(!e.name||!e.sets||!Number.isInteger(Number(e.sets))||Number(e.sets)<1){notice('wcMsg','Ogni esercizio richiede un nome e un numero intero di serie maggiore di zero.');return;}if(e.work_type==='time'&&Number(e.duration_seconds)<=0||e.work_type==='reps'&&!e.reps){notice('wcMsg','Indica ripetizioni o durata per ogni esercizio.');return;}for(const key of ['initial_seconds','rep_seconds','duration_seconds','rest_seconds'])e[key]=e[key]===null||e[key]===''?null:Number(e[key]);exercises.push(e);}
  workoutCreateBusy=true;const button=document.getElementById('wcSave');button.disabled=true;button.textContent='Salvataggio...';form.querySelectorAll('button,input,select').forEach(el=>el.disabled=true);
  let saved=false;
- try{const r=await db.rpc('coach_save_workout_plan',{p_plan_id:null,p_user_id:document.getElementById('wcUser').value,p_title:title,p_description:document.getElementById('wcDescription').value.trim(),p_exercises:exercises,p_make_active:document.getElementById('wcActive').checked});if(r.error)throw r.error;saved=true;closeModal();await loadWorkouts();}
+ try{const r=await db.rpc('coach_save_workout_plan',{p_plan_id:form.dataset.planId||null,p_user_id:form.dataset.userId||document.getElementById('wcUser').value,p_title:title,p_description:document.getElementById('wcDescription').value.trim(),p_exercises:exercises,p_make_active:document.getElementById('wcActive').checked});if(r.error)throw r.error;saved=true;closeModal();await loadWorkouts();}
  catch(e){if(!saved)notice('wcMsg','Scheda non salvata: '+(e.message||String(e)));}
- finally{workoutCreateBusy=false;if(document.contains(button)){form.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);form.querySelectorAll('select[data-field="work_type"]').forEach(toggleWorkoutCreateType);button.textContent='Crea scheda';}}
+ finally{workoutCreateBusy=false;if(document.contains(button)){form.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);form.querySelectorAll('select[data-field="work_type"]').forEach(toggleWorkoutCreateType);button.textContent=form.dataset.planId?'Salva modifiche':'Crea scheda';if(form.dataset.planId){document.getElementById('wcUser').disabled=true;document.getElementById('wcClientSearch').disabled=true;}}}
 }
 
 function workoutCreateClients(){

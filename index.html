@@ -5745,7 +5745,7 @@ async function openCreateWorkoutPlan(planId=null){
  <div class="wide"><label for="wcDescription">Descrizione / indicazioni</label><input id="wcDescription" maxlength="4000"></div></div>
  <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="wcActive" checked style="width:18px">Imposta come scheda attiva</label><p class="muted">Se attiva, sostituisce la precedente scheda attiva del cliente.</p>
  <div class="archiveBox"><h3>Archivio esercizi</h3><input id="wcSearch" placeholder="Cerca nome, muscolo o attrezzatura" oninput="renderWorkoutCreateArchive()"><div id="wcArchive" class="archiveList"></div>${archiveError?`<p class="danger">Archivio non disponibile: ${esc(archiveError)}. Puoi inserire esercizi manualmente.</p>`:''}</div>
- <h3>Esercizi della scheda</h3><div id="wcExercises"></div><button type="button" class="btn secondary" onclick="addWorkoutCreateExercise()">+ Esercizio manuale</button>
+ <h3>Esercizi della scheda</h3><div id="wcExerciseNotice" role="status" aria-live="polite" aria-atomic="true" style="display:none;padding:12px 14px;margin-bottom:12px;border:1px solid var(--accent);border-radius:10px;background:#202919;color:var(--text)"></div><div id="wcExercises"></div><button type="button" class="btn secondary" onclick="addWorkoutCreateExercise()">+ Esercizio manuale</button>
  <div id="wcMsg" class="error" role="status"></div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Annulla</button><button id="wcSave" class="btn" type="submit">Crea scheda</button></div></form>`);
  renderWorkoutCreateArchive();
  const form=document.getElementById('wcForm');
@@ -5761,7 +5761,7 @@ async function openCreateWorkoutPlan(planId=null){
  document.getElementById('wcActive').checked=existing.is_active!==false;
  document.getElementById('wcSave').textContent='Salva modifiche';
  existingExercises.forEach(e=>{
- addWorkoutCreateExercise();
+ addWorkoutCreateExercise(undefined,true);
  const card=document.getElementById('wcExercises').lastElementChild;
  card.querySelectorAll('[data-field]').forEach(input=>{const value=e[input.dataset.field];input.value=value==null?'':String(value);});
  const type=card.querySelector('[data-field="work_type"]');type.value=e.work_type==='time'?'time':'reps';toggleWorkoutCreateType(type);
@@ -5775,7 +5775,7 @@ function renderWorkoutCreateArchive(){
  const rows=exerciseLibraryData.map((e,index)=>({e,index})).filter(({e})=>normalizeExerciseKey([e.name,e.muscle_group,e.equipment].join(' ')).includes(q)).slice(0,40);
  box.innerHTML=rows.map(({e,index})=>`<button type="button" class="archiveItem" onclick="addWorkoutCreateExercise(${index})"><b>+ ${esc(e.name)}</b><span>${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</span></button>`).join('')||'<p class="muted">Nessun esercizio trovato. Usa l’inserimento manuale.</p>';
 }
-function addWorkoutCreateExercise(index){
+function addWorkoutCreateExercise(index,silent=false){
  const e=exerciseLibraryData[index]||{};const card=document.createElement('fieldset');card.className='archiveBox wcExercise';card.style.marginBottom='14px';
  const field=(key,label,value='',type='text')=>`<div><label>${label}<input data-field="${key}" type="${type}" value="${esc(value??'')}" ${type==='number'?'min="0" max="86400" step="1"':''} ${key==='name'?'required maxlength="200"':''}></label></div>`;
  card.innerHTML=`<legend>Esercizio</legend><div class="toolbar"><button type="button" class="btn secondary mini" onclick="moveWorkoutCreateExercise(this,-1)" aria-label="Sposta su">↑</button><button type="button" class="btn secondary mini" onclick="moveWorkoutCreateExercise(this,1)" aria-label="Sposta giù">↓</button><button type="button" class="btn secondary mini" onclick="this.closest('fieldset').remove()">Rimuovi</button></div><div class="formgrid">
@@ -5783,6 +5783,12 @@ function addWorkoutCreateExercise(index){
  <div><label>Tipo<select data-field="work_type" onchange="toggleWorkoutCreateType(this)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></label></div>
  ${field('reps','Ripetizioni (es. 8–12)',e.default_reps||10)}${field('duration_seconds','Durata (secondi)',e.default_duration_seconds||30,'number')}${field('weight','Carico / indicazioni','A corpo libero')}${field('rest_seconds','Recupero (secondi)',e.default_rest_seconds??90,'number')}${field('initial_seconds','Attesa iniziale (secondi)',0,'number')}${field('rep_seconds','Secondi per ripetizione',0,'number')}${field('muscle_group','Gruppo muscolare',e.muscle_group)}${field('equipment','Attrezzatura',e.equipment)}${field('focus','Focus / note',e.focus)}${field('image_url','URL immagine',getExerciseImageUrl(e))}</div>`;
  document.getElementById('wcExercises').appendChild(card);const select=card.querySelector('select');select.value=e.work_type==='time'?'time':'reps';toggleWorkoutCreateType(select);
+ if(!silent){
+ const message=document.getElementById('wcExerciseNotice');
+ if(message){message.style.display='block';message.textContent=e.name?'Nuovo esercizio aggiunto: '+e.name+'. Imposta i valori e premi '+(document.getElementById('wcForm')?.dataset.planId?'“Salva modifiche”':'“Crea scheda”')+' per confermare.':'Stai inserendo un nuovo esercizio manuale. Compila nome e valori, poi premi '+(document.getElementById('wcForm')?.dataset.planId?'“Salva modifiche”':'“Crea scheda”')+' per confermare.';}
+ card.scrollIntoView({behavior:'smooth',block:'nearest'});card.querySelector('[data-field="name"]')?.focus({preventScroll:true});
+ }
+
 }
 function toggleWorkoutCreateType(select){const c=select.closest('fieldset');for(const key of ['reps','duration_seconds']){const input=c.querySelector(`[data-field="${key}"]`);input.disabled=(key==='reps')===(select.value==='time');input.closest('div').style.display=input.disabled?'none':'';}}
 function moveWorkoutCreateExercise(button,direction){const card=button.closest('fieldset');const other=direction<0?card.previousElementSibling:card.nextElementSibling;if(other)card.parentNode.insertBefore(direction<0?card:other,direction<0?other:card);}

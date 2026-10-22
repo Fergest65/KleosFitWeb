@@ -356,9 +356,9 @@ qrcodes:`<div class="top"><div><div class="title">Il mio QR Code</div><div class
 <div class="card"><div class="sub" style="margin-bottom:12px">Presenta questo QR al lettore del tornello. Il codice è associato al tuo profilo KLEOSFIT.</div><div id="qrError" class="error"></div><div id="qrCount" class="muted" style="margin-top:12px">Caricamento...</div><div id="qrList" class="qrGrid" style="margin-top:14px"></div></div>`,
 progress:`<div class="top"><div><div class="title">Progressi</div><div class="sub">Storico delle tue misurazioni corporee</div></div><button class="btn" type="button" onclick="loadClientProgress()">Aggiorna</button></div>
 <div class="progressInfo"><span class="progressReadOnly">SOLA VISUALIZZAZIONE</span><div style="margin-top:8px">Le rilevazioni vengono inserite dal coach. Qui puoi consultare soltanto lo storico delle tue misurazioni.</div></div>
-<div class="progressGuide"><img src="misurazioni-corpo.png" alt="Guida alle misurazioni corporee"><div class="progressGuideCaption">Guida visiva alle zone di misurazione — area informativa, non modificabile dal cliente.</div></div>
+<div class="section"><div class="card"><h2>Le tue foto dei progressi</h2><div id="progressClientPhotos">Caricamento foto...</div></div></div><div class="progressGuide"><img src="misurazioni-corpo.png" alt="Guida alle misurazioni corporee"><div class="progressGuideCaption">Guida visiva alle zone di misurazione — area informativa, non modificabile dal cliente.</div></div>
 <div id="progressError" class="error"></div><div id="progressCount" class="muted">Caricamento...</div><div id="progressCards" class="progressGrid" style="margin-top:14px"></div>
-<div class="section"><div class="card"><h2>Storico misurazioni</h2><div id="progressTable" class="progressTableWrap">Caricamento...</div><div id="progressClientPhotos" style="margin-top:24px"></div></div></div>`,
+<div class="section"><div class="card"><h2>Storico misurazioni</h2><div id="progressTable" class="progressTableWrap">Caricamento...</div></div></div>`,
 priceList:`<div class="top"><div><div class="title">Listino prezzi</div><div class="sub">Visualizza gli abbonamenti disponibili e i relativi prezzi.</div></div><button class="btn" type="button" onclick="loadClientPriceList()">Aggiorna</button></div>
 <div class="card"><div id="clientPriceListError" class="error"></div><div id="clientPriceListStatus" class="muted">Caricamento listino...</div><div id="clientPriceList" style="margin-top:14px"></div></div>`,
 payments:`<div class="top"><div><div class="title">Storico pagamenti</div><div class="sub">Visualizza i tuoi pagamenti e lo stato degli abbonamenti</div></div><button class="btn" type="button" onclick="loadClientPayments()">Aggiorna</button></div>
@@ -3681,10 +3681,10 @@ async function renderProgressPhotoGallery(container,paths){
   try{
    const r=await db.storage.from('progress-photos').createSignedUrl(path,300);
    if(container._galleryToken!==token||!container.isConnected)return;
-   if(r.error||!r.data?.signedUrl)throw new Error('Anteprima non disponibile');
+   if(r.error||!r.data?.signedUrl)throw new Error(r.error?.message||'URL della foto non disponibile');
    const a=document.createElement('a');a.href=r.data.signedUrl;a.target='_blank';a.rel='noopener';
    const img=document.createElement('img');img.src=r.data.signedUrl;img.alt='Foto progressi';img.style.cssText='width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line)';a.appendChild(img);wrap.appendChild(a);
-  }catch(e){const unavailable=document.createElement('span');unavailable.textContent='Anteprima non disponibile';unavailable.className='muted';wrap.appendChild(unavailable)}
+  }catch(e){const unavailable=document.createElement('span');unavailable.textContent='Foto non accessibile: '+(e.message||'errore di lettura')+'. Se il coach vede la foto, verifica i permessi del bucket progress-photos.';unavailable.className='muted';wrap.appendChild(unavailable)}
   const editor=container._progressEditor;
   if(editor?.entryId&&isSuperuserRole()){
    const button=document.createElement('button');button.type='button';button.className='btn mini';button.textContent='Elimina foto';button.style.cssText='background:#c62828;color:#fff';
@@ -3772,23 +3772,24 @@ async function loadClientProgress(){
  const err=document.getElementById('progressError'),count=document.getElementById('progressCount'),cards=document.getElementById('progressCards'),table=document.getElementById('progressTable');
  if(!cards||!table)return;
  const photoSection=document.getElementById('progressClientPhotos');
- if(photoSection)photoSection.innerHTML='';
+ if(photoSection)photoSection.textContent='Caricamento foto...';
  err.style.display='none';cards.innerHTML='';table.innerHTML='Caricamento...';count.textContent='Caricamento...';
  if(!currentUser?.id){err.textContent='Utente non autenticato.';err.style.display='block';return}
  const r=await db.from('progress_entries').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(200);
- if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';return}
+ if(r.error){err.textContent='Storico misurazioni non disponibile: '+r.error.message;err.style.display='block';count.textContent='Errore';table.innerHTML='';if(photoSection)photoSection.textContent='Impossibile caricare le foto: storico non disponibile.';return}
  const rows=(r.data||[]).slice().sort((a,b)=>{const da=new Date(progressDate(a)||0).getTime(),db=new Date(progressDate(b)||0).getTime();return da-db});
  count.textContent=rows.length+(rows.length===1?' rilevazione':' rilevazioni');
- if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';return}
+ if(!rows.length){cards.innerHTML='<div class="card" style="grid-column:1/-1"><div class="muted">Nessuna rilevazione salvata.</div></div>';table.innerHTML='<div class="muted">Nessuna rilevazione salvata.</div>';if(photoSection)photoSection.textContent='Non ci sono ancora foto dei tuoi progressi.';return}
  const latest=rows[rows.length-1],previous=rows[rows.length-2]||null;
  cards.innerHTML=progressDefs.map(([label,names,unit])=>{const v=progressField(latest,names),pv=previous?progressField(previous,names):null;return `<div class="progressCard"><div class="progressCardHead"><div class="progressCardTitle">${label}</div><div class="progressTrend ${progressTrendClass(progressTrend(v,pv,label).status)}">${progressTrend(v,pv,label).arrow}</div></div><div class="progressValue">${v===null?'--':v.toFixed(1).replace('.',',')+unit}</div>${progressChange(v,pv,label)}<div class="progressDate">${esc(fmtDate(progressDate(latest)))}</div></div>`}).join('');
  const cols=['Data',...progressDefs.map(x=>x[0]),'Note'];
  table.innerHTML='<table class="table progressTable"><thead><tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,idx)=>`<tr><td>${esc(fmtDate(progressDate(r)))}</td>${progressDefs.map(([label,names,unit])=>{const v=progressField(r,names),older=idx>0?rows[idx-1]:null,pv=older?progressField(older,names):null,t=progressTrend(v,pv,label),arrowGlyph=progressArrowFromValues(v,pv,label),arrow=(idx===0||!arrowGlyph)?'':` <span class="${progressTrendClass(t.status)}" title="Confronto con la rilevazione precedente" style="font-size:15px;font-weight:900;margin-left:5px">${arrowGlyph}</span>`;return `<td>${v===null?'—':v.toFixed(1).replace('.',',')+unit+arrow}</td>`}).join('')}<td>${esc(firstVal(r,['notes','note'],''))}</td></tr>`).join('')+'</tbody></table>';
 
  if(photoSection&&photoSection.isConnected){
+  photoSection.innerHTML='';
   const photographed=rows.filter(row=>Array.isArray(row.photo_paths)&&row.photo_paths.length).slice().reverse();
   if(photographed.length){
-   const title=document.createElement('h2');title.textContent='Le tue foto dei progressi';photoSection.appendChild(title);
+
    for(const row of photographed){
     if(!photoSection.isConnected)break;
     const group=document.createElement('section');group.style.cssText='padding:14px 0;border-top:1px solid var(--line)';

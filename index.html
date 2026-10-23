@@ -2156,7 +2156,7 @@ function showWorkoutDetail(id){
      <div class="apkExStats">
        <div><span>Serie</span><b>${esc(fmtVal(e.sets))}</b></div>
        <div><span>Inizio</span><b>${esc(fmtSec(e.initial_seconds))}</b></div>
-       <div><span>Rip./tempo</span><b>${esc(fmtVal(e.reps))}</b></div>
+       <div><span>Rip./tempo</span><b>${esc(e.work_type==='time'?fmtSec(e.duration_seconds):fmtVal(e.reps))}</b></div>
        <div><span>Sec/rep</span><b>${esc(fmtSec(e.rep_seconds))}</b></div>
        <div><span>Carico/note</span><b>${esc(fmtVal(e.weight||e.notes))}</b></div>
        <div><span>Rec.</span><b>${esc(fmtSec(e.rest_seconds))}</b></div>
@@ -2169,7 +2169,7 @@ function showWorkoutDetail(id){
     <div><h2 style="margin:0">${esc(p.title||'Scheda allenamento')}</h2><div class="sub">${esc(p.description||'')}</div></div>
     <button class="close" onclick="closeModal()">Chiudi</button>
   </div>
-  <div class="detailHero">
+  ${canEditWorkout()?`<div class="toolbar" style="margin-bottom:12px"><button class="btn secondary" onclick="editWorkoutHeader('${id}')">Modifica intestazione / cliente</button></div>`:''}<div class="detailHero">
     <div><span class="label">Cliente</span><strong>${esc(client)}</strong>${email?`<div class="sub">${esc(email)}</div>`:''}</div>
     <div><span class="label">Stato</span><strong>${p.is_active===false?'Non attiva':'Attiva'}</strong></div>
     <div><span class="label">Esercizi</span><strong>${ex.length}</strong></div>
@@ -4817,31 +4817,9 @@ function applyArchiveExercise(id){
  const search=document.getElementById('weArchiveSearch');if(search)search.value=e.name||'';
  renderArchiveSuggestions();
 }
-async function editWorkoutExercise(id){
- if(!canEditWorkout()){alert('La scheda workout è in sola visualizzazione per il cliente.');return;}
- const e=(workoutsData.flatMap(p=>p.workout_exercises||[])).find(x=>x.id===id);if(!e)return;
- const archiveError=await loadExerciseLibrary();
- const initialArchive=(exerciseLibraryData||[]).find(x=>String(x.name||'').toLowerCase()===String(e.name||'').toLowerCase());
- openModal(`<div class="modalhead"><h2>Modifica esercizio</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
- <div class="archiveBox">
-   <h3>Archivio esercizi — come nell'app</h3>
-   <input id="weArchiveId" type="hidden" value="${esc(initialArchive?.id||'')}">
-   <input id="weArchiveSearch" class="archiveSearch" placeholder="Cerca nell'archivio esercizi..." value="${esc(e.name||'')}" oninput="renderArchiveSuggestions()">
-   <div id="weArchiveList" class="archiveList"></div>
-   <div id="weArchiveInfo" class="archiveInfo">${initialArchive?`<b>${esc(initialArchive.name||'')}</b>${[initialArchive.muscle_group,initialArchive.equipment].filter(Boolean).length?' · '+esc([initialArchive.muscle_group,initialArchive.equipment].filter(Boolean).join(' · ')):''}${initialArchive.focus?' · Focus: '+esc(initialArchive.focus):''}`:'Seleziona un esercizio: il Focus e i valori predefiniti verranno compilati automaticamente.'}</div>
-   ${archiveError?`<div class="error" style="display:block">Archivio esercizi non leggibile: ${esc(archiveError)}</div>`:''}
- </div>
- <div class="formgrid" style="margin-top:14px"><div class="wide"><label>Nome esercizio</label><input id="weName" value="${esc(e.name||'')}"></div><div><label>Serie</label><input id="weSets" type="number" value="${esc(e.sets??'')}"></div><div><label>Ripetizioni</label><input id="weReps" value="${esc(e.reps??'')}"></div><div><label>Carico</label><input id="weWeight" value="${esc(e.weight??'')}"></div><div><label>Recupero (sec)</label><input id="weRest" type="number" value="${esc(e.rest_seconds??'')}"></div><div><label>Tipo</label><input id="weType" value="${esc(e.work_type||e.exercise_type||'')}"></div><div><label>Focus</label><input id="weFocus" value="${esc(e.focus||'')}"></div></div>
- <div id="weMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveWorkoutExercise('${id}')">Salva</button></div>`);
- renderArchiveSuggestions();
-}
 
 function valOrNull(id){const v=document.getElementById(id)?.value?.trim();return v===''?null:v}
-async function saveWorkoutExercise(id){
- if(!canEditWorkout()){alert('Operazione non consentita: il cliente non può modificare la scheda workout.');return;}
- const payload={name:valOrNull('weName'),sets:valOrNull('weSets'),reps:valOrNull('weReps'),weight:valOrNull('weWeight'),rest_seconds:valOrNull('weRest'),work_type:valOrNull('weType'),focus:valOrNull('weFocus')};
- const r=await db.from('workout_exercises').update(payload).eq('id',id);if(r.error){notice('weMsg',r.error.message);return}closeModal();await loadWorkouts()
-}
+
 function canEditNutrition(){return !isClientRole();}
 function editNutritionPlanTitle(id){
  if(!canEditNutrition())return;
@@ -5915,3 +5893,35 @@ function closeWorkoutRunner(){if(workoutRunner?.saving)return;if(workoutRunner){
 
 </script>
 <style>.workoutRunnerDialog{width:min(920px,96vw);max-height:94vh;overflow:auto;border:1px solid var(--line);border-radius:18px;padding:24px;background:var(--bg);color:var(--text)}.workoutRunnerDialog::backdrop{background:rgba(0,0,0,.85)}.runnerHero{display:flex;align-items:center;gap:24px;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--panel)}.runnerHero img{width:220px;height:220px;object-fit:contain;border-radius:12px;background:#101217}.runnerPhase{text-align:center;margin-top:22px;font-size:21px;color:var(--accent);font-weight:800}.runnerTime{text-align:center;font-size:clamp(60px,12vw,100px);font-variant-numeric:tabular-nums;font-weight:900}.workoutRunnerDialog .rampTimerActions button{min-width:140px}@media(max-width:600px){.workoutRunnerDialog{padding:16px}.runnerHero{flex-direction:column;align-items:stretch;gap:10px}.runnerHero img{width:100%;height:200px}.workoutRunnerDialog .modalhead h2{font-size:20px}}</style>
+<script>
+async function editWorkoutExercise(id){
+ if(!canEditWorkout())return;
+ const plan=workoutsData.find(p=>(p.workout_exercises||[]).some(e=>String(e.id)===String(id)));const e=plan?.workout_exercises.find(e=>String(e.id)===String(id));if(!e)return;
+ const field=(key,label,type='text')=>`<div><label>${label}<input name="${key}" type="${type}" value="${esc(e[key]??'')}" ${type==='number'?'min="0" max="86400" step="1"':''} ${key==='name'?'required':''}></label></div>`;
+ openModal(`<div class="modalhead"><h2>Modifica esercizio</h2><button class="close" onclick="showWorkoutDetail('${plan.id}')">Indietro</button></div><form id="singleWorkoutExercise" onsubmit="event.preventDefault();saveWorkoutExercise('${e.id}')" data-plan-id="${esc(plan.id)}"><fieldset class="archiveBox"><legend>Esercizio</legend><div class="formgrid">${field('name','Nome esercizio')}${field('sets','Serie','number')}<div><label>Tipo<select name="work_type" onchange="toggleSingleWorkoutType()"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></label></div>${field('reps','Ripetizioni (es. 8–12)')}${field('duration_seconds','Durata (secondi)','number')}${field('weight','Carico / indicazioni')}${field('rest_seconds','Recupero (secondi)','number')}${field('initial_seconds','Attesa iniziale (secondi)','number')}${field('rep_seconds','Secondi per ripetizione','number')}${field('muscle_group','Gruppo muscolare')}${field('equipment','Attrezzatura')}${field('focus','Focus / note')}${field('image_url','URL immagine')}</div></fieldset><div id="weMsg" class="error" role="status"></div><div class="actions"><button type="button" class="btn secondary" onclick="showWorkoutDetail('${plan.id}')">Annulla</button><button type="submit" class="btn" id="singleWorkoutSave">Salva esercizio</button></div></form>`);
+ const form=document.getElementById('singleWorkoutExercise');form.elements.work_type.value=e.work_type==='time'?'time':'reps';form.elements.sets.min=1;toggleSingleWorkoutType();
+}
+function toggleSingleWorkoutType(){const form=document.getElementById('singleWorkoutExercise');if(!form)return;for(const key of ['reps','duration_seconds']){const input=form.elements[key];input.disabled=(key==='reps')===(form.elements.work_type.value==='time');input.closest('div').style.display=input.disabled?'none':'';input.required=!input.disabled;}form.elements.duration_seconds.min=1;}
+async function saveWorkoutExercise(id){
+ if(!canEditWorkout())return;const form=document.getElementById('singleWorkoutExercise');if(!form||!form.reportValidity())return;const button=document.getElementById('singleWorkoutSave');if(button.disabled)return;
+ const payload={};for(const key of ['name','sets','reps','duration_seconds','weight','rest_seconds','initial_seconds','rep_seconds','muscle_group','equipment','focus','image_url','work_type']){const input=form.elements[key];payload[key]=input.disabled?null:input.value.trim();}
+ if(!payload.name||Number(payload.sets)<1||!Number.isInteger(Number(payload.sets))){notice('weMsg','Inserisci nome e numero intero di serie maggiore di zero.');return;}
+ for(const key of ['duration_seconds','rest_seconds','initial_seconds','rep_seconds'])payload[key]=payload[key]===null||payload[key]===''?null:Number(payload[key]);
+ const planId=form.dataset.planId;button.disabled=true;
+ try{const r=await db.from('workout_exercises').update(payload).eq('id',id);if(r.error)throw r.error;const plan=workoutsData.find(p=>String(p.id)===planId);const exercise=plan?.workout_exercises.find(e=>String(e.id)===String(id));if(exercise)Object.assign(exercise,payload);filterWorkouts();showWorkoutDetail(planId);}catch(e){notice('weMsg','Modifiche non salvate: '+(e.message||e));}finally{button.disabled=false;}
+}
+async function editWorkoutHeader(id){
+ if(!canEditWorkout())return;const plan=workoutsData.find(p=>String(p.id)===String(id));if(!plan)return;
+ try{const r=await db.from('profiles').select('*').limit(1000);if(r.error)throw r.error;usersData=r.data||[];const clients=workoutCreateClients();if(plan.user_id&&!clients.some(u=>u.id===plan.user_id)){clients.push(plan.user_profile||{id:plan.user_id,full_name:plan.user_id});}clients.sort((a,b)=>profileDisplayName(a).localeCompare(profileDisplayName(b),'it',{sensitivity:'base'}));
+ openModal(`<div class="modalhead"><h2>Intestazione e intestatario scheda</h2><button class="close" onclick="showWorkoutDetail('${id}')">Indietro</button></div><form id="workoutHeaderForm" onsubmit="event.preventDefault();saveWorkoutHeader('${id}')"><label>Cerca cliente<input id="whSearch" type="search" placeholder="Nome o email" oninput="filterWorkoutHeaderClients()"></label><label>Cliente intestatario<select id="whUser"><option value="">Nessun cliente</option>${clients.map(u=>`<option value="${esc(u.id)}" ${u.id===plan.user_id?'selected':''}>${esc(profileDisplayName(u))}${profileEmail(u)?' — '+esc(profileEmail(u)):''}</option>`).join('')}</select></label><label>Titolo<input id="whTitle" required value="${esc(plan.title||'')}"></label><label>Descrizione / indicazioni<input id="whDescription" value="${esc(plan.description||'')}"></label><div class="checkrow"><label><input id="whActive" type="checkbox" style="width:18px" ${plan.is_active!==false?'checked':''}>Attiva</label><label><input id="whVisible" type="checkbox" style="width:18px" ${plan.is_visible!==false?'checked':''}>Visibile al cliente</label></div><p class="muted">Cambiando intestatario, questa scheda verrà assegnata al cliente selezionato.</p><div id="whMsg" class="error" role="status"></div><div class="actions"><button class="btn secondary" type="button" onclick="showWorkoutDetail('${id}')">Annulla</button><button class="btn" id="whSave" type="submit">Salva intestazione</button></div></form>`);
+ }catch(e){alert('Impossibile aprire l’intestazione: '+(e.message||e));}
+}
+function filterWorkoutHeaderClients(){const q=normalizeExerciseKey(document.getElementById('whSearch').value);const select=document.getElementById('whUser');for(const option of select.options){option.hidden=!!option.value&&option.value!==select.value&&!normalizeExerciseKey(option.textContent).includes(q);}}
+async function saveWorkoutHeader(id){
+ if(!canEditWorkout())return;const form=document.getElementById('workoutHeaderForm');if(!form?.reportValidity())return;const title=document.getElementById('whTitle').value.trim();if(!title){notice('whMsg','Inserisci il titolo.');return;}
+ const button=document.getElementById('whSave');if(button.disabled)return;button.disabled=true;
+ const payload={user_id:document.getElementById('whUser').value||null,title,description:document.getElementById('whDescription').value.trim(),is_active:document.getElementById('whActive').checked,is_visible:document.getElementById('whVisible').checked};
+ try{const r=await db.from('workout_plans').update(payload).eq('id',id);if(r.error)throw r.error;const plan=workoutsData.find(p=>String(p.id)===String(id));if(plan)Object.assign(plan,payload,{user_profile:usersData.find(u=>u.id===payload.user_id)||null});filterWorkouts();showWorkoutDetail(id);}catch(e){notice('whMsg','Intestazione non salvata: '+(e.message||e));}finally{button.disabled=false;}
+}
+
+</script>

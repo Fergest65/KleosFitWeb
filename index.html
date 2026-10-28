@@ -266,6 +266,8 @@ if(n==="nr_allergies_multi"){const none="Nessuna";if(t.checked&&t.value===none)d
 @media(max-width:600px){.nutritionClientGroup>summary,.nutritionRequestListItem>summary{padding:12px;gap:8px}.nutritionClientGroupBody{padding:0 8px 8px}.nutritionClientOpenHint{display:none}.nutritionRequestListBody{padding:0 8px 8px}.nutritionRequestListItem>summary{flex-wrap:wrap}.nutritionRequestHeading{flex-basis:65%}.nutritionClientName{font-size:15px}}
 </style>
 <style>.nutritionIngredientScroll{max-width:100%;overflow-x:auto}.nutritionIngredientTable tfoot{border-top:2px solid #77828c}.nutritionIngredientTable th:first-child{min-width:130px}@media print{.nutritionIngredientScroll{overflow:visible}.nutritionIngredientTable{font-size:10px}.nutritionIngredientTable th:first-child{min-width:0}.nutritionIngredientTable thead{display:table-header-group}.nutritionIngredientTable tfoot{display:table-row-group}}</style>
+
+<style id="wcArchiveThumbnails">#wcArchive .wcArchiveItem{display:flex;align-items:center;gap:10px}#wcArchive .wcArchiveThumb{width:68px;height:68px;flex:0 0 68px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0b1014;display:flex;align-items:center;justify-content:center}#wcArchive .wcArchiveThumb img{width:100%;height:100%;object-fit:contain;display:block}#wcArchive .wcArchiveThumb img[hidden],#wcArchive .wcArchiveNoImage[hidden]{display:none}#wcArchive .wcArchiveNoImage{font-size:10px;line-height:1.3;text-align:center;padding:5px;color:var(--muted)}#wcArchive .wcArchiveText{min-width:0;flex:1}#wcArchive .wcArchiveText b{overflow-wrap:anywhere}</style>
 </head><body><div id="welcome" class="welcome"><div class="welcomeContent">
 <div class="welcomeActions"><button class="welcomeBtn primary" type="button" onclick="openRegister()">REGISTRATI</button><button class="welcomeBtn dark" type="button" onclick="openLogin()">ACCEDI</button></div>
 </div></div>
@@ -5755,7 +5757,7 @@ function renderWorkoutCreateArchive(){
  const box=document.getElementById('wcArchive');if(!box)return;
  const q=normalizeExerciseKey(document.getElementById('wcSearch').value);
  const rows=exerciseLibraryData.map((e,index)=>({e,index})).filter(({e})=>normalizeExerciseKey([e.name,e.muscle_group,e.equipment].join(' ')).includes(q)).slice(0,40);
- box.innerHTML=rows.map(({e,index})=>`<button type="button" class="archiveItem" onclick="addWorkoutCreateExercise(${index})"><b>+ ${esc(e.name)}</b><span>${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</span></button>`).join('')||'<p class="muted">Nessun esercizio trovato. Usa l’inserimento manuale.</p>';
+ box.innerHTML=rows.map(({e,index})=>`<button type="button" class="archiveItem wcArchiveItem" onclick="addWorkoutCreateExercise(${index})"><div class="wcArchiveThumb">${getExerciseImageUrl(e)?`<img src="${esc(getExerciseImageUrl(e))}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="wcArchiveNoImage" hidden>Foto non disponibile</span>`:`<span class="wcArchiveNoImage">Nessuna foto</span>`}</div><div class="wcArchiveText"><b>+ ${esc(e.name)}</b><span>${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</span></div></button>`).join('')||'<p class="muted">Nessun esercizio trovato. Usa l’inserimento manuale.</p>';
 }
 function addWorkoutCreateExercise(index,silent=false){
  if(silent)return insertWorkoutCreateExercise(index,true);

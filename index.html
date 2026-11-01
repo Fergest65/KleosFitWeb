@@ -6108,6 +6108,23 @@ function kleosSheetDistrict(e){
  return kleosDefaultDistrict(linked?.muscle_group||e.muscle_group||'');
 }
 function kleosDistrictThumbHtml(e){return `<figure class="kleosDistrictThumb" data-sheet-muscle-name="${esc(e.name||'')}" data-sheet-muscle-group="${esc(e.muscle_group||'')}" data-sheet-muscle-id="${esc(e.exercise_id||e.exercise_library_id||'')}"><span class="districtMissing">Caricamento distretto…</span><figcaption>Distretto muscolare</figcaption></figure>`;}
+let kleosDistrictFolderRequest=null;
+async function kleosDistrictFolderFiles(){
+ if(!kleosDistrictFolderRequest)kleosDistrictFolderRequest=(async()=>{const bucket=db.storage.from('exercise-images'),files=[];for(let offset=0;;offset+=100){const result=await bucket.list('muscle-districts',{limit:100,offset,sortBy:{column:'name',order:'asc'}});if(result.error)throw result.error;for(const row of result.data||[])if(kleosMuscleImagePath('muscle-districts/'+row.name))files.push(row.name);if((result.data||[]).length<100)return files;}})().catch(error=>{kleosDistrictFolderRequest=null;throw error;});
+ return kleosDistrictFolderRequest;
+}
+async function kleosResolveDistrictImage(district){
+ const bucket=db.storage.from('exercise-images'),selected=kleosMuscleAssociationKey(district);
+ // Legge con la sessione autenticata anche quando il bucket non è pubblico.
+ const chosen=await bucket.download(selected);
+ if(!chosen.error&&chosen.data)return URL.createObjectURL(chosen.data);
+ const files=await kleosDistrictFolderFiles(),key=normalizeExerciseKey(district);
+ const matches=files.filter(name=>normalizeExerciseKey(name.replace(/\.[^.]+$/,''))===key);
+ if(matches.length!==1)throw Error(matches.length?'Più immagini per questo distretto: salva un abbinamento.':'Nessuna miniatura salvata per questo distretto.');
+ const result=await bucket.download('muscle-districts/'+matches[0]);if(result.error)throw result.error;
+ return URL.createObjectURL(result.data);
+}
+
 let kleosSheetLibraryPromise=null;
 async function kleosHydrateSheetDistricts(root=document){
  const figures=Array.from(root.querySelectorAll('[data-sheet-muscle-name]'));if(!figures.length)return;
@@ -6117,9 +6134,13 @@ async function kleosHydrateSheetDistricts(root=document){
  }
  for(const figure of figures){if(!figure.isConnected)continue;const district=kleosSheetDistrict({name:figure.dataset.sheetMuscleName,muscle_group:figure.dataset.sheetMuscleGroup,exercise_id:figure.dataset.sheetMuscleId});
   if(!district){figure.innerHTML='<span class="districtMissing">Distretto non assegnato</span><figcaption>Distretto muscolare</figcaption>';continue;}
-  const url=db.storage.from('exercise-images').getPublicUrl(kleosMuscleAssociationKey(district)).data.publicUrl;
-  figure.innerHTML=`<img src="${esc(url)}?v=${Date.now()}" alt="Distretto assegnato: ${esc(district)}" loading="lazy"><figcaption>${esc(district)}</figcaption>`;
-  figure.querySelector('img').onerror=function(){this.replaceWith(Object.assign(document.createElement('span'),{className:'districtMissing',textContent:'Miniatura non disponibile'}));};
+  figure.innerHTML='<span class="districtMissing">Caricamento…</span><figcaption>'+esc(district)+'</figcaption>';
+  try{const url=await kleosResolveDistrictImage(district);if(!figure.isConnected){URL.revokeObjectURL(url);continue;}
+   if(figure.dataset.objectUrl)URL.revokeObjectURL(figure.dataset.objectUrl);figure.dataset.objectUrl=url;
+   figure.innerHTML=`<img src="${esc(url)}" alt="Distretto assegnato: ${esc(district)}"><figcaption>${esc(district)}</figcaption>`;
+   const image=figure.querySelector('img');image.onload=()=>{URL.revokeObjectURL(url);delete figure.dataset.objectUrl;};image.onerror=()=>{URL.revokeObjectURL(url);image.replaceWith(Object.assign(document.createElement('span'),{className:'districtMissing',textContent:'Immagine non leggibile'}));};
+  }catch(error){if(figure.isConnected){figure.innerHTML='<span class="districtMissing">Miniatura non disponibile</span><figcaption>'+esc(district)+'</figcaption>';figure.title=String(error.message||error);}}
+
  }
 }
 const kleosOriginalShowSheet=showWorkoutDetail;

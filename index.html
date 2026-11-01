@@ -6014,14 +6014,14 @@ async function uploadKleosMediaImages(input){const state=kleosMediaState;if(!sta
 <script>
 const kleosMuscleDistricts=['Pettorali','Spalle','Dorsali','Trapezio e romboidi','Lombari','Bicipiti','Tricipiti','Avambracci','Addominali e obliqui','Glutei','Quadricipiti','Ischiocrurali','Adduttori','Abduttori dell’anca','Polpacci','Tibiale anteriore','Flessori dell’anca'];
 function kleosMuscleKey(name){return 'muscle-districts/'+normalizeExerciseKey(name).replace(/ /g,'-')+'.webp';}
-function kleosMuscleAssociationKey(name){return 'muscle-districts/_associations/'+normalizeExerciseKey(name).replace(/ /g,'-')+'.json';}
+function kleosMuscleAssociationKey(name){return 'muscle-districts/_selected/'+normalizeExerciseKey(name).replace(/ /g,'-')+'.webp';}
 function kleosDefaultDistrict(group){const t=normalizeExerciseKey(group);return kleosMuscleDistricts.find(x=>normalizeExerciseKey(x)===t)||(/petto|pettoral|chest/.test(t)?'Pettorali':/spall|deltoid|shoulder/.test(t)?'Spalle':/dors|schiena|back/.test(t)?'Dorsali':/addomin|core|obliqu/.test(t)?'Addominali e obliqui':/femoral|hamstring/.test(t)?'Ischiocrurali':/glute/.test(t)?'Glutei':'');}
 function kleosMuscleImagePath(path){return typeof path==='string'&&path.startsWith('muscle-districts/')&&!path.split('/').includes('..')&&/\.(png|jpe?g|webp|avif|gif)$/i.test(path);}
 const kleosOriginalMediaSelection=renderKleosMediaSelection;
 renderKleosMediaSelection=function(){
  kleosOriginalMediaSelection();const state=kleosMediaState,box=document.getElementById('kmSelection'),exercise=state?.exercises.find(e=>String(e.id)===state.selectedId);if(!box||!exercise)return;
  const selected=state.muscleDistrict||kleosDefaultDistrict(exercise.muscle_group);
- box.insertAdjacentHTML('beforeend',`<section class="kmMusclePanel"><h3>Miniatura distretto muscolare</h3><label for="kmMuscleDistrict">Distretto muscolare</label><select id="kmMuscleDistrict"><option value="">Scegli il distretto</option>${kleosMuscleDistricts.map(name=>`<option value="${esc(name)}" ${name===selected?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="muted">Carica le immagini in Supabase → Storage → exercise-images → muscle-districts. Poi seleziona qui la miniatura da associare al distretto.</p><div class="kmMusclePreview"><img id="kmMusclePreview" hidden alt="Miniatura distretto"><span id="kmMuscleEmpty" class="muted"></span></div><label for="kmMuscleSearch">Cerca nella cartella muscle-districts</label><input id="kmMuscleSearch" type="search" placeholder="Nome immagine"><button id="kmMuscleRefresh" class="btn secondary" type="button">Aggiorna cartella Supabase</button><div id="kmMuscleGallery" class="kleosMediaImageGrid"></div><button id="kmMuscleSave" type="button" class="btn" disabled>Salva abbinamento distretto</button><div id="kmMuscleMessage" role="status" aria-live="polite"></div></section>`);
+ box.insertAdjacentHTML('beforeend',`<section class="kmMusclePanel"><h3>Miniatura distretto muscolare</h3><label for="kmMuscleDistrict">Distretto muscolare</label><select id="kmMuscleDistrict"><option value="">Scegli il distretto</option>${kleosMuscleDistricts.map(name=>`<option value="${esc(name)}" ${name===selected?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="muted">Carica le immagini in Supabase → Storage → exercise-images → muscle-districts. Poi seleziona qui la miniatura da associare al distretto.</p><div class="kmMusclePreview"><img id="kmMusclePreview" hidden alt="Miniatura distretto"><span id="kmMuscleEmpty" class="muted"></span></div><label for="kmMuscleSearch">Cerca nella cartella muscle-districts</label><input id="kmMuscleSearch" type="search" placeholder="Nome immagine"><button id="kmMuscleRefresh" class="btn secondary" type="button">Aggiorna cartella Supabase</button><div id="kmMuscleGallery" class="kleosMediaImageGrid"></div><button id="kmMuscleSave" type="button" class="btn" disabled>Salva abbinamento esercizio / distretto</button><div id="kmMuscleMessage" role="status" aria-live="polite"></div></section>`);
  state.muscleDistrict=selected;state.muscleCandidate='';state.muscleSaved='';
  document.getElementById('kmMuscleDistrict').onchange=function(){state.muscleDistrict=this.value;kleosLoadMuscleThumbnail(state,this.value);};
  document.getElementById('kmMuscleSearch').oninput=()=>kleosRenderMuscleGallery(state);
@@ -6036,7 +6036,7 @@ function kleosRenderMuscleGallery(state){
  box.innerHTML=rows.map((row)=>`<button class="kmImageCard ${state.muscleCandidate===row.path?'kmSelected':''}" type="button" data-muscle-path="${esc(row.path)}" ${!state.muscleDistrict||state.busy?'disabled':''}><div class="kmThumb"><img src="${esc(row.url)}" alt="${esc(row.name)}" loading="lazy"></div><b>${esc(row.name)}</b></button>`).join('')||'<p class="muted">Nessuna immagine trovata nella cartella muscle-districts.</p>';
  box.querySelectorAll('[data-muscle-path]').forEach(button=>button.onclick=()=>{if(state.busy)return;state.muscleRequest=(state.muscleRequest||0)+1;state.muscleCandidate=button.dataset.musclePath;kleosUpdateMusclePreview(state);kleosRenderMuscleGallery(state);kleosMuscleMessage('Immagine selezionata. Premi Salva abbinamento distretto.',true);});
 }
-function kleosUpdateMusclePreview(state){const image=document.getElementById('kmMusclePreview'),empty=document.getElementById('kmMuscleEmpty'),save=document.getElementById('kmMuscleSave');if(!image)return;image.hidden=!state.muscleCandidate;if(state.muscleCandidate){image.src=db.storage.from('exercise-images').getPublicUrl(state.muscleCandidate).data.publicUrl;image.alt=state.muscleDistrict;image.onerror=()=>{image.hidden=true;empty.textContent='Anteprima non leggibile. Verifica i permessi di lettura.';};}empty.textContent=!state.muscleDistrict?'Seleziona un distretto.':state.muscleCandidate?(state.muscleCandidate===state.muscleSaved?'Abbinamento salvato':'Anteprima da salvare'):'Scegli una miniatura dalla cartella.';save.disabled=!!state.busy||!state.muscleDistrict||!state.muscleCandidate;}
+function kleosUpdateMusclePreview(state){const image=document.getElementById('kmMusclePreview'),empty=document.getElementById('kmMuscleEmpty'),save=document.getElementById('kmMuscleSave');if(!image)return;image.hidden=!state.muscleCandidate;if(state.muscleCandidate){image.src=db.storage.from('exercise-images').getPublicUrl(state.muscleCandidate).data.publicUrl+'?v='+Date.now();image.alt=state.muscleDistrict;image.onerror=()=>{image.hidden=true;empty.textContent='Anteprima non leggibile. Verifica i permessi di lettura.';};}empty.textContent=!state.muscleDistrict?'Seleziona un distretto.':state.muscleCandidate?(state.muscleCandidate===state.muscleSaved?'Abbinamento salvato':'Anteprima da salvare'):'Scegli una miniatura dalla cartella.';save.disabled=!!state.busy||!state.muscleDistrict||!state.muscleCandidate;}
 async function kleosRefreshMuscleGallery(state){
  const gallery=document.getElementById('kmMuscleGallery');if(!gallery)return;const request=state.muscleListRequest=(state.muscleListRequest||0)+1;gallery.textContent='Lettura cartella Supabase…';
  try{const bucket=db.storage.from('exercise-images'),images=[];for(let offset=0;;offset+=100){const result=await bucket.list('muscle-districts',{limit:100,offset,sortBy:{column:'name',order:'asc'}});if(result.error)throw result.error;for(const row of result.data||[]){const path='muscle-districts/'+row.name;if(kleosMuscleImagePath(path)&&(row.id||row.metadata))images.push({name:row.name,path,url:bucket.getPublicUrl(path).data.publicUrl});}if((result.data||[]).length<100)break;}
@@ -6045,18 +6045,36 @@ async function kleosRefreshMuscleGallery(state){
 }
 async function kleosLoadMuscleThumbnail(state,district){
  const request=state.muscleRequest=(state.muscleRequest||0)+1;state.muscleCandidate='';state.muscleSaved='';kleosUpdateMusclePreview(state);kleosRenderMuscleGallery(state);if(!district)return;
- try{const bucket=db.storage.from('exercise-images'),result=await bucket.download(kleosMuscleAssociationKey(district));if(kleosMediaState!==state||state.muscleRequest!==request)return;
- if(result.error){const status=String(result.error.statusCode||result.error.status||'');if(!['400','404'].includes(status))throw result.error;return;}
- const saved=JSON.parse(await result.data.text());if(kleosMediaState!==state||state.muscleRequest!==request)return;
- if(saved.district!==district||!kleosMuscleImagePath(saved.path))throw Error('Abbinamento non valido.');state.muscleSaved=state.muscleCandidate=saved.path;kleosUpdateMusclePreview(state);kleosRenderMuscleGallery(state);
+ try{const bucket=db.storage.from('exercise-images'),key=kleosMuscleAssociationKey(district),name=key.split('/').pop(),result=await bucket.list('muscle-districts/_selected',{search:name,limit:100});
+ if(kleosMediaState!==state||state.muscleRequest!==request)return;if(result.error)throw result.error;
+ if(!(result.data||[]).some(row=>row.name===name))return;
+ state.muscleSaved=state.muscleCandidate=key;kleosUpdateMusclePreview(state);kleosRenderMuscleGallery(state);
  }catch(error){if(kleosMediaState===state&&state.muscleRequest===request)kleosMuscleMessage('Impossibile leggere l’abbinamento: '+(error.message||error));}
+}
+async function kleosSelectedMuscleBlob(file){
+ const bitmap=await createImageBitmap(file);
+ try{const scale=Math.min(1,512/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.9));if(!blob||blob.type!=='image/webp')throw Error('Conversione miniatura non supportata dal browser.');return blob;}finally{bitmap.close();}
 }
 async function kleosSaveMuscleThumbnail(state){
  if(state!==kleosMediaState||state.busy||!canEditWorkout()||!kleosMuscleDistricts.includes(state.muscleDistrict)||!kleosMuscleImagePath(state.muscleCandidate))return;
  const district=state.muscleDistrict,path=state.muscleCandidate;state.busy=true;state.muscleBusy=true;
  const ids=['kmMuscleDistrict','kmMuscleSave','kmMuscleRefresh','kmSave','kmClear','kmUpload','kmRefresh'],controls=ids.map(id=>document.getElementById(id)).filter(Boolean),prior=controls.map(x=>x.disabled);controls.forEach(x=>x.disabled=true);kleosRenderMuscleGallery(state);
- try{const bucket=db.storage.from('exercise-images'),blob=new Blob([JSON.stringify({district,path})],{type:'application/json'}),result=await bucket.upload(kleosMuscleAssociationKey(district),blob,{contentType:'application/json',upsert:true,cacheControl:'0'});if(result.error)throw result.error;
- state.muscleSaved=path;kleosMuscleMessage('Abbinamento salvato per '+district+'. L’immagine resta nella cartella muscle-districts.',true);
+ try{const bucket=db.storage.from('exercise-images'),key=kleosMuscleAssociationKey(district);
+ const source=await bucket.download(path);if(source.error)throw source.error;
+ const blob=await kleosSelectedMuscleBlob(source.data),result=await bucket.upload(key,blob,{contentType:'image/webp',upsert:true,cacheControl:'0'});if(result.error)throw result.error;
+ state.muscleCandidate=key;
+ 
+ const exercise=state.exercises?.find(e=>String(e.id)===state.selectedId);
+ if(exercise){
+  const update=await db.from('exercise_library').update({muscle_group:district}).eq('id',exercise.id).select('id,muscle_group');
+  if(update.error)throw update.error;
+  const saved=(update.data||[]).find(row=>String(row.id)===String(exercise.id));
+  if(!saved||saved.muscle_group!==district)throw Error('Miniatura del distretto salvata, ma abbinamento esercizio non confermato. Verifica i permessi archivio esercizi.');
+  exercise.muscle_group=district;
+  const cached=exerciseLibraryData.find(e=>String(e.id)===String(exercise.id));if(cached)cached.muscle_group=district;
+  renderKleosMediaExercises();
+ }
+ state.muscleSaved=state.muscleCandidate;kleosMuscleMessage(exercise?'Abbinamento salvato: '+exercise.name+' → '+district+'.':'Abbinamento salvato per '+district+'.',true);
  }catch(error){kleosMuscleMessage('Abbinamento non salvato: '+(error.message||error));}
  finally{state.busy=false;state.muscleBusy=false;controls.forEach((el,i)=>{if(el.isConnected)el.disabled=prior[i];});if(kleosMediaState===state){kleosUpdateMusclePreview(state);kleosRenderMuscleGallery(state);}}
 }
@@ -6066,12 +6084,14 @@ selectKleosMediaExercise=function(id){if(kleosMediaState?.muscleBusy)return;if(k
 
 
 <script>
-function openMuscleDistrictLibrary(){
+async function openMuscleDistrictLibrary(){
  if(!canEditWorkout())return;
- kleosMediaState={images:[],exercises:[{id:'muscle-district-manager',name:'Distretti muscolari',muscle_group:''}],selectedId:'muscle-district-manager',candidate:'',busy:false,loading:false,limit:60};
- openModal(`<div class="kleosMediaManager kmDistrictManager"><div class="modalhead"><h2>Distretti muscolari</h2><button class="close" onclick="closeModal()">Chiudi</button></div><p class="muted">Scegli un distretto e seleziona una miniatura dalla cartella Supabase muscle-districts.</p><div id="kmSelection"></div><button id="kmSave" hidden></button><button id="kmClear" hidden></button></div>`);
- renderKleosMediaSelection();
- document.querySelector('.kmDistrictManager .kmPreviewRow')?.remove();
+ await openExerciseMediaLibrary();
+ if(!document.getElementById('kmExercises'))return;
+ const manager=document.querySelector('.kleosMediaManager');
+ const title=manager?.querySelector('h2');if(title)title.textContent='Abbinamento esercizio e distretto muscolare';
+ const description=manager?.querySelector('.modalhead p');if(description)description.textContent='Scegli un esercizio a sinistra, poi il distretto e la miniatura dalla cartella muscle-districts. Puoi anche gestire la foto dell’esercizio.';
 }
+
 </script>
 <style>.kmDistrictManager .kmMusclePanel{border-top:0;margin-top:0;padding-top:0}.kmDistrictManager .kmMusclePreview img{width:150px;height:150px}.kmDistrictManager #kmMuscleSave{margin:12px 0}</style>

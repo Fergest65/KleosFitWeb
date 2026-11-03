@@ -3931,7 +3931,7 @@ async function deleteCourseCatalog(id){
 function updateClientSubscriptionTotal(){
  const cost=document.getElementById('cpCost');if(!cost)return;
  let base=Number(cost.dataset.baseCost);
- if(!Number.isFinite(base)){base=Number(cost.value||0);cost.dataset.baseCost=String(base);}
+ if(!Number.isFinite(base)){base=kleosMoneyValue(cost.value)||0;cost.dataset.baseCost=String(base);}
  let extra=0;
  document.querySelectorAll('.cpPlusCourseCheck:checked').forEach(x=>{extra+=Math.max(0,Number(x.dataset.cost||0));});
  const plusCost=document.getElementById('cpPlusCost');if(plusCost)plusCost.value=extra.toFixed(2);
@@ -3947,7 +3947,7 @@ function renderPlusCourseSelection(p){
 function updateClientSubscriptionTotal(){
  const cost=document.getElementById('cpCost');if(!cost)return;
  let base=Number(cost.dataset.baseCost);
- if(!Number.isFinite(base)){base=Number(cost.value||0);cost.dataset.baseCost=String(base);}
+ if(!Number.isFinite(base)){base=kleosMoneyValue(cost.value)||0;cost.dataset.baseCost=String(base);}
  let extra=0;
  document.querySelectorAll('.cpPlusCourseCheck:checked').forEach(x=>{extra+=Math.max(0,Number(x.dataset.cost||0));});
  const plusCost=document.getElementById('cpPlusCost');if(plusCost)plusCost.value=extra.toFixed(2);
@@ -4090,7 +4090,7 @@ async function openSubscriptionRenewal(profileId){
           <div class="muted" style="margin-top:5px">Puoi selezionare più corsi. I corsi e i relativi supplementi vengono letti automaticamente dal listino.</div>
         </div>
         <div><label>Supplemento Plus totale (€)</label><input id="cpPlusCost" type="number" step="0.01" value="${existingPlus.toFixed(2)}" readonly></div>
-        <div><label>Costo totale abbonamento (€)</label><input id="cpCost" type="number" step="0.01" value="${Math.max(0,Number(p.subscription_cost||baseCost)).toFixed(2)}" oninput="this.dataset.baseCost=this.value;updateClientSubscriptionTotal()"></div>
+        <div><label>Costo totale abbonamento (€)</label><input id="cpCost" type="text" inputmode="decimal" value="${Math.max(0,Number(p.subscription_cost||baseCost)).toFixed(2)}" oninput="kleosRenewalCostInput(this)" onblur="if(Number.isFinite(kleosMoneyValue(this.value)))this.value=kleosMoneyValue(this.value).toFixed(2).replace('.',',')"></div>
         <div><label>Dal</label><input id="cpFrom" type="date" value="${from}" title="Seleziona la data di inizio abbonamento"></div>
         <div><label>Al</label><input id="cpTo" type="date" value="${to}" title="Seleziona la data di fine abbonamento"></div>
         <div><label>Abbonamento attivo</label><div id="cpActiveStatus" class="inputLike" style="padding:10px 12px;font-weight:700">${computeSubscriptionActive(from,to)?'ATTIVO':'NON ATTIVO'} — calcolato automaticamente dalle date</div></div>
@@ -4104,9 +4104,9 @@ async function openSubscriptionRenewal(profileId){
         <div class="sbRow"><span>Pagamenti collegati</span><b id="renewPaidSummary">€ 0,00</b></div>
         <div class="sbTotal"><span>Stato pagamento</span><b id="renewBalanceSummary">DA SALDARE</b></div>
       </div>
-      <div class="actions" style="justify-content:flex-start;margin-top:14px"><button class="btn mini" type="button" onclick="openSubscriptionPaymentEditor('${profileId}')">+ Nuovo pagamento</button><span class="muted">Il pagamento viene collegato direttamente a questo abbonamento.</span></div>
+      <div class="clientSheetSection" style="margin-top:14px"><h3>Pagamento alla conferma</h3><label for="cpInitialPayment">Importo versato ora (€)</label><div class="inputrow"><input id="cpInitialPayment" type="text" inputmode="decimal" value="" placeholder="0,00" oninput="this.dataset.manual='true';kleosRenewalPreview()"><button class="btn secondary" type="button" onclick="kleosRenewalSetFullPayment()">Saldo residuo</button></div><p class="muted">L’importo è precompilato con il prezzo dell’abbonamento, al netto dei pagamenti già registrati. Puoi modificarlo per versare un acconto oppure lasciarlo vuoto per confermare senza pagamento. Il versamento sarà registrato nello storico e collegato al periodo scelto.</p></div>
       <div id="renewMsg" class="error" style="display:none;margin-top:12px"></div>
-      <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal();setTimeout(()=>openClientSheet('${profileId}'),80)">Annulla</button><button class="btn" type="button" onclick="saveSubscriptionRenewal('${profileId}')">Conferma abbonamento</button></div>`);
+      <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn secondary" type="button" onclick="closeModal();setTimeout(()=>openClientSheet('${profileId}'),80)">Annulla</button><button class="btn" type="button" id="cpConfirmSubscription" onclick="saveSubscriptionRenewal('${profileId}')">Conferma abbonamento</button></div>`);
 
     const sel=document.getElementById('cpSubType');
     const activePresets=(subscriptionPricePresets||[]).filter(x=>x.active!==false && !['plus','accesso breve','personal training'].includes(String(x.plan_type||'').trim().toLowerCase()));
@@ -4150,16 +4150,19 @@ async function openSubscriptionRenewal(profileId){
     f?.addEventListener('change',syncDates);
     t?.addEventListener('change',syncDates);
     syncDates();
+    const refreshPaid=()=>refreshSubscriptionPaymentStatus(profileId,f.value,t.value,kleosMoneyValue(document.getElementById('cpCost')?.value));
+    f?.addEventListener('change',refreshPaid);t?.addEventListener('change',refreshPaid);
 
     const refreshTotal=()=>{
       updateClientSubscriptionTotal();
-      const c=Number(document.getElementById('cpCost')?.value||0);
+      const c=kleosMoneyValue(document.getElementById('cpCost')?.value);
       const totalSummary=document.getElementById('renewTotalSummary');
       if(totalSummary)totalSummary.textContent='€ '+c.toFixed(2).replace('.',',');
+      kleosRenewalPreview();
     };
     document.querySelectorAll('.cpPlusCourseCheck').forEach(x=>x.addEventListener('change',refreshTotal));
     refreshTotal();
-    refreshSubscriptionPaymentStatus(profileId,from,to,Number(document.getElementById('cpCost')?.value||0));
+    refreshSubscriptionPaymentStatus(profileId,from,to,kleosMoneyValue(document.getElementById('cpCost')?.value));
   }catch(e){alert('Impossibile aprire la gestione abbonamento: '+(e?.message||e));}
 }
 
@@ -4182,8 +4185,9 @@ async function refreshSubscriptionPaymentStatus(profileId,from,to,due){
     if(r.error)throw r.error;
     const paid=(r.data||[]).filter(x=>String(x.paid_from||'').slice(0,10)===String(from||'').slice(0,10)&&String(x.paid_to||'').slice(0,10)===String(to||'').slice(0,10)).reduce((a,x)=>a+(Number(x.amount)||0),0);
     const total=Number(due||0),remaining=Math.max(0,total-paid);
-    if(paidEl)paidEl.textContent='€ '+paid.toFixed(2).replace('.',',');
+    if(paidEl){paidEl.dataset.paid=String(paid);paidEl.textContent='€ '+paid.toFixed(2).replace('.',',');}
     if(balEl)balEl.textContent=remaining<=0.005?'SALDATO':(paid>0?'PARZIALE · RESIDUO € '+remaining.toFixed(2).replace('.',','):'DA SALDARE');
+    kleosRenewalPreview();
   }catch(e){
     if(paidEl)paidEl.textContent='—';
     if(balEl)balEl.textContent='DA VERIFICARE';
@@ -4191,10 +4195,15 @@ async function refreshSubscriptionPaymentStatus(profileId,from,to,due){
 }
 
 async function saveSubscriptionRenewal(profileId){
-  const msg=document.getElementById('renewMsg');
+  const msg=document.getElementById('renewMsg'),button=document.getElementById('cpConfirmSubscription');
+  if(button?.disabled)return;
+  if(button&&!button.dataset.requestId)button.dataset.requestId=crypto.randomUUID();
+  const requestId=button?.dataset.requestId||crypto.randomUUID();
+  const paymentRaw=document.getElementById('cpInitialPayment')?.value?.trim()||'';
+  const initialPayment=paymentRaw===''?0:kleosMoneyValue(paymentRaw);
   const from=document.getElementById('cpFrom')?.value||'';
   const to=document.getElementById('cpTo')?.value||'';
-  const cost=Number(document.getElementById('cpCost')?.value||0);
+  const cost=kleosMoneyValue(document.getElementById('cpCost')?.value);
   const typeEl=document.getElementById('cpSubType');
   const typeId=typeEl?.value||'';
   const fail=(t)=>{if(msg){msg.textContent=t;msg.style.display='block';}};
@@ -4202,6 +4211,8 @@ async function saveSubscriptionRenewal(profileId){
   if(!from||!to){fail('Inserisci il periodo dell’abbonamento.');return;}
   if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}
   if(!Number.isFinite(cost)||cost<=0){fail('Inserisci un costo abbonamento valido.');return;}
+
+  if(!Number.isFinite(initialPayment)||initialPayment<0){fail('Inserisci un pagamento valido, oppure lascia vuoto.');return;}
 
   const preset=typeId==='__custom__'?null:(subscriptionPricePresets||[]).find(x=>String(x.id)===String(typeId));
   const subscriptionType=typeId==='__custom__'?'Personalizzato':String(preset?.name||'');
@@ -4214,7 +4225,18 @@ async function saveSubscriptionRenewal(profileId){
   }));
   const plusCost=plusRows.reduce((sum,x)=>sum+Math.max(0,Number(x.cost||0)),0);
 
+  let subscriptionSaved=false;
+  if(button)button.disabled=true;
   try{
+    const marker='[[CONFERMA_ABBONAMENTO:'+requestId+']]';
+    let existingPayment=null;
+    if(initialPayment>0){
+      const history=await db.from('subscription_payment_history').select('id,amount,paid_from,paid_to,note').eq('profile_id',profileId).eq('paid_from',from).eq('paid_to',to);
+      if(history.error)throw history.error;
+      existingPayment=(history.data||[]).find(row=>String(row.note||'').includes(marker));
+      const alreadyPaid=(history.data||[]).filter(row=>row!==existingPayment).reduce((sum,row)=>sum+(Number(row.amount)||0),0);
+      if(alreadyPaid+initialPayment>cost+.005)throw Error('Il versamento supera il residuo: € '+Math.max(0,cost-alreadyPaid).toFixed(2).replace('.',','));
+    }
     const payload={
       subscription_type:subscriptionType,
       subscription_plus_course:JSON.stringify(plusRows),
@@ -4228,6 +4250,13 @@ async function saveSubscriptionRenewal(profileId){
     const upd=await db.from('profiles').update(payload).eq('id',profileId).select('*').maybeSingle();
     if(upd.error)throw upd.error;
     if(!upd.data)throw new Error('Salvataggio non autorizzato o cliente non trovato.');
+    subscriptionSaved=true;
+    if(initialPayment>0&&!existingPayment){
+      const note='Pagamento abbonamento [[DOVUTO_ID:DOVUTO-'+profileId+'-'+from+'-'+to+']] [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']] '+marker;
+      const payment=await db.from('subscription_payment_history').insert({profile_id:profileId,paid_from:from,paid_to:to,amount:initialPayment,note}).select('id').maybeSingle();
+      if(payment.error)throw payment.error;
+      if(!payment.data)throw Error('Pagamento non confermato dal server.');
+    }
 
 
     const updated=(clientsData||[]).find(x=>String(x.id)===String(profileId)) || (activeSubscriptionsData||[]).find(x=>String(x.id)===String(profileId)) || (anagraficaData||[]).find(x=>String(x.id)===String(profileId));
@@ -4235,7 +4264,8 @@ async function saveSubscriptionRenewal(profileId){
     if(typeof loadActiveSubscriptions==='function')await loadActiveSubscriptions();
     closeModal();
     setTimeout(()=>openClientSheet(profileId),80);
-  }catch(e){fail('Errore salvataggio abbonamento: '+(e?.message||e));}
+  }catch(e){fail((subscriptionSaved?'Abbonamento salvato. Pagamento non completato: ':'Errore salvataggio abbonamento: ')+(e?.message||e));}
+  finally{if(button)button.disabled=false;}
 }
 
 function addClientSubscriptionPeriod(){
@@ -4499,7 +4529,7 @@ function closePaymentEditor(profileId){
 function openSubscriptionPaymentEditor(profileId){
  const from=document.getElementById('cpFrom')?.value||'';
  const to=document.getElementById('cpTo')?.value||'';
- const due=Number(document.getElementById('cpCost')?.value||0);
+ const due=kleosMoneyValue(document.getElementById('cpCost')?.value);
  if(!from||!to){alert('Prima completa il periodo dell’abbonamento.');return;}
  if(!Number.isFinite(due)||due<=0){alert('Il costo dell’abbonamento non è valido.');return;}
  window.__forcedPaymentDueByProfile=window.__forcedPaymentDueByProfile||{}; window.__forcedPaymentDueByProfile[String(profileId)]=due;
@@ -6178,3 +6208,22 @@ showWorkoutRunnerProgram=function(...args){const result=kleosOriginalFullProgram
 <style>.activeSubFilters{display:grid;grid-template-columns:minmax(180px,1fr) minmax(230px,310px) minmax(150px,190px);gap:12px;align-items:end}.activeSubFilters label{margin:0 0 7px;font-size:12px}.activeSubFilters input,.activeSubFilters select{width:100%!important;max-width:100%;min-width:0;font-family:inherit;font-size:13px;font-weight:500}.activeSubFilters option{font:inherit}@media(max-width:1000px){.activeSubFilters{grid-template-columns:1fr 1fr}.activeSubSearchField{grid-column:1/-1}}@media(max-width:600px){.activeSubFilters{grid-template-columns:1fr}}</style>
 
 <style>.activeSubFilters{grid-template-columns:minmax(180px,1fr) minmax(230px,310px)}@media(max-width:700px){.activeSubFilters{grid-template-columns:1fr}.activeSubSearchField{grid-column:auto}}</style>
+
+<script>
+function kleosMoneyValue(value){const text=String(value??'').trim().replace(',','.');return text===''?NaN:Number(text);}
+function kleosRenewalCostInput(input){
+ const total=kleosMoneyValue(input.value);if(!Number.isFinite(total))return;
+ let extra=0;document.querySelectorAll('.cpPlusCourseCheck:checked').forEach(x=>extra+=Math.max(0,Number(x.dataset.cost||0)));
+ input.dataset.baseCost=String(total-extra);
+ const info=document.getElementById('cpPresetInfo');if(info)info.textContent='Totale abbonamento € '+total.toFixed(2).replace('.',',');
+ kleosRenewalPreview();
+}
+function kleosRenewalPreview(){
+ const total=kleosMoneyValue(document.getElementById('cpCost')?.value),paid=Number(document.getElementById('renewPaidSummary')?.dataset.paid||0),input=document.getElementById('cpInitialPayment');
+ if(input&&input.dataset.manual!=='true'&&Number.isFinite(total))input.value=Math.max(0,total-paid).toFixed(2).replace('.',',');
+ const amount=kleosMoneyValue(input?.value)||0;
+ const summary=document.getElementById('renewTotalSummary');if(summary)summary.textContent=Number.isFinite(total)?'€ '+total.toFixed(2).replace('.',','):'—';
+ const status=document.getElementById('renewBalanceSummary');if(status&&Number.isFinite(total)){const remaining=Math.max(0,total-paid-amount);status.textContent=remaining<=.005?'SALDATO'+(amount>0?' · alla conferma':''):(paid+amount>0?'PARZIALE · RESIDUO € '+remaining.toFixed(2).replace('.',','):'DA SALDARE');}
+}
+function kleosRenewalSetFullPayment(){const total=kleosMoneyValue(document.getElementById('cpCost')?.value),paid=Number(document.getElementById('renewPaidSummary')?.dataset.paid||0),input=document.getElementById('cpInitialPayment');if(input&&Number.isFinite(total)){input.dataset.manual='false';input.value=Math.max(0,total-paid).toFixed(2).replace('.',',');kleosRenewalPreview();}}
+</script>

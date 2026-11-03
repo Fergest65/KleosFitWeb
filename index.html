@@ -385,7 +385,8 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 `,
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
- <div class="inputrow"><input id="activeSubSearch" placeholder="Cerca cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"><select id="activeSubStatus" onchange="renderActiveSubscriptions()" style="max-width:190px"><option value="all" selected>Tutti</option><option value="active">Abbonamento attivo (inclusi OPEN)</option><option value="active_no_open">ATTIVI NO OPEN</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="suspended">Cliente sospeso</option></select></div>
+ <div style="margin-bottom:14px"><h3 style="margin:0 0 6px;font-size:15px">Filtri elenco abbonamenti</h3><p class="muted" style="margin:0">Cerca un cliente e combina i filtri. Stato cliente indica Attivo o Sospeso; Stato abbonamento indica la validità dell’abbonamento.</p></div>
+ <div class="activeSubFilters"><div class="activeSubSearchField"><label for="activeSubSearch">Cerca cliente</label><input id="activeSubSearch" placeholder="Cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"></div><div><label for="activeSubStatus">Filtro stato abbonamento</label><select id="activeSubStatus" onchange="renderActiveSubscriptions()"><option value="all" selected>Tutti gli abbonamenti</option><option value="active">Abbonamento attivo (inclusi OPEN)</option><option value="active_no_open">Abbonamento attivo (esclusi OPEN)</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option></select></div><div><label for="activeSubClientStatus">Filtro stato cliente</label><select id="activeSubClientStatus" onchange="renderActiveSubscriptions()"><option value="all" selected>Tutti i clienti</option><option value="active">Attivo</option><option value="suspended">Sospeso</option></select></div></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -1331,7 +1332,11 @@ function renderActiveSubscriptions(){
   if(!list)return;
   const q=(document.getElementById('activeSubSearch')?.value||'').toLowerCase().trim();
   const st=(document.getElementById('activeSubStatus')?.value||'all');
+  const clientStatus=document.getElementById('activeSubClientStatus')?.value||'all';
   let rows=activeSubscriptionsData.filter(p=>{
+    const suspended=isClientSuspended(p);
+    if(clientStatus==='active'&&suspended)return false;
+    if(clientStatus==='suspended'&&!suspended)return false;
     const subStatus=subscriptionListStatus(p);
     if(st==='active' && !['ATTIVO','OPEN'].includes(subStatus))return false;
     if(st==='active_no_open' && subStatus!=='ATTIVO')return false;
@@ -1350,7 +1355,7 @@ function renderActiveSubscriptions(){
   });
 
   const stateText=st==='suspended'?'sospesi':st==='open'?'OPEN':st==='inactive'?'non attivi':st==='active_no_open'?'attivi esclusi OPEN':st==='all'?'tutti':'attivi';
-  if(count)count.textContent=rows.length+(rows.length===1?' cliente '+stateText:' clienti '+stateText);
+  if(count)count.textContent=rows.length+(rows.length===1?' cliente':' clienti')+' · Abbonamento: '+stateText+(clientStatus==='all'?'':' · Stato cliente: '+(clientStatus==='active'?'attivo':'sospeso'));
   if(!rows.length){
     list.innerHTML='<div class="muted">Nessun cliente corrispondente ai filtri selezionati.</div>';
     return;
@@ -6163,3 +6168,11 @@ renderWorkoutRunner=function(...args){const result=kleosOriginalRenderSheetRunne
 const kleosOriginalFullProgram=showWorkoutRunnerProgram;
 showWorkoutRunnerProgram=function(...args){const result=kleosOriginalFullProgram(...args);kleosHydrateSheetDistricts();return result;};
 </script>
+
+<style>
+#activeSubStatus,#activeSubStatus option{font-family:inherit;font-size:13px;font-weight:500;font-style:normal;letter-spacing:normal;text-transform:none;text-align:left;line-height:1.4}
+#activeSubStatus{width:310px;max-width:100%;flex:0 0 auto}
+@media(max-width:700px){#activeSubStatus{width:100%}}
+</style>
+
+<style>.activeSubFilters{display:grid;grid-template-columns:minmax(180px,1fr) minmax(230px,310px) minmax(150px,190px);gap:12px;align-items:end}.activeSubFilters label{margin:0 0 7px;font-size:12px}.activeSubFilters input,.activeSubFilters select{width:100%!important;max-width:100%;min-width:0;font-family:inherit;font-size:13px;font-weight:500}.activeSubFilters option{font:inherit}@media(max-width:1000px){.activeSubFilters{grid-template-columns:1fr 1fr}.activeSubSearchField{grid-column:1/-1}}@media(max-width:600px){.activeSubFilters{grid-template-columns:1fr}}</style>

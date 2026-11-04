@@ -505,6 +505,7 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('accounting',this)">Contabilità</button>
  
  <button type="button" onclick="show('circuits')">Circuiti</button>
+ <button type="button" onclick="openAdminTxtViewer()">Visualizzatore file TXT</button>
 </div>`,
 suspendedClients:`<div class="top"><div><div class="title">Clienti sospesi</div><div class="sub">Clienti messi in pausa e temporaneamente esclusi dalla gestione ordinaria.</div></div><button class="btn" type="button" onclick="loadSuspendedClients()">Aggiorna</button></div><div class="card"><div id="suspendedClientError" class="error"></div><div id="suspendedClientCount" class="muted">Caricamento...</div><div id="suspendedClientList" style="margin-top:12px">Caricamento...</div></div>`,
 subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti</div><div class="sub">Gestisci prezzi abbonamenti e servizi aggiuntivi mostrati nel Listino prezzi.</div></div><button class="btn" type="button" onclick="openSubscriptionPriceModal()">＋ Nuovo prezzo</button></div>
@@ -6229,4 +6230,44 @@ function kleosRenewalPreview(){
  const status=document.getElementById('renewBalanceSummary');if(status&&Number.isFinite(total)){const remaining=Math.max(0,total-paid-amount);status.textContent=remaining<=.005?'SALDATO'+(amount>0?' · alla conferma':''):(paid+amount>0?'PARZIALE · RESIDUO € '+remaining.toFixed(2).replace('.',','):'DA SALDARE');}
 }
 function kleosRenewalSetFullPayment(){const total=kleosMoneyValue(document.getElementById('cpCost')?.value),paid=Number(document.getElementById('renewPaidSummary')?.dataset.paid||0),input=document.getElementById('cpInitialPayment');if(input&&Number.isFinite(total)){input.dataset.manual='false';input.value=Math.max(0,total-paid).toFixed(2).replace('.',',');kleosRenewalPreview();}}
+</script>
+
+<style>
+.adminTxtToolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}.adminTxtToolbar label{margin:0;cursor:pointer}.adminTxtToolbar button{min-height:42px}.adminTxtDocument{white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;tab-size:4;font-family:inherit;font-size:16px;line-height:1.65;margin:0;max-width:100%;min-width:0;color:var(--text);padding:20px;background:#101217;border:1px solid var(--line);border-radius:12px}.adminTxtCard{min-width:0}.adminTxtMeta{overflow-wrap:anywhere;margin-bottom:12px}.adminTxtHeading{gap:14px;flex-wrap:wrap}@media(max-width:600px){.adminTxtDocument{padding:12px;font-size:15px}.adminTxtHeading .title{font-size:23px}}
+</style>
+<script>
+let kleosAdminTxtState={name:'',text:'',size:0,fontSize:16,request:0};
+function openAdminTxtViewer(){
+ if(!isSuperuserRole())return;
+ const content=document.getElementById('content');if(!content)return;
+ content.innerHTML=`<div class="top adminTxtHeading"><div><div class="title">Visualizzatore file TXT</div><div class="sub">Apri un file di testo: il contenuto si adatta alla larghezza della pagina.</div></div><button type="button" class="btn secondary" onclick="show('superuser')">← Pannello amministrazione</button></div><section class="card adminTxtCard"><div class="adminTxtToolbar"><label class="btn" for="adminTxtFile">Apri file TXT</label><input id="adminTxtFile" type="file" accept=".txt,text/plain" style="width:auto;max-width:100%" onchange="loadAdminTxtFile(this)"><button type="button" class="btn secondary" onclick="resizeAdminTxt(-1)" aria-label="Riduci dimensione testo">A−</button><button type="button" class="btn secondary" onclick="resizeAdminTxt(1)" aria-label="Aumenta dimensione testo">A+</button></div><p id="adminTxtStatus" role="status" aria-live="polite" class="muted"></p><div id="adminTxtMeta" class="muted adminTxtMeta"></div><pre id="adminTxtDocument" class="adminTxtDocument" tabindex="0" aria-label="Contenuto del file di testo"></pre></section>`;
+ renderAdminTxtDocument();
+}
+function kleosDecodeTxt(buffer){
+ const bytes=new Uint8Array(buffer);
+ if(bytes[0]===255&&bytes[1]===254)return new TextDecoder('utf-16le').decode(bytes).replace(/^\uFEFF/,'');
+ if(bytes[0]===254&&bytes[1]===255)return new TextDecoder('utf-16be').decode(bytes).replace(/^\uFEFF/,'');
+ try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes).replace(/^\uFEFF/,'');}
+ catch{return new TextDecoder('windows-1252').decode(bytes);}
+}
+function renderAdminTxtDocument(){
+ const documentBox=document.getElementById('adminTxtDocument'),meta=document.getElementById('adminTxtMeta'),status=document.getElementById('adminTxtStatus');if(!documentBox)return;
+ documentBox.textContent=kleosAdminTxtState.text||'';documentBox.style.fontSize=kleosAdminTxtState.fontSize+'px';
+ if(meta)meta.textContent=kleosAdminTxtState.name?kleosAdminTxtState.name+' · '+(kleosAdminTxtState.size/1024).toFixed(1)+' KB':'';
+ if(status)status.textContent=kleosAdminTxtState.name?(kleosAdminTxtState.text?'File aperto.':'Il file è vuoto.'):'Seleziona un file .txt dal dispositivo (massimo 10 MB).';
+}
+async function loadAdminTxtFile(input){
+ if(!isSuperuserRole())return;const file=input.files?.[0];if(!file)return;
+ const status=document.getElementById('adminTxtStatus'),request=++kleosAdminTxtState.request;
+ const fail=text=>{if(status?.isConnected){status.textContent=text;status.className='danger';}};
+ if(!/\.txt$/i.test(file.name)){fail('Seleziona un file con estensione .txt.');input.value='';return;}
+ if(file.size>10*1024*1024){fail('Il file supera 10 MB. Seleziona un file più piccolo.');input.value='';return;}
+ if(status){status.className='muted';status.textContent='Lettura del file…';}
+ try{const text=kleosDecodeTxt(await file.arrayBuffer());if(request!==kleosAdminTxtState.request)return;
+ kleosAdminTxtState={...kleosAdminTxtState,name:file.name,text,size:file.size};
+ if(document.getElementById('adminTxtFile')===input)renderAdminTxtDocument();
+ }catch(error){fail('Impossibile leggere il file: '+(error.message||error));}
+ finally{input.value='';}
+}
+function resizeAdminTxt(delta){if(!isSuperuserRole())return;kleosAdminTxtState.fontSize=Math.min(28,Math.max(12,kleosAdminTxtState.fontSize+delta));const box=document.getElementById('adminTxtDocument');if(box)box.style.fontSize=kleosAdminTxtState.fontSize+'px';}
 </script>

@@ -740,11 +740,46 @@ function resizeMonitorTxt(delta){monitorTxtFontSize=Math.min(64,Math.max(14,moni
 .txtFormatted{white-space:normal!important;overflow-wrap:anywhere}.txtFormatted h1{font-size:1.7em;color:#a6ff00;line-height:1.15;margin:0 0 22px;padding-bottom:16px;border-bottom:1px solid #2a3035;white-space:pre-wrap}.txtFormatted h2{font-size:1.25em;color:#a6ff00;line-height:1.2;margin:24px 0 8px;white-space:pre-wrap}.txtFormatted h3{font-size:1.1em;color:#a6ff00;margin:18px 0 8px;white-space:pre-wrap}.txtFormatted p{font:inherit;line-height:1.5;margin:5px 0;white-space:pre-wrap}.txtFormatted .txtGap{height:12px}
 </style>
 <script>
-function kleosFormatTxtView(container,text){
- container.classList.add('txtFormatted');container.replaceChildren();
- for(const line of String(text||'').replace(/\r\n?/g,'\n').split('\n')){const match=line.match(/^(#{1,3})\s+(.+)$/),node=document.createElement(match?'h'+match[1].length:line.trim()?'p':'div');if(!line.trim())node.className='txtGap';node.textContent=match?match[2]:line;container.append(node);}
+function kleosTxtBlockCount(text){
+ const explicit=String(text||'').match(/^@blocchi:\s*([123])\s*$/im);if(explicit)return Number(explicit[1]);
+ let count=1;for(const line of String(text||'').split(/\r?\n/)){const cells=line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|');if([3,5,7].includes(cells.length)&&/^\s*\d+\s*$/.test(cells[1]))count=Math.max(count,(cells.length-1)/2);}return count;
 }
+function kleosFormatTxtView(container,text){
+ container.classList.add('txtFormatted');container.replaceChildren();const blocks=kleosTxtBlockCount(text);let table=null,body=null;
+ function cell(tag,value){const element=document.createElement(tag);element.textContent=value;return element;}
+ function ensureTable(){
+  if(table)return;const wrap=document.createElement('div');wrap.className='kleosTxtTableWrap';table=document.createElement('table');table.className='kleosTxtTable txtBlocks'+blocks;
+  const cols=document.createElement('colgroup'),nameCol=document.createElement('col');nameCol.style.width=blocks===1?'56%':'36%';cols.append(nameCol);for(let i=0;i<blocks*2;i++){const col=document.createElement('col');col.style.width=(blocks===1?22:64/(blocks*2))+'%';cols.append(col);}table.append(cols);
+  const head=document.createElement('thead'),top=document.createElement('tr'),name=cell('th','ESERCIZIO');name.scope='col';if(blocks>1)name.rowSpan=2;top.append(name);
+  if(blocks===1){for(const title of ['SERIE','RIPETIZIONI']){const h=cell('th',title);h.scope='col';top.append(h);}head.append(top);}
+  else{const lower=document.createElement('tr');for(let i=1;i<=blocks;i++){const title=cell('th','BLOCCO '+i);title.colSpan=2;title.scope='colgroup';title.className='txtBlockHead block'+i;top.append(title);for(const label of ['SERIE','RIP.']){const h=cell('th',label);h.scope='col';h.className='block'+i;lower.append(h);}}head.append(top,lower);}
+  body=document.createElement('tbody');table.append(head,body);wrap.append(table);container.append(wrap);
+ }
+ for(const line of String(text||'').replace(/\r\n?/g,'\n').split('\n')){
+  const trim=line.trim();if(/^@blocchi:\s*[123]\s*$/i.test(trim))continue;
+  const heading=line.match(/^(#{1,3})\s+(.+)$/);if(heading){table=body=null;container.append(cell('h'+heading[1].length,heading[2]));continue;}
+  let values=null;if(trim.includes('|')){const parts=trim.replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());if([3,5,7].includes(parts.length))values=parts;}
+  if(!values){const old=trim.match(/^(.+?):\s*(\d+)\s*seri[ea]\s*[x×]\s*(.+)$/i);if(old)values=[old[1].trim(),old[2],old[3].trim()];}
+  if(values){
+   if(values[0].toLowerCase()==='esercizio'&&values[1].toLowerCase()==='serie'){ensureTable();continue;}
+   if(values.every(x=>/^:?-{3,}:?$/.test(x))&&table)continue;
+   if(values[0]&&/^\d+$/.test(values[1])&&Number(values[1])>0){
+    ensureTable();const row=document.createElement('tr');row.append(cell('td',values[0]));for(let i=0;i<blocks;i++){for(let n=0;n<2;n++){const td=cell('td',values[1+i*2+n]||'—');td.className='block'+(i+1);if(n===0)td.classList.add('txtBlockStart');row.append(td);}}body.append(row);continue;
+   }
+  }
+  table=body=null;const node=cell(trim?'p':'div',line);if(!trim)node.className='txtGap';container.append(node);
+ }
+}
+
 </script>
 
 </body>
 </html>
+
+<style>
+.kleosTxtTable{width:100%;border-collapse:collapse;table-layout:fixed;margin:16px 0 22px;font:inherit;line-height:1.35;border:1px solid #52585d}.kleosTxtTable th,.kleosTxtTable td{border:1px solid #52585d;padding:.5em .65em;vertical-align:middle;overflow-wrap:anywhere;white-space:pre-wrap}.kleosTxtTable th{color:#a6ff00;background:#030605;font-weight:900;text-align:center;font-size:.95em}.kleosTxtTable th:first-child,.kleosTxtTable td:first-child{width:56%;text-align:left}.kleosTxtTable th:nth-child(2){width:18%}.kleosTxtTable th:nth-child(3){width:26%}.kleosTxtTable td{background:#111416;font-weight:800}.kleosTxtTable td:nth-child(2){background:#171b1b;color:#a6ff00;text-align:center;font-variant-numeric:tabular-nums}.kleosTxtTable td:nth-child(3){background:#101711;color:#a6ff00;text-align:center;font-variant-numeric:tabular-nums}.txtExerciseFields{display:grid;grid-template-columns:minmax(0,2fr) minmax(60px,.6fr) minmax(0,1fr);gap:8px;align-items:end;margin:14px 0}.txtExerciseFields label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}.txtExerciseFields input{min-width:0;padding:10px;font-size:14px}.txtExerciseFields .addExerciseButton{grid-column:1/-1}.preview h2{font-size:1.25em!important}.preview .txtGap{height:12px}@media(max-width:600px){.kleosTxtTable th,.kleosTxtTable td{padding:.45em .4em}.kleosTxtTable th{font-size:.8em}.kleosTxtTable th:first-child,.kleosTxtTable td:first-child{width:48%}.kleosTxtTable th:nth-child(3){width:34%}}
+</style>
+
+<style>
+.kleosTxtTableWrap{max-width:100%;overflow-x:auto;margin:16px 0 22px}.kleosTxtTableWrap .kleosTxtTable{margin:0}.kleosTxtTable.txtBlocks2{min-width:520px}.kleosTxtTable.txtBlocks3{min-width:680px}.kleosTxtTable[class*="txtBlocks"] th,.kleosTxtTable[class*="txtBlocks"] td{width:auto!important}.kleosTxtTable td:not(:first-child){text-align:center;color:#a6ff00;font-variant-numeric:tabular-nums}.kleosTxtTable .block1{background:#121c12!important}.kleosTxtTable .block2{background:#172027!important}.kleosTxtTable .block3{background:#252117!important}.kleosTxtTable .txtBlockHead{border-left:2px solid #77836c}.kleosTxtTable .txtBlockStart{border-left:2px solid #77836c}.kleosTxtTable th.txtBlockHead{font-size:.9em}.txtBlockPicker{margin:16px 0;padding:14px;border:1px solid #3b4d31;border-radius:9px;background:#0c130b}.txtBlockPicker label{display:block;color:#a6ff00;font-weight:800;margin-bottom:8px}.txtBlockPicker select{width:100%;padding:12px;border:1px solid #414940;border-radius:8px;background:#080d09;color:white;font:inherit}.txtBlockPicker p{font-size:13px;color:var(--muted);margin:8px 0 0}.txtExerciseFields.txtBlockFields{display:flex;flex-direction:column;align-items:stretch}.txtBlockFields fieldset{margin:0;border:1px solid #3c4937;border-radius:8px;padding:12px;min-width:0}.txtBlockFields fieldset[hidden]{display:none}.txtBlockFields legend{color:#a6ff00;font-size:13px;font-weight:800;padding:0 5px}.txtBlockInputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.txtBlockFields .addExerciseButton{margin-top:5px}
+</style>

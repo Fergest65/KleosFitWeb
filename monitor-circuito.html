@@ -823,22 +823,33 @@ function fitSheet(el){
  if(!el||!el.clientWidth||!el.clientHeight)return;
  let inner=el.querySelector('.txtFitContent');
  if(!inner){inner=document.createElement('div');inner.className='txtFitContent';while(el.firstChild)inner.append(el.firstChild);el.append(inner);}
- let shell=el.querySelector('.txtFitShell');
- if(!shell){shell=document.createElement('div');shell.className='txtFitShell';el.append(shell);shell.append(inner);}
- const width=Math.max(1,el.clientWidth-12),height=Math.max(1,el.clientHeight-12);
- inner.style.position='absolute';inner.style.transform='none';inner.style.width=width+'px';
- const naturalWidth=Math.max(width,inner.scrollWidth),naturalHeight=Math.max(1,inner.scrollHeight);
- const fitted=Math.min(1,width/naturalWidth,height/naturalHeight);
- const scale=fitted*monitorTxtZoom;
- inner.style.transform='scale('+scale+')';
- shell.style.position='relative';shell.style.width=Math.ceil(naturalWidth*scale)+'px';shell.style.height=Math.ceil(naturalHeight*scale)+'px';
- el.style.overflow='auto';
+ const shell=el.querySelector('.txtFitShell');
+ if(shell){el.append(inner);shell.remove();}
+ inner.style.position='static';inner.style.transform='none';inner.style.width='100%';
+ el.style.overflowX='hidden';el.style.overflowY='auto';
+ let size=monitorTxtZoom;
+ el.style.setProperty('--sheet-zoom',String(size));
+ // Auto-fit the initial overview only; manual enlargement must retain the chosen text size.
+ if(monitorTxtZoom===1){for(let i=0;i<12&&inner.scrollHeight>el.clientHeight-12;i++){size*=0.9;el.style.setProperty('--sheet-zoom',String(size));}}
 }
 function resizeMonitorTxt(delta){
- monitorTxtZoom=Math.min(4,Math.max(0.5,Math.round((monitorTxtZoom+(delta>0?0.15:-0.15))*100)/100));
+ monitorTxtZoom=Math.min(2.5,Math.max(0.5,Math.round((monitorTxtZoom+(delta>0?0.15:-0.15))*100)/100));
  fitSheet(document.getElementById('monitorTxtText'));
 }
 const compactTarget=document.getElementById('monitorTxtText');
 const originalFormat=kleosFormatTxtView;kleosFormatTxtView=function(el,text){originalFormat(el,text);requestAnimationFrame(()=>fitSheet(el));};
 new ResizeObserver(()=>fitSheet(compactTarget)).observe(compactTarget);
-</script><style>.txtFormatted{padding:2px!important;font-size:11px!important;line-height:1!important}.txtFormatted h1{font-size:14px!important;line-height:1.05!important;margin:0 0 3px!important;padding:0 0 2px!important}.txtFormatted p{font-size:9px!important;line-height:1.05!important;margin:2px 0!important}.txtFormatted .kleosTxtTableWrap{margin:3px 0!important}.txtFormatted .kleosTxtTable th,.txtFormatted .kleosTxtTable td{padding:2px 3px!important;font-size:11px!important;line-height:1.05!important}.txtFormatted .kleosTxtTable th{font-size:9px!important}.txtFormatted .kleosTxtExerciseThumb{width:24px!important;height:24px!important;flex:0 0 24px!important;border-radius:3px!important}.txtFormatted .kleosTxtExerciseIdentity{gap:4px!important}.txtFormatted .kleosTxtExerciseIdentity>span:last-child{font-size:11px!important}.txtFormatted .kleosTxtTable tbody tr:nth-child(4n+3) td,.txtFormatted .kleosTxtTable tbody tr:nth-child(4n+4) td{background:#172027!important}.txtFormatted .kleosTxtTable tbody tr:nth-child(2n+3) td{border-top:2px solid #637b30}.monitorTxtPane{padding:4px!important;margin:3px!important;gap:2px!important}</style><style>.txtFitShell>.txtFitContent{left:0;top:0;transform-origin:top left}.monitorTxtText{scrollbar-gutter:stable}</style>
+</script><style>.txtFormatted{padding:2px!important;font-size:11px!important;line-height:1!important}.txtFormatted h1{font-size:14px!important;line-height:1.05!important;margin:0 0 3px!important;padding:0 0 2px!important}.txtFormatted p{font-size:9px!important;line-height:1.05!important;margin:2px 0!important}.txtFormatted .kleosTxtTableWrap{margin:3px 0!important}.txtFormatted .kleosTxtTable th,.txtFormatted .kleosTxtTable td{padding:2px 3px!important;font-size:11px!important;line-height:1.05!important}.txtFormatted .kleosTxtTable th{font-size:9px!important}.txtFormatted .kleosTxtExerciseThumb{width:24px!important;height:24px!important;flex:0 0 24px!important;border-radius:3px!important}.txtFormatted .kleosTxtExerciseIdentity{gap:4px!important}.txtFormatted .kleosTxtExerciseIdentity>span:last-child{font-size:11px!important}.txtFormatted .kleosTxtTable tbody tr:nth-child(4n+3) td,.txtFormatted .kleosTxtTable tbody tr:nth-child(4n+4) td{background:#172027!important}.txtFormatted .kleosTxtTable tbody tr:nth-child(2n+3) td{border-top:2px solid #637b30}.monitorTxtPane{padding:4px!important;margin:3px!important;gap:2px!important}</style><style>.txtFitShell>.txtFitContent{left:0;top:0;transform-origin:top left}.monitorTxtText{scrollbar-gutter:stable}</style><style>
+#monitorTxtText{--sheet-zoom:1;overflow-x:hidden!important;overflow-y:auto!important}
+#monitorTxtText .txtFitContent{position:static!important;transform:none!important;width:100%!important;max-width:100%;min-width:0}
+#monitorTxtText h1{font-size:calc(14px * var(--sheet-zoom))!important}
+#monitorTxtText p{font-size:calc(9px * var(--sheet-zoom))!important;overflow-wrap:anywhere}
+#monitorTxtText .kleosTxtTableWrap{width:100%;max-width:100%;overflow:visible!important}
+#monitorTxtText .kleosTxtTable{width:100%!important;min-width:0!important;table-layout:fixed!important}
+#monitorTxtText .kleosTxtTable th,#monitorTxtText .kleosTxtTable td{font-size:calc(11px * var(--sheet-zoom))!important;padding:calc(2px * var(--sheet-zoom)) calc(3px * var(--sheet-zoom))!important;white-space:normal!important;overflow-wrap:anywhere;min-width:0}
+#monitorTxtText .kleosTxtTable th{font-size:calc(9px * var(--sheet-zoom))!important}
+#monitorTxtText .kleosTxtExerciseIdentity{gap:calc(4px * var(--sheet-zoom))!important;min-width:0;flex-wrap:nowrap!important}
+#monitorTxtText .kleosTxtExerciseIdentity>span:last-child{font-size:calc(11px * var(--sheet-zoom))!important;white-space:normal!important;overflow-wrap:anywhere;min-width:0}
+#monitorTxtText .kleosTxtExerciseThumb{width:calc(24px * var(--sheet-zoom))!important;height:calc(24px * var(--sheet-zoom))!important;flex:0 0 calc(24px * var(--sheet-zoom))!important}
+@media(max-width:600px){#monitorTxtText .kleosTxtExerciseIdentity{flex-wrap:wrap!important}}
+</style>

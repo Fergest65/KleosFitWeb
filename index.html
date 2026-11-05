@@ -386,7 +386,7 @@ admin:`<div class="top"><div><div class="title">Amministrazione</div><div class=
 activeSubscriptions:`<div class="top"><div><div class="title">Elenco abbonamenti</div><div class="sub">Clienti con abbonamento attivo e situazione contabile.</div></div><button class="btn" type="button" onclick="loadActiveSubscriptions()">Aggiorna</button></div>
 <div class="card">
  <div style="margin-bottom:14px"><h3 style="margin:0 0 6px;font-size:15px">Filtri elenco abbonamenti</h3><p class="muted" style="margin:0">Cerca un cliente e scegli nel filtro lo stato dell’abbonamento oppure lo stato del cliente: attivo o sospeso.</p></div>
- <div class="activeSubFilters"><div class="activeSubSearchField"><label for="activeSubSearch">Cerca cliente</label><input id="activeSubSearch" placeholder="Cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"></div><div><label for="activeSubStatus">Filtro stato abbonamento</label><select id="activeSubStatus" onchange="renderActiveSubscriptions()"><option value="all" selected>Tutti gli abbonamenti</option><option value="active">Abbonamento attivo (inclusi OPEN)</option><option value="active_no_open">Abbonamento attivo (esclusi OPEN)</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="client_active">Cliente attivo</option><option value="suspended">Cliente sospeso</option></select></div></div>
+ <div class="activeSubFilters"><div class="activeSubSearchField"><label for="activeSubSearch">Cerca cliente</label><input id="activeSubSearch" placeholder="Cliente, tessera o abbonamento" oninput="renderActiveSubscriptions()"></div><div><label for="activeSubStatus">Filtro stato abbonamento</label><select id="activeSubStatus" onchange="renderActiveSubscriptions()"><option value="all">Tutti gli abbonamenti</option><option value="active">Abbonamento attivo (inclusi OPEN)</option><option value="active_no_open">Abbonamento attivo (esclusi OPEN)</option><option value="inactive">Abbonamento non attivo</option><option value="open">OPEN</option><option value="client_active">Cliente attivo</option><option value="client_active_no_open" selected>Cliente attivo escluso OPEN</option><option value="suspended">Cliente sospeso</option></select></div></div>
  <div id="activeSubError" class="error"></div>
  <div id="activeSubCount" class="muted" style="margin-top:10px">Caricamento...</div>
  <div id="activeSubList" style="margin-top:14px">Caricamento...</div>
@@ -487,9 +487,9 @@ rampTimer:`<div class="top"><div><div class="title">Cronometro RAMP</div><div cl
 </div></div>`,
 myNotifications:`<div class="top"><div><div class="title">Notifiche</div><div class="sub">Le tue comunicazioni e notifiche KleosFit.</div></div><button class="btn" type="button" onclick="loadMyNotifications()">Aggiorna</button></div><div class="card"><div id="myNotifStatus" class="muted"></div><div class="inputrow" style="margin-top:12px"><button class="btn secondary" type="button" onclick="requestNotificationPermission()">ATTIVA NOTIFICHE SU QUESTO DISPOSITIVO</button><button class="btn secondary" type="button" onclick="testBrowserNotification()">TEST NOTIFICA</button></div><div id="myNotifList" style="margin-top:14px">Caricamento...</div></div>`,
 regulation:`<div class="top"><div><div class="title">Regolamento</div><div class="sub">Regolamento generale del centro KLEOSFIT</div></div></div><div class="regulationPage"><div class="regulationIntro"><h2>KLEOSFIT</h2><h3>REGOLAMENTO GENERALE DEL CENTRO</h3><p class="regulationSubtitle">Regolamento comportamentale, sanitario ed economico</p><p>Il presente regolamento disciplina l'accesso e la permanenza presso KLEOSFIT, l'utilizzo degli spazi, delle attrezzature e dei servizi messi a disposizione dal Centro.</p><p>L'iscrizione e/o l'accesso ai servizi comportano la presa visione e l'accettazione del presente regolamento, delle condizioni relative al servizio sottoscritto e delle eventuali successive comunicazioni organizzative del Centro, nei limiti consentiti dalla normativa applicabile.</p></div><section class="regulationSection"><h3>1. PRINCIPI GENERALI</h3><p>KLEOSFIT promuove un ambiente dedicato all'allenamento, al benessere e alla cura della persona, fondato sui principi di:</p><ul><li>rispetto reciproco;</li><li>educazione;</li><li>puntualità;</li><li>igiene;</li><li>sicurezza;</li><li>corretta utilizzazione degli spazi e delle attrezzature;</li><li>rispetto del lavoro dello staff e degli altri utenti.</li></ul><p>Ogni iscritto è tenuto ad adottare un comportamento compatibile con tali principi.</p></section><section class="regulationSection"><h3>2. ACCESSO AL CENTRO</h3><p>L'accesso a KLEOSFIT è consentito esclusivamente agli utenti regolarmente iscritti o autorizzati.</p><p>L'eventuale tessera, badge, QR code, codice personale o altro sistema di identificazione/accesso è strettamente personale e non può essere ceduto o utilizzato da terzi.</p><p>È vietato consentire l'accesso a persone non autorizzate.</p><p>Gli orari di apertura, di accesso e di erogazione dei singoli servizi sono quelli comunicati da KLEOSFIT e potranno essere aggiornati per esigenze organizzative.</p></section><section class="regulationSection"><h3>3. COMPORTAMENTO ALL'INTERNO DEL CENTRO</h3><p>Gli utenti devono mantenere un comportamento rispettoso nei confronti dello staff, degli istruttori e degli altri frequentatori.</p><p>Non sono ammessi:</p><ul><li>comportamenti aggressivi, offensivi, intimidatori o molesti;</li><li>urla o comportamenti che disturbino ingiustificatamente gli altri utenti;</li><li>utilizzo improprio o pericoloso delle attrezzature;</li><li>danneggiamento volontario degli ambienti o delle attrezzature;</li><li>ingresso in aree riservate al personale;</li><li>attività commerciali, promozionali o professionali non preventivamente autorizzate;</li><li>comportamenti contrari alle norme di sicurezza o alle indicazioni impartite dallo staff.</li></ul><p>In presenza di comportamenti gravi o reiterati, KLEOSFIT potrà adottare i provvedimenti previsti dalle condizioni contrattuali applicabili.</p></section><section class="regulationSection"><h3>4. ABBIGLIAMENTO E IGIENE</h3><p>Durante l'attività è richiesto un abbigliamento sportivo adeguato, pulito e compatibile con l'attività svolta.</p><p>È obbligatorio utilizzare calzature pulite e idonee all'attività sportiva, ove richieste.</p><p>L'utente dovrà utilizzare un asciugamano personale sulle attrezzature quando previsto dalle regole del Centro.</p><p>Dopo l'utilizzo, le attrezzature dovranno essere lasciate pulite e in condizioni idonee per l'utente successivo.</p><p>KLEOSFIT potrà mettere a disposizione prodotti specifici per l'igienizzazione delle superfici.</p></section><section class="regulationSection"><h3>5. UTILIZZO DELLE ATTREZZATURE</h3><p>Le attrezzature devono essere utilizzate esclusivamente per la loro destinazione d'uso e nel rispetto delle indicazioni tecniche e di sicurezza.</p><p>L'utente è tenuto a:</p><ul><li>utilizzare correttamente macchinari e accessori;</li><li>rispettare le indicazioni dello staff;</li><li>non modificare o manomettere le attrezzature;</li><li>riporre pesi, manubri e accessori dopo l'utilizzo;</li><li>segnalare immediatamente eventuali anomalie, guasti o danneggiamenti;</li><li>evitare comportamenti che possano creare pericolo per sé o per gli altri.</li></ul><p>Qualora l'utente non conosca il corretto utilizzo di un'attrezzatura, è invitato a richiedere assistenza allo staff prima di utilizzarla.</p></section><section class="regulationSection"><h3>6. SPOGLIATOI E SPAZI COMUNI</h3><p>Gli spogliatoi e gli spazi comuni devono essere utilizzati mantenendo ordine, pulizia e rispetto degli altri utenti.</p><p>Gli effetti personali devono essere riposti negli spazi eventualmente predisposti.</p><p>Gli armadietti, salvo diversa indicazione, sono destinati all'utilizzo temporaneo durante la permanenza nel Centro.</p><p>Non devono essere lasciati oggetti personali negli armadietti oltre i tempi consentiti.</p><p>Per denaro, documenti, gioielli, dispositivi elettronici e altri beni di valore si applicano le condizioni di custodia e responsabilità previste dalla normativa e dalle condizioni del servizio.</p></section><section class="regulationSection"><h3>7. TELEFONI, FOTO E VIDEO</h3><p>L'utilizzo del telefono cellulare non e consentito durante.</p><p>Foto e video devono essere realizzati nel rispetto della riservatezza e dell'immagine delle altre persone presenti.</p><p>Non è consentito fotografare o riprendere altri utenti o membri dello staff senza il loro consenso quando questo sia richiesto dalla normativa applicabile.</p><p>Particolare attenzione deve essere osservata all'interno di spogliatoi, docce e aree nelle quali è richiesta una maggiore tutela della riservatezza.</p></section><section class="regulationSection"><h3>8. REQUISITI SANITARI E IDONEITÀ ALL'ATTIVITÀ</h3><p>L'utente è tenuto a rispettare gli eventuali requisiti sanitari e di certificazione previsti dalla normativa vigente per l'attività praticata.</p><p>Certificazione richiesta: [certificato di stato buona salute attività non agonistiche]</p><p>Validità della certificazione: [12 mesi]</p><p>Modalità di consegna/rinnovo: [cartaceo]</p><p>Quando richiesta, la certificazione dovrà essere valida per tutto il periodo nel quale viene svolta l'attività interessata.</p><p>In caso di scadenza o mancanza della documentazione obbligatoria, l'accesso alle attività interessate potrà essere sospeso fino alla regolarizzazione.</p></section><section class="regulationSection"><h3>9. CONDIZIONI DI SALUTE</h3><p>Prima di iniziare un'attività, l'utente deve valutare le proprie condizioni fisiche e attenersi alle eventuali prescrizioni ricevute dai professionisti sanitari.</p><p>In presenza di sintomi, malessere, infortunio o condizioni che possano rendere inappropriata l'attività fisica, l'utente è invitato a non iniziare o a interrompere l'allenamento e, quando opportuno, a rivolgersi a un professionista sanitario.</p><p>L'utente è tenuto a fornire allo staff esclusivamente le informazioni sanitarie eventualmente necessarie nei casi e secondo le modalità previste dalla normativa e dai servizi specificamente erogati.</p></section><section class="regulationSection"><h3>10. EMERGENZE E INFORTUNI</h3><p>In caso di malore o infortunio all'interno della struttura, l'utente deve informare immediatamente lo staff.</p><p>Gli utenti sono tenuti a rispettare le procedure di emergenza, la segnaletica, le vie di esodo e le indicazioni del personale.</p><p>È vietato ostacolare uscite di emergenza, dispositivi antincendio e presidi di sicurezza.</p></section><section class="regulationSection"><h3>11. ISCRIZIONE</h3><p>L'iscrizione a KLEOSFIT è subordinata alla compilazione e accettazione della documentazione prevista.</p><p>Quota di iscrizione: € 30</p><p>Durata dell'iscrizione: 12 mesi</p><p>Eventuale quota associativa/tesseramento: € 5</p><p>Decorrenza: Data iscrizione da rinnovare ogni 12 mesi</p></section><section class="regulationSection"><h3>12. ABBONAMENTI E SERVIZI</h3><p>KLEOSFIT potrà proporre differenti formule di abbonamento e servizi.</p><p>Mensile: € [60]</p><p>Trimestrale: € [165]</p><p>Semestrale: € [306]</p><p>Annuale: € [540]</p><p>Ingresso singolo: € [15]</p><p>Pacchetto personal training: € [30 oraria]</p><p>Altri servizi: [DESCRIZIONE / IMPORTO]</p><p>La durata, i servizi compresi, le modalità di utilizzo e le eventuali limitazioni sono quelle indicate nella formula sottoscritta dall'utente.</p></section><section class="regulationSection"><h3>13. PAGAMENTI</h3><p>I pagamenti dovranno essere effettuati secondo modalità e scadenze indicate nel contratto o nella formula di abbonamento prescelta.</p><p>Modalità accettate: [CONTANTI / POS / ]</p><p>Scadenza: [5 gg. In anticipo]</p><p>L'eventuale mancato pagamento alle scadenze previste sarà gestito secondo quanto stabilito dalle condizioni contrattuali applicabili.</p></section><section class="regulationSection"><h3>14. RITARDI E MANCATI PAGAMENTI</h3><p>In caso di mancato pagamento, KLEOSFIT potrà, nei limiti previsti dal contratto e dalla normativa applicabile:</p><ul><li>comunicare all'utente l'irregolarità;</li><li>richiedere la regolarizzazione dell'importo dovuto;</li><li>sospendere temporaneamente l'accesso ai servizi interessati;</li><li>applicare eventuali costi o conseguenze espressamente previsti dal contratto e consentiti dalla legge.</li></ul><p>Termine di tolleranza: [5 giorni]</p><p>Eventuali costi previsti: € [0]</p></section><section class="regulationSection"><h3>15. SOSPENSIONE DELL'ABBONAMENTO</h3><p>L'eventuale possibilità di sospendere l'abbonamento dipende dalla formula sottoscritta.</p><p>Sospensione consentita: [NO]</p></section><section class="regulationSection"><h3>16. DISDETTA, RECESSO E RINNOVO</h3><p>Durata, eventuale rinnovo, diritto di recesso e modalità di disdetta sono disciplinati dal contratto sottoscritto e dalla normativa applicabile.</p><p>Preavviso previsto: [10 giorni]</p><p>Modalità di comunicazione: [in sede]</p><p>Rinnovo: [AUTOMATICO / NON AUTOMATICO / DA DEFINIRE]</p><p>Condizioni particolari: [DA DEFINIRE]</p><p>Le presenti disposizioni devono essere coordinate con gli eventuali diritti inderogabili riconosciuti al consumatore dalla normativa vigente.</p></section><section class="regulationSection"><h3>17. PRENOTAZIONE DELLE ATTIVITÀ</h3><p>Per corsi, lezioni, personal training o attività a numero limitato potrà essere richiesta la prenotazione.</p><p>Anticipo massimo prenotazione: [50%]</p><p>Termine cancellazione: [10 ore]</p><p>Ritardo massimo consentito: [5 minuti]</p><p>Conseguenze per mancata presenza: [quota intera]</p><p>In caso di ritardo, l'accesso a una lezione già iniziata potrà essere limitato quando ciò sia necessario per ragioni organizzative o di sicurezza.</p></section><section class="regulationSection"><h3>18. PERSONAL TRAINING E APPUNTAMENTI INDIVIDUALI</h3><p>Le sedute individuali devono essere prenotate secondo le modalità stabilite dal Centro.</p><p>In caso di impossibilità a partecipare, la cancellazione dovrà essere comunicata entro:</p><p>[10 ORE] prima dell'appuntamento.</p><p>In caso di cancellazione tardiva o mancata presentazione:</p><p>[SEDUTA ADDEBITATA / PARZIALMENTE ADDEBITATA / ALTRA REGOLA]</p><p>Potranno essere previste eccezioni documentate secondo le condizioni del servizio.</p></section><section class="regulationSection"><h3>19. DANNEGGIAMENTI</h3><p>L'utente deve utilizzare con cura locali, arredi e attrezzature.</p><p>Eventuali danni causati da comportamenti dolosi, colposi o da utilizzo improprio potranno comportare l'applicazione delle responsabilità previste dalla legge e dal contratto.</p><p>Ogni guasto o danneggiamento deve essere immediatamente segnalato allo staff.</p></section><section class="regulationSection"><h3>20. PROVVEDIMENTI PER VIOLAZIONE DEL REGOLAMENTO</h3><p>In relazione alla natura e alla gravità della violazione, potranno essere adottati, ove contrattualmente e legalmente applicabili:</p><ul><li>richiamo verbale;</li><li>richiamo scritto;</li><li>sospensione temporanea dell'accesso;</li><li>esclusione da una specifica attività;</li><li>risoluzione del rapporto nei casi previsti.</li></ul><p>Comportamenti che mettano concretamente in pericolo persone o cose potranno comportare l'immediato allontanamento dalla struttura.</p></section><section class="regulationSection"><h3>21. DIVIETI</h3><p>All'interno di KLEOSFIT è vietato:</p><ul><li>fumare nelle aree in cui il divieto è previsto;</li><li>introdurre sostanze o oggetti vietati dalla legge;</li><li>introdurre animali salvo i casi previsti dalla legge o espressamente autorizzati;</li><li>svolgere attività di personal training o attività professionali non autorizzate;</li><li>manomettere impianti e attrezzature;</li><li>utilizzare attrezzature dichiarate fuori servizio;</li><li>occupare impropriamente gli spazi;</li><li>tenere comportamenti pericolosi per sé o per gli altri.</li></ul></section><section class="regulationSection"><h3>22. MINORI</h3><p>L'accesso e l'attività dei minori sono disciplinati dalle disposizioni di legge e dalle specifiche condizioni stabilite da KLEOSFIT.</p><p>Età minima: [ 5 anni]</p><p>Autorizzazione genitore/tutore: [SÌ]</p><p>Attività consentite: [DA DEFINIRE]</p><p>Eventuale presenza/accompagnamento: [DA DEFINIRE]</p></section><section class="regulationSection"><h3>23. MODIFICHE ORGANIZZATIVE</h3><p>KLEOSFIT potrà modificare orari, programmazione delle attività, istruttori, disposizione delle attrezzature e modalità organizzative quando necessario per esigenze tecniche, organizzative, manutentive o di sicurezza, nel rispetto delle condizioni contrattuali e della normativa applicabile.</p><p>Eventuali chiusure programmate saranno comunicate attraverso i canali utilizzati dal Centro.</p></section><section class="regulationSection"><h3>24. PRIVACY E TRATTAMENTO DEI DATI</h3><p>I dati personali degli utenti saranno trattati secondo la normativa vigente e secondo l'informativa privacy fornita da KLEOSFIT.</p><p>Le modalità relative a immagini, videosorveglianza, comunicazioni commerciali e altri trattamenti specifici saranno disciplinate dalle rispettive informative e, quando necessario, dagli specifici consensi.</p></section><section class="regulationSection"><h3>25. COMUNICAZIONI</h3><p>Le comunicazioni ufficiali potranno essere effettuate attraverso:</p><ul><li>reception;</li><li>SMS;</li><li>WhatsApp o altro servizio di messaggistica;</li><li>applicazione KLEOSFIT;</li><li>avvisi all'interno della struttura;</li><li>altri canali preventivamente comunicati.</li></ul><p>L'utente è tenuto a mantenere aggiornati i propri recapiti.</p></section><section class="regulationSection"><h3>26. ACCETTAZIONE</h3><p>Con la sottoscrizione della documentazione di iscrizione, l'utente dichiara di aver ricevuto o avuto la possibilità di consultare il presente regolamento e di accettarne le disposizioni applicabili al servizio sottoscritto.</p></section></div>`,
-accounting:`<div class="top"><div><div class="title">Contabilità</div><div class="sub">Riepilogo degli importi registrati nel periodo selezionato.</div></div><button class="btn" type="button" onclick="loadAccounting()">Aggiorna</button></div>
-<div class="card"><div class="bookingDateFilters" style="display:flex;align-items:end;gap:12px;flex-wrap:wrap"><div><label>DAL</label><input id="accountingFrom" type="date" onchange="loadAccounting()"></div><div><label>AL</label><input id="accountingTo" type="date" onchange="loadAccounting()"></div><button class="btn secondary" type="button" onclick="setAccountingMonth()">Mese corrente</button></div>
-<div id="accountingError" class="error"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:16px"><div class="card"><div class="label">Totale incassato</div><div id="accountingTotal" class="metric">€ 0,00</div></div><div class="card"><div class="label">Movimenti</div><div id="accountingCount" class="metric">0</div></div><div class="card"><div class="label">Clienti distinti</div><div id="accountingClients" class="metric">0</div></div></div>
+accounting:`<div class="top"><div><div class="title">Contabilità</div><div class="sub">Abbonamenti iniziati nel periodo selezionato: incassato, saldati e importi ancora da incassare.</div></div><button class="btn" type="button" onclick="loadAccounting()">Aggiorna</button></div>
+<div class="card"><div class="bookingDateFilters" style="display:flex;align-items:end;gap:12px;flex-wrap:wrap"><div><label>Data inizio abbonamento DAL</label><input id="accountingFrom" type="date" onchange="loadAccounting()"></div><div><label>Data inizio abbonamento AL</label><input id="accountingTo" type="date" onchange="loadAccounting()"></div><button class="btn secondary" type="button" onclick="setAccountingMonth()">Mese corrente</button></div>
+<div id="accountingError" class="error"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:16px"><div class="card"><div class="label">Incassato sugli abbonamenti selezionati</div><div id="accountingTotal" class="metric" style="color:var(--accent)">€ 0,00</div></div><div class="card"><div class="label">Sospeso — ancora da incassare</div><div id="accountingOutstanding" class="metric" style="color:#ffb020">€ 0,00</div><div id="accountingPendingCount" class="muted">0 abbonamenti</div></div><div class="card"><div class="label">Abbonamenti saldati</div><div id="accountingPaidCount" class="metric">0</div></div><div class="card"><div class="label">Movimenti</div><div id="accountingCount" class="metric">0</div></div><div class="card"><div class="label">Clienti distinti</div><div id="accountingClients" class="metric">0</div></div></div>
 <div id="accountingStatus" class="muted" style="margin:12px 0"></div><div id="accountingList" style="overflow:auto"></div></div>`,
 superuser:`<div class="top"><div><div class="title">Pannello amministrazione</div><div class="sub">Utenti, abbonamenti, slot, prenotazioni, circuiti e strumenti operativi.</div></div></div>
 <div class="superuserMenuGrid">
@@ -1334,7 +1334,7 @@ function renderActiveSubscriptions(){
   if(!list)return;
   const q=(document.getElementById('activeSubSearch')?.value||'').toLowerCase().trim();
   const st=(document.getElementById('activeSubStatus')?.value||'all');
-  const clientStatus=st==='client_active'?'active':st==='suspended'?'suspended':'all';
+  const clientStatus=['client_active','client_active_no_open'].includes(st)?'active':st==='suspended'?'suspended':'all';
   let rows=activeSubscriptionsData.filter(p=>{
     const suspended=isClientSuspended(p);
     if(clientStatus==='active'&&suspended)return false;
@@ -1344,6 +1344,7 @@ function renderActiveSubscriptions(){
     if(st==='active_no_open' && subStatus!=='ATTIVO')return false;
     if(st==='inactive' && subStatus!=='NON ATTIVO')return false;
     if(st==='open' && subStatus!=='OPEN')return false;
+    if(st==='client_active_no_open' && isSubscriptionOpen(p))return false;
     if(st==='suspended' && !isClientSuspended(p))return false;
     const name=profileDisplayName(p)||p.full_name||p.name||'';
     const hay=[name,p.email,p.member_card_number,p.subscription_type,p.subscription_plus_course]
@@ -1357,7 +1358,7 @@ function renderActiveSubscriptions(){
   });
 
   const stateText=st==='suspended'?'sospesi':st==='client_active'?'con stato cliente attivo':st==='open'?'OPEN':st==='inactive'?'non attivi':st==='active_no_open'?'attivi esclusi OPEN':st==='all'?'tutti':'attivi';
-  if(count)count.textContent=rows.length+(rows.length===1?' cliente':' clienti')+' · '+(clientStatus==='all'?'Abbonamento: '+stateText:'Stato cliente: '+(clientStatus==='active'?'attivo':'sospeso'));
+  if(count)count.textContent=rows.length+(rows.length===1?' cliente':' clienti')+' · '+(clientStatus==='all'?'Abbonamento: '+stateText:'Stato cliente: '+(clientStatus==='active'?(st==='client_active_no_open'?'attivo escluso OPEN':'attivo'):'sospeso'));
   if(!rows.length){
     list.innerHTML='<div class="muted">Nessun cliente corrispondente ai filtri selezionati.</div>';
     return;
@@ -4361,55 +4362,9 @@ async function loadAdminClientPayments(profileId){
    const rows=r.data||[];
    const currentFrom=String(profile.subscription_paid_from||'').slice(0,10);
    const currentTo=String(profile.subscription_paid_to||'').slice(0,10);
-   const currentKey=currentFrom+'|'+currentTo;
    const currentDue=profile.subscription_cost==null?null:Number(profile.subscription_cost);
-   const dueIdFor=(from,to)=>'DOVUTO-'+String(profileId)+'-'+String(from||'')+'-'+String(to||'');
-   const extractDueId=(note)=>{
-     const m=String(note||'').match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);
-     return m?String(m[1]):'';
-   };
-   const groups={};
-   const ensureGroup=(id,from,to,due)=>{
-     if(!groups[id])groups[id]={id,from:String(from||'').slice(0,10),to:String(to||'').slice(0,10),due:due==null?null:Number(due),paid:0,rows:[]};
-     if(due!=null)groups[id].due=Number(due);
-     return groups[id];
-   };
-   if(currentFrom&&currentTo)ensureGroup(dueIdFor(currentFrom,currentTo),currentFrom,currentTo,currentDue);
-   const currentIdForLegacy=(from,to)=>dueIdFor(from,to);
-   rows.forEach(x=>{
-     const dueMarker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
-     const token=extractDueId(x.note);
-     const xfrom=String(x.paid_from||'').slice(0,10);
-     // Compatibilità con gli acconti già registrati con un vecchio DOVUTO_ID:
-     // se appartengono alla stessa data di inizio del dovuto corrente, restano
-     // nello stesso pannello anche se il vecchio token non coincide con quello nuovo.
-     if(token){
-       if(currentFrom && xfrom===currentFrom && groups[currentIdForLegacy(currentFrom,currentTo)]){
-         const g=groups[currentIdForLegacy(currentFrom,currentTo)];
-         if(dueMarker)g.due=Number(dueMarker[1]);
-         g.paid+=Number(x.amount)||0;
-         g.rows.push(x);
-       }else{
-         const g=ensureGroup(token,'','',null);
-         if(dueMarker)g.due=Number(dueMarker[1]);
-         g.paid+=Number(x.amount)||0;
-         g.rows.push(x);
-       }
-       return;
-     }
-     const from=xfrom;
-     const to=String(x.paid_to||'').slice(0,10);
-     const key=from+'|'+to;
-     const g=ensureGroup(key,from,to,key===currentKey?currentDue:null);
-     if(dueMarker)g.due=Number(dueMarker[1]);
-     g.paid+=Number(x.amount)||0;
-     g.rows.push(x);
-   });
-   // I movimenti con un DOVUTO_ID vengono ricondotti al relativo pannello.
-   // Se il token corrisponde al periodo corrente, il gruppo riceve anche il dovuto corrente.
-   const currentId=currentFrom&&currentTo?dueIdFor(currentFrom,currentTo):'';
-   if(currentId&&groups[currentId])groups[currentId].due=currentDue;
-   const groupRows=Object.values(groups).filter(g=>g.from||g.to||g.rows.length).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
+   const currentId=currentFrom&&currentTo?'DOVUTO-'+String(profileId)+'-'+currentFrom+'-'+currentTo:'';
+   const groupRows=kleosSubscriptionPaymentGroups([{...profile,id:profileId}],rows).sort((a,b)=>String(b.to||b.from).localeCompare(String(a.to||a.from)));
    const fmtMoney=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
    const statusFor=(due,paid)=>due==null?'DOVUTO NON DISPONIBILE':(due-paid<=0.005?'SALDATO':paid>0?'PARZIALE':'NON PAGATO');
    const badge=(st)=>st==='SALDATO'?'<span class="pill" style="background:#c6ff35;color:#111">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5c5c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
@@ -4699,95 +4654,23 @@ async function loadAccounting(){
   const allowedIds=new Set(profiles.map(p=>String(p.id)));
   const allPayments=(pay.data||[]).filter(x=>allowedIds.has(String(x.profile_id||'')));
   const money=n=>'€ '+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const extractDueId=note=>{const m=String(note||'').match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i);return m?String(m[1]):'';};
-  const dueIdFor=(pid,a,b)=>'DOVUTO-'+String(pid)+'-'+String(a||'')+'-'+String(b||'');
-  const groups=new Map();
-  const ensure=(pid,fromDate,toDate,due)=>{const key=dueIdFor(pid,fromDate,toDate);if(!groups.has(key))groups.set(key,{key,pid,from:String(fromDate||'').slice(0,10),to:String(toDate||'').slice(0,10),due:due==null?null:Number(due),paid:0,rows:[]});const g=groups.get(key);if(due!=null)g.due=Number(due);return g;};
-  // Il dovuto viene letto dal costo registrato SOLO quando le date coincidono
-  // esattamente con il periodo salvato sul profilo. Non usare mai il prezzo di listino
-  // o il costo corrente per stimare un periodo storico differente.
-  profiles.forEach(p=>{
-   const a=String(p.subscription_paid_from||'').slice(0,10),b=String(p.subscription_paid_to||'').slice(0,10);
-   // Usa la stessa registrazione dell'abbonamento della Gestione abbonamenti.
-   // Non limitare il recupero del dovuto alle date del filtro contabile: un pagamento
-   // può essere stato registrato nel periodo selezionato per un abbonamento con periodo diverso.
-   if(a&&b&&p.subscription_cost!=null)ensure(p.id,a,b,p.subscription_cost);
-  });
-  // Collega prima di tutto ogni movimento al DOVUTO_ID salvato al momento della registrazione.
-  // Le date del movimento possono essere diverse da quelle dell'abbonamento: non devono creare
-  // un secondo riepilogo se il movimento porta già l'identificativo del dovuto corretto.
-  allPayments.forEach(x=>{
-   const pid=String(x.profile_id||'');if(!pid)return;
-   const a=String(x.paid_from||'').slice(0,10),b=String(x.paid_to||'').slice(0,10),token=extractDueId(x.note);
-   let g;
-   if(token){
-    // Prima scelta: collegamento esatto tramite ID del dovuto.
-    g=groups.get(token)||[...groups.values()].find(z=>z.pid===pid&&z.key===token);
-    if(!g){
-     const parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
-     if(parsed&&String(parsed[1])===pid){
-      // Compatibilità con vecchi token che codificano direttamente il periodo.
-      g=groups.get(token)||{key:token,pid,from:parsed[2],to:parsed[3],due:null,paid:0,rows:[]};
-      groups.set(token,g);
-     }else{
-      // Vecchi movimenti possono avere un token non più riconoscibile e date
-      // del pagamento vuote. In quel solo caso, collegali al periodo corrente
-      // del profilo, come fa la scheda Abbonamenti, invece di perderli in un
-      // gruppo senza periodo che non compare in Contabilità.
-      const currentFrom=String((names.get(pid)||{}).subscription_paid_from||'').slice(0,10);
-      const currentTo=String((names.get(pid)||{}).subscription_paid_to||'').slice(0,10);
-      if(currentFrom&&currentTo&&(!a||!b|| (a===currentFrom&&b===currentTo))){
-       g=ensure(pid,currentFrom,currentTo,(names.get(pid)||{}).subscription_cost);
-      }else{
-       g={key:token,pid,from:'',to:'',due:null,paid:0,rows:[]};
-       groups.set(token,g);
-      }
-     }
-    }
-   }else{
-    // I movimenti legacy possono avere paid_from/paid_to impostate sulle date
-    // del pagamento, non sul periodo dell'abbonamento. Se la nota conserva il
-    // dovuto registrato, associa al periodo corrente solo quando l'importo del
-    // marker coincide con il costo registrato del profilo; non usare la data
-    // dell'acconto come filtro del periodo di abbonamento.
-    const p0=names.get(pid)||{};
-    const currentFrom=String(p0.subscription_paid_from||'').slice(0,10);
-    const currentTo=String(p0.subscription_paid_to||'').slice(0,10);
-    const marker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
-    const markerDue=marker?Number(marker[1]):null;
-    const profileDue=p0.subscription_cost==null?null:Number(p0.subscription_cost);
-    const markerMatches=markerDue!=null&&profileDue!=null&&Math.abs(markerDue-profileDue)<0.005;
-    if(currentFrom&&currentTo&&((!a||!b)||markerMatches)){
-     g=ensure(pid,currentFrom,currentTo,profileDue);
-    }else{
-     g=ensure(pid,a,b,null);
-    }
-   }
-   const dueMarker=String(x.note||'').match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
-   if(dueMarker)g.due=Number(dueMarker[1]);
-   g.paid+=Number(x.amount)||0;g.rows.push(x);
-  });
-  // Per i periodi storici il dovuto deve provenire dalla registrazione di quel
-  // preciso abbonamento. Se il database contiene solo movimenti ma non il costo
-  // storico registrato per quel periodo, lasciamo il dovuto non disponibile invece
-  // di sostituirlo con il costo corrente del profilo o con un prezzo di listino.
-  // Il filtro DAL–AL riguarda esclusivamente il periodo dell'abbonamento.
-  // Le date di registrazione degli acconti/saldi non devono includere o escludere abbonamenti.
-  const selected=[...groups.values()].filter(g=>{
-   return Boolean(g.from&&g.to&&g.from<=to&&g.to>=from);
-  }).sort((a,b)=>(a.from||'').localeCompare(b.from||'')||String((names.get(a.pid)||{}).full_name||'').localeCompare(String((names.get(b.pid)||{}).full_name||''),'it'));
-  // Totali e conteggi considerano tutti i movimenti collegati agli abbonamenti selezionati,
-  // anche quando la data dell'acconto è fuori dall'intervallo scelto.
-  const selectedKeys=new Set(selected.map(g=>g.key));
-  const periodPayments=selected.flatMap(g=>g.rows);
-  const total=periodPayments.reduce((sum,x)=>sum+Number(x.amount||0),0),clients=new Set(periodPayments.map(x=>String(x.profile_id||'')).filter(Boolean));
+  // Scheda cliente e contabilità condividono l'identificazione dei periodi.
+  const groups=new Map(kleosSubscriptionPaymentGroups(profiles,allPayments).map(group=>[group.key,group]));
+  const summary=kleosAccountingPeriodSummary([...groups.values()],from,to),selected=summary.selected;
   const totalEl=document.getElementById('accountingTotal'),countEl=document.getElementById('accountingCount'),clientsEl=document.getElementById('accountingClients');
-  if(totalEl)totalEl.textContent=money(total);if(countEl)countEl.textContent=String(periodPayments.length);if(clientsEl)clientsEl.textContent=String(clients.size);
-  if(status)status.textContent=`${selected.length} abbonamenti nel periodo ${fmtDateIT(from)} – ${fmtDateIT(to)}; conteggi inclusivi di tutti gli acconti e saldi collegati, indipendentemente dalla data di pagamento.`;
-  if(!selected.length){list.innerHTML='<div class="muted">Nessun abbonamento con periodo compreso nell\'intervallo selezionato.</div>';return;}
-  list.innerHTML=selected.map(g=>{const p=names.get(g.pid)||{},name=p.full_name||p.name||p.email||'Cliente non disponibile',residuo=g.due==null?null:Math.max(0,g.due-g.paid),st=g.due==null?'DOVUTO NON DISPONIBILE':(g.due-g.paid<=0.005?'SALDATO':g.paid>0?'PARZIALE':'NON PAGATO');const badge=st==='SALDATO'?'<span class="pill" style="background:#c4ff3d;color:#10130a">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5d6c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
+  if(totalEl)totalEl.textContent=money(summary.collected);if(countEl)countEl.textContent=String(summary.movements.length);if(clientsEl)clientsEl.textContent=String(summary.clients);
+  const outstanding=document.getElementById('accountingOutstanding'),pendingCount=document.getElementById('accountingPendingCount'),paidCount=document.getElementById('accountingPaidCount');
+  if(outstanding)outstanding.textContent=money(summary.outstanding);if(pendingCount)pendingCount.textContent=summary.pending.length+' abbonamenti con residuo';if(paidCount)paidCount.textContent=String(summary.paid.length);
+  if(status)status.textContent=selected.length+' abbonamenti iniziati dal '+fmtDateIT(from)+' al '+fmtDateIT(to)+'. Ogni versamento è mostrato con la propria data effettiva; sono inclusi solo i movimenti degli abbonamenti selezionati.'+(summary.verify.length?' Importo dovuto da verificare per '+summary.verify.length+' abbonamenti: esclusi dal totale sospeso.':'');
+  if(!selected.length){list.innerHTML='<div class="muted">Nessun abbonamento iniziato nell\'intervallo selezionato.</div>';return;}
+  list.innerHTML=selected.map((g,index)=>{const p=names.get(g.pid)||{},name=p.full_name||p.name||p.email||'Cliente non disponibile',residuo=g.due==null?null:Math.max(0,g.due-g.paid),st=g.due==null?'DOVUTO NON DISPONIBILE':(g.due-g.paid<=0.005?'SALDATO':g.paid>0?'PARZIALE':'NON PAGATO');const badge=st==='SALDATO'?'<span class="pill" style="background:#c4ff3d;color:#10130a">SALDATO</span>':st==='PARZIALE'?'<span class="pill" style="background:#ffb020;color:#111">PARZIALE</span>':st==='NON PAGATO'?'<span class="pill" style="background:#ff5d6c;color:#fff">NON PAGATO</span>':'<span class="pill">STORICO</span>';
    const movements=g.rows.slice().sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))).map(x=>{const note=String(x.note||'Pagamento abbonamento').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';return `<tr><td>${esc(fmtDate(x.created_at))}</td><td>${esc(note.toLowerCase().includes('saldo')?'SALDO':'ACCONTO')}</td><td><b>${money(x.amount)}</b></td><td>${esc(note)}</td></tr>`;}).join('');
-   return `<div class="card" style="margin-top:12px;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>${esc(name)}</strong><div class="muted">DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')} · Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</div></div>${badge}</div><div class="paymentSummary" style="margin-top:10px"><div class="sbRow"><span>Dovuto</span><b>${g.due==null?'—':money(g.due)}</b></div><div class="sbRow"><span>Pagato / acconti registrati</span><b>${money(g.paid)}</b></div><div class="sbTotal"><span>Residuo</span><b>${residuo==null?'—':money(residuo)}</b></div></div><div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>${movements?`<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data</th><th>Tipo</th><th>Importo</th><th>Nota</th></tr></thead><tbody>${movements}</tbody></table></div>`:'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}</div>`;
+   const category=kleosAccountingGroupState(g),previous=index?kleosAccountingGroupState(selected[index-1]):null;
+   const sectionTitle=category==='paid'?'Saldati / incassati':category==='pending'?'Sospesi — importi da incassare':'Storico — importi da verificare';
+   const sectionRows=category==='paid'?summary.paid:category==='pending'?summary.pending:summary.verify;
+   const sectionInfo=category==='paid'?'Incassato '+money(sectionRows.reduce((sum,row)=>sum+row.paid,0)):category==='pending'?'Già incassato '+money(sectionRows.reduce((sum,row)=>sum+row.paid,0))+' · Ancora da incassare '+money(summary.outstanding):'Importo dovuto non disponibile: residuo non calcolato.';
+   const sectionHeader=category!==previous?'<div style="margin:24px 0 12px;padding-top:14px;border-top:1px solid var(--line)"><h2 style="font-size:20px;color:'+(category==='pending'?'#ffb020':'var(--accent)')+';margin:0 0 6px">'+sectionTitle+'</h2><div class="muted">'+sectionInfo+'</div></div>':'';
+   return `${sectionHeader}<div class="card" style="margin-top:12px;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>${esc(name)}</strong><div class="muted">DOVUTO — ${esc(g.from?fmtDateIT(g.from):'Periodo')} · Periodo: ${esc(g.from?fmtDateIT(g.from):'—')} → ${esc(g.to?fmtDateIT(g.to):'—')}</div></div>${badge}</div><div class="paymentSummary" style="margin-top:10px"><div class="sbRow"><span>Dovuto</span><b>${g.due==null?'—':money(g.due)}</b></div><div class="sbRow"><span>Pagato / acconti registrati</span><b>${money(g.paid)}</b></div><div class="sbTotal"><span>Sospeso da incassare</span><b>${residuo==null?'—':money(residuo)}</b></div></div><div style="margin-top:12px;font-weight:700">Movimenti collegati a questo dovuto</div>${movements?`<div style="overflow:auto;margin-top:6px"><table class="table"><thead><tr><th>Data pagamento</th><th>Tipo</th><th>Importo</th><th>Nota</th></tr></thead><tbody>${movements}</tbody></table></div>`:'<div class="muted" style="margin-top:6px">Nessun acconto registrato.</div>'}</div>`;
   }).join('');
  }catch(e){if(err){err.textContent=e?.message||String(e);err.style.display='block';}list.innerHTML='';}
 }
@@ -6321,8 +6204,8 @@ function kleosFormatTxtView(container,text){
   if(table)return;const wrap=document.createElement('div');wrap.className='kleosTxtTableWrap';table=document.createElement('table');table.className='kleosTxtTable txtBlocks'+blocks;
   const cols=document.createElement('colgroup'),nameCol=document.createElement('col');nameCol.style.width=blocks===1?'56%':'36%';cols.append(nameCol);for(let i=0;i<blocks*2;i++){const col=document.createElement('col');col.style.width=(blocks===1?22:64/(blocks*2))+'%';cols.append(col);}table.append(cols);
   const head=document.createElement('thead'),top=document.createElement('tr'),name=cell('th','ESERCIZIO');name.scope='col';if(blocks>1)name.rowSpan=2;top.append(name);
-  if(blocks===1){for(const title of ['SERIE','RIPETIZIONI']){const h=cell('th',title);h.scope='col';top.append(h);}head.append(top);}
-  else{const lower=document.createElement('tr');for(let i=1;i<=blocks;i++){const title=cell('th','BLOCCO '+i);title.colSpan=2;title.scope='colgroup';title.className='txtBlockHead block'+i;top.append(title);for(const label of ['SERIE','RIP.']){const h=cell('th',label);h.scope='col';h.className='block'+i;lower.append(h);}}head.append(top,lower);}
+  if(blocks===1){for(const title of ['SERIE','RIP. / TEMPO']){const h=cell('th',title);h.scope='col';top.append(h);}head.append(top);}
+  else{const lower=document.createElement('tr');for(let i=1;i<=blocks;i++){const title=cell('th','BLOCCO '+i);title.colSpan=2;title.scope='colgroup';title.className='txtBlockHead block'+i;top.append(title);for(const label of ['SERIE','RIP. / TEMPO']){const h=cell('th',label);h.scope='col';h.className='block'+i;lower.append(h);}}head.append(top,lower);}
   body=document.createElement('tbody');table.append(head,body);wrap.append(table);container.append(wrap);
  }
  for(const line of String(text||'').replace(/\r\n?/g,'\n').split('\n')){
@@ -6352,3 +6235,44 @@ function kleosFormatTxtView(container,text){
 <style>
 .kleosTxtTableWrap{max-width:100%;overflow-x:auto;margin:16px 0 22px}.kleosTxtTableWrap .kleosTxtTable{margin:0}.kleosTxtTable.txtBlocks2{min-width:520px}.kleosTxtTable.txtBlocks3{min-width:680px}.kleosTxtTable[class*="txtBlocks"] th,.kleosTxtTable[class*="txtBlocks"] td{width:auto!important}.kleosTxtTable td:not(:first-child){text-align:center;color:#a6ff00;font-variant-numeric:tabular-nums}.kleosTxtTable .block1{background:#121c12!important}.kleosTxtTable .block2{background:#172027!important}.kleosTxtTable .block3{background:#252117!important}.kleosTxtTable .txtBlockHead{border-left:2px solid #77836c}.kleosTxtTable .txtBlockStart{border-left:2px solid #77836c}.kleosTxtTable th.txtBlockHead{font-size:.9em}.txtBlockPicker{margin:16px 0;padding:14px;border:1px solid #3b4d31;border-radius:9px;background:#0c130b}.txtBlockPicker label{display:block;color:#a6ff00;font-weight:800;margin-bottom:8px}.txtBlockPicker select{width:100%;padding:12px;border:1px solid #414940;border-radius:8px;background:#080d09;color:white;font:inherit}.txtBlockPicker p{font-size:13px;color:var(--muted);margin:8px 0 0}.txtExerciseFields.txtBlockFields{display:flex;flex-direction:column;align-items:stretch}.txtBlockFields fieldset{margin:0;border:1px solid #3c4937;border-radius:8px;padding:12px;min-width:0}.txtBlockFields fieldset[hidden]{display:none}.txtBlockFields legend{color:#a6ff00;font-size:13px;font-weight:800;padding:0 5px}.txtBlockInputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.txtBlockFields .addExerciseButton{margin-top:5px}
 </style>
+
+<script>
+function kleosSubscriptionPaymentGroups(profiles,payments){
+ const date=value=>String(value||'').slice(0,10),groups=new Map(),byId=new Map(profiles.map(p=>[String(p.id),p]));
+ const keyFor=(pid,from,to)=>'DOVUTO-'+pid+'-'+from+'-'+to;
+ function ensure(pid,from,to,due,customKey){const key=customKey||keyFor(pid,from,to);if(!groups.has(key))groups.set(key,{id:key,key,pid,from,to,due:due==null?null:Number(due),paid:0,rows:[]});return groups.get(key);}
+ for(const p of profiles){const from=date(p.subscription_paid_from),to=date(p.subscription_paid_to);if(from&&to)ensure(String(p.id),from,to,p.subscription_cost);}
+ for(const payment of payments){
+  const pid=String(payment.profile_id||'');if(!byId.has(pid))continue;
+  const p=byId.get(pid),currentFrom=date(p.subscription_paid_from),currentTo=date(p.subscription_paid_to),from=date(payment.paid_from),to=date(payment.paid_to),note=String(payment.note||'');
+  const token=note.match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i)?.[1]||'',parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
+  const tokenPeriod=parsed&&parsed[1]===pid?{from:parsed[2],to:parsed[3]}:null;
+  const marker=note.match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
+  // L'inizio identifica lo stesso periodo dopo una correzione della scadenza.
+  // Un token che identifica un altro inizio resta storico, anche a parità di importo.
+  const matchesCurrent=Boolean(currentFrom&&currentTo&&(tokenPeriod?tokenPeriod.from===currentFrom:from===currentFrom||token===keyFor(pid,currentFrom,currentTo)));
+  let group;
+  if(matchesCurrent)group=ensure(pid,currentFrom,currentTo,p.subscription_cost);
+  else if(tokenPeriod)group=ensure(pid,tokenPeriod.from,tokenPeriod.to,null);
+  else if(from||to)group=ensure(pid,from,to,null);
+  else group=ensure(pid,'','',null,'NON-ASSOCIATO-'+pid+'-'+(token||'senza-periodo'));
+  const isCurrent=group.from===currentFrom&&group.to===currentTo&&currentFrom&&currentTo;
+  if(isCurrent)group.due=p.subscription_cost==null?null:Number(p.subscription_cost);
+  else if(marker)group.due=Number(marker[1]);
+  group.paid+=Number(payment.amount)||0;group.rows.push(payment);
+ }
+ return [...groups.values()];
+}
+
+</script>
+
+<script>
+function kleosAccountingGroupState(group){return group.due==null||!Number.isFinite(Number(group.due))?'verify':Number(group.due)-group.paid<=.005?'paid':'pending';}
+function kleosAccountingPeriodSummary(groups,from,to){
+ const selected=groups.filter(group=>group.from&&group.to&&group.from>=from&&group.from<=to);
+ const rank={paid:0,pending:1,verify:2};selected.sort((a,b)=>rank[kleosAccountingGroupState(a)]-rank[kleosAccountingGroupState(b)]||a.from.localeCompare(b.from)||String(a.pid).localeCompare(String(b.pid)));
+ const paid=selected.filter(g=>kleosAccountingGroupState(g)==='paid'),pending=selected.filter(g=>kleosAccountingGroupState(g)==='pending'),verify=selected.filter(g=>kleosAccountingGroupState(g)==='verify'),movements=selected.flatMap(g=>g.rows);
+ return {selected,paid,pending,verify,movements,collected:movements.reduce((sum,row)=>sum+(Number(row.amount)||0),0),outstanding:pending.reduce((sum,g)=>sum+Math.max(0,Number(g.due)-g.paid),0),clients:new Set(selected.map(g=>String(g.pid))).size};
+}
+
+</script>

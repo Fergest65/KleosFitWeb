@@ -221,6 +221,12 @@
       }
     }
   </style>
+<style>
+#monitorTxtFile{font:inherit;color:var(--text);background:transparent;border:0;padding:0;min-width:0}
+#monitorTxtFile::file-selector-button{appearance:none;min-height:clamp(42px,4.8vh,54px);border:0;border-radius:8px;padding:7px clamp(10px,1vw,18px);font-family:inherit;font-size:clamp(12px,.9vw,16px);font-weight:1000;cursor:pointer;background:var(--lime);color:#071006;min-width:clamp(92px,7vw,134px);margin-right:12px}
+#monitorTxtFile::file-selector-button:hover{filter:brightness(1.08)}
+#monitorTxtFile:focus-visible{outline:2px solid var(--lime);outline-offset:4px;border-radius:8px}
+</style>
 </head>
 <body>
   <div class="screen">
@@ -271,7 +277,7 @@
 <footer>
 <button class="secondary" type="button" onclick="window.open('schede-txt.html','_blank','noopener')">CREA SCHEDA TXT</button>
 <button id="monitorTxtToggle" type="button" class="secondary" onclick="toggleMonitorTxt()" aria-controls="monitorTxtPane" aria-expanded="false">VISUALIZZA TXT</button>
-      <button class="secondary" onclick="location.href='dashboard-admin.html'">DASHBOARD PRINCIPALE</button>
+      
       <select id="circuitSelect" onchange="selectCircuit(this.value)"></select>
       <button onclick="startTimer()">START</button>
       <button class="secondary" onclick="pauseTimer()">PAUSA</button>

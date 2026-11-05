@@ -744,19 +744,49 @@ function kleosTxtBlockCount(text){
  const explicit=String(text||'').match(/^@blocchi:\s*([123])\s*$/im);if(explicit)return Number(explicit[1]);
  let count=1;for(const line of String(text||'').split(/\r?\n/)){const cells=line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|');if([3,5,7].includes(cells.length)&&/^\s*\d+\s*$/.test(cells[1]))count=Math.max(count,(cells.length-1)/2);}return count;
 }
+/* Kleos TXT images v1. Embedded raster assets; legacy TXT stays supported. */
+function kleosTxtImageKey(name){return String(name||'').normalize('NFKC').trim().toLocaleLowerCase('it');}
+function kleosTxtImageData(text){
+ const line=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/).find(line=>/^@kleos-immagini:\s*/i.test(line));
+ if(!line)return {version:1,assets:{},exercises:{}};
+ try{const data=JSON.parse(line.replace(/^@kleos-immagini:\s*/i,''));if(data.version!==1||!data.assets||!data.exercises||Array.isArray(data.assets)||Array.isArray(data.exercises))throw Error();return data;}
+ catch{return {version:1,assets:{},exercises:{},invalid:true};}
+}
+function kleosTxtRaster(src){return typeof src==='string'&&src.length<=10*1024*1024&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);}
+function kleosTxtImageNode(data,name){
+ const key=kleosTxtImageKey(name);if(!Object.prototype.hasOwnProperty.call(data.exercises,key))return null;
+ const item=data.exercises[key];if(!item||!Object.prototype.hasOwnProperty.call(data.assets,item.asset))return null;
+ const src=data.assets[item.asset];if(!kleosTxtRaster(src))return null;
+ const cols=item.cols??1,rows=item.rows??1,x=item.x??0,y=item.y??0;
+ if(![cols,rows,x,y].every(Number.isInteger)||cols<1||rows<1||cols>16||rows>16||x<0||y<0||x>=cols||y>=rows)return null;
+ const node=document.createElement('span');node.className='kleosTxtExerciseThumb';node.setAttribute('role','img');node.setAttribute('aria-label',name);node.title=name;
+ node.style.backgroundImage='url("'+src+'")';node.style.backgroundSize=(cols*100)+'% '+(rows*100)+'%';node.style.backgroundPosition=(cols===1?0:x/(cols-1)*100)+'% '+(rows===1?0:y/(rows-1)*100)+'%';
+ return node;
+}
+function kleosTxtExerciseCell(data,name){
+ const td=document.createElement('td'),image=kleosTxtImageNode(data,name);
+ if(!image){td.textContent=name;return td;}
+ const wrap=document.createElement('div');wrap.className='kleosTxtExerciseIdentity';const label=document.createElement('span');label.textContent=name;wrap.append(image,label);td.append(wrap);return td;
+}
+function kleosTxtBrand(container,data){
+ if(data.invalid){const warning=document.createElement('p');warning.className='kleosTxtImageWarning';warning.textContent='Immagini non disponibili: dati immagine non validi. Il testo della scheda resta leggibile.';container.append(warning);}
+ if(!kleosTxtRaster(data.brand))return;
+ const brand=document.createElement('div');brand.className='kleosTxtBrand';const logo=document.createElement('img');logo.src=data.brand;logo.alt='Logo Kleos';logo.width=42;logo.height=42;const label=document.createElement('span');label.textContent='KLEOS FITCOACH PRO';brand.append(logo,label);container.append(brand);
+}
+
 function kleosFormatTxtView(container,text){
- container.classList.add('txtFormatted');container.replaceChildren();const blocks=kleosTxtBlockCount(text);let table=null,body=null;
+ container.classList.add('txtFormatted');container.replaceChildren();const imageData=kleosTxtImageData(text);kleosTxtBrand(container,imageData);const blocks=kleosTxtBlockCount(text);let table=null,body=null;
  function cell(tag,value){const element=document.createElement(tag);element.textContent=value;return element;}
  function ensureTable(){
   if(table)return;const wrap=document.createElement('div');wrap.className='kleosTxtTableWrap';table=document.createElement('table');table.className='kleosTxtTable txtBlocks'+blocks;
   const cols=document.createElement('colgroup'),nameCol=document.createElement('col');nameCol.style.width=blocks===1?'56%':'36%';cols.append(nameCol);for(let i=0;i<blocks*2;i++){const col=document.createElement('col');col.style.width=(blocks===1?22:64/(blocks*2))+'%';cols.append(col);}table.append(cols);
   const head=document.createElement('thead'),top=document.createElement('tr'),name=cell('th','ESERCIZIO');name.scope='col';if(blocks>1)name.rowSpan=2;top.append(name);
-  if(blocks===1){for(const title of ['SERIE','RIPETIZIONI']){const h=cell('th',title);h.scope='col';top.append(h);}head.append(top);}
-  else{const lower=document.createElement('tr');for(let i=1;i<=blocks;i++){const title=cell('th','BLOCCO '+i);title.colSpan=2;title.scope='colgroup';title.className='txtBlockHead block'+i;top.append(title);for(const label of ['SERIE','RIP.']){const h=cell('th',label);h.scope='col';h.className='block'+i;lower.append(h);}}head.append(top,lower);}
+  if(blocks===1){for(const title of ['SERIE','RIP. / TEMPO']){const h=cell('th',title);h.scope='col';top.append(h);}head.append(top);}
+  else{const lower=document.createElement('tr');for(let i=1;i<=blocks;i++){const title=cell('th','BLOCCO '+i);title.colSpan=2;title.scope='colgroup';title.className='txtBlockHead block'+i;top.append(title);for(const label of ['SERIE','RIP. / TEMPO']){const h=cell('th',label);h.scope='col';h.className='block'+i;lower.append(h);}}head.append(top,lower);}
   body=document.createElement('tbody');table.append(head,body);wrap.append(table);container.append(wrap);
  }
  for(const line of String(text||'').replace(/\r\n?/g,'\n').split('\n')){
-  const trim=line.trim();if(/^@blocchi:\s*[123]\s*$/i.test(trim))continue;
+  if(/^@kleos-immagini:/i.test(line))continue;const trim=line.trim();if(/^@blocchi:\s*[123]\s*$/i.test(trim))continue;
   const heading=line.match(/^(#{1,3})\s+(.+)$/);if(heading){table=body=null;container.append(cell('h'+heading[1].length,heading[2]));continue;}
   let values=null;if(trim.includes('|')){const parts=trim.replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());if([3,5,7].includes(parts.length))values=parts;}
   if(!values){const old=trim.match(/^(.+?):\s*(\d+)\s*seri[ea]\s*[x×]\s*(.+)$/i);if(old)values=[old[1].trim(),old[2],old[3].trim()];}
@@ -764,7 +794,7 @@ function kleosFormatTxtView(container,text){
    if(values[0].toLowerCase()==='esercizio'&&values[1].toLowerCase()==='serie'){ensureTable();continue;}
    if(values.every(x=>/^:?-{3,}:?$/.test(x))&&table)continue;
    if(values[0]&&/^\d+$/.test(values[1])&&Number(values[1])>0){
-    ensureTable();const row=document.createElement('tr');row.append(cell('td',values[0]));for(let i=0;i<blocks;i++){for(let n=0;n<2;n++){const td=cell('td',values[1+i*2+n]||'—');td.className='block'+(i+1);if(n===0)td.classList.add('txtBlockStart');row.append(td);}}body.append(row);continue;
+    ensureTable();const row=document.createElement('tr');row.append(kleosTxtExerciseCell(imageData,values[0]));for(let i=0;i<blocks;i++){for(let n=0;n<2;n++){const td=cell('td',values[1+i*2+n]||'—');td.className='block'+(i+1);if(n===0)td.classList.add('txtBlockStart');row.append(td);}}body.append(row);continue;
    }
   }
   table=body=null;const node=cell(trim?'p':'div',line);if(!trim)node.className='txtGap';container.append(node);
@@ -782,4 +812,9 @@ function kleosFormatTxtView(container,text){
 
 <style>
 .kleosTxtTableWrap{max-width:100%;overflow-x:auto;margin:16px 0 22px}.kleosTxtTableWrap .kleosTxtTable{margin:0}.kleosTxtTable.txtBlocks2{min-width:520px}.kleosTxtTable.txtBlocks3{min-width:680px}.kleosTxtTable[class*="txtBlocks"] th,.kleosTxtTable[class*="txtBlocks"] td{width:auto!important}.kleosTxtTable td:not(:first-child){text-align:center;color:#a6ff00;font-variant-numeric:tabular-nums}.kleosTxtTable .block1{background:#121c12!important}.kleosTxtTable .block2{background:#172027!important}.kleosTxtTable .block3{background:#252117!important}.kleosTxtTable .txtBlockHead{border-left:2px solid #77836c}.kleosTxtTable .txtBlockStart{border-left:2px solid #77836c}.kleosTxtTable th.txtBlockHead{font-size:.9em}.txtBlockPicker{margin:16px 0;padding:14px;border:1px solid #3b4d31;border-radius:9px;background:#0c130b}.txtBlockPicker label{display:block;color:#a6ff00;font-weight:800;margin-bottom:8px}.txtBlockPicker select{width:100%;padding:12px;border:1px solid #414940;border-radius:8px;background:#080d09;color:white;font:inherit}.txtBlockPicker p{font-size:13px;color:var(--muted);margin:8px 0 0}.txtExerciseFields.txtBlockFields{display:flex;flex-direction:column;align-items:stretch}.txtBlockFields fieldset{margin:0;border:1px solid #3c4937;border-radius:8px;padding:12px;min-width:0}.txtBlockFields fieldset[hidden]{display:none}.txtBlockFields legend{color:#a6ff00;font-size:13px;font-weight:800;padding:0 5px}.txtBlockInputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.txtBlockFields .addExerciseButton{margin-top:5px}
+</style>
+
+<style>/* Kleos TXT embedded exercise images v1 */
+.kleosTxtExerciseIdentity{display:flex;align-items:center;gap:12px;white-space:normal;min-width:0}.kleosTxtExerciseIdentity>span:last-child{white-space:pre-wrap;overflow-wrap:anywhere}.kleosTxtExerciseThumb{display:block;flex:0 0 96px;width:96px;height:96px;background-repeat:no-repeat;background-color:#080a0b;border:1px solid #637b30;border-radius:10px;overflow:hidden}.kleosTxtBrand{display:flex;align-items:center;gap:12px;color:#a6ff00;font:800 15px Arial,sans-serif;letter-spacing:1px;margin:0 0 18px}.kleosTxtBrand img{object-fit:contain}.kleosTxtImageWarning{color:#ffcb7d!important;font-size:14px!important}.txtImageTools{padding:14px;border:1px solid #3b4d31;border-radius:9px;margin:14px 0;background:#0c130b}.txtImageTools label{display:block;font-weight:800;color:#a6ff00;margin-bottom:8px}.txtImageTools p{font-size:13px;color:#a4adb6}.txtImageTools button{margin-top:8px}@media(max-width:600px){.kleosTxtExerciseThumb{flex-basis:64px;width:64px;height:64px}.kleosTxtExerciseIdentity{gap:8px;flex-wrap:wrap}}
+
 </style>

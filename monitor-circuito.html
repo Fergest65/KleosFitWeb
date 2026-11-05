@@ -267,7 +267,9 @@
       </aside>
     </main>
 
-    <footer>
+    <section id="monitorTxtPane" class="monitorTxtPane" hidden aria-label="Visualizzatore TXT"><div class="monitorTxtTools"><label for="monitorTxtFile">Apri file TXT</label><input id="monitorTxtFile" type="file" accept=".txt,text/plain" onchange="loadMonitorTxt(this)"><button type="button" class="secondary" aria-label="Riduci carattere" onclick="resizeMonitorTxt(-2)">A−</button><button type="button" class="secondary" aria-label="Ingrandisci carattere" onclick="resizeMonitorTxt(2)">A+</button></div><div id="monitorTxtName" class="monitorTxtName"></div><div id="monitorTxtMessage" class="monitorTxtMessage" role="status" aria-live="polite">Scegli un file TXT: il testo si adatta alla larghezza della schermata.</div><pre id="monitorTxtText" class="monitorTxtText" tabindex="0" aria-label="Contenuto file TXT"></pre></section>
+<footer>
+<button id="monitorTxtToggle" type="button" class="secondary" onclick="toggleMonitorTxt()" aria-controls="monitorTxtPane" aria-expanded="false">VISUALIZZA TXT</button>
       <button class="secondary" onclick="location.href='dashboard-admin.html'">DASHBOARD PRINCIPALE</button>
       <select id="circuitSelect" onchange="selectCircuit(this.value)"></select>
       <button onclick="startTimer()">START</button>
@@ -701,5 +703,31 @@
     setInterval(updateClock, 1000);
     loadCircuits();
   </script>
+<style>
+.monitorTxtPane[hidden]{display:none!important}.screen.monitorTxtOpen>main{display:none}.monitorTxtPane{display:flex;flex-direction:column;gap:12px;margin:16px;min-height:0;min-width:0;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}.monitorTxtTools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.monitorTxtTools label{font-weight:900;color:var(--lime)}.monitorTxtTools input{max-width:100%;color:var(--text);font:inherit}.monitorTxtTools button{min-width:52px}.monitorTxtName{color:var(--muted);font-size:14px;overflow-wrap:anywhere}.monitorTxtText{flex:1;min-height:0;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;font-family:inherit;font-size:24px;line-height:1.5;tab-size:4;margin:0;padding:14px;background:#060707;border-radius:8px;touch-action:pan-y;-webkit-overflow-scrolling:touch}.monitorTxtMessage{color:var(--muted);font-size:14px}.monitorTxtMessage.error{color:var(--danger)}@media(max-width:700px){.monitorTxtPane{margin:8px;padding:10px}.monitorTxtText{padding:10px;font-size:18px}.monitorTxtTools{gap:8px}.monitorTxtTools input{width:100%}}
+</style>
+<script>
+let monitorTxtRequest=0,monitorTxtFontSize=24;
+function toggleMonitorTxt(){
+ const screen=document.querySelector('.screen'),pane=document.getElementById('monitorTxtPane');
+ const opening=pane.hidden;pane.hidden=!opening;screen.classList.toggle('monitorTxtOpen',opening);
+ const button=document.getElementById('monitorTxtToggle');button.textContent=opening?'TORNA AL CIRCUITO':'VISUALIZZA TXT';button.setAttribute('aria-expanded',String(opening));
+ if(opening)document.getElementById('monitorTxtFile').focus();
+}
+function decodeMonitorTxt(buffer){const bytes=new Uint8Array(buffer);if(bytes[0]===255&&bytes[1]===254)return new TextDecoder('utf-16le').decode(bytes);if(bytes[0]===254&&bytes[1]===255)return new TextDecoder('utf-16be').decode(bytes);try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{return new TextDecoder('windows-1252').decode(bytes);}}
+async function loadMonitorTxt(input){
+ const file=input.files?.[0];if(!file)return;const request=++monitorTxtRequest,message=document.getElementById('monitorTxtMessage');message.className='monitorTxtMessage';
+ if(!/\.txt$/i.test(file.name)){message.textContent='Seleziona un file .txt.';message.classList.add('error');input.value='';return;}
+ if(file.size>10*1024*1024){message.textContent='Il file supera 10 MB.';message.classList.add('error');input.value='';return;}
+ message.textContent='Lettura file…';
+ try{const text=decodeMonitorTxt(await file.arrayBuffer()).replace(/^\uFEFF/,'');if(request!==monitorTxtRequest)return;
+ document.getElementById('monitorTxtText').textContent=text;document.getElementById('monitorTxtText').scrollTop=0;
+ document.getElementById('monitorTxtName').textContent=file.name+' · '+(file.size/1024).toFixed(1)+' KB';message.textContent=text?'':'Il file è vuoto.';
+ }catch(error){if(request===monitorTxtRequest){message.textContent='Impossibile leggere il file: '+(error.message||error);message.classList.add('error');}}
+ finally{input.value='';}
+}
+function resizeMonitorTxt(delta){monitorTxtFontSize=Math.min(64,Math.max(14,monitorTxtFontSize+delta));document.getElementById('monitorTxtText').style.fontSize=monitorTxtFontSize+'px';}
+</script>
+
 </body>
 </html>

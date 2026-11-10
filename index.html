@@ -4254,6 +4254,11 @@ async function saveSubscriptionRenewal(profileId){
       subscription_active:computeSubscriptionActive(from,to),
       subscription_open:document.getElementById('cpOpen')?.value==='true'
     };
+    const previous=await db.from('profiles').select('subscription_paid_from,subscription_paid_to,subscription_cost').eq('id',profileId).maybeSingle();
+    if(previous.error)throw previous.error;
+    if(!previous.data)throw Error('Cliente non trovato.');
+    if(String(previous.data.subscription_paid_from||'').slice(0,10)!==from||String(previous.data.subscription_paid_to||'').slice(0,10)!==to)await kleosPreserveSubscriptionPeriod(profileId,previous.data);
+    await kleosPreserveSubscriptionPeriod(profileId,payload);
     const upd=await db.from('profiles').update(payload).eq('id',profileId).select('*').maybeSingle();
     if(upd.error)throw upd.error;
     if(!upd.data)throw new Error('Salvataggio non autorizzato o cliente non trovato.');
@@ -4446,6 +4451,17 @@ async function saveSubscriptionDueEditor(profileId){
   if(to<from){fail('La data Al non può essere precedente alla data Dal.');return;}
   if(!Number.isFinite(cost)||cost<=0){fail('Inserisci l’importo effettivo dovuto per questo periodo.');return;}
   try{
+    const live=await db.from('profiles').select('subscription_paid_from,subscription_paid_to').eq('id',profileId).maybeSingle();
+    if(live.error)throw live.error;
+    if(!live.data)throw Error('Cliente non trovato.');
+    const liveFrom=String(live.data.subscription_paid_from||'').slice(0,10),liveTo=String(live.data.subscription_paid_to||'').slice(0,10);
+    if(!historical&&(liveFrom!==originalFrom||liveTo!==originalTo))throw Error('L’abbonamento corrente è cambiato. Riapri il periodo da modificare.');
+    if(from!==originalFrom||to!==originalTo){
+      if(historical&&from===liveFrom&&to===liveTo)throw Error('Esiste già un abbonamento per il periodo scelto.');
+      const target=await db.from('subscription_payment_history').select('id').eq('profile_id',profileId).eq('paid_from',from).eq('paid_to',to).limit(1);
+      if(target.error)throw target.error;
+      if(target.data?.length)throw Error('Esiste già un abbonamento per il periodo scelto: le date non sono state modificate.');
+    }
     if(historical){
       // Seleziona i movimenti del periodo ORIGINALE e aggiorna quelle righe: non inserire nuove righe.
       let query=db.from('subscription_payment_history').select('id,note,paid_from,paid_to').eq('profile_id',profileId);
@@ -4456,7 +4472,7 @@ async function saveSubscriptionDueEditor(profileId){
       if(!(hr.data||[]).length)throw new Error('Nessun movimento trovato per il periodo originale: date non salvate.');
       for(const row of hr.data){
         const clean=String(row.note||'Pagamento abbonamento').replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]\s*/ig,' ').trim()||'Pagamento abbonamento';
-        const note=clean+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
+        const note=kleosSubscriptionPeriodNote(clean,profileId,from,to,cost);
         const up=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId).select('id').maybeSingle();
         if(up.error)throw up.error;
         if(!up.data)throw new Error('Supabase non ha confermato l’aggiornamento del movimento '+row.id+'. Controlla i permessi RLS.');
@@ -4471,7 +4487,7 @@ async function saveSubscriptionDueEditor(profileId){
       const oldToken='DOVUTO-'+profileId+'-'+originalFrom+'-'+originalTo,newToken='DOVUTO-'+profileId+'-'+from+'-'+to;
       for(const row of history.data||[]){
         let note=String(row.note||'Pagamento abbonamento').replace(/\[\[DOVUTO_ID:([^\]]+)\]\]/ig,(marker,token)=>token===oldToken?'[[DOVUTO_ID:'+newToken+']]':marker);
-        note=note.replace(/\s*\[\[DOVUTO_IMPORTO:[^\]]+\]\]\s*/ig,' ').trim()+' [[DOVUTO_IMPORTO:'+cost.toFixed(2)+']]';
+        note=kleosSubscriptionPeriodNote(note,profileId,from,to,cost);
         const updated=await db.from('subscription_payment_history').update({paid_from:from,paid_to:to,note}).eq('id',row.id).eq('profile_id',profileId).select('id').maybeSingle();
         if(updated.error||!updated.data)throw new Error('Periodo aggiornato nella scheda, ma movimento '+row.id+' non sincronizzato: '+(updated.error?.message||'aggiornamento non confermato'));
       }
@@ -4611,7 +4627,7 @@ async function loadClientPayments(){
  if(!currentUser?.id){err.textContent='Utente non autenticato';err.style.display='block';list.innerHTML='';count.textContent='';return}
  const r=await db.from('subscription_payment_history').select('*').eq('profile_id',currentUser.id).order('created_at',{ascending:false}).limit(100);
  if(r.error){err.textContent='Storico pagamenti non leggibile con i permessi attuali.';err.style.display='block';list.innerHTML='';count.textContent='';return}
- const rows=r.data||[]; count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
+ const rows=(r.data||[]).filter(row=>!String(row.note||'').includes('[[ABBONAMENTO_PERIODO]]')); count.textContent=rows.length+(rows.length===1?' pagamento':' pagamenti');
  if(!rows.length){list.innerHTML='<div class="muted">Nessun pagamento presente nello storico.</div>';return}
  const dateVal=x=>x.created_at;
  const fromVal=x=>x.paid_from;
@@ -6268,29 +6284,44 @@ function kleosFormatTxtView(container,text){
 </style>
 
 <script>
+function kleosSubscriptionPeriodNote(note,profileId,from,to,cost,recordOnly=false){
+ const clean=String(note||'Abbonamento registrato').replace(/\s*\[\[(?:DOVUTO_ID|DOVUTO_IMPORTO):[^\]]+\]\]\s*/ig,' ').trim();
+ return clean+' [[DOVUTO_ID:DOVUTO-'+profileId+'-'+from+'-'+to+']] [[DOVUTO_IMPORTO:'+Number(cost).toFixed(2)+']]'+(recordOnly&&!clean.includes('[[ABBONAMENTO_PERIODO]]')?' [[ABBONAMENTO_PERIODO]]':'');
+}
+async function kleosPreserveSubscriptionPeriod(profileId,subscription){
+ const from=String(subscription?.subscription_paid_from||'').slice(0,10),to=String(subscription?.subscription_paid_to||'').slice(0,10),cost=Number(subscription?.subscription_cost);
+ if(!from||!to||subscription?.subscription_cost==null||!Number.isFinite(cost))return;
+ const history=await db.from('subscription_payment_history').select('id,note,amount').eq('profile_id',profileId).eq('paid_from',from).eq('paid_to',to);
+ if(history.error)throw history.error;
+ if((history.data||[]).length){
+  for(const row of history.data){const note=kleosSubscriptionPeriodNote(row.note,profileId,from,to,cost);if(note===row.note)continue;
+   const r=await db.from('subscription_payment_history').update({note}).eq('id',row.id).eq('profile_id',profileId).select('id').maybeSingle();
+   if(r.error||!r.data)throw Error('Conservazione del periodo precedente non riuscita: '+(r.error?.message||'aggiornamento non confermato'));
+  }
+ }else{
+  // Preserve an unpaid period as a non-payment registration, never as a receipt.
+  const note=kleosSubscriptionPeriodNote('Abbonamento registrato',profileId,from,to,cost,true);
+  const r=await db.from('subscription_payment_history').insert({profile_id:profileId,paid_from:from,paid_to:to,amount:0,note}).select('id').maybeSingle();
+  if(r.error||!r.data)throw Error('Impossibile conservare il periodo abbonamento: '+(r.error?.message||'registrazione non confermata'));
+ }
+}
 function kleosSubscriptionPaymentGroups(profiles,payments){
  const date=value=>String(value||'').slice(0,10),groups=new Map(),byId=new Map(profiles.map(p=>[String(p.id),p]));
  const keyFor=(pid,from,to)=>'DOVUTO-'+pid+'-'+from+'-'+to;
- function ensure(pid,from,to,due,customKey){const key=customKey||keyFor(pid,from,to);if(!groups.has(key))groups.set(key,{id:key,key,pid,from,to,due:due==null?null:Number(due),paid:0,rows:[]});return groups.get(key);}
+ function ensure(pid,from,to,due,key=keyFor(pid,from,to)){if(!groups.has(key))groups.set(key,{id:key,key,pid,from,to,due:due==null?null:Number(due),paid:0,rows:[]});return groups.get(key);}
  for(const p of profiles){const from=date(p.subscription_paid_from),to=date(p.subscription_paid_to);if(from&&to)ensure(String(p.id),from,to,p.subscription_cost);}
  for(const payment of payments){
   const pid=String(payment.profile_id||'');if(!byId.has(pid))continue;
-  const p=byId.get(pid),currentFrom=date(p.subscription_paid_from),currentTo=date(p.subscription_paid_to),from=date(payment.paid_from),to=date(payment.paid_to),note=String(payment.note||'');
-  const token=note.match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i)?.[1]||'',parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
+  const p=byId.get(pid),note=String(payment.note||''),token=note.match(/\[\[DOVUTO_ID:([^\]]+)\]\]/i)?.[1]||'',parsed=token.match(/^DOVUTO-(.+)-(\d{4}-\d{2}-\d{2})-(\d{4}-\d{2}-\d{2})$/i);
   const tokenPeriod=parsed&&parsed[1]===pid?{from:parsed[2],to:parsed[3]}:null;
+  // Saved date columns are authoritative; older tokens only fill missing dates.
+  const from=date(payment.paid_from)||tokenPeriod?.from||'',to=date(payment.paid_to)||tokenPeriod?.to||'';
+  const currentFrom=date(p.subscription_paid_from),currentTo=date(p.subscription_paid_to),isCurrent=!!(currentFrom&&currentTo&&from===currentFrom&&to===currentTo);
+  const group=from||to?ensure(pid,from,to,isCurrent?p.subscription_cost:null):ensure(pid,'','',null,'NON-ASSOCIATO-'+pid+'-'+(token||'senza-periodo'));
   const marker=note.match(/\[\[DOVUTO_IMPORTO:([0-9]+(?:\.[0-9]+)?)\]\]/i);
-  // L'inizio identifica lo stesso periodo dopo una correzione della scadenza.
-  // Un token che identifica un altro inizio resta storico, anche a parità di importo.
-  const matchesCurrent=Boolean(currentFrom&&currentTo&&(tokenPeriod?tokenPeriod.from===currentFrom:from===currentFrom||token===keyFor(pid,currentFrom,currentTo)));
-  let group;
-  if(matchesCurrent)group=ensure(pid,currentFrom,currentTo,p.subscription_cost);
-  else if(tokenPeriod)group=ensure(pid,tokenPeriod.from,tokenPeriod.to,null);
-  else if(from||to)group=ensure(pid,from,to,null);
-  else group=ensure(pid,'','',null,'NON-ASSOCIATO-'+pid+'-'+(token||'senza-periodo'));
-  const isCurrent=group.from===currentFrom&&group.to===currentTo&&currentFrom&&currentTo;
-  if(isCurrent)group.due=p.subscription_cost==null?null:Number(p.subscription_cost);
-  else if(marker)group.due=Number(marker[1]);
-  group.paid+=Number(payment.amount)||0;group.rows.push(payment);
+  if(isCurrent)group.due=p.subscription_cost==null?null:Number(p.subscription_cost);else if(marker)group.due=Number(marker[1]);
+  group.paid+=Number(payment.amount)||0;
+  if(!note.includes('[[ABBONAMENTO_PERIODO]]'))group.rows.push(payment);
  }
  return [...groups.values()];
 }

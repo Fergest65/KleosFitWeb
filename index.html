@@ -6141,7 +6141,7 @@ let kleosAdminTxtState={name:'',text:'',size:0,fontSize:16,request:0};
 function openAdminTxtViewer(){
  if(!isSuperuserRole())return;
  const content=document.getElementById('content');if(!content)return;
- content.innerHTML=`<div class="top adminTxtHeading"><div><div class="title">Visualizzatore file TXT</div><div class="sub">Apri un file di testo: il contenuto si adatta alla larghezza della pagina.</div></div><button type="button" class="btn secondary" onclick="show('superuser')">← Pannello amministrazione</button></div><section class="card adminTxtCard"><div class="adminTxtToolbar"><label class="btn" for="adminTxtFile">Apri file TXT</label><input id="adminTxtFile" type="file" accept=".txt,text/plain" style="width:auto;max-width:100%" onchange="loadAdminTxtFile(this)"><button type="button" class="btn secondary" onclick="resizeAdminTxt(-1)" aria-label="Riduci dimensione testo">A−</button><button type="button" class="btn secondary" onclick="resizeAdminTxt(1)" aria-label="Aumenta dimensione testo">A+</button></div><p id="adminTxtStatus" role="status" aria-live="polite" class="muted"></p><div id="adminTxtMeta" class="muted adminTxtMeta"></div><pre id="adminTxtDocument" class="adminTxtDocument" tabindex="0" aria-label="Contenuto del file di testo"></pre></section>`;
+ content.innerHTML=`<div class="top adminTxtHeading"><div><div class="title">Visualizzatore file TXT</div><div class="sub">Apri un file di testo: il contenuto si adatta alla larghezza della pagina.</div></div><button type="button" class="btn secondary" onclick="show('superuser')">← Pannello amministrazione</button></div><section class="card adminTxtCard"><div class="adminTxtToolbar"><label class="btn" for="adminTxtFile">Apri file TXT</label><input id="adminTxtFile" type="file" accept=".txt,text/plain" style="width:auto;max-width:100%" onchange="loadAdminTxtFile(this)"><button type="button" class="btn secondary" onclick="resizeAdminTxt(-1)" aria-label="Riduci dimensione testo">A−</button><button type="button" class="btn secondary" onclick="resizeAdminTxt(1)" aria-label="Aumenta dimensione testo">A+</button><button id="adminTxtDownload" type="button" class="btn" onclick="downloadAdminTxt()" disabled>Scarica TXT aggiornato</button></div><div id="adminTxtEditor"></div><p id="adminTxtStatus" role="status" aria-live="polite" class="muted"></p><div id="adminTxtMeta" class="muted adminTxtMeta"></div><pre id="adminTxtDocument" class="adminTxtDocument" tabindex="0" aria-label="Contenuto del file di testo"></pre></section>`;
  renderAdminTxtDocument();
 }
 function kleosDecodeTxt(buffer){
@@ -6153,9 +6153,11 @@ function kleosDecodeTxt(buffer){
 }
 function renderAdminTxtDocument(){
  const documentBox=document.getElementById('adminTxtDocument'),meta=document.getElementById('adminTxtMeta'),status=document.getElementById('adminTxtStatus');if(!documentBox)return;
- kleosFormatTxtView(documentBox,kleosAdminTxtState.text||'');documentBox.style.fontSize=kleosAdminTxtState.fontSize+'px';
+ document.getElementById('adminTxtEditor').replaceChildren();
+ document.getElementById('adminTxtDownload').disabled=!kleosAdminTxtState.edited;
+ kleosFormatTxtView(documentBox,kleosAdminTxtState.text||'',editAdminTxtExercise);documentBox.style.fontSize=kleosAdminTxtState.fontSize+'px';
  if(meta)meta.textContent=kleosAdminTxtState.name?kleosAdminTxtState.name+' · '+(kleosAdminTxtState.size/1024).toFixed(1)+' KB':'';
- if(status)status.textContent=kleosAdminTxtState.name?(kleosAdminTxtState.text?'File aperto.':'Il file è vuoto.'):'Seleziona un file .txt dal dispositivo (massimo 10 MB).';
+ if(status)status.textContent=kleosAdminTxtState.edited?'Modifiche applicate. Scarica il TXT aggiornato.':kleosAdminTxtState.name?(kleosAdminTxtState.text?'File aperto.':'Il file è vuoto.'):'Seleziona un file .txt dal dispositivo (massimo 10 MB).';
 }
 async function loadAdminTxtFile(input){
  if(!isSuperuserRole())return;const file=input.files?.[0];if(!file)return;
@@ -6165,10 +6167,149 @@ async function loadAdminTxtFile(input){
  if(file.size>10*1024*1024){fail('Il file supera 10 MB. Seleziona un file più piccolo.');input.value='';return;}
  if(status){status.className='muted';status.textContent='Lettura del file…';}
  try{const text=kleosDecodeTxt(await file.arrayBuffer());if(request!==kleosAdminTxtState.request)return;
- kleosAdminTxtState={...kleosAdminTxtState,name:file.name,text,size:file.size};
+ kleosAdminTxtState={...kleosAdminTxtState,name:file.name,text,size:file.size,edited:false};
  if(document.getElementById('adminTxtFile')===input)renderAdminTxtDocument();
  }catch(error){fail('Impossibile leggere il file: '+(error.message||error));}
  finally{input.value='';}
+}
+async function chooseAdminTxtReplacement(form){
+ const picker=form.querySelector('[data-txt-library]');
+ const search=picker.querySelector('input'),list=picker.querySelector('[data-txt-results]');
+ const status=picker.querySelector('[role="status"]');
+ const selected=picker.querySelector('[data-txt-selected]');
+ let rows=[],choice=null;
+ const name=form.elements.exerciseName;
+ Object.defineProperty(form,'txtReplacement',{get:()=>choice?.name===name.value.trim()?choice:null});
+ function render(){
+  const query=normalizeExerciseKey(search.value);
+  const matches=rows.filter(e=>normalizeExerciseKey(archiveLabel(e)).includes(query));
+  status.textContent=matches.length>60?'Mostrati 60 risultati. Affina la ricerca.':matches.length?'':'Nessun esercizio trovato.';
+  list.replaceChildren();
+  for(const exercise of matches.slice(0,60)){
+   const button=document.createElement('button');
+   button.type='button';button.className='archiveItem detailArchiveWithImage';
+   const thumb=document.createElement('div');thumb.className='detailArchiveThumbnail';
+   const label=document.createElement('b');label.textContent=exercise.name;
+   const url=getExerciseImageUrl(exercise);
+   const fallback=document.createElement('span');fallback.textContent='Foto non disponibile';
+   if(/^(https?:\/\/|data:image\/)/i.test(url)){
+    const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=url;
+    fallback.hidden=true;img.onerror=()=>{img.remove();fallback.hidden=false;};
+    thumb.append(img);
+   }
+   thumb.append(fallback);button.append(thumb,label);
+   button.onclick=()=>{
+    choice={name:String(exercise.name).trim(),url};
+    name.value=choice.name;
+    selected.textContent='Selezionato: '+choice.name;
+    name.focus();
+   };
+   list.append(button);
+  }
+ }
+ name.addEventListener('input',()=>{choice=null;selected.textContent='';});
+ search.addEventListener('input',render);
+ status.textContent='Caricamento libreria…';
+ try{
+  const error=exerciseLibraryData.length?null:await loadExerciseLibrary();
+  if(error)throw Error(error);
+  rows=exerciseLibraryData;
+  render();
+ }catch(error){status.textContent='Libreria non disponibile: '+(error.message||error);}
+}
+async function embedAdminTxtReplacement(lines,replacement){
+ const source=lines.join(''),data=kleosTxtImageData(source);
+ if(data.invalid)throw Error('I dati delle immagini della scheda non sono leggibili.');
+ const key=kleosTxtImageKey(replacement.name);
+ let raster=replacement.url;
+ if(!raster&&kleosTxtImageNode(data,replacement.name))return;
+ if(!raster)throw Error('Nessuna immagine associata a questo esercizio nella libreria.');
+ if(!kleosTxtRaster(raster)){
+  const response=await fetch(raster,{signal:AbortSignal.timeout(15000)});
+  if(!response.ok)throw Error('Impossibile scaricare la foto dalla libreria.');
+  const bitmap=await createImageBitmap(await response.blob());
+  try{
+   const scale=Math.min(1,480/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+   canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+   raster=canvas.toDataURL('image/webp',0.86);
+  }finally{bitmap.close();}
+ }
+ if(!kleosTxtRaster(raster))throw Error('Formato immagine non supportato.');
+ let asset=Object.keys(data.assets).find(id=>data.assets[id]===raster);
+ if(!asset){
+  let index=1;
+  while(Object.hasOwn(data.assets,'library-'+index))index++;
+  asset='library-'+index;
+  data.assets[asset]=raster;
+ }
+ const previous=Object.hasOwn(data.exercises,key)?data.exercises[key]?.asset:null;
+ Object.defineProperty(data.exercises,key,{value:{asset},enumerable:true,configurable:true,writable:true});
+ if(previous&&previous!==asset&&!Object.values(data.exercises).some(item=>item?.asset===previous))delete data.assets[previous];
+ const metadata='@kleos-immagini: '+JSON.stringify(data);
+ const lineIndex=lines.findIndex((line,i)=>i%2===0&&/^@kleos-immagini:/i.test(line));
+ if(lineIndex>=0)lines[lineIndex]=metadata;
+ else lines[lines.length-1]+=(lines.at(-1)?lines[1]||'\n':'')+metadata;
+}
+function editAdminTxtExercise(lineIndex,values,blocks,trigger){
+ if(!isSuperuserRole())return;
+ const editor=document.getElementById('adminTxtEditor');
+ const source=kleosAdminTxtState.text;
+ const form=document.createElement('form');
+ form.className='txtExerciseFields txtBlockFields';
+ form.innerHTML='<details data-txt-library><summary>Sostituisci dalla libreria</summary><label>Cerca esercizio<input type="search" placeholder="Nome, muscolo o attrezzo"></label><p role="status" class="muted"></p><div data-txt-results class="detailArchiveList" style="max-height:18rem;overflow:auto"></div></details><p data-txt-selected aria-live="polite"></p><label>Nome esercizio<input name="exerciseName" required></label>'+
+  Array.from({length:blocks},(_,i)=>`<fieldset><legend>Blocco ${i+1}</legend><div class="txtBlockInputs"><label>Serie<input name="sets${i}" type="text" inputmode="numeric" pattern="[0-9]*" ${i===0?'required':''}></label><label>Ripetizioni / tempo<input name="reps${i}"></label></div></fieldset>`).join('')+
+  '<p role="alert" class="danger" hidden></p><div class="inputrow"><button class="btn" type="submit">Applica modifica</button><button class="btn secondary" type="button">Annulla</button></div>';
+ form.elements.exerciseName.value=values[0];
+ for(let i=0;i<blocks;i++){
+  form.elements['sets'+i].value=values[1+i*2]??'';
+  form.elements['reps'+i].value=values[2+i*2]??'';
+ }
+ form.querySelector('[type="button"]').onclick=()=>{form.remove();trigger.focus();};
+ form.onsubmit=async event=>{
+  event.preventDefault();
+  if(!isSuperuserRole()||kleosAdminTxtState.text!==source)return;
+  const cells=[form.elements.exerciseName.value.trim()];
+  for(let i=0;i<blocks;i++)cells.push(form.elements['sets'+i].value.trim(),form.elements['reps'+i].value.trim());
+  const alert=form.querySelector('[role="alert"]');
+  if(!cells[0]||cells.some(value=>/[|\r\n]/.test(value))||cells.slice(1).some((value,i)=>i%2===0&&value&&Number(value)<=0)){
+   alert.hidden=false;alert.textContent='Inserisci un nome, usa serie maggiori di zero ed evita il carattere |.';return;
+  }
+  const lines=source.split(/(\r\n|\r|\n)/);
+  // A closing delimiter keeps a blank final field readable by the TXT viewer.
+  lines[lineIndex*2]='| '+cells.join(' | ')+' |';
+  const replacement=form.txtReplacement;
+  if(replacement){
+   const submit=form.querySelector('[type="submit"]');
+   if(submit.disabled)return;
+   submit.disabled=true;
+   alert.hidden=false;alert.textContent='Salvataggio immagine in corso…';
+   try{await embedAdminTxtReplacement(lines,replacement);}
+   catch(error){alert.textContent='Immagine non salvata: '+(error.message||error);return;}
+   finally{submit.disabled=false;}
+   if(!form.isConnected||!isSuperuserRole()||kleosAdminTxtState.text!==source)return;
+  }
+  const text=lines.join('');
+  const size=new Blob([text]).size;
+  if(size>10*1024*1024){alert.hidden=false;alert.textContent='La scheda supererebbe il limite di 10 MB.';return;}
+  kleosAdminTxtState={...kleosAdminTxtState,text,size,edited:true};
+  renderAdminTxtDocument();
+  document.querySelector('[data-admin-txt-line="'+lineIndex+'"]')?.focus();
+ };
+ editor.replaceChildren(form);
+ const picker=form.querySelector('[data-txt-library]');
+ picker.addEventListener('toggle',()=>{if(picker.open)chooseAdminTxtReplacement(form);},{once:true});
+ form.elements.exerciseName.focus();
+}
+function downloadAdminTxt(){
+ if(!isSuperuserRole()||!kleosAdminTxtState.edited)return;
+ const blob=new Blob([kleosAdminTxtState.text],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download=kleosAdminTxtState.name.replace(/\.txt$/i,'')+'-modificata.txt';
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function resizeAdminTxt(delta){if(!isSuperuserRole())return;kleosAdminTxtState.fontSize=Math.min(28,Math.max(12,kleosAdminTxtState.fontSize+delta));const box=document.getElementById('adminTxtDocument');if(box)box.style.fontSize=kleosAdminTxtState.fontSize+'px';}
 </script>
@@ -6217,7 +6358,7 @@ function kleosTxtBlockCount(text){
 /* Kleos TXT images v1. Embedded raster assets; legacy TXT stays supported. */
 function kleosTxtImageKey(name){return String(name||'').normalize('NFKC').trim().toLocaleLowerCase('it');}
 function kleosTxtImageData(text){
- const line=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/).find(line=>/^@kleos-immagini:\s*/i.test(line));
+ const line=String(text||'').replace(/^\uFEFF/,'').split(/\r\n|\r|\n/).find(line=>/^@kleos-immagini:\s*/i.test(line));
  if(!line)return {version:1,assets:{},exercises:{}};
  try{const data=JSON.parse(line.replace(/^@kleos-immagini:\s*/i,''));if(data.version!==1||!data.assets||!data.exercises||Array.isArray(data.assets)||Array.isArray(data.exercises))throw Error();return data;}
  catch{return {version:1,assets:{},exercises:{},invalid:true};}
@@ -6244,7 +6385,7 @@ function kleosTxtBrand(container,data){
  const brand=document.createElement('div');brand.className='kleosTxtBrand';const logo=document.createElement('img');logo.src=data.brand;logo.alt='Logo Kleos';logo.width=42;logo.height=42;const label=document.createElement('span');label.textContent='KLEOS FITCOACH PRO';brand.append(logo,label);container.append(brand);
 }
 
-function kleosFormatTxtView(container,text){
+function kleosFormatTxtView(container,text,onEdit){
  container.classList.add('txtFormatted');container.replaceChildren();const imageData=kleosTxtImageData(text);kleosTxtBrand(container,imageData);const blocks=kleosTxtBlockCount(text);let table=null,body=null;
  function cell(tag,value){const element=document.createElement(tag);element.textContent=value;return element;}
  function ensureTable(){
@@ -6255,7 +6396,7 @@ function kleosFormatTxtView(container,text){
   else{const lower=document.createElement('tr');for(let i=1;i<=blocks;i++){const title=cell('th','BLOCCO '+i);title.colSpan=2;title.scope='colgroup';title.className='txtBlockHead block'+i;top.append(title);for(const label of ['SERIE','RIP. / TEMPO']){const h=cell('th',label);h.scope='col';h.className='block'+i;lower.append(h);}}head.append(top,lower);}
   body=document.createElement('tbody');table.append(head,body);wrap.append(table);container.append(wrap);
  }
- for(const line of String(text||'').replace(/\r\n?/g,'\n').split('\n')){
+ for(const [lineIndex,line] of String(text||'').split(/\r\n|\r|\n/).entries()){
   if(/^@kleos-immagini:/i.test(line))continue;const trim=line.trim();if(/^@blocchi:\s*[123]\s*$/i.test(trim))continue;
   const heading=line.match(/^(#{1,3})\s+(.+)$/);if(heading){table=body=null;container.append(cell('h'+heading[1].length,heading[2]));continue;}
   let values=null;if(trim.includes('|')){const parts=trim.replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());if([3,5,7].includes(parts.length))values=parts;}
@@ -6264,7 +6405,14 @@ function kleosFormatTxtView(container,text){
    if(values[0].toLowerCase()==='esercizio'&&values[1].toLowerCase()==='serie'){ensureTable();continue;}
    if(values.every(x=>/^:?-{3,}:?$/.test(x))&&table)continue;
    if(values[0]&&/^\d+$/.test(values[1])&&Number(values[1])>0){
-    ensureTable();const row=document.createElement('tr');row.append(kleosTxtExerciseCell(imageData,values[0]));for(let i=0;i<blocks;i++){for(let n=0;n<2;n++){const td=cell('td',values[1+i*2+n]||'—');td.className='block'+(i+1);if(n===0)td.classList.add('txtBlockStart');row.append(td);}}body.append(row);continue;
+    ensureTable();const row=document.createElement('tr');row.append(kleosTxtExerciseCell(imageData,values[0]));
+    if(onEdit){
+     const button=cell('button','Modifica');button.type='button';button.className='btn secondary mini';
+     button.dataset.adminTxtLine=lineIndex;button.setAttribute('aria-label','Modifica '+values[0]);
+     button.onclick=()=>onEdit(lineIndex,values,Math.max(blocks,(values.length-1)/2),button);
+     row.firstElementChild.append(document.createElement('br'),button);
+    }
+    for(let i=0;i<blocks;i++){for(let n=0;n<2;n++){const td=cell('td',values[1+i*2+n]||'—');td.className='block'+(i+1);if(n===0)td.classList.add('txtBlockStart');row.append(td);}}body.append(row);continue;
    }
   }
   table=body=null;const node=cell(trim?'p':'div',line);if(!trim)node.className='txtGap';container.append(node);

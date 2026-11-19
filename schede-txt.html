@@ -73,15 +73,20 @@ function kleosFormatTxtView(container,text){
 }
 
 </script>
-</head>
+<style>.replacement-panel{margin:1rem 0}.replacement-panel label{display:block;margin:.5rem 0}.replacement-panel select,.replacement-panel input{display:block;width:100%;max-width:32rem;padding:.65rem;background:#090d0e;color:inherit;border:1px solid var(--line);border-radius:.5rem}.replacement-results{max-height:16rem;overflow:auto;display:grid;gap:.35rem}.replacement-result{display:flex;align-items:center;gap:.65rem;text-align:left}.replacement-result img{width:3rem;height:3rem;object-fit:contain}</style></head>
 <body>
 <header><div class="brand">KLEOS FITCOACH PRO</div><a class="btn" href="monitor-circuito.html">Apri monitor</a></header>
 <main class="page">
 <h1>Crea e salva schede TXT</h1><div class="muted">Scrivi la scheda, controlla l’anteprima e salvala sul computer. Riapri un TXT per modificarlo.</div>
-<div class="toolbar"><button class="primary" id="save">Salva scheda TXT</button><button id="open">Apri scheda TXT</button><button id="new">Nuova scheda</button><button id="example">Carica esempio</button><button id="kleosExample">Circuito Kleos 60 min + immagini</button><input id="file" type="file" accept=".txt,text/plain" class="hidden" aria-label="Seleziona una scheda TXT"></div>
+<div class="toolbar"><button class="primary" id="save">Salva scheda TXT</button><button id="open">Apri scheda TXT</button><button id="replaceExercise" type="button" class="primary">Modifica esercizio</button><button id="new">Nuova scheda</button><button id="example">Carica esempio</button><button id="kleosExample">Circuito Kleos 60 min + immagini</button><input id="file" type="file" accept=".txt,text/plain" class="hidden" aria-label="Seleziona una scheda TXT"></div>
 <label class="field" for="filename">Nome del file</label><input class="filename" id="filename" value="scheda-allenamento.txt" autocomplete="off">
 <div id="status" class="status" role="status" aria-live="polite">Pronto: crea una scheda oppure carica l’esempio.</div>
-<div class="layout"><section class="card"><h2>Contenuto della scheda</h2><div class="formatTools"><button data-insert="# TITOLO SCHEDA">+ Titolo</button><button data-insert="## NUOVA SEZIONE">+ Sezione</button><button data-insert="## RECUPERO&#10;60 secondi tra i giri">+ Recupero</button></div><div class="txtBlockPicker"><label for="blockCount">Numero di blocchi</label><select id="blockCount"><option value="1">1 blocco — Serie e Ripetizioni / Tempo</option><option value="2">2 blocchi — Serie e Ripetizioni / Tempo per blocco</option><option value="3">3 blocchi — Serie e Ripetizioni / Tempo per blocco</option></select><p>Ogni blocco ha i propri valori. Se riduci i blocchi, i dati già inseriti nel testo restano conservati e tornano visibili selezionando nuovamente più blocchi.</p></div><div class="txtExerciseFields txtBlockFields"><div><label for="exerciseName">Esercizio</label><input id="exerciseName" placeholder="Es. Squat"></div><fieldset id="blockFields1" ><legend>Blocco 1</legend><div class="txtBlockInputs"><div><label for="blockSets1">Serie</label><input id="blockSets1" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode1">Modalità</label><select id="blockMode1" onchange="updateBlockWorkMode(1)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel1" for="blockReps1">Ripetizioni</label><input id="blockReps1" inputmode="text" value="15" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields2" hidden><legend>Blocco 2</legend><div class="txtBlockInputs"><div><label for="blockSets2">Serie</label><input id="blockSets2" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode2">Modalità</label><select id="blockMode2" onchange="updateBlockWorkMode(2)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel2" for="blockReps2">Ripetizioni</label><input id="blockReps2" inputmode="text" value="12" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields3" hidden><legend>Blocco 3</legend><div class="txtBlockInputs"><div><label for="blockSets3">Serie</label><input id="blockSets3" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode3">Modalità</label><select id="blockMode3" onchange="updateBlockWorkMode(3)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel3" for="blockReps3">Ripetizioni</label><input id="blockReps3" inputmode="text" value="10" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><button id="addExercise" class="primary addExerciseButton" type="button">Aggiungi esercizio con i blocchi</button></div><div class="txtImageTools"><label for="exercisePhoto">Immagine dell’esercizio</label><input id="exercisePhoto" type="file" accept="image/png,image/jpeg,image/webp"><button id="attachExercisePhoto" type="button">Associa al nome esercizio</button><p>Scrivi il nome nel campo Esercizio, scegli una foto PNG, JPG o WebP e associala. La foto resta incorporata nel TXT e compare anche in Visualizza TXT. Modificando il nome nella stessa riga, la foto viene conservata.</p><p id="txtImageCount" role="status"></p></div><label for="editor" class="field">Testo modificabile</label><textarea id="editor" spellcheck="true" placeholder="# TITOLO SCHEDA&#10;&#10;## RISCALDAMENTO&#10;Scrivi qui il programma…"></textarea><p class="help">Usa <b>#</b> per il titolo e <b>##</b> per le sezioni. Usa il selettore per scegliere 1, 2 o 3 blocchi e seleziona Ripetizioni oppure Tempo per ogni blocco. La durata si inserisce in secondi. Il testo conserva ogni esercizio come <b>Nome | Serie 1 | Rip. 1 | Serie 2 | Rip. 2…</b>. Non mettere righe vuote tra gli esercizi della stessa tabella.</p></section>
+<section id="replacePanel" class="card replacement-panel" hidden aria-label="Sostituzione esercizio">
+<label>Riga da modificare<select></select></label>
+<label>Cerca nella libreria<input type="search" placeholder="Nome, muscolo o attrezzo"></label>
+<p role="status" aria-live="polite"></p><div data-results class="replacement-results"></div>
+<div class="toolbar"><button type="button" class="primary" data-apply disabled>Sostituisci con immagine</button><button type="button" data-close>Chiudi</button></div>
+</section><div class="layout"><section class="card"><h2>Contenuto della scheda</h2><div class="formatTools"><button data-insert="# TITOLO SCHEDA">+ Titolo</button><button data-insert="## NUOVA SEZIONE">+ Sezione</button><button data-insert="## RECUPERO&#10;60 secondi tra i giri">+ Recupero</button></div><div class="txtBlockPicker"><label for="blockCount">Numero di blocchi</label><select id="blockCount"><option value="1">1 blocco — Serie e Ripetizioni / Tempo</option><option value="2">2 blocchi — Serie e Ripetizioni / Tempo per blocco</option><option value="3">3 blocchi — Serie e Ripetizioni / Tempo per blocco</option></select><p>Ogni blocco ha i propri valori. Se riduci i blocchi, i dati già inseriti nel testo restano conservati e tornano visibili selezionando nuovamente più blocchi.</p></div><div class="txtExerciseFields txtBlockFields"><div><label for="exerciseName">Esercizio</label><input id="exerciseName" placeholder="Es. Squat"></div><fieldset id="blockFields1" ><legend>Blocco 1</legend><div class="txtBlockInputs"><div><label for="blockSets1">Serie</label><input id="blockSets1" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode1">Modalità</label><select id="blockMode1" onchange="updateBlockWorkMode(1)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel1" for="blockReps1">Ripetizioni</label><input id="blockReps1" inputmode="text" value="15" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields2" hidden><legend>Blocco 2</legend><div class="txtBlockInputs"><div><label for="blockSets2">Serie</label><input id="blockSets2" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode2">Modalità</label><select id="blockMode2" onchange="updateBlockWorkMode(2)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel2" for="blockReps2">Ripetizioni</label><input id="blockReps2" inputmode="text" value="12" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields3" hidden><legend>Blocco 3</legend><div class="txtBlockInputs"><div><label for="blockSets3">Serie</label><input id="blockSets3" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode3">Modalità</label><select id="blockMode3" onchange="updateBlockWorkMode(3)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel3" for="blockReps3">Ripetizioni</label><input id="blockReps3" inputmode="text" value="10" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><button id="addExercise" class="primary addExerciseButton" type="button">Aggiungi esercizio con i blocchi</button></div><div class="txtImageTools"><label for="exercisePhoto">Immagine dell’esercizio</label><input id="exercisePhoto" type="file" accept="image/png,image/jpeg,image/webp"><button id="attachExercisePhoto" type="button">Associa al nome esercizio</button><p>Scrivi il nome nel campo Esercizio, scegli una foto PNG, JPG o WebP e associala. La foto resta incorporata nel TXT e compare anche in Visualizza TXT. Modificando il nome nella stessa riga, la foto viene conservata.</p><p id="txtImageCount" role="status"></p></div><label for="editor" class="field">Testo modificabile</label><textarea id="editor" spellcheck="true" placeholder="# TITOLO SCHEDA&#10;&#10;## RISCALDAMENTO&#10;Scrivi qui il programma…"></textarea><p class="help">Usa <b>#</b> per il titolo e <b>##</b> per le sezioni. Usa il selettore per scegliere 1, 2 o 3 blocchi e seleziona Ripetizioni oppure Tempo per ogni blocco. La durata si inserisce in secondi. Il testo conserva ogni esercizio come <b>Nome | Serie 1 | Rip. 1 | Serie 2 | Rip. 2…</b>. Non mettere righe vuote tra gli esercizi della stessa tabella.</p></section>
 <section class="card"><div class="previewHead"><h2>Anteprima monitor</h2><div><button id="smaller" aria-label="Riduci testo anteprima">A−</button> <button id="larger" aria-label="Ingrandisci testo anteprima">A+</button></div></div><article id="preview" class="preview" aria-label="Anteprima della scheda"></article></section></div>
 <div class="footerNote">Il comando Salva scarica un file .txt: scegli la cartella di destinazione nel browser. Per aggiornare una scheda già esistente, salva nuovamente il file. Il caricamento dei file resta sul dispositivo.</div>
 </main>
@@ -159,6 +164,244 @@ document.querySelectorAll('[data-insert]').forEach(button=>button.onclick=()=>in
 document.getElementById('smaller').onclick=()=>{previewSize=Math.max(14,previewSize-2);render();};document.getElementById('larger').onclick=()=>{previewSize=Math.min(40,previewSize+2);render();};
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();saveTxt();}});
 render();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
+const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
+let db,exerciseLibraryData=[];
+function firstVal(obj, keys, fallback=''){
+ for(const k of keys){ if(obj && obj[k]!==undefined && obj[k]!==null && String(obj[k]).trim()!=='') return obj[k]; }
+ return fallback;
+}
+async function loadExerciseLibrary(){
+ // NON assumiamo colonne come user_id/default_*: l'archivio dell'app può avere uno schema diverso.
+ // Leggiamo le righe reali e poi normalizziamo i possibili nomi dei campi.
+ let r=await db.from('exercise_library').select('*').limit(1000);
+ if(r.error){
+   exerciseLibraryData=[];
+   return r.error.message;
+ }
+ exerciseLibraryData=(r.data||[]).map(e=>({
+   ...e,
+   id:e.id,
+   name:firstVal(e,['name','exercise_name','title','nome']),
+   muscle_group:firstVal(e,['muscle_group','muscle','target_muscle','gruppo_muscolare']),
+   equipment:firstVal(e,['equipment','attrezzatura','tool']),
+   focus:firstVal(e,['focus','description','notes','note']),
+   image_url:firstVal(e,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']),
+   work_type:firstVal(e,['work_type','exercise_type','type','tipo']),
+   default_sets:firstVal(e,['default_sets','sets','serie','default_series']),
+   default_reps:firstVal(e,['default_reps','reps','ripetizioni','repetitions']),
+   default_duration_seconds:firstVal(e,['default_duration_seconds','duration_seconds','duration']),
+   default_rest_seconds:firstVal(e,['default_rest_seconds','rest_seconds','recovery_seconds','recupero'])
+ })).filter(e=>e.id && e.name);
+ exerciseLibraryData.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+ return null;
+}
+const APK_EXERCISE_ASSETS={
+ 'ab wheel rollout':'ab-wheel-rollout-ai.jpg','ab wheel':'ab-wheel-rollout-ai.jpg',
+ 'advanced tuck front lever':'advanced-tuck-front-lever-ai.jpg','front lever tuck':'advanced-tuck-front-lever-ai.jpg',
+ 'alternating dumbbell press':'alternating-dumbbell-press-ai.jpg',
+ 'ankle dorsiflexion':'ankle-dorsiflexion-ai-v2.jpg','arch hold':'arch-hold-ai-v2.jpg',
+ 'assault bike':'assault-bike-photo.jpg','assisted chin up':'assisted-chin-up-ai.jpg',
+ 'band hip abduction seated':'band-hip-abduction-seated-ai.jpg','band pulldown':'band-pulldown-ai.jpg',
+ 'banded ankle dorsiflexion':'banded-ankle-dorsiflexion-ai.jpg','barbell curl':'barbell-curl.jpg',
+ 'barbell squat':'barbell-squat-ai.jpg','barbell z press':'barbell-z-press-ai.jpg',
+ 'bench press':'bench-press-ai.jpg','panca piana':'bench-press-ai.jpg',
+ 'bulgarian split squat':'bulgarian-split-squat-ai.jpg','cable chest fly':'cable-chest-fly-ai.jpg',
+ 'cable kickback glute':'cable-kickback-glute-ai.jpg','dead bug':'dead-bug-photo.jpg',
+ 'dumbbell curl':'dumbbell-curl-photo.jpg','dumbbell pullover':'dumbbell-pullover-ai.jpg',
+ 'dumbbell shoulder press':'dumbbell-shoulder-press-ai.jpg','dumbbell step up':'dumbbell-step-up-ai.jpg',
+ 'farmer walk':'farmer-walk-photo.jpg','glute bridge':'glute-bridge-ai.jpg',
+ 'hack squat machine':'hack-squat-machine-ai.jpg','hammer curl':'hammer-curl-photo.jpg',
+ 'hip abductor machine':'hip-abductor-machine-ai.jpg','hip adductor machine':'hip-adductor-machine-ai.jpg',
+ 'hip thrust':'hip-thrust-ai.jpg','hyperextension 45 glute bias':'hyperextension-45-glute-bias-ai.jpg',
+ 'incline dumbbell press':'incline-dumbbell-press-ai.jpg','lat pulldown':'lat-pulldown-ai.jpg',
+ 'leg extension machine':'leg-extension-machine-ai.jpg','leg press':'leg-press.jpg',
+ 'mountain climber':'mountain-climber-photo.jpg','one arm dumbbell row':'one-arm-dumbbell-row-ai.jpg',
+ 'plank':'plank-photo.jpg','push up':'push-up-ai.jpg','romanian deadlift':'romanian-deadlift-ai.jpg',
+ 'russian twist':'russian-twist-photo.jpg','seated cable row':'seated-cable-row-ai.jpg',
+ 'seated leg curl':'seated-leg-curl-photo.jpg','shrug':'shrug-photo.jpg',
+ 'single cable rear delt':'single-cable-rear-delt-ai-v2.jpg','sled push':'sled-push-photo.jpg',
+ 'standing calf raise':'standing-calf-raise-ai.jpg','sumo squat':'sumo-squat-ai.jpg',
+ 'thruster':'thruster-photo.jpg','treadmill':'treadmill-photo.jpg','triceps pushdown':'triceps-pushdown-ai.jpg',
+ 'trx burpee':'trx-burpee-ai.jpg','trx hamstring curl':'trx-hamstring-curl-ai.jpg',
+ 'trx mountain climber':'trx-mountain-climber-ai.jpg','trx row':'trx-row-ai.jpg',
+ 'trx single leg squat':'trx-single-leg-squat-ai.jpg','trx squat':'trx-squat-ai.jpg',
+ 'trx triceps extension':'trx-triceps-extension-ai.jpg','trx y fly':'trx-y-fly-ai.jpg',
+ 'wall ball':'wall-ball-photo.jpg'
+};
+function normalizeExerciseKey(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function resolveExerciseImageUrl(v){
+ const raw=String(v||'').trim();
+ if(!raw)return '';
+ if(/^data:image\//i.test(raw)||/^https?:\/\//i.test(raw))return raw;
+ if(raw.startsWith('//'))return location.protocol+raw;
+ const clean=raw.replace(/^\.?\//,'');
+ if(clean.startsWith('storage/v1/object/public/'))return SUPABASE_URL+'/'+clean;
+ if(clean.startsWith('/storage/v1/object/public/'))return SUPABASE_URL+clean;
+ if(clean.startsWith('exercise-images/'))return SUPABASE_URL+'/storage/v1/object/public/'+clean;
+ // In exercise_library some records can contain only the object filename/path.
+ if(/\.(jpe?g|png|webp|gif)$/i.test(clean))return SUPABASE_URL+'/storage/v1/object/public/exercise-images/eventi/'+clean.split('/').map(encodeURIComponent).join('/');
+ return raw;
+}
+function getExerciseImageUrl(e){
+ if(!e)return '';
+ const direct=firstVal(e,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']);
+ const fromLib=e.exercise_library||{};
+ const lib=firstVal(fromLib,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']);
+ const candidate=resolveExerciseImageUrl(direct||lib);
+ if(candidate)return candidate;
+ const key=normalizeExerciseKey(e.name||e.exercise_name||e.title||'');
+ const asset=APK_EXERCISE_ASSETS[key];
+ if(asset)return 'https://classic-assets.eascdn.net/~assets/exercise-images-optimized/'+asset;
+ return '';
+}
+async function loadExerciseLibrary(){
+ // NON assumiamo colonne come user_id/default_*: l'archivio dell'app può avere uno schema diverso.
+ // Leggiamo le righe reali e poi normalizziamo i possibili nomi dei campi.
+ let r=await db.from('exercise_library').select('*').limit(1000);
+ if(r.error){
+   exerciseLibraryData=[];
+   return r.error.message;
+ }
+ exerciseLibraryData=(r.data||[]).map(e=>({
+   ...e,
+   id:e.id,
+   name:firstVal(e,['name','exercise_name','title','nome']),
+   muscle_group:firstVal(e,['muscle_group','muscle','target_muscle','gruppo_muscolare']),
+   equipment:firstVal(e,['equipment','attrezzatura','tool']),
+   focus:firstVal(e,['focus','description','notes','note']),
+   image_url:firstVal(e,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']),
+   work_type:firstVal(e,['work_type','exercise_type','type','tipo']),
+   default_sets:firstVal(e,['default_sets','sets','serie','default_series']),
+   default_reps:firstVal(e,['default_reps','reps','ripetizioni','repetitions']),
+   default_duration_seconds:firstVal(e,['default_duration_seconds','duration_seconds','duration']),
+   default_rest_seconds:firstVal(e,['default_rest_seconds','rest_seconds','recovery_seconds','recupero'])
+ })).filter(e=>e.id && e.name);
+ exerciseLibraryData.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+ return null;
+}
+function archiveLabel(e){
+ return [e.name,e.muscle_group,e.equipment].filter(Boolean).join(' · ')
+}
+async function embedSheetReplacement(data,replacement){
+ if(data.invalid)throw Error('I dati delle immagini della scheda non sono leggibili.');
+ const key=kleosTxtImageKey(replacement.name);
+ let raster=replacement.url;
+ if(!raster&&kleosTxtImageNode(data,replacement.name))return;
+ if(!raster)throw Error('Nessuna immagine associata a questo esercizio nella libreria.');
+ if(!kleosTxtRaster(raster)){
+  const response=await fetch(raster,{signal:AbortSignal.timeout(15000)});
+  if(!response.ok)throw Error('Impossibile scaricare la foto dalla libreria.');
+  const bitmap=await createImageBitmap(await response.blob());
+  try{
+   const scale=Math.min(1,480/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+   canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+   raster=canvas.toDataURL('image/webp',0.86);
+  }finally{bitmap.close();}
+ }
+ if(!kleosTxtRaster(raster))throw Error('Formato immagine non supportato.');
+ let asset=Object.keys(data.assets).find(id=>data.assets[id]===raster);
+ if(!asset){
+  let index=1;
+  while(Object.hasOwn(data.assets,'library-'+index))index++;
+  asset='library-'+index;
+  data.assets[asset]=raster;
+ }
+ const previous=Object.hasOwn(data.exercises,key)?data.exercises[key]?.asset:null;
+ Object.defineProperty(data.exercises,key,{value:{asset},enumerable:true,configurable:true,writable:true});
+ if(previous&&previous!==asset&&!Object.values(data.exercises).some(item=>item?.asset===previous))delete data.assets[previous];
+
+}
+function editableSheetRow(line){
+ if(/^\s*(?:#|@)/.test(line))return null;
+ const table=line.match(/^(\s*\|?\s*)([^|]+?)(\s*\|.*)$/);
+ if(table){
+  const cells=line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(cell=>cell.trim());
+  if([3,5,7].includes(cells.length)&&cells[0]&&/^\d+$/.test(cells[1])&&Number(cells[1])>0)return table;
+ }
+ return line.match(/^(\s*)([^:]+?)(\s*:\s*[1-9]\d*\s*seri[ea]\s*[x×]\s*.+)$/i);
+}
+function installSheetReplacement(){
+ const panel=document.getElementById('replacePanel'),open=document.getElementById('replaceExercise');
+ const row=panel.querySelector('select'),search=panel.querySelector('input'),list=panel.querySelector('[data-results]');
+ const notice=panel.querySelector('[role="status"]'),apply=panel.querySelector('[data-apply]');
+ let snapshot,request,chosen,loading;
+ function renderResults(){
+  const query=normalizeExerciseKey(search.value);
+  const matches=exerciseLibraryData.filter(item=>normalizeExerciseKey(archiveLabel(item)).includes(query));
+  list.replaceChildren();
+  for(const exercise of matches.slice(0,60)){
+   const url=getExerciseImageUrl(exercise),button=document.createElement('button');
+   button.type='button';button.className='replacement-result';
+   const label=document.createElement('span');label.textContent=archiveLabel(exercise);
+   if(/^(https?:\/\/|data:image\/)/i.test(url)){
+    const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';
+    img.onerror=()=>img.remove();button.append(img);
+   }
+   button.append(label);
+   button.onclick=()=>{
+    chosen={name:String(exercise.name).trim(),url};
+    notice.textContent='Selezionato: '+chosen.name;
+    apply.disabled=false;
+   };
+   list.append(button);
+  }
+  notice.textContent=matches.length>60?'Primi 60 risultati. Affina la ricerca.':matches.length?'Scegli il nuovo esercizio.':'Nessun esercizio trovato.';
+ }
+ open.onclick=async()=>{
+  snapshot=editor.value;request=readRequest;chosen=null;apply.disabled=true;
+  row.replaceChildren();list.replaceChildren();search.value='';
+  snapshot.split('\n').forEach((line,i)=>{
+   const entry=editableSheetRow(line);
+   if(entry)row.add(new Option(entry[2].trim()+' · riga '+(i+1),String(i)));
+  });
+  if(!row.options.length){panel.hidden=true;message('Apri una scheda con almeno un esercizio riconoscibile, ad esempio «Squat | 3 | 10».',true);return;}
+  panel.hidden=false;row.focus();
+  notice.textContent='Caricamento libreria…';
+  try{
+   if(!window.supabase)throw Error('Connessione alla libreria non disponibile.');
+   db??=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+   if(!exerciseLibraryData.length){
+    loading??=loadExerciseLibrary().finally(()=>{loading=null;});
+    const error=await loading;
+    if(error)throw Error(error);
+   }
+   if(!panel.hidden)renderResults();
+  }catch(error){notice.textContent='Libreria non disponibile. Accedi a Kleos sullo stesso sito e riprova. '+error.message;}
+ };
+ search.oninput=()=>{chosen=null;apply.disabled=true;renderResults();};
+ panel.querySelector('[data-close]').onclick=()=>{panel.hidden=true;chosen=null;open.focus();};
+ apply.onclick=async()=>{
+  if(!chosen||apply.disabled)return;
+  if(editor.value!==snapshot||readRequest!==request){notice.textContent='La scheda è cambiata. Premi di nuovo «Modifica esercizio».';return;}
+  const previousText=snapshot,previousRequest=request,previousData=txtImageData,selection=chosen;
+  const lines=previousText.split('\n'),i=Number(row.value),entry=editableSheetRow(lines[i]);
+  if(!entry||!selection.name||/[|\r\n]/.test(selection.name)||(entry[3].trimStart().startsWith(':')&&selection.name.includes(':'))){
+   notice.textContent='Nome incompatibile con il formato della riga.';return;
+  }
+  apply.disabled=true;notice.textContent='Caricamento immagine…';
+  try{
+   const next=JSON.parse(JSON.stringify(previousData));
+   await embedSheetReplacement(next,selection);
+   if(panel.hidden||selection!==chosen)return;
+   if(editor.value!==previousText||readRequest!==previousRequest||txtImageData!==previousData)throw Error('La scheda è cambiata. Apri di nuovo «Modifica esercizio».');
+   lines[i]=entry[1]+selection.name+entry[3];
+   const updated=lines.join('\n');
+   if(new Blob([updated,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La scheda supererebbe il limite di 10 MB.');
+   txtImageData=next;editor.value=updated;panel.hidden=true;edited();
+   message('Esercizio sostituito con '+selection.name+'. Premi «Salva scheda TXT».');
+   open.focus();
+  }catch(error){notice.textContent=error.message;}
+  finally{apply.disabled=!chosen;}
+ };
+}
+installSheetReplacement();
 </script>
 </body></html>
 

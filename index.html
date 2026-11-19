@@ -6141,8 +6141,35 @@ let kleosAdminTxtState={name:'',text:'',size:0,fontSize:16,request:0};
 function openAdminTxtViewer(){
  if(!isSuperuserRole())return;
  const content=document.getElementById('content');if(!content)return;
- content.innerHTML=`<div class="top adminTxtHeading"><div><div class="title">Visualizzatore file TXT</div><div class="sub">Apri un file di testo: il contenuto si adatta alla larghezza della pagina.</div></div><button type="button" class="btn secondary" onclick="show('superuser')">← Pannello amministrazione</button></div><section class="card adminTxtCard"><div class="adminTxtToolbar"><label class="btn" for="adminTxtFile">Apri file TXT</label><input id="adminTxtFile" type="file" accept=".txt,text/plain" style="width:auto;max-width:100%" onchange="loadAdminTxtFile(this)"><button type="button" class="btn secondary" onclick="resizeAdminTxt(-1)" aria-label="Riduci dimensione testo">A−</button><button type="button" class="btn secondary" onclick="resizeAdminTxt(1)" aria-label="Aumenta dimensione testo">A+</button><button id="adminTxtDownload" type="button" class="btn" onclick="downloadAdminTxt()" disabled>Scarica TXT aggiornato</button></div><div id="adminTxtEditor"></div><p id="adminTxtStatus" role="status" aria-live="polite" class="muted"></p><div id="adminTxtMeta" class="muted adminTxtMeta"></div><pre id="adminTxtDocument" class="adminTxtDocument" tabindex="0" aria-label="Contenuto del file di testo"></pre></section>`;
+ content.innerHTML=`<div class="top adminTxtHeading"><div><div class="title">Visualizzatore file TXT</div><div class="sub">Apri un file di testo: il contenuto si adatta alla larghezza della pagina.</div></div><button type="button" class="btn secondary" onclick="show('superuser')">← Pannello amministrazione</button></div><section class="card adminTxtCard"><div class="adminTxtToolbar"><label class="btn" for="adminTxtFile">Apri file TXT</label><input id="adminTxtFile" type="file" accept=".txt,text/plain" style="width:auto;max-width:100%" onchange="loadAdminTxtFile(this)"><button type="button" class="btn secondary" onclick="resizeAdminTxt(-1)" aria-label="Riduci dimensione testo">A−</button><button type="button" class="btn secondary" onclick="resizeAdminTxt(1)" aria-label="Aumenta dimensione testo">A+</button><button type="button" class="btn" onclick="pickAdminTxtExercise()">Modifica esercizio</button><button id="adminTxtDownload" type="button" class="btn" onclick="downloadAdminTxt()" disabled>Scarica TXT aggiornato</button></div><div id="adminTxtEditor"></div><p id="adminTxtStatus" role="status" aria-live="polite" class="muted"></p><div id="adminTxtMeta" class="muted adminTxtMeta"></div><pre id="adminTxtDocument" class="adminTxtDocument" tabindex="0" aria-label="Contenuto del file di testo"></pre></section>`;
  renderAdminTxtDocument();
+}
+function pickAdminTxtExercise(){
+ if(!isSuperuserRole())return;
+ const status=document.getElementById('adminTxtStatus');
+ if(!kleosAdminTxtState.name){status.textContent='Prima apri una scheda con «Apri file TXT».';return;}
+ const rows=[...document.querySelectorAll('#adminTxtDocument [data-admin-txt-line]')];
+ if(!rows.length){
+  status.textContent='Nessun esercizio riconosciuto. Esempi di riga supportata: «Squat | 3 | 10» oppure «Squat: 3 serie x 10».';
+  return;
+ }
+ if(rows.length===1){rows[0].click();return;}
+ const form=document.createElement('form');
+ form.className='inputrow';
+ form.innerHTML='<label>Scegli l’esercizio da modificare<select name="exerciseRow" required><option value="">Seleziona un esercizio</option></select></label><button type="submit" class="btn">Apri modifica</button>';
+ const select=form.elements.exerciseRow;
+ for(const row of rows){
+  const option=document.createElement('option');
+  option.value=row.dataset.adminTxtLine;
+  option.textContent=row.dataset.adminTxtName+' · riga '+(Number(option.value)+1);
+  select.append(option);
+ }
+ form.onsubmit=event=>{
+  event.preventDefault();
+  rows.find(row=>row.dataset.adminTxtLine===select.value)?.click();
+ };
+ document.getElementById('adminTxtEditor').replaceChildren(form);
+ select.focus();
 }
 function kleosDecodeTxt(buffer){
  const bytes=new Uint8Array(buffer);
@@ -6157,7 +6184,7 @@ function renderAdminTxtDocument(){
  document.getElementById('adminTxtDownload').disabled=!kleosAdminTxtState.edited;
  kleosFormatTxtView(documentBox,kleosAdminTxtState.text||'',editAdminTxtExercise);documentBox.style.fontSize=kleosAdminTxtState.fontSize+'px';
  if(meta)meta.textContent=kleosAdminTxtState.name?kleosAdminTxtState.name+' · '+(kleosAdminTxtState.size/1024).toFixed(1)+' KB':'';
- if(status)status.textContent=kleosAdminTxtState.edited?'Modifiche applicate. Scarica il TXT aggiornato.':kleosAdminTxtState.name?(kleosAdminTxtState.text?'File aperto.':'Il file è vuoto.'):'Seleziona un file .txt dal dispositivo (massimo 10 MB).';
+ if(status)status.textContent=kleosAdminTxtState.edited?'Modifiche applicate. Scarica il TXT aggiornato.':kleosAdminTxtState.name?(kleosAdminTxtState.text?'File aperto. Premi «Modifica esercizio» per scegliere la riga.':'Il file è vuoto.'):'Seleziona un file .txt dal dispositivo (massimo 10 MB).';
 }
 async function loadAdminTxtFile(input){
  if(!isSuperuserRole())return;const file=input.files?.[0];if(!file)return;
@@ -6408,7 +6435,7 @@ function kleosFormatTxtView(container,text,onEdit){
     ensureTable();const row=document.createElement('tr');row.append(kleosTxtExerciseCell(imageData,values[0]));
     if(onEdit){
      const button=cell('button','Modifica');button.type='button';button.className='btn secondary mini';
-     button.dataset.adminTxtLine=lineIndex;button.setAttribute('aria-label','Modifica '+values[0]);
+     button.dataset.adminTxtLine=lineIndex;button.dataset.adminTxtName=values[0];button.setAttribute('aria-label','Modifica '+values[0]);
      button.onclick=()=>onEdit(lineIndex,values,Math.max(blocks,(values.length-1)/2),button);
      row.firstElementChild.append(document.createElement('br'),button);
     }

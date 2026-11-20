@@ -874,25 +874,47 @@ footer{gap:7px!important;padding:10px 18px!important;min-height:0!important;back
 main{padding:16px 22px!important;gap:16px!important}.stage{border-color:#a6ff0060;border-radius:18px;box-shadow:var(--tech-glow)}.stage .timer{background:#a6ff00;color:#102000!important;border-radius:14px;padding:12px;font-size:clamp(80px,12vw,200px);line-height:1}.stage .exercise{font-size:clamp(30px,4vw,64px);line-height:1.08}.stage .note{font-size:16px}.side .box{border-radius:12px;border-color:#a6ff0030}
 @media(max-width:900px){.screen{grid-template-rows:68px minmax(0,1fr) auto!important}.screen>header{padding:8px 12px!important;gap:10px!important}.brand{font-size:12px!important}.techBrandLogo{width:26px;height:26px}.monitorTxtPane{margin:8px!important;padding:9px!important}.techHero{grid-template-columns:76px minmax(0,1fr) 150px;gap:10px;padding:10px;min-height:110px}.techHeroImage{width:76px;height:76px}.techHeroTitle{font-size:20px}.techTimerValue{font-size:49px}.techHeroMeta{font-size:10px}.techStats{font-size:10px;gap:8px}.techProgress{min-width:60px}footer{padding:7px!important;gap:5px!important}footer button,footer select{font-size:10px!important;min-height:34px!important;padding:6px 8px!important}}
 @media(max-width:600px){.screen{grid-template-rows:58px minmax(0,1fr) auto!important}.screen>header{grid-template-columns:minmax(0,1fr) auto!important}.screen>header>div:nth-child(2){display:none}.brand{font-size:12px!important}.clock{font-size:25px!important}.monitorTxtPane{margin:5px!important;padding:7px!important}.monitorTxtTools label{display:none}.monitorTxtName{display:none}.techHero{grid-template-columns:55px minmax(0,1fr) 105px;padding:8px;gap:8px;min-height:95px}.techHeroImage{width:55px;height:64px}.techHeroTitle{font-size:16px}.techKicker{font-size:8px;margin-bottom:4px;letter-spacing:.08em}.techTimer{padding:9px 4px}.techTimerValue{font-size:35px}.techTimerLabel{font-size:8px}.techHeroMeta{font-size:9px;margin-top:4px}.techStats{margin-top:7px;font-size:8px;gap:6px}.techProgress{display:none}#monitorTxtText .kleosTxtTable td{font-size:calc(11px * var(--sheet-zoom))!important;padding:4px!important}#monitorTxtText .kleosTxtTable th{font-size:9px!important}#monitorTxtText .kleosTxtExerciseThumb{width:calc(27px * var(--sheet-zoom))!important;height:calc(27px * var(--sheet-zoom))!important;flex-basis:calc(27px * var(--sheet-zoom))!important}#monitorTxtText .kleosTxtExerciseIdentity{flex-wrap:nowrap!important}footer{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px!important}footer select{max-width:100%;width:100%;grid-column:span 2}footer button{font-size:8px!important;padding:6px 3px!important;min-height:31px!important}footer button[onclick="startTimer()"]{min-width:0!important}.screen>main{grid-template-columns:1fr!important;padding:8px!important}.screen>main .side{display:none}}
-</style><script>function techSeconds(value){
- const text=String(value||'').trim();let m=text.match(/^(\d+):(\d{2})(?::(\d{2}))?/);
- if(m)return m[3]?Number(m[1])*3600+Number(m[2])*60+Number(m[3]):Number(m[1])*60+Number(m[2]);
- m=text.match(/^(\d+(?:[.,]\d+)?)\s*(min(?:uti)?\b|s(?:ec(?:ondi)?)?\b|[″"']{1,2}|′)/i);
- return m?Math.round(Number(m[1].replace(',','.'))*(/min|′/.test(m[2])?60:1)):0;
+</style><script>function techDuration(value){
+ const text=String(value??'').trim();
+ const clock=text.match(/^(\d+):([0-5]\d)(?::([0-5]\d))?(?![:\d])/);
+ if(clock)return clock[3]===undefined?Number(clock[1])*60+Number(clock[2]):Number(clock[1])*3600+Number(clock[2])*60+Number(clock[3]);
+ const amount=text.match(/^(\d+(?:[.,]\d+)?)\s*(min(?:ut[io])?\b|sec(?:ond[io])?\b|s\b|[″"]|′|''?)/i);
+ if(!amount)return null;
+ const minutes=/^min|^′$|^'$/.test(amount[2].toLowerCase());
+ return Math.round(Number(amount[1].replace(',','.'))*(minutes?60:1));
+}
+function techRecovery(value){
+ const raw=String(value).trim().replace(/^[:=–-]\s*/,'');
+ return techDuration(raw)??(/^\d+(?:\s|$)/.test(raw)?Number(raw.match(/^\d+/)[0]):null);
 }
 function parseKleosWorkout(text){
- const plain=String(text).replace(/^@kleos-immagini:.*$/gim,'');
+ const lines=String(text).split(/\r\n|\r|\n/).filter(line=>!/^@kleos-immagini:/i.test(line));
+ const plain=lines.join('\n');
  const title=(plain.match(/^#\s+(.+)$/m)||[])[1]||'Scheda TXT';
- const restMatch=plain.match(/recupero\s*[:=]?\s*(\d+)\s*(?:[″"']|s\b)/i);
- const defaultRest=restMatch?Number(restMatch[1]):0;
+ let defaultRest=0,roundRest=0;
+ for(const [i,line] of lines.entries()){
+  const match=line.match(/^\s*(?:#{1,6}\s+)?recupero\b\s*(.*)$/i);
+  if(!match||line.includes('|'))continue;
+  let description=match[1].trim();
+  if(!description||/^[:=–-]$/.test(description)||/^tra\s+(?:i\s+)?giri$/i.test(description)){
+   const following=lines.slice(i+1).find(next=>next.trim())||'';
+   description=(description+' '+following).trim();
+  }
+  const betweenRounds=/\btra\s+(?:[iI]\s+)?giri\b/i.test(description);
+  const seconds=techRecovery(description.replace(/\btra\s+(?:i\s+)?(?:giri|esercizi)\b|\btra\s+(?:le\s+)?serie\b/i,''));
+  if(seconds===null)continue;
+  if(betweenRounds)roundRest=seconds;else defaultRest=seconds;
+ }
  const blocks=Number((plain.match(/^@blocchi:\s*([123])/im)||[])[1]||1),rows=[];
- for(const line of plain.split(/\r?\n/)){
+ for(const line of lines){
   const c=line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
   if(![3,5,7].includes(c.length)||!c[0]||!/^\d+$/.test(c[1])||Number(c[1])<1)continue;
   const work=[];
   for(let b=0;b<blocks;b++){
-   const sets=Number(c[1+b*2]||0),label=c[2+b*2]||'',seconds=techSeconds(label);
-   let rest=defaultRest;const rm=label.match(/(?:\+|\/)\s*(\d+)\s*(?:[″"']|s\b).*rec/i);if(rm)rest=Number(rm[1]);
+   const sets=Number(c[1+b*2]||0),label=c[2+b*2]||'',seconds=techDuration(label)??0;
+   const inline=label.match(/\brec(?:upero)?\.?\s*[:=]?\s*(\d.*)$/i);
+   const trailing=label.match(/(?:\+|\/)\s*(\d.*?)\s+rec(?:upero)?\.?\s*$/i);
+   const rest=techRecovery(inline?.[1]??trailing?.[1]??'')??defaultRest;
    if(sets>0)work.push({block:b,sets:Math.min(999,sets),seconds,rest,label});
   }
   rows.push({name:c[0],index:rows.length,work});
@@ -902,8 +924,15 @@ function parseKleosWorkout(text){
   const rounds=Math.max(0,...rows.map(r=>r.work.find(w=>w.block===b)?.sets||0));
   for(let r=1;r<=rounds;r++)for(const row of rows){const w=row.work.find(w=>w.block===b);if(w&&r<=w.sets)steps.push({...w,name:row.name,row:row.index,round:r,rounds,kind:'work'});}
  }
- const timeline=[];steps.forEach((s,i)=>{timeline.push(s);if(i<steps.length-1&&s.rest>0)timeline.push({...s,kind:'rest',seconds:s.rest});});
- return {title,rows,steps:timeline,total:timeline.reduce((t,s)=>t+s.seconds,0)};
+ const timeline=[];
+ for(const [i,step] of steps.entries()){
+  timeline.push(step);
+  const next=steps[i+1];
+  if(!next)continue;
+  if(step.rest>0)timeline.push({...step,kind:'rest',seconds:step.rest});
+  if(roundRest>0&&next.block===step.block&&next.round>step.round)timeline.push({...step,kind:'rest',roundRest:true,seconds:roundRest});
+ }
+ return {title,rows,steps:timeline,total:timeline.reduce((total,step)=>total+step.seconds,0)};
 }
 // UI integration: existing circuit handlers remain available outside TXT mode.
 const techState={plan:null,index:0,remaining:0,running:false,done:false,deadline:0,interval:null,images:null,lastRow:-1};
@@ -919,7 +948,7 @@ function techSay(text){if(typeof speak==='function')speak(text);}
 function techPaint(){
  const t=techState,p=t.plan,s=p?.steps[t.index];if(!p)return;
  const put=(id,v)=>{document.getElementById(id).textContent=v;};
- put('techName',t.done?'Allenamento completato':s?.kind==='rest'?'Recupero':s?.name||'Nessun esercizio');
+ put('techName',t.done?'Allenamento completato':s?.kind==='rest'?(s.roundRest?'Recupero tra giri':'Recupero'):s?.name||'Nessun esercizio');
  put('techPhase',t.done?'COMPLETATO':s?.kind==='rest'?'RECUPERO':`ESERCIZIO ${(s?.row||0)+1} / ${p.rows.length}`);
  put('techMeta',t.done?'':s?.kind==='rest'?'Prossimo: '+(p.steps[t.index+1]?.name||'Fine'):s?.seconds?`Lavoro ${s.seconds}″ · Recupero ${s.rest}″`:'Ripetizioni: '+s?.label+' · Premi AVANTI al termine');
  put('techTimer',t.done?'✓':s?.seconds?techTime(t.remaining):s?.label||'00:00');

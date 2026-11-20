@@ -24,10 +24,25 @@ function kleosTxtImageData(text){
  catch{return {version:1,assets:{},exercises:{},invalid:true};}
 }
 function kleosTxtRaster(src){return typeof src==='string'&&src.length<=10*1024*1024&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);}
+function kleosTxtPhotoLink(value){
+ try{
+  const url=new URL(value);
+  return url.protocol==='https:'&&!url.username&&!url.password?url.href:'';
+ }catch{return '';}
+}
 function kleosTxtImageNode(data,name){
  const key=kleosTxtImageKey(name);if(!Object.prototype.hasOwnProperty.call(data.exercises,key))return null;
  const item=data.exercises[key];if(!item||!Object.prototype.hasOwnProperty.call(data.assets,item.asset))return null;
- const src=data.assets[item.asset];if(!kleosTxtRaster(src))return null;
+ const src=data.assets[item.asset];
+ if(!kleosTxtRaster(src)){
+  const url=kleosTxtPhotoLink(src);
+  if(!url)return null;
+  const image=document.createElement('img');
+  image.className='kleosTxtExerciseThumb';image.alt=name;image.loading='lazy';
+  image.referrerPolicy='no-referrer';image.style.objectFit='contain';
+  image.onerror=()=>image.remove();image.src=url;
+  return image;
+ }
  const cols=item.cols??1,rows=item.rows??1,x=item.x??0,y=item.y??0;
  if(![cols,rows,x,y].every(Number.isInteger)||cols<1||rows<1||cols>16||rows>16||x<0||y<0||x>=cols||y>=rows)return null;
  const node=document.createElement('span');node.className='kleosTxtExerciseThumb';node.setAttribute('role','img');node.setAttribute('aria-label',name);node.title=name;
@@ -319,14 +334,15 @@ async function loadExerciseLibrary(){
 function archiveLabel(e){
  return [e.name,e.muscle_group,e.equipment].filter(Boolean).join(' · ')
 }
-async function embedSheetReplacement(data,replacement){
+async function embedSheetReplacement(data,replacement,{allowLink=false}={}){
  if(data.invalid)throw Error('I dati delle immagini della scheda non sono leggibili.');
  const key=kleosTxtImageKey(replacement.name);
  let raster=replacement.url;
  if(!raster&&kleosTxtImageNode(data,replacement.name))return;
  if(!raster)throw Error('Nessuna immagine associata a questo esercizio nella libreria.');
  if(!kleosTxtRaster(raster)){
-  const response=await fetch(raster,{signal:AbortSignal.timeout(15000)});
+  try{
+   const response=await fetch(raster,{signal:AbortSignal.timeout(8000),referrerPolicy:'no-referrer'});
   if(!response.ok)throw Error('Impossibile scaricare la foto dalla libreria.');
   const bitmap=await createImageBitmap(await response.blob());
   try{
@@ -336,9 +352,20 @@ async function embedSheetReplacement(data,replacement){
    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
    canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
    raster=canvas.toDataURL('image/webp',0.86);
-  }finally{bitmap.close();}
+   }finally{bitmap.close();}
+  }catch(error){
+   const url=allowLink&&kleosTxtPhotoLink(replacement.url);
+   if(!url)throw error;
+   const image=document.createElement('img');
+   image.referrerPolicy='no-referrer';image.src=url;
+   let timer;
+   try{
+    await Promise.race([image.decode(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Foto non raggiungibile.')),8000);})]);
+    raster=url;
+   }finally{clearTimeout(timer);}
+  }
  }
- if(!kleosTxtRaster(raster))throw Error('Formato immagine non supportato.');
+ if(!kleosTxtRaster(raster)&&!(allowLink&&kleosTxtPhotoLink(raster)))throw Error('Formato immagine non supportato.');
  let asset=Object.keys(data.assets).find(id=>data.assets[id]===raster);
  if(!asset){
   let index=1;
@@ -452,21 +479,32 @@ function installSheetReplacement(){
   if(mode==='edit'&&(editor.value!==previousText||readRequest!==previousRequest)){
    notice.textContent='La scheda è cambiata. Apri di nuovo «Modifica esercizio».';return;
   }
-  const file=photo.files[0],url=onlyImage?chosen?.url:chosen?.name===name?chosen.url:'';
+  const file=photo.files[0];
+  const sameName=exercise=>kleosTxtImageKey(exercise.name)===kleosTxtImageKey(name);
+  const fromLibrary=chosen&&(onlyImage||sameName(chosen))?chosen:null;
+  const known=onlyImage?null:exerciseLibraryData.find(sameName);
+  const url=fromLibrary?.url||(onlyImage?'':getExerciseImageUrl(known||{name}));
+  if(!onlyImage&&fromLibrary&&!url&&!file&&!kleosTxtImageNode(previousData,name)){
+   notice.textContent='Questo esercizio non ha una foto nella libreria. Scegli una foto dal dispositivo o modifica il nome a mano.';return;
+  }
   if(onlyImage&&!file&&!url){notice.textContent='Scegli una foto dal dispositivo o un’immagine dalla libreria.';return;}
   apply.disabled=true;imageOnly.disabled=true;
   try{
    const image=file?await sheetLocalPhoto(file):url;
    if(current!==version)return;
    const next=JSON.parse(JSON.stringify(previousData));
-   if(image){notice.textContent='Caricamento immagine…';await embedSheetReplacement(next,{name,url:image});}
+   if(image){notice.textContent='Caricamento immagine…';await embedSheetReplacement(next,{name,url:image},{allowLink:!file});}
+   const imageKey=kleosTxtImageKey(name);
+   const stored=next.assets[next.exercises[imageKey]?.asset];
+   const linked=Boolean(kleosTxtPhotoLink(stored));
    if(current!==version)return;
    if(editor.value!==previousText||readRequest!==previousRequest||txtImageData!==previousData)throw Error('La scheda è cambiata. Apri di nuovo «Modifica esercizio».');
    if(!onlyImage)lines[i]=entry[1]+name+entry[3];
    const updated=lines.join('\n');
    if(new Blob([updated,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La scheda supererebbe il limite di 10 MB.');
    txtImageData=next;editor.value=updated;panel.hidden=true;edited();
-   message(onlyImage?'Immagine aggiornata. Premi «Salva scheda TXT».':'Esercizio sostituito con '+name+'. Premi «Salva scheda TXT».');
+   const result=onlyImage?'Immagine aggiornata.':'Esercizio sostituito con '+name+(stored?' e relativa immagine.':'.');
+   message(result+(linked?' La foto viene caricata online.':'')+' Premi «Salva scheda TXT».');
    open.focus();
   }catch(error){notice.textContent='Modifica non applicata. '+error.message+' Puoi scegliere una foto dal dispositivo.';}
   finally{if(current===version){apply.disabled=false;imageOnly.disabled=false;}}

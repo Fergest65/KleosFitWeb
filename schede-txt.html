@@ -73,7 +73,7 @@ function kleosFormatTxtView(container,text){
 }
 
 </script>
-<style>.replacement-panel{margin:1rem 0}.replacement-panel [hidden]{display:none}.replacement-panel [data-library-list]{min-height:8rem}.replacement-panel label{display:block;margin:.5rem 0}.replacement-panel select,.replacement-panel input{display:block;width:100%;max-width:32rem;padding:.65rem;background:#090d0e;color:inherit;border:1px solid var(--line);border-radius:.5rem}.replacement-results{max-height:16rem;overflow:auto;display:grid;gap:.35rem}.replacement-result{display:flex;align-items:center;gap:.65rem;text-align:left}.replacement-result img{width:3rem;height:3rem;object-fit:contain}</style></head>
+<style>.replacement-panel{margin:1rem 0}.replacement-panel [hidden]{display:none}.replacement-panel [data-library-list]{min-height:8rem}.replacement-panel label{display:block;margin:.5rem 0}.replacement-panel select,.replacement-panel input{display:block;width:100%;max-width:32rem;padding:.65rem;background:#090d0e;color:inherit;border:1px solid var(--line);border-radius:.5rem}.replacement-results{max-height:16rem;overflow:auto;display:grid;gap:.35rem}.replacement-result{display:flex;align-items:center;gap:.65rem;text-align:left}#inlineExerciseList[hidden]{display:none}#inlineExerciseList{margin-top:.4rem}#inlineExercisePreview img{width:4rem;height:4rem;object-fit:contain;margin-top:.4rem}.replacement-result img{width:3rem;height:3rem;object-fit:contain}</style></head>
 <body>
 <header><div class="brand">KLEOS FITCOACH PRO</div><a class="btn" href="monitor-circuito.html">Apri monitor</a></header>
 <main class="page">
@@ -86,7 +86,7 @@ function kleosFormatTxtView(container,text){
 <label>Cerca nella libreria<input type="search" placeholder="Nome, muscolo o attrezzo"></label><label>Elenco esercizi<select data-library-list size="6" aria-label="Elenco esercizi"></select></label><label>Nome esercizio (anche manuale)<input data-manual type="text"></label><label>Foto dal dispositivo (PNG, JPG o WebP)<input data-photo type="file" accept="image/png,image/jpeg,image/webp"></label>
 <p role="status" aria-live="polite"></p><div data-results class="replacement-results"></div>
 <div class="toolbar"><button type="button" class="primary" data-apply disabled>Applica sostituzione</button><button type="button" data-image-only>Cambia solo immagine</button><button type="button" data-close>Chiudi</button></div>
-</section><div class="layout"><section class="card"><h2>Contenuto della scheda</h2><div class="formatTools"><button data-insert="# TITOLO SCHEDA">+ Titolo</button><button data-insert="## NUOVA SEZIONE">+ Sezione</button><button data-insert="## RECUPERO&#10;60 secondi tra i giri">+ Recupero</button></div><div class="txtBlockPicker"><label for="blockCount">Numero di blocchi</label><select id="blockCount"><option value="1">1 blocco — Serie e Ripetizioni / Tempo</option><option value="2">2 blocchi — Serie e Ripetizioni / Tempo per blocco</option><option value="3">3 blocchi — Serie e Ripetizioni / Tempo per blocco</option></select><p>Ogni blocco ha i propri valori. Se riduci i blocchi, i dati già inseriti nel testo restano conservati e tornano visibili selezionando nuovamente più blocchi.</p></div><div class="txtExerciseFields txtBlockFields"><div><label for="exerciseName">Esercizio</label><input id="exerciseName" placeholder="Es. Squat"><button id="chooseNewExercise" type="button">Scegli esercizio dalla libreria</button><small id="newExercisePhoto" aria-live="polite"></small></div><fieldset id="blockFields1" ><legend>Blocco 1</legend><div class="txtBlockInputs"><div><label for="blockSets1">Serie</label><input id="blockSets1" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode1">Modalità</label><select id="blockMode1" onchange="updateBlockWorkMode(1)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel1" for="blockReps1">Ripetizioni</label><input id="blockReps1" inputmode="text" value="15" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields2" hidden><legend>Blocco 2</legend><div class="txtBlockInputs"><div><label for="blockSets2">Serie</label><input id="blockSets2" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode2">Modalità</label><select id="blockMode2" onchange="updateBlockWorkMode(2)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel2" for="blockReps2">Ripetizioni</label><input id="blockReps2" inputmode="text" value="12" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields3" hidden><legend>Blocco 3</legend><div class="txtBlockInputs"><div><label for="blockSets3">Serie</label><input id="blockSets3" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode3">Modalità</label><select id="blockMode3" onchange="updateBlockWorkMode(3)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel3" for="blockReps3">Ripetizioni</label><input id="blockReps3" inputmode="text" value="10" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><button id="addExercise" class="primary addExerciseButton" type="button">Aggiungi esercizio con i blocchi</button></div><div class="txtImageTools"><label for="exercisePhoto">Immagine dell’esercizio</label><input id="exercisePhoto" type="file" accept="image/png,image/jpeg,image/webp"><button id="attachExercisePhoto" type="button">Associa al nome esercizio</button><p>Scrivi il nome nel campo Esercizio, scegli una foto PNG, JPG o WebP e associala. La foto resta incorporata nel TXT e compare anche in Visualizza TXT. Modificando il nome nella stessa riga, la foto viene conservata.</p><p id="txtImageCount" role="status"></p></div><label for="editor" class="field">Testo modificabile</label><textarea id="editor" spellcheck="true" placeholder="# TITOLO SCHEDA&#10;&#10;## RISCALDAMENTO&#10;Scrivi qui il programma…"></textarea><p class="help">Usa <b>#</b> per il titolo e <b>##</b> per le sezioni. Usa il selettore per scegliere 1, 2 o 3 blocchi e seleziona Ripetizioni oppure Tempo per ogni blocco. La durata si inserisce in secondi. Il testo conserva ogni esercizio come <b>Nome | Serie 1 | Rip. 1 | Serie 2 | Rip. 2…</b>. Non mettere righe vuote tra gli esercizi della stessa tabella.</p></section>
+</section><div class="layout"><section class="card"><h2>Contenuto della scheda</h2><div class="formatTools"><button data-insert="# TITOLO SCHEDA">+ Titolo</button><button data-insert="## NUOVA SEZIONE">+ Sezione</button><button data-insert="## RECUPERO&#10;60 secondi tra i giri">+ Recupero</button></div><div class="txtBlockPicker"><label for="blockCount">Numero di blocchi</label><select id="blockCount"><option value="1">1 blocco — Serie e Ripetizioni / Tempo</option><option value="2">2 blocchi — Serie e Ripetizioni / Tempo per blocco</option><option value="3">3 blocchi — Serie e Ripetizioni / Tempo per blocco</option></select><p>Ogni blocco ha i propri valori. Se riduci i blocchi, i dati già inseriti nel testo restano conservati e tornano visibili selezionando nuovamente più blocchi.</p></div><div class="txtExerciseFields txtBlockFields"><div><label for="exerciseName">Esercizio</label><input id="exerciseName" placeholder="Es. Squat"><div id="inlineExerciseList" class="replacement-results" aria-label="Esercizi della libreria" hidden></div><div id="inlineExercisePreview"></div><small id="newExercisePhoto" aria-live="polite"></small></div><fieldset id="blockFields1" ><legend>Blocco 1</legend><div class="txtBlockInputs"><div><label for="blockSets1">Serie</label><input id="blockSets1" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode1">Modalità</label><select id="blockMode1" onchange="updateBlockWorkMode(1)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel1" for="blockReps1">Ripetizioni</label><input id="blockReps1" inputmode="text" value="15" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields2" hidden><legend>Blocco 2</legend><div class="txtBlockInputs"><div><label for="blockSets2">Serie</label><input id="blockSets2" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode2">Modalità</label><select id="blockMode2" onchange="updateBlockWorkMode(2)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel2" for="blockReps2">Ripetizioni</label><input id="blockReps2" inputmode="text" value="12" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><fieldset id="blockFields3" hidden><legend>Blocco 3</legend><div class="txtBlockInputs"><div><label for="blockSets3">Serie</label><input id="blockSets3" type="number" min="1" max="999" step="1" value="3"></div><div><label for="blockMode3">Modalità</label><select id="blockMode3" onchange="updateBlockWorkMode(3)"><option value="reps">Ripetizioni</option><option value="time">Tempo</option></select></div><div><label id="blockValueLabel3" for="blockReps3">Ripetizioni</label><input id="blockReps3" inputmode="text" value="10" placeholder="Es. 12 oppure 12 per gamba"></div></div></fieldset><button id="addExercise" class="primary addExerciseButton" type="button">Aggiungi esercizio con i blocchi</button><div id="addExerciseStatus" class="addExerciseButton" role="status" aria-live="polite"></div></div><div class="txtImageTools"><label for="exercisePhoto">Immagine dell’esercizio</label><input id="exercisePhoto" type="file" accept="image/png,image/jpeg,image/webp"><button id="attachExercisePhoto" type="button">Associa al nome esercizio</button><p>Scrivi il nome nel campo Esercizio, scegli una foto PNG, JPG o WebP e associala. La foto resta incorporata nel TXT e compare anche in Visualizza TXT. Modificando il nome nella stessa riga, la foto viene conservata.</p><p id="txtImageCount" role="status"></p></div><label for="editor" class="field">Testo modificabile</label><textarea id="editor" spellcheck="true" placeholder="# TITOLO SCHEDA&#10;&#10;## RISCALDAMENTO&#10;Scrivi qui il programma…"></textarea><p class="help">Usa <b>#</b> per il titolo e <b>##</b> per le sezioni. Usa il selettore per scegliere 1, 2 o 3 blocchi e seleziona Ripetizioni oppure Tempo per ogni blocco. La durata si inserisce in secondi. Il testo conserva ogni esercizio come <b>Nome | Serie 1 | Rip. 1 | Serie 2 | Rip. 2…</b>. Non mettere righe vuote tra gli esercizi della stessa tabella.</p></section>
 <section class="card"><div class="previewHead"><h2>Anteprima monitor</h2><div><button id="smaller" aria-label="Riduci testo anteprima">A−</button> <button id="larger" aria-label="Ingrandisci testo anteprima">A+</button></div></div><article id="preview" class="preview" aria-label="Anteprima della scheda"></article></section></div>
 <div class="footerNote">Il comando Salva scarica un file .txt: scegli la cartella di destinazione nel browser. Per aggiornare una scheda già esistente, salva nuovamente il file. Il caricamento dei file resta sul dispositivo.</div>
 </main>
@@ -144,30 +144,47 @@ function formatBlockWork(mode,value){
  return text.replace(/^(\d+(?:\s*[-–]\s*\d+)?)(.*)$/,'$1 rip.$2');
 }
 async function addTableExercise(){
- const name=document.getElementById('exerciseName').value.trim(),count=Number(document.getElementById('blockCount').value),cells=[name];
- if(!name||/[|\r\n]/.test(name)){message('Inserisci un nome esercizio senza | o nuove righe.',true);return;}
+ const input=document.getElementById('exerciseName'),feedback=document.getElementById('addExerciseStatus');
+ const name=input.value.trim(),count=Number(document.getElementById('blockCount').value),cells=[name];
+ const report=(text,error=false)=>{feedback.textContent=text;message(text,error);};
+ if(!name||/[|\r\n]/.test(name)){report('Scrivi il nome dell’esercizio oppure sceglilo dalla libreria.',true);input.focus();return;}
  for(let i=1;i<=count;i++){
-  const sets=Number(document.getElementById('blockSets'+i).value),value=document.getElementById('blockReps'+i).value.trim(),mode=document.getElementById('blockMode'+i)?.value||'reps';
-  if(!Number.isInteger(sets)||sets<1||sets>999){message('Blocco '+i+': inserisci Serie tra 1 e 999.',true);return;}
-  try{cells.push(String(sets),formatBlockWork(mode,value));}catch(error){message('Blocco '+i+': '+error.message,true);return;}
+  const setsInput=document.getElementById('blockSets'+i),workInput=document.getElementById('blockReps'+i);
+  const sets=Number(setsInput.value),mode=document.getElementById('blockMode'+i).value;
+  if(!Number.isInteger(sets)||sets<1||sets>999){report('Blocco '+i+': inserisci Serie tra 1 e 999.',true);setsInput.focus();return;}
+  try{cells.push(String(sets),formatBlockWork(mode,workInput.value));}
+  catch(error){report('Blocco '+i+': '+error.message,true);workInput.focus();return;}
  }
- const input=document.getElementById('exerciseName'),button=document.getElementById('addExercise');
- const choice=newSheetExerciseChoice;
- if(choice?.name===name){
-  const text=editor.value,request=readRequest,previous=txtImageData;
+ const line='| '+cells.join(' | ')+' |';
+ const text=editor.value;
+ const cursor=editor.selectionEnd;
+ const end=text.indexOf('\n',cursor);
+ const position=end===-1?text.length:end+1;
+ const block=(position>0&&text[position-1]!=='\n'?'\n':'')+line+'\n';
+ const nextText=text.slice(0,position)+block+text.slice(position);
+ const choice=newSheetExerciseChoice?.name===name?newSheetExerciseChoice:null;
+ const request=readRequest;
+ editor.value=nextText;
+ editor.setSelectionRange(position+block.length,position+block.length);
+ input.value='';clearNewSheetExerciseChoice();edited();
+ const added=name+' aggiunto alla scheda.';
+ report(choice?.url?added+' Caricamento immagine…':added);
+ input.focus();
+ if(!choice?.url)return;
+ try{
+  const photo={version:1,assets:{},exercises:{}};
+  await embedSheetReplacement(photo,choice);
+  if(request!==readRequest||!editor.value.split('\n').includes(line))return;
+  const key=kleosTxtImageKey(name),src=photo.assets[photo.exercises[key].asset];
+  const previous=txtImageData;
   const next=JSON.parse(JSON.stringify(previous));
-  button.disabled=true;
-  try{
-   if(choice.url){
-    await embedSheetReplacement(next,choice);
-    if(new Blob([text,cells.join(' | '),JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La scheda supererebbe il limite di 10 MB.');
-   }
-   if(request!==readRequest||text!==editor.value||previous!==txtImageData||input.value.trim()!==name||newSheetExerciseChoice!==choice)return;
-   txtImageData=next;
-  }catch(error){message('Immagine non caricata. Usa una foto dal dispositivo o inserisci il nome manualmente. '+error.message,true);return;}
-  finally{button.disabled=false;}
+  await embedSheetReplacement(next,{name,url:src});
+  if(request!==readRequest||txtImageData!==previous||!editor.value.split('\n').includes(line))return;
+  if(new Blob([editor.value,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La foto supera lo spazio disponibile nella scheda.');
+  txtImageData=next;edited();report(name+' aggiunto con immagine.');
+ }catch(error){
+  if(request===readRequest&&editor.value.split('\n').includes(line))report(added+' Foto non caricata. Puoi allegarla con «Modifica esercizio». '+error.message,true);
  }
- insertBlock(cells.join(' | '));input.value='';clearNewSheetExerciseChoice();input.focus();
 }
 document.getElementById('blockCount').onchange=()=>{updateBlockFields();edited();};
 document.getElementById('addExercise').onclick=addTableExercise;
@@ -355,10 +372,10 @@ function sheetLocalPhoto(file){
 function clearNewSheetExerciseChoice(){
  newSheetExerciseChoice=null;
  document.getElementById('newExercisePhoto').textContent='';
+ document.getElementById('inlineExercisePreview').replaceChildren();
 }
 function installSheetReplacement(){
  const panel=document.getElementById('replacePanel'),open=document.getElementById('replaceExercise');
- const add=document.getElementById('chooseNewExercise'),nameInput=document.getElementById('exerciseName');
  const row=panel.querySelector('[data-row] select'),search=panel.querySelector('input[type="search"]');
  const library=panel.querySelector('[data-library-list]'),list=panel.querySelector('[data-results]');
  const manual=panel.querySelector('[data-manual]'),photo=panel.querySelector('[data-photo]');
@@ -397,14 +414,14 @@ function installSheetReplacement(){
   if(chosen)library.selectedIndex=matches.findIndex(item=>item.name===chosen.name&&getExerciseImageUrl(item)===chosen.url);
   notice.textContent=(matches.length?matches.length+' esercizi. Scegli dall’elenco o scrivi un nome.':'Nessun risultato. Puoi scrivere un nome.')+sourceNote;
  }
- async function show(nextMode){
+ async function show(){
   const current=++version;
-  mode=nextMode;snapshot=editor.value;request=readRequest;chosen=null;sourceNote='';
+  mode='edit';snapshot=editor.value;request=readRequest;chosen=null;sourceNote='';
   panel.querySelector('[data-row]').hidden=mode==='new';
   imageOnly.hidden=mode==='new';
   apply.textContent=mode==='new'?'Usa nel nuovo inserimento':'Applica sostituzione';
   apply.disabled=false;imageOnly.disabled=false;
-  row.replaceChildren();search.value='';manual.value=mode==='new'?nameInput.value:'';photo.value='';
+  row.replaceChildren();search.value='';manual.value='';photo.value='';
   if(mode==='edit'){
    snapshot.split('\n').forEach((line,i)=>{
     const entry=editableSheetRow(line);
@@ -441,12 +458,6 @@ function installSheetReplacement(){
   try{
    const image=file?await sheetLocalPhoto(file):url;
    if(current!==version)return;
-   if(mode==='new'){
-    nameInput.value=name;
-    newSheetExerciseChoice=image?{name,url:image}:null;
-    document.getElementById('newExercisePhoto').textContent=image?'Immagine scelta. Verrà associata quando aggiungi l’esercizio.':'';
-    panel.hidden=true;nameInput.focus();return;
-   }
    const next=JSON.parse(JSON.stringify(previousData));
    if(image){notice.textContent='Caricamento immagine…';await embedSheetReplacement(next,{name,url:image});}
    if(current!==version)return;
@@ -460,15 +471,73 @@ function installSheetReplacement(){
   }catch(error){notice.textContent='Modifica non applicata. '+error.message+' Puoi scegliere una foto dal dispositivo.';}
   finally{if(current===version){apply.disabled=false;imageOnly.disabled=false;}}
  }
- open.onclick=()=>show('edit');
- add.onclick=()=>show('new');
- nameInput.addEventListener('input',clearNewSheetExerciseChoice);
+ open.onclick=show;
  search.oninput=renderResults;
- panel.querySelector('[data-close]').onclick=()=>{++version;panel.hidden=true;(mode==='new'?add:open).focus();};
+ panel.querySelector('[data-close]').onclick=()=>{++version;panel.hidden=true;open.focus();};
  apply.onclick=()=>commit(false);
  imageOnly.onclick=()=>commit(true);
 }
+function installInlineExerciseLibrary(){
+ const input=document.getElementById('exerciseName'),list=document.getElementById('inlineExerciseList'),preview=document.getElementById('inlineExercisePreview');
+ let active=false,loading;
+ function thumbnail(url){
+  if(!/^(https?:\/\/|data:image\/)/i.test(url))return null;
+  const image=document.createElement('img');
+  image.alt='';image.loading='lazy';image.src=url;image.onerror=()=>image.remove();
+  return image;
+ }
+ function render(){
+  if(!active)return;
+  const query=normalizeExerciseKey(input.value);
+  const catalog=new Map(Object.keys(APK_EXERCISE_ASSETS).map(key=>[key,{name:key[0].toUpperCase()+key.slice(1)}]));
+  for(const exercise of exerciseLibraryData)catalog.set(normalizeExerciseKey(exercise.name),exercise);
+  const matches=[...catalog.values()].filter(exercise=>normalizeExerciseKey(archiveLabel(exercise)).includes(query))
+   .sort((a,b)=>String(a.name).localeCompare(String(b.name),'it')).slice(0,12);
+  list.replaceChildren();
+  for(const exercise of matches){
+   const name=String(exercise.name).trim(),url=getExerciseImageUrl(exercise);
+   const button=document.createElement('button');
+   button.type='button';button.className='replacement-result';
+   const image=thumbnail(url);
+   if(image)button.append(image);
+   const label=document.createElement('span');label.textContent=archiveLabel(exercise);button.append(label);
+   button.onclick=()=>{
+    active=false;list.hidden=true;input.value=name;
+    newSheetExerciseChoice=url?{name,url}:null;
+    const selected=thumbnail(url);
+    preview.replaceChildren();
+    if(selected)preview.append(selected);
+    document.getElementById('newExercisePhoto').textContent=selected?'Immagine selezionata.':'';
+    document.getElementById('blockSets1').focus();
+   };
+   list.append(button);
+  }
+  if(!matches.length){
+   const empty=document.createElement('small');empty.textContent='Nessun risultato. Puoi usare il nome digitato.';list.append(empty);
+  }
+  list.hidden=false;
+ }
+ input.addEventListener('input',()=>{clearNewSheetExerciseChoice();active=true;render();});
+ input.addEventListener('focus',()=>{
+  active=true;render();
+  if(exerciseLibraryData.length||loading||!window.supabase)return;
+  db??=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  loading=loadExerciseLibrary().then(render,()=>{}).finally(()=>{loading=null;});
+ });
+ input.addEventListener('keydown',event=>{
+  if(list.hidden)return;
+  if(event.key==='Escape'){active=false;list.hidden=true;event.preventDefault();}
+  if(event.key==='ArrowDown'){
+   const first=list.querySelector('button');
+   if(first){event.preventDefault();first.focus();}
+  }
+ });
+ document.addEventListener('focusin',event=>{
+  if(event.target!==input&&!list.contains(event.target)){active=false;list.hidden=true;}
+ });
+}
 installSheetReplacement();
+installInlineExerciseLibrary();
 </script>
 </body></html>
 

@@ -387,14 +387,34 @@ function editableSheetRow(line){
  }
  return line.match(/^(\s*)([^:]+?)(\s*:\s*[1-9]\d*\s*seri[ea]\s*[x×]\s*.+)$/i);
 }
-function sheetLocalPhoto(file){
- if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>2*1024*1024)throw Error('Scegli una foto PNG, JPG o WebP fino a 2 MB.');
- return new Promise((resolve,reject)=>{
-  const reader=new FileReader();
-  reader.onload=()=>kleosTxtRaster(reader.result)?resolve(reader.result):reject(Error('Formato immagine non valido.'));
-  reader.onerror=()=>reject(Error('Lettura immagine non riuscita.'));
-  reader.readAsDataURL(file);
- });
+async function sheetLocalPhoto(file){
+ const limit=2*1024*1024;
+ const header=new Uint8Array(await file.slice(0,12).arrayBuffer());
+ const png=[137,80,78,71,13,10,26,10].every((byte,i)=>header[i]===byte);
+ const jpeg=header[0]===255&&header[1]===216&&header[2]===255;
+ const webp=String.fromCharCode(...header.slice(0,4))==='RIFF'&&String.fromCharCode(...header.slice(8,12))==='WEBP';
+ if(!png&&!jpeg&&!webp)throw Error('Il file non è un’immagine PNG, JPG o WebP valida.');
+ if(file.size>25*1024*1024)throw Error('La foto supera 25 MB. Scegli un file più leggero.');
+ if(file.size<=limit){
+  const typed=file.slice(0,file.size,png?'image/png':jpeg?'image/jpeg':'image/webp');
+  return new Promise((resolve,reject)=>{
+   const reader=new FileReader();
+   reader.onload=()=>kleosTxtRaster(reader.result)?resolve(reader.result):reject(Error('Formato immagine non valido.'));
+   reader.onerror=()=>reject(Error('Lettura immagine non riuscita.'));
+   reader.readAsDataURL(typed);
+  });
+ }
+ const bitmap=await createImageBitmap(file);
+ try{
+  const scale=Math.min(1,960/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+  const image=canvas.toDataURL('image/webp',0.82);
+  if(!kleosTxtRaster(image))throw Error('Impossibile ridimensionare la foto.');
+  return image;
+ }finally{bitmap.close();}
 }
 function clearNewSheetExerciseChoice(){
  newSheetExerciseChoice=null;
@@ -472,14 +492,14 @@ function installSheetReplacement(){
   if(apply.disabled)return;
   const current=version,previousText=snapshot,previousRequest=request,previousData=txtImageData;
   const lines=previousText.split('\n'),i=Number(row.value),entry=mode==='edit'?editableSheetRow(lines[i]):null;
-  const name=onlyImage?entry?.[2].trim():manual.value.trim();
+  const file=photo.files[0];
+  const name=onlyImage?entry?.[2].trim():manual.value.trim()||(file?entry?.[2].trim():'');
   if(!name||/[|\r\n]/.test(name)||(entry?.[3].trimStart().startsWith(':')&&name.includes(':'))){
    notice.textContent='Scrivi un nome valido o scegli un esercizio dall’elenco.';return;
   }
   if(mode==='edit'&&(editor.value!==previousText||readRequest!==previousRequest)){
    notice.textContent='La scheda è cambiata. Apri di nuovo «Modifica esercizio».';return;
   }
-  const file=photo.files[0];
   const sameName=exercise=>kleosTxtImageKey(exercise.name)===kleosTxtImageKey(name);
   const fromLibrary=chosen&&(onlyImage||sameName(chosen))?chosen:null;
   const known=onlyImage?null:exerciseLibraryData.find(sameName);
@@ -499,14 +519,14 @@ function installSheetReplacement(){
    const linked=Boolean(kleosTxtPhotoLink(stored));
    if(current!==version)return;
    if(editor.value!==previousText||readRequest!==previousRequest||txtImageData!==previousData)throw Error('La scheda è cambiata. Apri di nuovo «Modifica esercizio».');
-   if(!onlyImage)lines[i]=entry[1]+name+entry[3];
+   if(!onlyImage&&name!==entry[2].trim())lines[i]=entry[1]+name+entry[3];
    const updated=lines.join('\n');
    if(new Blob([updated,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La scheda supererebbe il limite di 10 MB.');
    txtImageData=next;editor.value=updated;panel.hidden=true;edited();
-   const result=onlyImage?'Immagine aggiornata.':'Esercizio sostituito con '+name+(stored?' e relativa immagine.':'.');
+   const result=onlyImage||name===entry[2].trim()&&stored?'Immagine aggiornata.':'Esercizio sostituito con '+name+(stored?' e relativa immagine.':'.');
    message(result+(linked?' La foto viene caricata online.':'')+' Premi «Salva scheda TXT».');
    open.focus();
-  }catch(error){notice.textContent='Modifica non applicata. '+error.message+' Puoi scegliere una foto dal dispositivo.';}
+  }catch(error){notice.textContent='Modifica non applicata. '+error.message+(file?'':' Puoi scegliere una foto dal dispositivo.');}
   finally{if(current===version){apply.disabled=false;imageOnly.disabled=false;}}
  }
  open.onclick=show;
@@ -594,7 +614,7 @@ installInlineExerciseLibrary();
 document.getElementById('attachExercisePhoto').onclick=async()=>{
  const name=document.getElementById('exerciseName').value.trim(),file=document.getElementById('exercisePhoto').files[0];
  if(!name||/[|\r\n]/.test(name)){message('Scrivi prima il nome dell’esercizio.',true);return;}
- if(!file||!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>2*1024*1024){message('Scegli una foto PNG, JPG o WebP fino a 2 MB.',true);return;}
+ if(!file){message('Scegli una foto PNG, JPG o WebP.',true);return;}
  const request=readRequest;const button=document.getElementById('attachExercisePhoto');button.disabled=true;
  try{const src=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('Lettura immagine non riuscita.'));reader.readAsDataURL(file);});
   if(request!==readRequest)return;if(!kleosTxtRaster(src))throw Error('Formato immagine non valido.');

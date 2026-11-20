@@ -1041,11 +1041,48 @@ function techTick(){
 function techStart(){const t=techState;if(t.done)techReset();if(t.running)return;techOriginal.pause();t.running=true;t.deadline=Date.now()+t.remaining*1000;t.interval=setInterval(techTick,200);techSay(t.plan.steps[t.index].kind==='rest'?'Recupero':t.plan.steps[t.index].name);techPaint();}
 function techPause(){if(techState.running)techTick();techStop();techPaint();}
 function techReset(){techStop();techState.index=0;techState.done=false;techState.remaining=techState.plan?.steps[0]?.seconds||0;techState.lastRow=-1;techState.lastStepRow=null;techPaint();}
+function arrangeTechColumns(container,rows){
+ for(const [i,row] of rows.entries()){
+  const cell=row.cells[0],number=document.createElement('span');
+  number.className='techExerciseNumber';number.textContent=(i+1)+'.';
+  (cell.querySelector('.kleosTxtExerciseIdentity')||cell).prepend(number);
+ }
+ if(rows.length<2)return;
+ const firstRight=rows[Math.ceil(rows.length/2)],table=firstRight.closest('table');
+ let boundary=table.parentElement;
+ if(firstRight.previousElementSibling){
+  const rightTable=table.cloneNode(false);
+  for(const child of table.children){
+   if(child.tagName==='COLGROUP'||child.tagName==='THEAD')rightTable.append(child.cloneNode(true));
+  }
+  const body=rightTable.createTBody();
+  let row=firstRight;
+  while(row){
+   const next=row.nextElementSibling;
+   body.append(row);
+   row=next;
+  }
+  const rightWrap=boundary.cloneNode(false);
+  rightWrap.append(rightTable);
+  boundary.after(rightWrap);boundary=rightWrap;
+ }
+ const grid=document.createElement('div'),left=document.createElement('div'),right=document.createElement('div');
+ grid.className='techExerciseColumns';
+ left.className=right.className='techExerciseColumn';
+ grid.dataset.blocks=String((rows[0].cells.length-1)/2);
+ let column=left;
+ for(const child of [...container.children]){
+  if(child===boundary)column=right;
+  column.append(child);
+ }
+ grid.append(left,right);container.append(grid);
+}
 function techLoad(text){
  techStop();const plan=parseKleosWorkout(text);techState.plan=plan;techState.images=kleosTxtImageData(text);techReset();
  const rows=[...document.querySelectorAll('#monitorTxtText tbody tr')];
  rows.forEach((row,index)=>{row.dataset.techRow=index;row.tabIndex=0;const jump=()=>{const current=plan.steps[techState.index];let at=plan.steps.findIndex(s=>s.kind==='work'&&s.row===index&&s.round===(current?.round||1)&&s.block===(current?.block||0));if(at<0)at=plan.steps.findIndex(s=>s.kind==='work'&&s.row===index);if(at>=0){techState.index=at;techState.done=false;techState.remaining=plan.steps[at].seconds;techState.deadline=Date.now()+techState.remaining*1000;techPaint();}};row.onclick=jump;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump();}};});
  techRenderRecoveryRows(rows,plan);
+ arrangeTechColumns(document.getElementById('monitorTxtText'),rows);
  techPaint();
 }
 kleosFormatTxtView=function(el,text){techOriginal.format(el,text);if(el.id==='monitorTxtText'){techOriginal.pause();techLoad(text);}};
@@ -1084,4 +1121,14 @@ document.getElementById('circuitSelect').addEventListener('change',()=>{if(!tech
  .monitorTxtOpen #monitorTxtText .kleosTxtTable.txtBlocks1 col:nth-child(2){width:13%!important}
  .monitorTxtOpen #monitorTxtText .kleosTxtTable.txtBlocks1 col:nth-child(3){width:26%!important}
 }
+</style>
+
+<style>
+.techExerciseColumns{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:start}
+.techExerciseColumn{min-width:0}
+.techExerciseNumber{display:inline-block;min-width:2ch;margin-inline-end:.4em;color:#a6ff00;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kleosTxtExerciseIdentity>.techExerciseNumber{margin-inline-end:0;flex-shrink:0}
+@media(min-width:901px){.techExerciseColumns[data-blocks="1"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1250px){.techExerciseColumns[data-blocks="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1550px){.techExerciseColumns[data-blocks="3"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>

@@ -887,15 +887,24 @@ function techRecovery(value){
  const raw=String(value).trim().replace(/^[:=–-]\s*/,'');
  return techDuration(raw)??(/^\d+(?:\s|$)/.test(raw)?Number(raw.match(/^\d+/)[0]):null);
 }
+function techWorkoutCells(line){
+ const cells=line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(value=>value.trim());
+ return [3,5,7].includes(cells.length)&&cells[0]&&/^\d+$/.test(cells[1])&&Number(cells[1])>0?cells:null;
+}
 function parseKleosWorkout(text){
  const lines=String(text).split(/\r\n|\r|\n/).filter(line=>!/^@kleos-immagini:/i.test(line));
  const plain=lines.join('\n');
  const title=(plain.match(/^#\s+(.+)$/m)||[])[1]||'Scheda TXT';
- let defaultRest=0,roundRest=0;
+ const exerciseLines=lines.flatMap((line,i)=>techWorkoutCells(line)?[i]:[]);
+ const lastExercise=exerciseLines.at(-1)??-1;
+ const rowRecovery=new Map();
+ let defaultRest=0,roundRest=0,currentRow=-1;
  for(const [i,line] of lines.entries()){
+  if(techWorkoutCells(line)){currentRow=i;continue;}
   const match=line.match(/^\s*(?:#{1,6}\s+)?recupero\b\s*(.*)$/i);
-  if(!match||line.includes('|'))continue;
-  let description=match[1].trim();
+  const standalone=/^\s*\d[^|]*\btra\s+(?:i\s+)?(?:giri|esercizi)\s*\.?\s*$/i.test(line);
+  if((!match&&!standalone)||line.includes('|'))continue;
+  let description=(match?match[1]:line).trim();
   if(!description||/^[:=–-]$/.test(description)||/^tra\s+(?:i\s+)?giri$/i.test(description)){
    const following=lines.slice(i+1).find(next=>next.trim())||'';
    description=(description+' '+following).trim();
@@ -903,18 +912,21 @@ function parseKleosWorkout(text){
   const betweenRounds=/\btra\s+(?:[iI]\s+)?giri\b/i.test(description);
   const seconds=techRecovery(description.replace(/\btra\s+(?:i\s+)?(?:giri|esercizi)\b|\btra\s+(?:le\s+)?serie\b/i,''));
   if(seconds===null)continue;
-  if(betweenRounds)roundRest=seconds;else defaultRest=seconds;
+  if(currentRow>=0&&i<lastExercise){
+   rowRecovery.set(currentRow,seconds);
+  }else if(match){
+   if(betweenRounds)roundRest=seconds;else defaultRest=seconds;
+  }
  }
  const blocks=Number((plain.match(/^@blocchi:\s*([123])/im)||[])[1]||1),rows=[];
- for(const line of lines){
-  const c=line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
-  if(![3,5,7].includes(c.length)||!c[0]||!/^\d+$/.test(c[1])||Number(c[1])<1)continue;
+ for(const i of exerciseLines){
+  const c=techWorkoutCells(lines[i]);
   const work=[];
   for(let b=0;b<blocks;b++){
    const sets=Number(c[1+b*2]||0),label=c[2+b*2]||'',seconds=techDuration(label)??0;
    const inline=label.match(/\brec(?:upero)?\.?\s*[:=]?\s*(\d.*)$/i);
    const trailing=label.match(/(?:\+|\/)\s*(\d.*?)\s+rec(?:upero)?\.?\s*$/i);
-   const rest=techRecovery(inline?.[1]??trailing?.[1]??'')??defaultRest;
+   const rest=techRecovery(inline?.[1]??trailing?.[1]??'')??rowRecovery.get(i)??defaultRest;
    if(sets>0)work.push({block:b,sets:Math.min(999,sets),seconds,rest,label});
   }
   rows.push({name:c[0],index:rows.length,work});

@@ -227,6 +227,11 @@
 #monitorTxtFile::file-selector-button:hover{filter:brightness(1.08)}
 #monitorTxtFile:focus-visible{outline:2px solid var(--lime);outline-offset:4px;border-radius:8px}
 </style>
+<style>
+#monitorTxtText .kleosTxtTable .techRecoveryRow td{background:#20271c!important;color:#e3edda!important;font-weight:600}
+#monitorTxtText .kleosTxtTable .techRecoveryRow td:last-child{text-align:center;font-variant-numeric:tabular-nums}
+#monitorTxtText .kleosTxtTable .techRecoveryRow.techActive td{background:#374723!important;color:#fff!important;box-shadow:inset 0 -1px #a6ff00}
+</style>
 </head>
 <body>
   <div class="screen">
@@ -897,10 +902,19 @@ function parseKleosWorkout(text){
  const title=(plain.match(/^#\s+(.+)$/m)||[])[1]||'Scheda TXT';
  const exerciseLines=lines.flatMap((line,i)=>techWorkoutCells(line)?[i]:[]);
  const lastExercise=exerciseLines.at(-1)??-1;
- const rowRecovery=new Map();
+ const rowRecovery=new Map(),explicitRowRecovery=new Set();
  let defaultRest=0,roundRest=0,currentRow=-1;
  for(const [i,line] of lines.entries()){
   if(techWorkoutCells(line)){currentRow=i;continue;}
+  const explicit=line.match(/^\s*recupero\s+(esercizio|tra\s+serie\s*\/\s*giri)\s*:\s*(.+)$/i);
+  if(explicit){
+   const seconds=techRecovery(explicit[2]);
+   if(seconds!==null){
+    if(/^tra/i.test(explicit[1]))roundRest=seconds;
+    else if(currentRow>=0){rowRecovery.set(currentRow,seconds);explicitRowRecovery.add(currentRow);}
+   }
+   continue;
+  }
   const match=line.match(/^\s*(?:#{1,6}\s+)?recupero\b\s*(.*)$/i);
   const standalone=/^\s*\d[^|]*\btra\s+(?:i\s+)?(?:giri|esercizi)\s*\.?\s*$/i.test(line);
   if((!match&&!standalone)||line.includes('|'))continue;
@@ -927,7 +941,7 @@ function parseKleosWorkout(text){
    const inline=label.match(/\brec(?:upero)?\.?\s*[:=]?\s*(\d.*)$/i);
    const trailing=label.match(/(?:\+|\/)\s*(\d.*?)\s+rec(?:upero)?\.?\s*$/i);
    const rest=techRecovery(inline?.[1]??trailing?.[1]??'')??rowRecovery.get(i)??defaultRest;
-   if(sets>0)work.push({block:b,sets:Math.min(999,sets),seconds,rest,label});
+   if(sets>0)work.push({block:b,sets:Math.min(999,sets),seconds,rest,label,explicitRest:explicitRowRecovery.has(i)});
   }
   rows.push({name:c[0],index:rows.length,work});
  }
@@ -940,14 +954,14 @@ function parseKleosWorkout(text){
  for(const [i,step] of steps.entries()){
   timeline.push(step);
   const next=steps[i+1];
+  if(step.rest>0&&(next||step.explicitRest))timeline.push({...step,kind:'rest',seconds:step.rest});
   if(!next)continue;
-  if(step.rest>0)timeline.push({...step,kind:'rest',seconds:step.rest});
   if(roundRest>0&&next.block===step.block&&next.round>step.round)timeline.push({...step,kind:'rest',roundRest:true,seconds:roundRest});
  }
  return {title,rows,steps:timeline,total:timeline.reduce((total,step)=>total+step.seconds,0)};
 }
 // UI integration: existing circuit handlers remain available outside TXT mode.
-const techState={plan:null,index:0,remaining:0,running:false,done:false,deadline:0,interval:null,images:null,lastRow:-1};
+const techState={plan:null,index:0,remaining:0,running:false,done:false,deadline:0,interval:null,images:null,lastRow:-1,lastStepRow:null};
 const techPane=document.getElementById('monitorTxtPane');
 const techHero=document.createElement('section');techHero.className='techHero';techHero.setAttribute('aria-label','Esercizio e timer');
 techHero.innerHTML='<div id="techPhoto" class="techHeroImage"><span class="techHeroPlaceholder">K</span></div><div><div id="techPhase" class="techKicker">MONITOR ALLENAMENTO</div><div id="techName" class="techHeroTitle">Carica la tua scheda</div><div id="techMeta" class="techHeroMeta">Immagini, tempi e recuperi in un solo monitor.</div><div class="techStats"><span id="techRound">GIRO <strong>—</strong></span><div id="techProgress" class="techProgress"></div><span>TOTALE <strong id="techTotal">00:00</strong></span><span>RIMANENTE <strong id="techRemaining">00:00</strong></span></div></div><div class="techTimer"><div id="techTimer" class="techTimerValue" role="timer">00:00</div><div id="techTimerLabel" class="techTimerLabel">PRONTO</div></div>';
@@ -957,19 +971,55 @@ function techMode(){return !techPane.hidden&&techState.plan?.steps.length>0;}
 function techTime(seconds){const n=Math.max(0,Math.ceil(seconds));return (n>=3600?String(Math.floor(n/3600)).padStart(2,'0')+':':'')+String(Math.floor(n/60)%60).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}
 function techStop(){clearInterval(techState.interval);techState.interval=null;techState.running=false;}
 function techSay(text){if(typeof speak==='function')speak(text);}
+function techStepRowKey(step){
+ if(!step)return '';
+ return step.kind==='rest'
+  ?[step.row,step.block,step.roundRest?'roundRest':'rest',step.seconds].join(':')
+  :String(step.row);
+}
+function techRenderRecoveryRows(rows,plan){
+ const inserted=new Map();
+ const keys=new Set();
+ for(const step of plan.steps){
+  if(step.kind!=='rest')continue;
+  const key=techStepRowKey(step),exercise=rows[step.row];
+  if(!exercise||keys.has(key))continue;
+  keys.add(key);
+  const row=document.createElement('tr');
+  row.dataset.techRow=key;row.className='techRecoveryRow';
+  const label=document.createElement('td'),duration=document.createElement('td');
+  const blocks=Math.max(1,(exercise.cells.length-1)/2);
+  label.textContent=(step.roundRest?'Recupero tra serie/giri':'Recupero')+(blocks>1?' · Blocco '+(step.block+1):'');
+  label.colSpan=Math.max(1,exercise.cells.length-1);
+  duration.textContent=techTime(step.seconds);
+  row.append(label,duration);
+  (inserted.get(step.row)||exercise).after(row);
+  inserted.set(step.row,row);
+ }
+}
 function techPaint(){
  const t=techState,p=t.plan,s=p?.steps[t.index];if(!p)return;
  const put=(id,v)=>{document.getElementById(id).textContent=v;};
  put('techName',t.done?'Allenamento completato':s?.kind==='rest'?(s.roundRest?'Recupero tra giri':'Recupero'):s?.name||'Nessun esercizio');
  put('techPhase',t.done?'COMPLETATO':s?.kind==='rest'?'RECUPERO':`ESERCIZIO ${(s?.row||0)+1} / ${p.rows.length}`);
- put('techMeta',t.done?'':s?.kind==='rest'?'Prossimo: '+(p.steps[t.index+1]?.name||'Fine'):s?.seconds?`Lavoro ${s.seconds}″ · Recupero ${s.rest}″`:'Ripetizioni: '+s?.label+' · Premi AVANTI al termine');
+ put('techMeta',t.done?'':s?.kind==='rest'?'Prossimo: '+(p.steps[t.index+1]?.kind==='rest'?(p.steps[t.index+1].roundRest?'Recupero tra giri':'Recupero'):(p.steps[t.index+1]?.name||'Fine')):s?.seconds?`Lavoro ${s.seconds}″ · Recupero ${s.rest}″`:'Ripetizioni: '+s?.label+' · Premi AVANTI al termine');
  put('techTimer',t.done?'✓':s?.seconds?techTime(t.remaining):s?.label||'00:00');
  put('techTimerLabel',t.done?'COMPLETATO':t.running?(s?.kind==='rest'?'RECUPERO':'LAVORO'):'PRONTO / PAUSA');
  put('techTotal',techTime(p.total));put('techRemaining',techTime(t.done?0:t.remaining+p.steps.slice(t.index+1).reduce((a,x)=>a+x.seconds,0)));
  const round=document.getElementById('techRound');round.replaceChildren();round.append('GIRO ');const strong=document.createElement('strong');strong.textContent=`${s?.round||1}/${s?.rounds||1}`;round.append(strong);
  const bars=document.getElementById('techProgress');bars.replaceChildren();for(let i=1;i<=Math.min(20,s?.rounds||1);i++){const bar=document.createElement('span');bar.className=i<(s?.round||1)?'done':i===(s?.round||1)?'current':'';bars.append(bar);}
  techHero.classList.toggle('recovery',s?.kind==='rest');
- const row=s?.row??-1;document.querySelectorAll('#monitorTxtText tr[data-tech-row]').forEach(el=>{const active=Number(el.dataset.techRow)===row&&!t.done;el.classList.toggle('techActive',active);el.setAttribute('aria-current',active?'step':'false');if(active&&row!==t.lastRow){if(row===0)document.getElementById('monitorTxtText').scrollTop=0;else el.scrollIntoView({block:'nearest',inline:'nearest'});}});
+ const row=s?.row??-1,key=techStepRowKey(s);
+ document.querySelectorAll('#monitorTxtText tr[data-tech-row]').forEach(el=>{
+  const active=el.dataset.techRow===key&&!t.done;
+  el.classList.toggle('techActive',active);
+  el.setAttribute('aria-current',active?'step':'false');
+  if(active&&key!==t.lastStepRow){
+   if(key==='0')document.getElementById('monitorTxtText').scrollTop=0;
+   else el.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+ });
+ t.lastStepRow=key;
  if(row!==t.lastRow){const photo=document.getElementById('techPhoto');photo.replaceChildren();const image=kleosTxtImageNode(t.images,s?.name);if(image)photo.append(image);else{const k=document.createElement('span');k.className='techHeroPlaceholder';k.textContent='K';photo.append(k);}t.lastRow=row;}
  if(techMode()){put('stateLabel',t.done?'COMPLETATO':t.running?'LIVE':'PAUSA');put('circuitTitle',p.title);put('circuitDescription','Scheda digitale · '+p.rows.length+' esercizi');}
 }
@@ -988,10 +1038,13 @@ function techTick(){
 }
 function techStart(){const t=techState;if(t.done)techReset();if(t.running)return;techOriginal.pause();t.running=true;t.deadline=Date.now()+t.remaining*1000;t.interval=setInterval(techTick,200);techSay(t.plan.steps[t.index].kind==='rest'?'Recupero':t.plan.steps[t.index].name);techPaint();}
 function techPause(){if(techState.running)techTick();techStop();techPaint();}
-function techReset(){techStop();techState.index=0;techState.done=false;techState.remaining=techState.plan?.steps[0]?.seconds||0;techState.lastRow=-1;techPaint();}
+function techReset(){techStop();techState.index=0;techState.done=false;techState.remaining=techState.plan?.steps[0]?.seconds||0;techState.lastRow=-1;techState.lastStepRow=null;techPaint();}
 function techLoad(text){
  techStop();const plan=parseKleosWorkout(text);techState.plan=plan;techState.images=kleosTxtImageData(text);techReset();
- document.querySelectorAll('#monitorTxtText tbody tr').forEach((row,index)=>{row.dataset.techRow=index;row.tabIndex=0;const jump=()=>{const current=plan.steps[techState.index];let at=plan.steps.findIndex(s=>s.kind==='work'&&s.row===index&&s.round===(current?.round||1)&&s.block===(current?.block||0));if(at<0)at=plan.steps.findIndex(s=>s.kind==='work'&&s.row===index);if(at>=0){techState.index=at;techState.done=false;techState.remaining=plan.steps[at].seconds;techState.deadline=Date.now()+techState.remaining*1000;techPaint();}};row.onclick=jump;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump();}};});techPaint();
+ const rows=[...document.querySelectorAll('#monitorTxtText tbody tr')];
+ rows.forEach((row,index)=>{row.dataset.techRow=index;row.tabIndex=0;const jump=()=>{const current=plan.steps[techState.index];let at=plan.steps.findIndex(s=>s.kind==='work'&&s.row===index&&s.round===(current?.round||1)&&s.block===(current?.block||0));if(at<0)at=plan.steps.findIndex(s=>s.kind==='work'&&s.row===index);if(at>=0){techState.index=at;techState.done=false;techState.remaining=plan.steps[at].seconds;techState.deadline=Date.now()+techState.remaining*1000;techPaint();}};row.onclick=jump;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump();}};});
+ techRenderRecoveryRows(rows,plan);
+ techPaint();
 }
 kleosFormatTxtView=function(el,text){techOriginal.format(el,text);if(el.id==='monitorTxtText'){techOriginal.pause();techLoad(text);}};
 startTimer=function(){return techMode()?techStart():techOriginal.start();};pauseTimer=function(){return techMode()?techPause():techOriginal.pause();};nextStep=function(){return techMode()?techAdvance():techOriginal.next();};resetCircuit=function(){return techMode()?techReset():techOriginal.reset();};

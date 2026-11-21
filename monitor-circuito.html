@@ -250,7 +250,7 @@
 
     
 
-    <section id="monitorTxtPane" class="monitorTxtPane" aria-label="Visualizzatore TXT"><div class="monitorTxtTools"><button type="button" class="secondary" aria-label="Riduci carattere" onclick="resizeMonitorTxt(-2)">A−</button><button type="button" class="secondary" aria-label="Ingrandisci carattere" onclick="resizeMonitorTxt(2)">A+</button></div><div data-txt-cloud class="txtCloud"><label for="cloudTxtSelect">Schede TXT online</label><select id="cloudTxtSelect"><option value="">Scegli scheda online</option></select><button type="button" data-cloud-refresh>Aggiorna</button><small role="status" aria-live="polite"></small></div><div id="monitorTxtName" class="monitorTxtName"></div><div id="monitorTxtMessage" class="monitorTxtMessage" role="status" aria-live="polite">Scegli una scheda dal menu.</div><pre id="monitorTxtText" class="monitorTxtText" tabindex="0" aria-label="Contenuto file TXT"></pre></section>
+    <section id="monitorTxtPane" class="monitorTxtPane" aria-label="Visualizzatore TXT"><div class="monitorTxtTools"><button type="button" class="secondary" aria-label="Riduci carattere" onclick="resizeMonitorTxt(-2)">A−</button><button type="button" class="secondary" aria-label="Ingrandisci carattere" onclick="resizeMonitorTxt(2)">A+</button></div><div data-txt-cloud class="txtCloud"><label for="cloudTxtSelect">Schede TXT</label><select id="cloudTxtSelect"><option value="">Scegli scheda online</option></select><button type="button" data-cloud-refresh>Aggiorna</button><small role="status" aria-live="polite"></small></div><div id="monitorTxtName" class="monitorTxtName"></div><div id="monitorTxtMessage" class="monitorTxtMessage" role="status" aria-live="polite">Scegli una scheda dal menu.</div><pre id="monitorTxtText" class="monitorTxtText" tabindex="0" aria-label="Contenuto file TXT"></pre></section>
 <footer id="monitorControls">
 <button class="secondary" type="button" onclick="window.open('schede-txt.html','_blank','noopener')">CREA SCHEDA TXT</button>
 
@@ -742,3 +742,5 @@ document.addEventListener('visibilitychange',()=>{if(techState.running)techTick(
 </style>
 <style>.txtCloud{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-block:4px}.txtCloud label{font-weight:700}.txtCloud select{min-width:12rem;max-width:100%;padding:7px;background:#121913;color:#eef4eb;border:1px solid #50633b;border-radius:7px}.txtCloud small{color:#ccd6c8}.txtCloud button{min-height:34px}</style>
 <script src="schede-txt-cloud.js"></script>
+
+<style>.txtCloud .txtCloudLogin{color:#a6ff00;font-weight:700;text-underline-offset:.15em}</style>

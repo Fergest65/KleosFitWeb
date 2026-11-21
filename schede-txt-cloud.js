@@ -2,7 +2,12 @@
  const controls=document.querySelector('[data-txt-cloud]');
  const select=controls.querySelector('select'),status=controls.querySelector('[role="status"]');
  const refresh=controls.querySelector('[data-cloud-refresh]'),save=controls.querySelector('[data-cloud-save]');
+ const login=document.createElement('a');
+ login.href='./index.html';login.textContent='Accedi a Kleos';login.className='txtCloudLogin';login.hidden=true;
+ controls.append(login);
  const editorMode=Boolean(save),limit=10*1024*1024,ownerKey='kleos-txt-offline-owner';
+ const publicCache='public-monitor';
+ const cachedOwner=()=>editorMode?localStorage.getItem(ownerKey):publicCache;
  let busy=false,selected='',available=new Map(),offline=new Map(),database,authBound=false;
  function report(text){status.textContent=text;}
  function cache(mode,operation){
@@ -22,12 +27,16 @@
  async function storage(){
   if(editorMode&&window.supabase)db??=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   const connection=editorMode?db:client;
-  if(!connection||!navigator.onLine)throw Error('Connessione assente.');
+  if(location.protocol==='file:')throw Error('Apri il monitor dal sito Kleos per usare Supabase.');
+  if(!navigator.onLine)throw Error('Connessione assente.');
+  if(!connection)throw Error('Connessione a Supabase non caricata. Ricarica la pagina del sito.');
+  if(!editorMode)return {bucket:connection.storage.from('schede-txt'),owner:publicCache};
   if(!authBound){
    authBound=true;
    connection.auth.onAuthStateChange(event=>{
     if(event==='SIGNED_OUT'){
      localStorage.removeItem(ownerKey);offline.clear();available.clear();draw();
+     login.hidden=false;report('Accedi a Kleos per vedere le schede online.');
     }
    });
   }
@@ -35,8 +44,10 @@
   if(error)throw error;
   if(!data.session){
    localStorage.removeItem(ownerKey);offline.clear();available.clear();draw();
-   throw Error('Accedi come amministratore su Kleos.');
+   login.hidden=false;
+   throw Error('La sessione Kleos manca o è scaduta. Accedi al sito e riapri il monitor dal Pannello amministrazione.');
   }
+  login.hidden=true;
   const owner=data.session.user.id;
   localStorage.setItem(ownerKey,owner);
   return {bucket:connection.storage.from('schede-txt'),owner};
@@ -58,7 +69,7 @@
   return data;
  }
  async function sync(){
-  try{offline=await readCache(localStorage.getItem(ownerKey));}catch{offline=new Map();}
+  try{offline=await readCache(cachedOwner());}catch{offline=new Map();}
   available=new Map(offline);draw();
   if(!navigator.onLine){
    report(offline.size?'Offline · '+offline.size+' schede disponibili.':'Offline · nessuna scheda sincronizzata su questo dispositivo.');
@@ -75,7 +86,7 @@
     for(const f of data)if(f.id&&/.txt$/i.test(f.name))online.set(f.name,f);
     if(data.length<100)break;
    }
-   if(localStorage.getItem(ownerKey)!==owner)return;
+   if(cachedOwner()!==owner)return;
    available=online;draw();
    const next=new Map(),pending=[...online];
    let failed=0;
@@ -88,7 +99,7 @@
     }
    };
    await Promise.all(Array.from({length:3},worker));
-   if(localStorage.getItem(ownerKey)!==owner)return;
+   if(cachedOwner()!==owner)return;
    await cache('readwrite',store=>store.put([...next],owner));
    offline=next;draw();
    report(failed?next.size+' schede disponibili offline. Aggiorna per riprovare la sincronizzazione.':next.size+' schede disponibili offline.');

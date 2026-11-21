@@ -229,6 +229,7 @@
 </style>
 <style>
 #monitorTxtText .kleosTxtTable .techRecoveryRow td{background:#20271c!important;color:#e3edda!important;font-weight:600}
+#monitorTxtText .kleosTxtTable .techRecoveryRow td:first-child,#monitorTxtText .kleosTxtTable .techRecoveryRow.techActive td:first-child{color:#a6ff00!important;font-weight:800!important}
 #monitorTxtText .kleosTxtTable .techRecoveryRow td:last-child{text-align:center;font-variant-numeric:tabular-nums}
 #monitorTxtText .kleosTxtTable .techRecoveryRow.techActive td{background:#374723!important;color:#fff!important;box-shadow:inset 0 -1px #a6ff00}
 </style>
@@ -279,7 +280,7 @@
     </main>
 
     <section id="monitorTxtPane" class="monitorTxtPane" hidden aria-label="Visualizzatore TXT"><div class="monitorTxtTools"><label for="monitorTxtFile">Apri file TXT</label><input id="monitorTxtFile" type="file" accept=".txt,text/plain" onchange="loadMonitorTxt(this)"><button type="button" class="secondary" aria-label="Riduci carattere" onclick="resizeMonitorTxt(-2)">A−</button><button type="button" class="secondary" aria-label="Ingrandisci carattere" onclick="resizeMonitorTxt(2)">A+</button></div><div id="monitorTxtName" class="monitorTxtName"></div><div id="monitorTxtMessage" class="monitorTxtMessage" role="status" aria-live="polite">Scegli un file TXT: il testo si adatta alla larghezza della schermata.</div><pre id="monitorTxtText" class="monitorTxtText" tabindex="0" aria-label="Contenuto file TXT"></pre></section>
-<footer>
+<footer id="monitorControls">
 <button class="secondary" type="button" onclick="window.open('schede-txt.html','_blank','noopener')">CREA SCHEDA TXT</button>
 <button id="monitorTxtToggle" type="button" class="secondary" onclick="toggleMonitorTxt()" aria-controls="monitorTxtPane" aria-expanded="false">VISUALIZZA TXT</button>
       
@@ -1131,4 +1132,10 @@ document.getElementById('circuitSelect').addEventListener('change',()=>{if(!tech
 @media(min-width:901px){.techExerciseColumns[data-blocks="1"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:1250px){.techExerciseColumns[data-blocks="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:1550px){.techExerciseColumns[data-blocks="3"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<style>
+#monitorControls button,#monitorControls select{background:#a6ff00!important;color:#141b08!important;border-color:#a6ff00!important}
+#monitorControls button.danger{background:#d52a37!important;color:#fff!important;border-color:#d52a37!important}
+#monitorControls :is(button,select):focus-visible{outline:2px solid #fff;outline-offset:2px}
 </style>

@@ -75,7 +75,6 @@
 .qrTokenText{font-size:12px;color:#c4ff3d;word-break:break-all;margin-top:5px}
 @media(max-width:600px){.qrManagementBox{grid-template-columns:1fr}.qrManagementBox .qrBox{justify-self:center}}
 
-.circuitRunnerPage{max-width:900px;margin:20px auto 0;background:#0d1014;border:1px solid var(--line);border-radius:18px;padding:28px;min-height:520px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.circuitRunnerPage .circuitRunnerTitle{font-size:clamp(28px,5vw,52px);font-weight:950}.circuitRunnerPage .circuitRunnerRound{color:var(--muted);font-weight:800;margin-top:8px}.circuitRunnerPage .circuitRunnerPhase{color:var(--accent);font-weight:900;text-transform:uppercase;margin-top:18px}.circuitRunnerPage .circuitRunnerDisplay{font-size:clamp(72px,14vw,150px);font-weight:950;line-height:1;margin:18px 0}.circuitRunnerPage .circuitRunnerExercise{font-size:clamp(20px,3vw,30px);font-weight:900}.circuitRunnerPage .circuitRunnerNext{color:var(--muted);min-height:26px;margin-top:12px}.circuitRunnerPage .circuitRunnerActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}.circuitRunnerPage .circuitRunnerActions .btn{min-width:130px;min-height:52px}@media(max-width:600px){.circuitRunnerPage{padding:20px;min-height:calc(100vh - 180px)}.circuitRunnerPage .circuitRunnerActions{width:100%;display:grid;grid-template-columns:1fr 1fr}.circuitRunnerPage .circuitRunnerActions .btn:first-child{grid-column:1/-1}}
 </style></style>
 </style>
 </style>
@@ -142,32 +141,9 @@
 @media(max-width:800px){.slotAdminCard{grid-template-columns:1fr}.slotAdminMeta{grid-column:1}.slotAdminActions{grid-column:1;grid-row:auto}.slotAdminTabs{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.slotAdminTitle{font-size:30px}.slotAdminTab{font-size:15px!important;min-height:50px}.slotAdminMainLine{font-size:17px}.slotAdminMeta{font-size:14px}.slotAdminBtn{font-size:14px!important;height:48px}}
 </style><style>.bookingDateFilters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:0 0 16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#111419}.bookingDateFilters label{margin:0 0 6px}.bookingDateFilters .btn{height:44px}.bookingResultHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.bookingAdminTable th{white-space:nowrap}.bookingAdminTable td{font-size:14px;vertical-align:middle}.bookingActivity{font-weight:850;color:var(--accent)}@media(max-width:700px){.bookingDateFilters{grid-template-columns:1fr 1fr}.bookingDateFilters .btn{grid-column:1/-1;width:100%}.bookingResultHead{align-items:flex-start;flex-direction:column}}.notifComposeRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}.notifComposeRow label{display:block;color:#c8ccd3;font-size:13px;margin:0 0 7px}.notifComposeRow select,.notifComposeRow input{width:100%}@media(max-width:700px){.notifComposeRow{grid-template-columns:1fr}}}</style><style>
-.circuitList{display:grid;gap:12px}
-.circuitCard{border:1px solid var(--line);border-radius:14px;background:#111419;padding:16px}
-.circuitCardHead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.circuitMeta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
 .circuitMeta .pill{font-size:12px}
-.circuitActions{display:flex;gap:8px;flex-wrap:wrap}
-.circuitBuilderGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.circuitBuilderWide{grid-column:1/-1}
-.circuitStationBuilder{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px;background:#0e1115}
-.circuitStationBuilderHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-.circuitStationRow{display:block;padding:14px;border:1px solid var(--line);border-radius:12px;background:#111419;margin-bottom:10px}.circuitStationTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.circuitStationNum{font-weight:900;color:var(--accent);font-size:16px}.circuitMode{display:flex;gap:6px}.circuitMode button{min-width:110px}.circuitStationGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.circuitStationGrid .wide{grid-column:1/-1}.circuitStationRemove{margin-left:auto}.circuitStationField label{font-size:11px;text-transform:uppercase;color:#aeb5c1;display:block;margin-bottom:5px}.circuitStationField input,.circuitStationField select{width:100%}
 
-.circuitStationEmpty{padding:18px;text-align:center;color:#9299a5}
-.circuitStationCard{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#111419;margin-bottom:10px}.circuitStationCardMain{min-width:0}.circuitStationCardTitle{font-weight:900;color:var(--accent);font-size:16px}.circuitStationCardName{font-weight:800;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.circuitStationCardMeta{color:#9299a5;font-size:12px;margin-top:4px}.circuitStationCardActions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.circuitStationEditorHead{display:flex;align-items:center;gap:10px;margin-bottom:14px}.circuitStationEditorBack{width:100%;margin-bottom:14px}.circuitStationTypeTabs,.circuitModeTabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.circuitStationTypeTabs .btn,.circuitModeTabs .btn{min-height:54px;font-weight:900}.circuitStationPanel{border:1px solid var(--line);border-radius:14px;padding:14px;background:#111419}.circuitStationPanelGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.circuitStationPanelGrid .wide{grid-column:1/-1}.circuitStationPanelField label{font-size:11px;text-transform:uppercase;color:#aeb5c1;display:block;margin-bottom:6px}.circuitStationPanelField input,.circuitStationPanelField select,.circuitStationPanelField textarea{width:100%}.circuitStationSave{width:100%;margin-top:14px;min-height:56px}.circuitStationEditorActions{display:flex;gap:10px;margin-top:14px}.circuitStationEditorActions .btn{flex:1;min-height:52px}.circuitRecoveryNote{min-height:110px;resize:vertical}
-@media(max-width:600px){.circuitStationPanelGrid{grid-template-columns:1fr}.circuitStationPanelGrid .wide{grid-column:auto}.circuitStationCard{align-items:flex-start;flex-direction:column}.circuitStationCardActions{width:100%;justify-content:stretch}.circuitStationCardActions .btn{flex:1}}
 
-.circuitRunner{background:#0b0d10;border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center}
-.circuitRunnerTitle{font-size:22px;font-weight:900}
-.circuitRunnerRound{color:#aeb5c1;margin-top:5px}
-.circuitRunnerPhase{font-size:15px;color:var(--accent);font-weight:800;margin-top:18px}
-.circuitRunnerDisplay{font-size:72px;line-height:1;font-weight:950;margin:18px 0}
-.circuitRunnerExercise{font-size:26px;font-weight:900}
-.circuitRunnerNext{margin-top:10px;color:#aeb5c1}
-.circuitRunnerActions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
-@media(max-width:800px){.circuitBuilderGrid{grid-template-columns:1fr}.circuitBuilderWide{grid-column:auto}}
-@media(max-width:600px){.circuitStationGrid{grid-template-columns:1fr}.circuitStationGrid .wide{grid-column:auto}.circuitMode button{min-width:0;flex:1}}
 </style><style>
 /* Contabilità: uniforma il carattere a quello usato nelle altre sezioni, senza modificare la logica. */
 #content:has(#accountingList) { font-family: inherit; }
@@ -274,7 +250,7 @@ if(n==="nr_allergies_multi"){const none="Nessuna";if(t.checked&&t.value===none)d
 <div id="login" class="loginScreen"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeLogin()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Coach Pro Web</h1><p>Accedi con le stesse credenziali dell'app Android.</p><form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><div class="passwordWrap"><input id="password" type="password" autocomplete="current-password" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('password',this)">MOSTRA</button></div><button class="btn full" type="submit">Accedi</button><div id="error" class="error"></div></form><div style="margin-top:12px;text-align:center"><button class="btn secondary mini" type="button" onclick="openPasswordRecovery()">Password dimenticata?</button></div><div style="margin-top:18px;text-align:center"><span class="muted">Non hai ancora un account?</span> <button class="btn secondary mini" type="button" onclick="openRegister()">Registrati</button></div></div></div>
 <div id="passwordRecovery" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closePasswordRecovery()">← Torna all'accesso</button><div class="brand">KLEOS<span>FIT</span></div><h1 id="recoveryTitle">Recupera password</h1><p id="recoveryDescription">Inserisci l'email del tuo account. Riceverai un link per impostare una nuova password.</p><form id="recoveryForm"><label>Email</label><input id="recoveryEmail" type="email" autocomplete="email" required><button class="btn full" type="submit">Invia link di recupero</button><div id="recoveryError" class="error"></div><div id="recoverySuccess" class="success" style="display:none"></div></form><form id="resetPasswordForm" style="display:none"><label>Nuova password</label><div class="passwordWrap"><input id="newPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" onclick="togglePassword('newPassword',this)">MOSTRA</button></div><label>Conferma nuova password</label><div class="passwordWrap"><input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" onclick="togglePassword('confirmNewPassword',this)">MOSTRA</button></div><button class="btn full" type="submit">Salva nuova password</button><div id="resetError" class="error"></div><div id="resetSuccess" class="success" style="display:none"></div></form></div></div>
 <div id="register" class="loginScreen" style="display:none"><div class="loginbox"><button class="btn secondary mini loginBack" type="button" onclick="closeRegister()">← Torna alla home</button><div class="brand">KLEOS<span>FIT</span></div><h1>Prima registrazione</h1><p>Crea il tuo account cliente per accedere a KleosFit Coach Pro.</p><form id="registerForm"><label>Nome e Cognome</label><input id="registerName" type="text" autocomplete="name" required><label>Email</label><input id="registerEmail" type="email" autocomplete="email" required><label>Password</label><div class="passwordWrap"><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPassword',this)">MOSTRA</button></div><label>Conferma Password</label><div class="passwordWrap"><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="6" required><button class="passwordToggle" type="button" aria-label="Mostra password" onclick="togglePassword('registerPasswordConfirm',this)">MOSTRA</button></div><button class="btn full" type="submit">Crea account</button><div id="registerError" class="error"></div><div id="registerSuccess" class="success" style="display:none"></div></form></div></div><div id="app" class="app hide">
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button class="hideForClientNav" style="display:none" onclick="show('circuits',this)">⟳ <span>Circuiti</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button onclick="show('regulation',this)">☷ <span>Regolamento</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientAnagraficaNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalbox"><div id="modalContent"></div></div></div><aside class="side"><div class="logo">KLEOS<span>FIT</span></div><div id="role" class="role">Utente</div><nav class="nav"><button class="active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button><button onclick="show('workout',this)">▣ <span>Workout</span></button><button class="clientOnlyNav" style="display:none" onclick="show('qrcodes',this)">▦ <span>Il mio QR Code</span></button><button onclick="show('nutrition',this)">◈ <span>Nutrizione</span></button><button onclick="show('booking',this)">◷ <span>Prenotazioni</span></button><button onclick="show('regulation',this)">☷ <span>Regolamento</span></button><button class="clientOnlyNav" style="display:none" onclick="show('progress',this)">↗ <span>Progressi</span></button><button class="clientAnagraficaNav" style="display:none" onclick="show('anagraficaClient',this)">♙ <span>Anagrafica</span></button><button class="clientOnlyNav" style="display:none" onclick="show('myNotifications',this)">🔔 <span>Notifiche</span></button><button onclick="show('rampTimer',this)">⏱ <span>Cronometro</span></button><button class="clientOnlyNav" style="display:none" onclick="show('priceList',this)">▣ <span>Listino prezzi</span></button><button onclick="show('payments',this)">€ <span>Pagamenti</span></button><button onclick="show('admin',this)">⚙ <span>Amministrazione</span></button><button class="superuserOnlyNav" style="display:none" onclick="show('superuser',this)">♛ <span>Superuser</span></button></nav><button class="btn secondary logout" onclick="logout()">Logout</button></aside><main class="main" id="content"></main></div><script>
 const SUPABASE_URL='https://dicfqbqdbqkyggjezpaz.supabase.co';
 const SUPABASE_KEY='sb_publishable_m4WBBkaDzYRfeEQYrCkdGw_LSKwPBB_';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -504,8 +480,8 @@ superuser:`<div class="top"><div><div class="title">Pannello amministrazione</di
  <button type="button" onclick="show('activeSubscriptions',this)">Abbonamenti attivi</button>
  <button type="button" onclick="show('accounting',this)">Contabilità</button>
  
- <button type="button" onclick="show('circuits')">Circuiti</button>
- <button type="button" onclick="if(isSuperuserRole())window.open('monitor-circuito.html','_blank','noopener')">Apri monitor</button>
+ 
+ <button type="button" onclick="if(isSuperuserRole())window.open('monitor-circuito.html','_blank','noopener')">Monitor schede TXT</button>
 <button type="button" onclick="window.open('schede-txt.html','_blank','noopener')">Crea scheda TXT</button>
 </div>`,
 suspendedClients:`<div class="top"><div><div class="title">Clienti sospesi</div><div class="sub">Clienti messi in pausa e temporaneamente esclusi dalla gestione ordinaria.</div></div><button class="btn" type="button" onclick="loadSuspendedClients()">Aggiorna</button></div><div class="card"><div id="suspendedClientError" class="error"></div><div id="suspendedClientCount" class="muted">Caricamento...</div><div id="suspendedClientList" style="margin-top:12px">Caricamento...</div></div>`,
@@ -513,340 +489,11 @@ subscriptionPrices:`<div class="top"><div><div class="title">Prezzi abbonamenti<
 <div class="card"><div id="subscriptionPricesError" class="error"></div><div id="subscriptionPricesStatus" class="muted">Caricamento prezzi...</div><div id="subscriptionPricesList" style="margin-top:14px">Caricamento...</div></div>`,
 courseCatalog:`<div class="top"><div><div class="title">Gestione corsi</div><div class="sub">Gestisci i corsi disponibili come abbonamento base o come corso aggiuntivo Plus.</div></div><button class="btn" type="button" onclick="openCourseCatalogModal()">＋ Nuovo corso</button></div>
 <div class="card"><div id="courseCatalogError" class="error"></div><div id="courseCatalogStatus" class="muted">Caricamento corsi...</div><div id="courseCatalogList" style="margin-top:14px">Caricamento...</div></div>`,
-circuits:`<div class="top"><div><div class="title">Circuiti</div><div class="sub">Circuiti funzionali a tempo, ripetizioni e recupero.</div></div><button class="btn" type="button" onclick="openCircuitBuilder()">＋ Nuovo circuito</button></div>
-<div class="card"><div class="inputrow"><input id="circuitSearch" placeholder="Cerca circuito..." oninput="renderCircuits()"><button class="btn secondary" type="button" onclick="loadCircuits()">Aggiorna</button></div><div id="circuitsStatus" class="muted" style="margin-top:10px">Caricamento...</div><div id="circuitsList" class="circuitList" style="margin-top:14px"></div></div>`,
 progressAdmin:`<div class="top"><div><div class="title">Progressi clienti</div><div class="sub">Consultazione delle misurazioni corporee registrate dal coach.</div></div><button class="btn" type="button" onclick="loadProgressAdmin()">Aggiorna</button></div>
 <div class="card"><div class="inputrow"><input id="progressAdminSearch" placeholder="Cerca cliente per nome, email o tessera" oninput="filterProgressAdminClients()"></div><div id="progressAdminStatus" class="muted">Caricamento clienti...</div><div id="progressAdminClients" style="margin-top:14px"></div></div>
 <div id="progressAdminDetail" class="section"></div>`,
 };
 
-let circuitsData=[];
-let circuitStationsDraft=[];
-let circuitRunnerState=null;
-let circuitRunnerTimer=0;
-let circuitRunnerLast=0;
-
-async function loadCircuits(){
- const status=document.getElementById('circuitsStatus'),list=document.getElementById('circuitsList');if(!list)return;
- if(status)status.textContent='Caricamento circuiti...';
- const r=await db.from('functional_circuits').select('*').order('title',{ascending:true});
- if(r.error){if(status)status.textContent='Circuiti non disponibili: '+r.error.message;list.innerHTML='<div class="error" style="display:block">Errore lettura circuiti: '+esc(r.error.message)+'</div>';return;}
- circuitsData=r.data||[];
- for(const c of circuitsData){
-   const q=await db.from('functional_circuit_stations').select('id',{count:'exact',head:true}).eq('circuit_id',c.id);
-   c.station_count=q.count||0;
- }
- if(status)status.textContent=circuitsData.length+(circuitsData.length===1?' circuito':' circuiti');
- renderCircuits();
-}
-function renderCircuits(){
- const list=document.getElementById('circuitsList');if(!list)return;
- const q=(document.getElementById('circuitSearch')?.value||'').toLowerCase().trim();
- let rows=circuitsData.filter(c=>!q||[c.title,c.description].map(x=>String(x||'').toLowerCase()).join(' ').includes(q));
- if(isClientRole()) rows=rows.filter(c=>String(c.status||'active').toLowerCase()==='active' && c.client_authorized===true);
- if(!rows.length){list.innerHTML='<div class="muted">Nessun circuito disponibile.</div>';return;}
- list.innerHTML=rows.map(c=>`<div class="circuitCard"><div class="circuitCardHead"><div><h3 style="margin:0">${esc(c.title||'Circuito')}</h3><div class="muted" style="margin-top:5px">${esc(c.description||'Circuito a tempo/ripetizioni e recuperi.')}</div></div><div class="circuitActions"><button class="btn mini" type="button" onclick="openCircuitRunner('${c.id}')">▶ AVVIA</button>${isSuperuserRole()?`<button class="btn secondary mini" type="button" onclick="openCircuitBuilder('${c.id}')">Modifica</button><button class="btn secondary mini" type="button" onclick="deleteCircuit('${c.id}')">Elimina</button>`:''}</div></div><div class="circuitMeta"><span class="pill">${c.rounds||1} giri</span><span class="pill">${c.station_count||0} stazioni</span><span class="pill">Recupero ${c.rest_between_rounds_seconds||0}s</span>${isSuperuserRole()?`<span class="pill">${c.client_authorized===false?'Non autorizzato':'Autorizzato'}</span><span class="pill">${String(c.status||'').toLowerCase()!=='active'?'Disattivo':'Attivo'}</span>`:''}</div></div>`).join('');
-}
-let circuitBuilderContext=null;
-let circuitStationEditorIndex=null;
-let circuitStationEditorDraft=null;
-
-async function openCircuitBuilder(id=null){
- await loadExerciseLibrary();
- let c=null,stations=[];
- if(id){
-  c=circuitsData.find(x=>String(x.id)===String(id));
-  const r=await db.from('functional_circuit_stations').select('*').eq('circuit_id',id).order('sort_order',{ascending:true});
-  if(r.error){alert('Impossibile caricare il circuito: '+r.error.message);return;}
-  stations=r.data||[];
- }
- circuitBuilderContext={
-  id:id||null,
-  title:c?.title||'',
-  description:c?.description||'',
-  rounds:c?.rounds??4,
-  rest_between_rounds_seconds:c?.rest_between_rounds_seconds??60,
-  status:String(c?.status||'active').toLowerCase()==='active',
-  client_authorized:c?.client_authorized===true
- };
- circuitStationsDraft=stations.map(s=>({
-  ...s,
-  station_type:String(s.station_type||'exercise').toLowerCase()==='recovery'?'recovery':'exercise',
-  exercise_id:'',
-  exercise_name:s.exercise_name||'',
-  recovery_name:s.station_type==='recovery'?(s.exercise_name||'Recupero'):(s.recovery_name||''),
-  mode:(s.work_mode==='reps'?'reps':'time'),
-  work_seconds:s.work_seconds??60,
-  repetitions:s.reps??1,
-  seconds_between_reps:s.rep_interval_seconds??0,
-  rest_seconds:s.recovery_seconds??20,
-  load_value:s.load_text??0,
-  prep_seconds:0,
-  notes:s.notes||''
- }));
- renderCircuitBuilderModal();
-}
-
-function calculateCircuitTotalSeconds(){
- const c=circuitBuilderContext||{};
- const rounds=Math.max(1,Number(document.getElementById('cRounds')?.value||c.rounds||1));
- const roundRest=Math.max(0,Number(document.getElementById('cRoundRest')?.value||c.rest_between_rounds_seconds||0));
- const stationTotal=(circuitStationsDraft||[]).reduce((total,st)=>{
-  const work=st.station_type==='recovery'
-    ? Number(st.work_seconds||st.recovery_seconds||0)
-    : (st.mode==='reps'
-      ? Number(st.repetitions||0)*Number(st.seconds_between_reps||st.rep_interval_seconds||0)
-      : Number(st.work_seconds||0));
-  const rest=st.station_type==='exercise'?Number(st.rest_seconds||st.recovery_seconds||0):0;
-  return total+Math.max(0,work)+Math.max(0,rest);
- },0);
- return stationTotal*rounds+roundRest*Math.max(0,rounds-1);
-}
-function formatCircuitTotalSeconds(seconds){
- const total=Math.max(0,Math.round(Number(seconds)||0));
- const h=Math.floor(total/3600);
- const m=Math.floor((total%3600)/60);
- const sec=total%60;
- return h>0
-  ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
-  : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-}
-function updateCircuitTotalTime(){
- const el=document.getElementById('cTotalTime');
- if(el)el.value=formatCircuitTotalSeconds(calculateCircuitTotalSeconds());
-}
-
-function renderCircuitBuilderModal(){
- const c=circuitBuilderContext||{};
- openModal(`<div class="modalhead"><h2>${c.id?'Modifica circuito':'Nuovo circuito'}</h2><button class="close" onclick="closeModal()">Chiudi</button></div><div class="circuitBuilderGrid">
-  <div class="circuitBuilderWide"><label>Nome circuito</label><input id="cName" value="${esc(c.title||'')}" placeholder="es. Circuito Full Body 01"></div>
-  <div class="circuitBuilderWide"><label>Descrizione</label><input id="cDesc" value="${esc(c.description||'')}" placeholder="Circuito a tempo/ripetizioni e recuperi"></div>
-  <div><label>Giri / Round</label><input id="cRounds" type="number" min="1" max="50" value="${esc(c.rounds??4)}" oninput="updateCircuitTotalTime()"></div>
-  <div><label>Recupero tra giri (sec)</label><input id="cRoundRest" type="number" min="0" max="3600" value="${esc(c.rest_between_rounds_seconds??60)}" oninput="updateCircuitTotalTime()"></div>
-  <div><label>Tempo totale circuito</label><input id="cTotalTime" type="text" value="${formatCircuitTotalSeconds(0)}" readonly></div>
- </div><div class="checkrow" style="margin-top:12px"><label><input id="cActive" type="checkbox" ${c.status?'checked':''}> Circuito attivo</label><label><input id="cAuthorized" type="checkbox" ${c.client_authorized?'checked':''}> Autorizzato ai clienti</label></div>
- <div class="circuitStationBuilder"><div class="circuitStationBuilderHead"><div><b>Stazioni</b><div class="muted">Gestisci esercizi e recuperi come nell'app.</div></div><button class="btn secondary mini" type="button" onclick="addCircuitStation()">＋ Nuova stazione</button></div><div id="circuitStationsDraft"></div></div>
- <div id="cMsg" class="error"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveCircuit('${c.id||''}')">Salva circuito</button></div>`);
- renderCircuitStationsDraft();
- updateCircuitTotalTime();
-}
-
-function addCircuitStation(){
- circuitStationsDraft.push({station_type:'exercise',exercise_id:'',exercise_name:'',recovery_name:'Recupero',muscle_group:'Full body',equipment:'Corpo libero',mode:'time',work_seconds:60,repetitions:1,rep_seconds:2,seconds_between_reps:0,rest_seconds:20,prep_seconds:0,load_value:0,notes:''});
- const i=circuitStationsDraft.length-1;
- openCircuitStationEditor(i);
-}
-
-function removeCircuitStation(i){circuitStationsDraft.splice(i,1);renderCircuitStationsDraft();}
-
-function renderCircuitStationsDraft(){
- const box=document.getElementById('circuitStationsDraft');if(!box)return;
- if(!circuitStationsDraft.length){box.innerHTML='<div class="circuitStationEmpty">Nessuna stazione inserita. Premi “＋ Nuova stazione”.</div>';return;}
- box.innerHTML=circuitStationsDraft.map((s,i)=>{
-  const recovery=s.station_type==='recovery';
-  const name=recovery?(s.recovery_name||s.exercise_name||'Recupero'):(s.exercise_name||'Esercizio non selezionato');
-  const meta=recovery?`Recupero · ${Number(s.work_seconds||s.recovery_seconds||0)} sec`:`${s.mode==='reps'?'Ripetizioni':'Tempo'} · ${s.mode==='reps'?Number(s.repetitions||0)+' rep':Number(s.work_seconds||0)+' sec'}`;
-  return `<div class="circuitStationCard"><div class="circuitStationCardMain"><div class="circuitStationCardTitle">STAZIONE ${i+1} · ${recovery?'RECUPERO':'ESERCIZIO'}</div><div class="circuitStationCardName">${esc(name)}</div><div class="circuitStationCardMeta">${esc(meta)}</div></div><div class="circuitStationCardActions"><button class="btn secondary mini" type="button" onclick="openCircuitStationEditor(${i})">Modifica</button><button class="btn secondary mini" type="button" onclick="removeCircuitStation(${i})">×</button></div></div>`;
- }).join('');
- updateCircuitTotalTime();
-}
-
-function openCircuitStationEditor(i){
- const s=circuitStationsDraft[i];if(!s)return;
- circuitStationEditorIndex=i;
- circuitStationEditorDraft={...s};
- renderCircuitStationEditor();
-}
-
-function renderCircuitStationEditor(){
- const s=circuitStationEditorDraft;if(!s)return;
- const i=circuitStationEditorIndex;
- const recovery=s.station_type==='recovery';
- const opts='<option value="">— Seleziona dalla libreria esercizi —</option>'+exerciseLibraryData.map(e=>`<option value="${esc(e.name)}">${esc(e.name)}</option>`).join('');
- openModal(`<div class="modalhead"><h2>Dati stazione</h2><button class="close" onclick="closeModal()">Chiudi</button></div>
- <button class="btn secondary circuitStationEditorBack" type="button" onclick="returnToCircuitBuilder()">← Torna al circuito</button>
- <div class="circuitStationTypeTabs"><button type="button" class="btn ${!recovery?'':'secondary'}" onclick="setCircuitStationType('exercise')">Esercizio</button><button type="button" class="btn ${recovery?'':'secondary'}" onclick="setCircuitStationType('recovery')">Recupero</button></div>
- ${recovery?renderCircuitRecoveryEditor(s):renderCircuitExerciseEditor(s,opts)}
- <div id="stationMsg" class="error"></div><button class="btn circuitStationSave" type="button" onclick="saveCircuitStationEditor()">▣ Salva stazione</button>`);
- if(!recovery){const sel=document.getElementById('stationLibrary');if(sel)sel.value=s.exercise_name||'';}
-}
-
-function renderCircuitExerciseEditor(s,opts){
- return `<div class="circuitStationPanel"><div class="circuitModeTabs"><button type="button" class="btn ${s.mode!=='reps'?'':'secondary'}" onclick="setCircuitStationMode('time')">Tempo</button><button type="button" class="btn ${s.mode==='reps'?'':'secondary'}" onclick="setCircuitStationMode('reps')">Ripetizioni</button></div><div class="circuitStationPanelGrid">
-  <div class="circuitStationPanelField"><label>Gruppo muscolare</label><input id="stationMuscle" value="${esc(s.muscle_group??'')}" placeholder="Gruppo muscolare"></div>
-  <div class="circuitStationPanelField"><label>Nome esercizio</label><input id="stationName" value="${esc(s.exercise_name??'')}" placeholder="Nome esercizio"></div>
-  <div class="circuitStationPanelField wide"><label>Libreria esercizi</label><select id="stationLibrary" onchange="setCircuitStationField('exercise_name',this.value)">${opts}</select></div>
-  <div class="circuitStationPanelField wide"><label>Attrezzo</label><input id="stationEquipment" value="${esc(s.equipment??'Corpo libero')}" placeholder="Attrezzo"></div>
-  ${s.mode!=='reps'?`<div class="circuitStationPanelField"><label>Secondi lavoro</label><input id="stationWork" type="number" min="1" value="${esc(s.work_seconds??60)}"></div>`:`<div class="circuitStationPanelField"><label>Ripetizioni max 50</label><input id="stationReps" type="number" min="1" max="50" value="${esc(Math.min(50,s.repetitions??1))}"></div><div class="circuitStationPanelField"><label>Secondi tra ripetizioni</label><input id="stationRepInterval" type="number" min="0" value="${esc(s.seconds_between_reps??0)}"></div>`}
-  <div class="circuitStationPanelField"><label>Recupero dopo stazione (sec)</label><input id="stationRest" type="number" min="0" value="${esc(s.rest_seconds??20)}"></div>
-  <div class="circuitStationPanelField"><label>Carico</label><input id="stationLoad" type="number" min="0" step="0.5" value="${esc(s.load_value??0)}"></div>
- </div></div>`;
-}
-
-function renderCircuitRecoveryEditor(s){
- return `<div class="circuitStationPanel"><div class="circuitStationPanelGrid">
-  <div class="circuitStationPanelField wide"><label>Nome recupero</label><input id="recoveryName" value="${esc(s.recovery_name||s.exercise_name||'Recupero')}" placeholder="Recupero"></div>
-  <div class="circuitStationPanelField wide"><label>Secondi lavoro</label><input id="recoverySeconds" type="number" min="0" value="${esc(s.work_seconds??60)}"></div>
-  <div class="circuitStationPanelField wide"><label>Note</label><textarea id="recoveryNotes" class="circuitRecoveryNote" placeholder="Respira profondamente">${esc(s.notes||'')}</textarea></div>
- </div></div>`;
-}
-
-function setCircuitStationType(type){
- circuitStationEditorDraft.station_type=type==='recovery'?'recovery':'exercise';
- if(circuitStationEditorDraft.station_type==='recovery'){
-  circuitStationEditorDraft.recovery_name=circuitStationEditorDraft.recovery_name||'Recupero';
-  circuitStationEditorDraft.notes=circuitStationEditorDraft.notes||'Respira profondamente';
- }else{
-  circuitStationEditorDraft.exercise_name=circuitStationEditorDraft.exercise_name||'';
- }
- renderCircuitStationEditor();
-}
-function setCircuitStationMode(mode){circuitStationEditorDraft.mode=mode==='reps'?'reps':'time';renderCircuitStationEditor();}
-function setCircuitStationField(key,value){circuitStationEditorDraft[key]=value;}
-
-function saveCircuitStationEditor(){
- const s=circuitStationEditorDraft;if(!s)return;
- if(s.station_type==='recovery'){
-  s.recovery_name=(document.getElementById('recoveryName')?.value||'Recupero').trim()||'Recupero';
-  s.exercise_name=s.recovery_name;
-  s.work_seconds=Math.max(0,Number(document.getElementById('recoverySeconds')?.value||0));
-  s.notes=document.getElementById('recoveryNotes')?.value||'';
-  s.mode='time';s.rest_seconds=0;s.load_value=0;
- }else{
-  s.muscle_group=document.getElementById('stationMuscle')?.value||'';
-  s.exercise_name=document.getElementById('stationName')?.value||'';
-  s.equipment=document.getElementById('stationEquipment')?.value||'Corpo libero';
-  if(s.mode!=='reps') s.work_seconds=Math.max(1,Number(document.getElementById('stationWork')?.value||1));
-  if(s.mode==='reps'){
-   s.repetitions=Math.min(50,Math.max(1,Number(document.getElementById('stationReps')?.value||1)));
-   s.seconds_between_reps=Math.max(0,Number(document.getElementById('stationRepInterval')?.value||0));
-  }
-  s.rest_seconds=Math.max(0,Number(document.getElementById('stationRest')?.value||0));
-  s.load_value=Math.max(0,Number(document.getElementById('stationLoad')?.value||0));
- }
- circuitStationsDraft[circuitStationEditorIndex]={...s};
- returnToCircuitBuilder();
-}
-
-function returnToCircuitBuilder(){
- const c=circuitBuilderContext||{};
- circuitStationEditorIndex=null;circuitStationEditorDraft=null;
- renderCircuitBuilderModal();
-}
-
-function updateCircuitStation(i,key,value){if(!circuitStationsDraft[i])return;if(['work_seconds','repetitions','rep_seconds','seconds_between_reps','rest_seconds','prep_seconds','load_value'].includes(key))value=Math.max(0,Number(value||0));if(key==='repetitions')value=Math.min(50,value);circuitStationsDraft[i][key]=value;}
-function updateCircuitStationName(i,id){const e=exerciseLibraryData.find(x=>String(x.id)===String(id));if(e)circuitStationsDraft[i].exercise_name=e.name||'';}
-
-async function saveCircuit(id){
- const title=document.getElementById('cName')?.value.trim();if(!title){notice('cMsg','Inserisci il nome del circuito.');return;}
- const circuitStatus=document.getElementById('cActive')?.checked===false?'inactive':'active';
- const payload={
-  title,
-  description:document.getElementById('cDesc')?.value.trim()||null,
-  rounds:Math.max(1,Number(document.getElementById('cRounds')?.value||1)),
-  rest_between_rounds_seconds:Math.max(0,Number(document.getElementById('cRoundRest')?.value||0)),
-  client_authorized:document.getElementById('cAuthorized')?.checked===true
- };
- let r=id?await db.from('functional_circuits').update({...payload,status:circuitStatus}).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
- if(r.error && String(r.error.message||'').includes('functional_circuits_status_check')){
-  r=id?await db.from('functional_circuits').update(payload).eq('id',id).select().single():await db.from('functional_circuits').insert(payload).select().single();
- }
- if(r.error){notice('cMsg','Errore salvataggio circuito: '+r.error.message);return;}
- const circuitId=r.data.id;
- if(id){const d=await db.from('functional_circuit_stations').delete().eq('circuit_id',circuitId);if(d.error){notice('cMsg','Errore aggiornamento stazioni: '+d.error.message);return;}}
- const stations=circuitStationsDraft.map((st,i)=>({
-  circuit_id:circuitId,
-  sort_order:i+1,
-  station_type:st.station_type||'exercise',
-  muscle_group:st.station_type==='recovery'?null:(st.muscle_group||null),
-  exercise_name:st.station_type==='recovery'?(st.recovery_name||st.exercise_name||'Recupero'):(st.exercise_name||null),
-  equipment:st.station_type==='recovery'?null:(st.equipment||null),
-  work_mode:st.station_type==='recovery'?'time':(st.mode==='reps'?'reps':'time'),
-  work_seconds:Math.max(0,Number(st.work_seconds||0)),
-  reps:st.station_type==='exercise' && st.mode==='reps'?Math.min(50,Math.max(1,Number(st.repetitions||1))):null,
-  recovery_seconds:st.station_type==='exercise'?Math.max(0,Number(st.rest_seconds||0)):Math.max(0,Number(st.work_seconds||0)),
-  load_text:st.station_type==='recovery'?null:(st.load_value!=null && st.load_value!=='' ? String(st.load_value) : null),
-  notes:st.notes||null,
-  rep_interval_seconds:st.station_type==='exercise' && st.mode==='reps'?Math.max(0,Number(st.seconds_between_reps||0)):0
- }));
- if(stations.length){const ins=await db.from('functional_circuit_stations').insert(stations);if(ins.error){notice('cMsg','Circuito salvato ma stazioni non salvate: '+ins.error.message);return;}}
- closeModal();await loadCircuits();
-}
-async function deleteCircuit(id){if(!confirm('Eliminare definitivamente questo circuito?'))return;const d=await db.from('functional_circuit_stations').delete().eq('circuit_id',id);if(d.error){alert('Errore eliminazione stazioni: '+d.error.message);return;}const r=await db.from('functional_circuits').delete().eq('id',id);if(r.error){alert('Errore eliminazione circuito: '+r.error.message);return;}await loadCircuits();}
-async function openCircuitRunner(id){
- const c=circuitsData.find(x=>String(x.id)===String(id));if(!c)return;
- if(isClientRole() && !(c.client_authorized===true && String(c.status||'active').toLowerCase()==='active')){alert('Questo circuito non è disponibile per il cliente.');return;}
- const r=await db.from('functional_circuit_stations').select('*').eq('circuit_id',id).order('sort_order',{ascending:true});if(r.error){alert('Impossibile aprire il circuito: '+r.error.message);return;}
- if(!(r.data||[]).length){alert('Il circuito non contiene stazioni.');return;}
- circuitRunnerState={c,stations:r.data||[],round:1,index:0,phase:(r.data||[])[0]?.work_mode==='reps'?'reps':'work',remaining:(r.data||[])[0]?.work_mode==='reps'?Number((r.data||[])[0]?.rep_interval_seconds||1):Number((r.data||[])[0]?.work_seconds||1),rep:0,running:false};
- renderCircuitRunnerPage();
- renderCircuitRunner();
-}
-function renderCircuitRunnerPage(){
- const content=document.getElementById('content');if(!content)return;
- content.innerHTML=`<div class="top"><div><div class="title">${esc(circuitRunnerState?.c?.title||'Circuito')}</div><div class="sub">Esecuzione circuito</div></div><button class="btn secondary" type="button" onclick="stopCircuitRunner();show('circuits',document.querySelector('.nav button[onclick*=\"circuits\"]'))">← Circuiti</button></div><div class="circuitRunnerPage"><div class="circuitRunnerTitle" id="crExercise">Preparati</div><div class="circuitRunnerRound" id="crRound"></div><div class="circuitRunnerPhase" id="crPhase">Pronto</div><div class="circuitRunnerDisplay" id="crDisplay">00:00</div><div class="circuitRunnerExercise" id="crStation">—</div><div class="circuitRunnerNext" id="crNext"></div><div class="circuitRunnerActions"><button class="btn" id="crStart" onclick="toggleCircuitRunner()">▶ AVVIA</button><button class="btn secondary" onclick="resetCircuitRunner()">RESET</button><button class="btn secondary" onclick="nextCircuitRunner()">SALTA</button></div></div>`;
-}
-
-function circuitFmt(sec){sec=Math.max(0,Math.ceil(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
-function renderCircuitRunner(){
- const s=circuitRunnerState;if(!s)return;
- const st=s.stations[s.index],ex=st?.exercise_name||'Esercizio';
- const next=s.stations[s.index+1]?.exercise_name||(s.round<s.c.rounds?s.stations[0]?.exercise_name:'Fine circuito');
- const phase=s.phase==='rest'?'Recupero':s.phase==='reps'?'Ripetizioni':s.phase==='done'?'COMPLETO':'Lavoro';
- document.getElementById('crExercise').textContent=s.phase==='done'?'Circuito completato':ex;
- document.getElementById('crRound').textContent=s.phase==='done'?'':`Giro ${s.round} / ${s.c.rounds}`;
- document.getElementById('crPhase').textContent=phase;
- document.getElementById('crDisplay').textContent=s.phase==='reps'?`${s.rep}/${st?.reps||0}`:circuitFmt(s.remaining);
- document.getElementById('crStation').textContent=st?.equipment?`${ex} · ${st.equipment}`:ex;
- document.getElementById('crNext').textContent=next&&next!=='Fine circuito'?`Prossima stazione: ${next}`:'Circuito completato';
- const btn=document.getElementById('crStart');if(btn)btn.textContent=s.running?'⏸ PAUSA':'▶ AVVIA';
-}
-function toggleCircuitRunner(){const s=circuitRunnerState;if(!s)return;s.running=!s.running;if(s.running){circuitRunnerLast=0;cancelAnimationFrame(circuitRunnerTimer);circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);}else cancelAnimationFrame(circuitRunnerTimer);renderCircuitRunner();}
-function stopCircuitRunner(){circuitRunnerState=null;cancelAnimationFrame(circuitRunnerTimer);}
-function resetCircuitRunner(){
- const s=circuitRunnerState;if(!s)return;
- const st=s.stations[0];
- s.round=1;s.index=0;s.phase=st?.work_mode==='reps'?'reps':'work';
- s.remaining=s.phase==='reps'?Number(st?.rep_interval_seconds||1):Number(st?.work_seconds||1);
- s.rep=0;s.running=false;cancelAnimationFrame(circuitRunnerTimer);renderCircuitRunner();
-}
-function nextCircuitRunner(){const s=circuitRunnerState;if(!s)return;circuitAdvanceRunner();renderCircuitRunner();}
-function circuitAdvanceRunner(){
- const s=circuitRunnerState,st=s.stations[s.index];
- if(st?.recovery_seconds>0){s.phase='rest';s.remaining=Number(st.recovery_seconds);return;}
- if(s.index<s.stations.length-1){
-   s.index++;const n=s.stations[s.index];s.phase=n.work_mode==='reps'?'reps':'work';
-   s.remaining=s.phase==='reps'?Number(n.rep_interval_seconds||1):Number(n.work_seconds||1);s.rep=0;return;
- }
- if(s.round<s.c.rounds){
-   s.round++;s.index=0;const n=s.stations[0];s.phase=n.work_mode==='reps'?'reps':'work';
-   s.remaining=s.phase==='reps'?Number(n.rep_interval_seconds||1):Number(n.work_seconds||1);s.rep=0;return;
- }
- s.running=false;s.phase='done';s.remaining=0;
-}
-function circuitRunnerTick(t){
- const s=circuitRunnerState;if(!s||!s.running)return;
- if(!circuitRunnerLast)circuitRunnerLast=t;
- const dt=(t-circuitRunnerLast)/1000;circuitRunnerLast=t;
- const st=s.stations[s.index];
- if(s.phase==='work'||s.phase==='rest'){
-   s.remaining-=dt;
-   if(s.remaining<=0){
-     if(s.phase==='work'){
-       if(st.work_mode==='reps'){s.phase='reps';s.rep=0;s.remaining=Number(st.rep_interval_seconds||1);}
-       else circuitAdvanceRunner();
-     }else circuitAdvanceRunner();
-   }
- }else if(s.phase==='reps'){
-   s.remaining-=dt;
-   if(s.remaining<=0){
-     s.rep++;
-     if(s.rep>=Number(st.reps||1)){circuitAdvanceRunner();}
-     else s.remaining=Number(st.rep_interval_seconds||1);
-   }
- }
- renderCircuitRunner();if(s.running)circuitRunnerTimer=requestAnimationFrame(circuitRunnerTick);
-}
 const VAPID_PUBLIC_KEY='BF3sh9vV60FkOEH-lMcvI8Dl8vZsImpfm2WVwFBmSKx9uPcwythx0Mx-it4nTwobAs0JxNjyi5z0pElYegZorU4';
 function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
 async function getPushSubscription(){
@@ -1038,7 +685,6 @@ function show(v,el){
  if(v==='subscriptionPrices') loadSubscriptionPrices();
  if(v==='accounting') { setAccountingMonth(false); loadAccounting(); }
  if(v==='courseCatalog') loadCourseCatalog();
- if(v==='circuits') loadCircuits();
 
   if(v==='slotDelete') setTimeout(loadSlotDelete,100);
 }

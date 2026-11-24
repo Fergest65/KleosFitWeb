@@ -194,7 +194,7 @@ async function addTableExercise(){
   const next=JSON.parse(JSON.stringify(previous));
   await embedSheetReplacement(next,{name,url:src});
   if(request!==readRequest||txtImageData!==previous||!editor.value.split('\n').includes(line))return;
-  if(new Blob([editor.value,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La foto supera lo spazio disponibile nella scheda.');
+  const compressedSize=await compressSheetImagesToFit(next,editor.value);if(compressedSize>9.5*1024*1024)throw Error('La scheda resta oltre 10 MB anche dopo la compressione automatica. Rimuovi una o più immagini.');
   txtImageData=next;edited();report(name+' aggiunto con immagine.');
  }catch(error){
   if(request===readRequest&&editor.value.split('\n').includes(line))report(added+' Foto non caricata. Puoi allegarla con «Modifica esercizio». '+error.message,true);
@@ -403,6 +403,41 @@ function editableSheetRow(line){
  }
  return line.match(/^(\s*)([^:]+?)(\s*:\s*[1-9]\d*\s*seri[ea]\s*[x×]\s*.+)$/i);
 }
+/* Riduce automaticamente le immagini incorporate quando la scheda si avvicina al limite TXT. */
+async function compressSheetImagesToFit(data,text,maxBytes=9.25*1024*1024){
+ const size=()=>new Blob([String(text||''),JSON.stringify(data)]).size;
+ if(size()<=maxBytes)return size();
+ const candidates=Object.entries(data.assets||{})
+  .filter(([,src])=>typeof src==='string'&&/^data:image\/(?:png|jpeg|webp);base64,/.test(src))
+  .sort((a,b)=>b[1].length-a[1].length);
+ for(const [id,src] of candidates){
+  if(size()<=maxBytes)break;
+  let bitmap;
+  try{bitmap=await createImageBitmap(await (await fetch(src)).blob());}
+  catch{continue;}
+  try{
+   let best=src;
+   for(const maxSide of [800,680,560,448,360]){
+    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const context=canvas.getContext('2d');
+    if(!context)continue;
+    context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    for(const quality of [0.78,0.68,0.58,0.48]){
+     const encoded=canvas.toDataURL('image/webp',quality);
+     if(encoded.length<best.length)best=encoded;
+     data.assets[id]=best;
+     if(size()<=maxBytes)return size();
+    }
+   }
+   data.assets[id]=best;
+  }finally{bitmap.close();}
+ }
+ return size();
+}
+
 async function sheetLocalPhoto(file){
  const limit=2*1024*1024;
  const header=new Uint8Array(await file.slice(0,12).arrayBuffer());
@@ -537,7 +572,7 @@ function installSheetReplacement(){
    if(editor.value!==previousText||readRequest!==previousRequest||txtImageData!==previousData)throw Error('La scheda è cambiata. Apri di nuovo «Modifica esercizio».');
    if(!onlyImage&&name!==entry[2].trim())lines[i]=entry[1]+name+entry[3];
    const updated=lines.join('\n');
-   if(new Blob([updated,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('La scheda supererebbe il limite di 10 MB.');
+   const compressedSize=await compressSheetImagesToFit(next,updated);if(compressedSize>9.5*1024*1024)throw Error('La scheda resta oltre 10 MB anche dopo la compressione automatica. Rimuovi una o più immagini.');
    txtImageData=next;editor.value=updated;panel.hidden=true;edited();
    const result=onlyImage||name===entry[2].trim()&&stored?'Immagine aggiornata.':'Esercizio sostituito con '+name+(stored?' e relativa immagine.':'.');
    message(result+(linked?' La foto viene caricata online.':'')+' Premi «Salva su Supabase».');
@@ -636,7 +671,7 @@ document.getElementById('attachExercisePhoto').onclick=async()=>{
   if(request!==readRequest)return;if(!kleosTxtRaster(src))throw Error('Formato immagine non valido.');
   const key=kleosTxtImageKey(name),asset='foto-'+key;const next=JSON.parse(JSON.stringify(txtImageData));next.assets[asset]=src;next.exercises[key]={asset};
   const used=new Set(Object.values(next.exercises).map(item=>item.asset));for(const id of Object.keys(next.assets))if(!used.has(id))delete next.assets[id];
-  if(new Blob([editor.value,JSON.stringify(next)]).size>9.5*1024*1024)throw Error('Scheda troppo grande: usa foto più leggere per restare sotto 10 MB.');
+  const compressedSize=await compressSheetImagesToFit(next,editor.value);if(compressedSize>9.5*1024*1024)throw Error('La scheda resta oltre 10 MB anche dopo la compressione automatica. Rimuovi una o più immagini.');
   txtImageData=next;clearNewSheetExerciseChoice();edited();message('Immagine associata a '+name+'. Salva la scheda TXT per conservarla.');
  }catch(error){message(error.message,true);}finally{button.disabled=false;}
 };

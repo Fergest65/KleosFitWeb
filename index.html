@@ -5927,7 +5927,7 @@ views.exerciseLibraryAdmin=`
     <label>Distretto muscolare<select name="district"></select></label>
     <label>Attrezzatura<input name="equipment"></label>
    </div>
-   <div class="inputrow"><label>URL immagine<input name="image" type="url" placeholder="https://…"></label><img id="libraryAdminPhoto" width="72" height="72" style="object-fit:contain" alt="Anteprima immagine" hidden></div>
+   <div class="inputrow"><label>URL immagine<input name="image" type="url" placeholder="https://…"></label><button id="libraryAdminImagePath" class="btn secondary" type="button">Inserisci percorso immagine</button><img id="libraryAdminPhoto" width="72" height="72" style="object-fit:contain" alt="Anteprima immagine" hidden></div>
    <div class="inputrow"><button class="btn" type="submit">Salva esercizio</button><button id="libraryAdminCancel" class="btn secondary" type="button">Chiudi modifica</button></div>
   </fieldset>
  </form>
@@ -6028,6 +6028,30 @@ async function openExerciseLibraryAdmin(){
   finally{setBusy(false);}
  };
  photo.onerror=()=>{photo.hidden=true;};
+ document.getElementById('libraryAdminImagePath').onclick=()=>{
+  const entered=prompt('Incolla il percorso nel bucket exercise-images oppure un URL. Esempio: kleos-library/squat.png',fields.image.value);
+  if(entered===null)return;
+  const value=entered.trim();
+  if(!value)return;
+  let url;
+  try{
+   if(/^https?:\/\//i.test(value)){
+    url=new URL(value);
+    if(url.username||url.password)throw Error('URL non valido.');
+    url=url.href;
+   }else{
+    const path=value.replace(/\\/g,'/').replace(/^\/+/, '').replace(/^exercise-images\//,'');
+    const segments=path.split('/');
+    if(segments.some(part=>!part||part==='.'||part==='..')||!/\.(png|jpe?g|webp|gif|avif|svg)$/i.test(path)||/^[a-z]:/i.test(path)){
+     throw Error('Inserisci il percorso del file nel bucket exercise-images.');
+    }
+    url=db.storage.from('exercise-images').getPublicUrl(path).data.publicUrl;
+   }
+   fields.image.value=url;
+   updatePreview();
+   report('Percorso inserito. Premi Salva esercizio per confermare.');
+  }catch(error){report(error.message||String(error),true);}
+ };
  fields.image.oninput=updatePreview;
  add.onclick=()=>openForm(null);
  document.getElementById('libraryAdminCancel').onclick=()=>{form.hidden=true;};

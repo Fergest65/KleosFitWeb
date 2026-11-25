@@ -5682,7 +5682,7 @@ async function uploadKleosMediaImages(input){
 .kmMusclePanel{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.kmMusclePreview{display:flex;gap:14px;align-items:center;margin:12px 0}.kmMusclePreview img{width:96px;height:96px;object-fit:contain;background:#080a0d;border:1px solid var(--line);border-radius:10px}.kmMusclePanel input[type=file]{margin:10px 0}.kmMusclePanel label{margin-top:10px}
 </style>
 <script>
-const kleosMuscleDistricts=['Pettorali','Spalle','Dorsali','Trapezio e romboidi','Lombari','Bicipiti','Tricipiti','Avambracci','Addominali e obliqui','Glutei','Quadricipiti','Ischiocrurali','Adduttori','Abduttori dell’anca','Polpacci','Tibiale anteriore','Flessori dell’anca'];
+const kleosMuscleDistricts=['Total Body','Pettorali','Spalle','Dorsali','Trapezio e romboidi','Lombari','Bicipiti','Tricipiti','Avambracci','Addominali e obliqui','Glutei','Quadricipiti','Ischiocrurali','Adduttori','Abduttori dell’anca','Polpacci','Tibiale anteriore','Flessori dell’anca'];
 function kleosMuscleKey(name){return 'muscle-districts/'+normalizeExerciseKey(name).replace(/ /g,'-')+'.webp';}
 function kleosMuscleAssociationKey(name){return 'muscle-districts/_selected/'+normalizeExerciseKey(name).replace(/ /g,'-')+'.webp';}
 function kleosDefaultDistrict(group){const t=normalizeExerciseKey(group);return kleosMuscleDistricts.find(x=>normalizeExerciseKey(x)===t)||(/petto|pettoral|chest/.test(t)?'Pettorali':/spall|deltoid|shoulder/.test(t)?'Spalle':/dors|schiena|back/.test(t)?'Dorsali':/addomin|core|obliqu/.test(t)?'Addominali e obliqui':/femoral|hamstring/.test(t)?'Ischiocrurali':/glute/.test(t)?'Glutei':'');}
@@ -5789,7 +5789,7 @@ async function kleosResolveDistrictImage(district){
  const chosen=await bucket.download(selected);
  if(!chosen.error&&chosen.data)return URL.createObjectURL(chosen.data);
  const files=await kleosDistrictFolderFiles(),key=normalizeExerciseKey(district);
- const matches=files.filter(name=>normalizeExerciseKey(name.replace(/\.[^.]+$/,''))===key);
+ const matches=files.filter(name=>{const fileKey=normalizeExerciseKey(name.replace(/\.[^.]+$/,''));return fileKey===key||(key==='total body'&&fileKey==='totalbody');});
  if(matches.length!==1)throw Error(matches.length?'Più immagini per questo distretto: salva un abbinamento.':'Nessuna miniatura salvata per questo distretto.');
  const result=await bucket.download('muscle-districts/'+matches[0]);if(result.error)throw result.error;
  return URL.createObjectURL(result.data);

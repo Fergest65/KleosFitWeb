@@ -88,7 +88,7 @@ function kleosFormatTxtView(container,text){
 }
 
 </script>
-<style>.replacement-panel{margin:1rem 0}.replacement-panel [hidden]{display:none}.replacement-panel [data-library-list]{min-height:8rem}.replacement-panel label{display:block;margin:.5rem 0}.replacement-panel select,.replacement-panel input{display:block;width:100%;max-width:32rem;padding:.65rem;background:#090d0e;color:inherit;border:1px solid var(--line);border-radius:.5rem}.replacement-results{max-height:16rem;overflow:auto;display:grid;gap:.35rem}.replacement-result{display:flex;align-items:center;gap:.65rem;text-align:left}#inlineExerciseList[hidden]{display:none}#inlineExerciseList{margin-top:.4rem}#inlineExercisePreview img{width:4rem;height:4rem;object-fit:contain;margin-top:.4rem}.replacement-result img{width:3rem;height:3rem;object-fit:contain}</style></head>
+<style>.replacement-panel{margin:1rem 0}.replacement-panel [hidden]{display:none}.replacement-panel [data-library-list]{min-height:8rem}.replacement-panel label{display:block;margin:.5rem 0}.replacement-panel select,.replacement-panel input{display:block;width:100%;max-width:32rem;padding:.65rem;background:#090d0e;color:inherit;border:1px solid var(--line);border-radius:.5rem}.replacement-results{max-height:16rem;overflow:auto;display:grid;gap:.35rem}.replacement-result{display:flex;align-items:center;gap:.65rem;text-align:left}#inlineExerciseList[hidden]{display:none}#inlineExerciseList{margin-top:.4rem}.inline-exercise-thumb{display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:#090d0e;color:#a4adb6}#inlineExercisePreview .inline-exercise-thumb{margin-top:.4rem;width:64px;height:64px}.inline-exercise-thumb>img,.inline-exercise-thumb>.kleosTxtExerciseThumb,#inlineExercisePreview .inline-exercise-thumb>img{display:block;width:100%;height:100%;margin:0;border:0;border-radius:0;object-fit:contain}#inlineExercisePreview img{width:4rem;height:4rem;object-fit:contain;margin-top:.4rem}.replacement-result img{width:3rem;height:3rem;object-fit:contain}</style></head>
 <body>
 <header><div class="brand">KLEOS FITCOACH PRO</div><a class="btn" href="monitor-circuito.html">Apri monitor</a></header>
 <main class="page">
@@ -589,11 +589,31 @@ function installSheetReplacement(){
 function installInlineExerciseLibrary(){
  const input=document.getElementById('exerciseName'),list=document.getElementById('inlineExerciseList'),preview=document.getElementById('inlineExercisePreview');
  let active=false,loading;
- function thumbnail(url){
-  if(!/^(https?:\/\/|data:image\/)/i.test(url))return null;
-  const image=document.createElement('img');
-  image.alt='';image.loading='lazy';image.src=url;image.onerror=()=>image.remove();
-  return image;
+ function thumbnail(name,url,fallback,onSourceChange=()=>{}){
+  const frame=document.createElement('span');
+  frame.className='inline-exercise-thumb';
+  frame.setAttribute('aria-hidden','true');
+  const saved=kleosTxtImageNode(txtImageData,name);
+  const image=saved||document.createElement('img');
+  if(image.tagName!=='IMG'){
+   frame.append(image);
+   return frame;
+  }
+  image.alt='';
+  image.loading='lazy';
+  image.decoding='async';
+  const sources=[...new Set([saved?.getAttribute('src'),url,fallback])]
+   .filter(src=>src&&(kleosTxtRaster(src)||/^https?:\/\//i.test(src)));
+  function loadNext(){
+   const src=sources.shift();
+   onSourceChange(src||'');
+   if(!src){image.remove();frame.textContent='—';return;}
+   image.src=src;
+  }
+  image.onerror=loadNext;
+  frame.append(image);
+  loadNext();
+  return frame;
  }
  function render(){
   if(!active)return;
@@ -607,16 +627,24 @@ function installInlineExerciseLibrary(){
    const name=String(exercise.name).trim(),url=getExerciseImageUrl(exercise);
    const button=document.createElement('button');
    button.type='button';button.className='replacement-result';
-   const image=thumbnail(url);
-   if(image)button.append(image);
+   const asset=APK_EXERCISE_ASSETS[normalizeExerciseKey(name)];
+   const fallback=asset?'https://classic-assets.eascdn.net/~assets/exercise-images-optimized/'+asset:'';
+   let displayedUrl=url;
+   button.append(thumbnail(name,url,fallback,src=>{displayedUrl=src;}));
    const label=document.createElement('span');label.textContent=archiveLabel(exercise);button.append(label);
    button.onclick=()=>{
     active=false;list.hidden=true;input.value=name;
-    newSheetExerciseChoice=url?{name,url}:null;
-    const selected=thumbnail(url);
-    preview.replaceChildren();
-    if(selected)preview.append(selected);
-    document.getElementById('newExercisePhoto').textContent=selected?'Immagine selezionata.':'';
+    const choice={name,url:displayedUrl};
+    newSheetExerciseChoice=choice;
+    const notice=document.getElementById('newExercisePhoto');
+    notice.textContent=kleosTxtImageNode(txtImageData,name)?'Immagine associata.':'';
+    const selected=thumbnail(name,displayedUrl,fallback,src=>{
+     if(newSheetExerciseChoice!==choice)return;
+     choice.url=src;
+     notice.textContent=src?'Immagine selezionata.':'';
+    });
+    if(!selected.querySelector('img'))choice.url='';
+    preview.replaceChildren(selected);
     document.getElementById('blockSets1').focus();
    };
    list.append(button);

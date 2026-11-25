@@ -690,6 +690,58 @@ installInlineExerciseLibrary();
 </style>
 
 <script>
+async function saveExercisePhotoToLibrary(name,file){
+ if(!navigator.onLine||!window.supabase)return 'Connettiti a Kleos per salvarla anche nella libreria.';
+ db??=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ const {data:auth,error:authError}=await db.auth.getSession();
+ if(authError)throw authError;
+ if(!auth.session)return 'Accedi a Kleos per salvarla anche nella libreria.';
+ const key=normalizeExerciseKey(name);
+ if(!key)return 'Nome non riconosciuto nella libreria esercizi.';
+ const matches=[];
+ for(let offset=0;;offset+=100){
+  const {data,error}=await db.from('exercise_library').select('*').order('id').range(offset,offset+99);
+  if(error)throw error;
+  for(const row of data){
+   const label=firstVal(row,['name','exercise_name','title','nome']);
+   if(normalizeExerciseKey(label)===key)matches.push(row);
+  }
+  if(matches.length>1)return 'Più esercizi in libreria hanno questo nome.';
+  if(data.length<100)break;
+ }
+ const exercise=matches[0];
+ if(!exercise)return 'Esercizio non trovato nella libreria.';
+ const extension={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[file.type];
+ if(!extension)throw Error('Usa una foto PNG, JPG o WebP.');
+ const digest=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());
+ const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+ const path='kleos-library/'+encodeURIComponent(String(exercise.id))+'/'+hash+'.'+extension;
+ const bucket=db.storage.from('exercise-images');
+ const url=bucket.getPublicUrl(path).data.publicUrl;
+ if(exercise.image_url===url)return 'Foto già associata nella libreria.';
+ if(getExerciseImageUrl({...exercise,name})&&!confirm('Sostituire la foto di «'+name+'» nella libreria esercizi?')){
+  return 'Foto della libreria conservata.';
+ }
+ const result=await bucket.upload(path,file,{contentType:file.type,upsert:false});
+ if(result.error){
+  const error=result.error,code=error.code||error.error||error.name;
+  if(String(error.statusCode||error.status)!=='409'
+   &&!['Duplicate','ResourceAlreadyExists','KeyAlreadyExists','already_exists'].includes(code)
+   &&!/already exists|duplicate/i.test(error.message||''))throw error;
+ }
+ let update=db.from('exercise_library').update({image_url:url}).eq('id',exercise.id);
+ update=exercise.image_url==null?update.is('image_url',null):update.eq('image_url',exercise.image_url);
+ const {data:saved,error}=await update.select('id,image_url');
+ if(error)throw error;
+ if(!saved?.some(row=>row.image_url===url)){
+  const {data:current,error:readError}=await db.from('exercise_library').select('image_url').eq('id',exercise.id).maybeSingle();
+  if(readError)throw readError;
+  if(current?.image_url!==url)throw Error('La foto è cambiata nel frattempo oppure il tuo account non può modificare la libreria.');
+ }
+ const cached=exerciseLibraryData.find(row=>row.id===exercise.id);
+ if(cached)cached.image_url=url;
+ return 'Foto salvata nella libreria esercizi.';
+}
 document.getElementById('attachExercisePhoto').onclick=async()=>{
  const name=document.getElementById('exerciseName').value.trim(),file=document.getElementById('exercisePhoto').files[0];
  if(!name||/[|\r\n]/.test(name)){message('Scrivi prima il nome dell’esercizio.',true);return;}
@@ -700,7 +752,16 @@ document.getElementById('attachExercisePhoto').onclick=async()=>{
   const key=kleosTxtImageKey(name),asset='foto-'+key;const next=JSON.parse(JSON.stringify(txtImageData));next.assets[asset]=src;next.exercises[key]={asset};
   const used=new Set(Object.values(next.exercises).map(item=>item.asset));for(const id of Object.keys(next.assets))if(!used.has(id))delete next.assets[id];
   const compressedSize=await compressSheetImagesToFit(next,editor.value);if(compressedSize>9.5*1024*1024)throw Error('La scheda resta oltre 10 MB anche dopo la compressione automatica. Rimuovi una o più immagini.');
-  txtImageData=next;clearNewSheetExerciseChoice();edited();message('Immagine associata a '+name+'. Salva la scheda TXT per conservarla.');
+  if(request!==readRequest)return;
+  txtImageData=next;clearNewSheetExerciseChoice();edited();
+  const local='Foto associata a '+name+' nella scheda. Salva il TXT per conservarla.';
+  message(local+' Verifica della libreria in corso…');
+  try{
+   const result=await saveExercisePhotoToLibrary(name,file);
+   if(request===readRequest)message(local+' '+result);
+  }catch(error){
+   if(request===readRequest)message(local+' Libreria: '+(error.message||String(error)),true);
+  }
  }catch(error){message(error.message,true);}finally{button.disabled=false;}
 };
 document.getElementById('kleosExample').onclick=()=>{

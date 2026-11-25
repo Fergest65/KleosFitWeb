@@ -238,31 +238,7 @@ function firstVal(obj, keys, fallback=''){
  for(const k of keys){ if(obj && obj[k]!==undefined && obj[k]!==null && String(obj[k]).trim()!=='') return obj[k]; }
  return fallback;
 }
-async function loadExerciseLibrary(){
- // NON assumiamo colonne come user_id/default_*: l'archivio dell'app può avere uno schema diverso.
- // Leggiamo le righe reali e poi normalizziamo i possibili nomi dei campi.
- let r=await db.from('exercise_library').select('*').limit(1000);
- if(r.error){
-   exerciseLibraryData=[];
-   return r.error.message;
- }
- exerciseLibraryData=(r.data||[]).map(e=>({
-   ...e,
-   id:e.id,
-   name:firstVal(e,['name','exercise_name','title','nome']),
-   muscle_group:firstVal(e,['muscle_group','muscle','target_muscle','gruppo_muscolare']),
-   equipment:firstVal(e,['equipment','attrezzatura','tool']),
-   focus:firstVal(e,['focus','description','notes','note']),
-   image_url:firstVal(e,['image_url','image','photo_url','image_path','image_src','thumbnail_url','asset_path','file_path','filename']),
-   work_type:firstVal(e,['work_type','exercise_type','type','tipo']),
-   default_sets:firstVal(e,['default_sets','sets','serie','default_series']),
-   default_reps:firstVal(e,['default_reps','reps','ripetizioni','repetitions']),
-   default_duration_seconds:firstVal(e,['default_duration_seconds','duration_seconds','duration']),
-   default_rest_seconds:firstVal(e,['default_rest_seconds','rest_seconds','recovery_seconds','recupero'])
- })).filter(e=>e.id && e.name);
- exerciseLibraryData.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
- return null;
-}
+
 const APK_EXERCISE_ASSETS={
  'ab wheel rollout':'ab-wheel-rollout-ai.jpg','ab wheel':'ab-wheel-rollout-ai.jpg',
  'advanced tuck front lever':'advanced-tuck-front-lever-ai.jpg','front lever tuck':'advanced-tuck-front-lever-ai.jpg',
@@ -325,12 +301,15 @@ function getExerciseImageUrl(e){
 async function loadExerciseLibrary(){
  // NON assumiamo colonne come user_id/default_*: l'archivio dell'app può avere uno schema diverso.
  // Leggiamo le righe reali e poi normalizziamo i possibili nomi dei campi.
- let r=await db.from('exercise_library').select('*').limit(1000);
- if(r.error){
-   exerciseLibraryData=[];
-   return r.error.message;
+ const rows=[];
+ for(let offset=0;;){
+  const {data,error}=await db.from('exercise_library').select('*').order('id').range(offset,offset+99);
+  if(error){exerciseLibraryData=[];return error.message;}
+  if(!data.length)break;
+  rows.push(...data);
+  offset+=data.length;
  }
- exerciseLibraryData=(r.data||[]).map(e=>({
+ exerciseLibraryData=rows.map(e=>({
    ...e,
    id:e.id,
    name:firstVal(e,['name','exercise_name','title','nome']),
@@ -621,7 +600,7 @@ function installInlineExerciseLibrary(){
   const catalog=new Map(Object.keys(APK_EXERCISE_ASSETS).map(key=>[key,{name:key[0].toUpperCase()+key.slice(1)}]));
   for(const exercise of exerciseLibraryData)catalog.set(normalizeExerciseKey(exercise.name),exercise);
   const matches=[...catalog.values()].filter(exercise=>normalizeExerciseKey(archiveLabel(exercise)).includes(query))
-   .sort((a,b)=>String(a.name).localeCompare(String(b.name),'it')).slice(0,12);
+   .sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
   list.replaceChildren();
   for(const exercise of matches){
    const name=String(exercise.name).trim(),url=getExerciseImageUrl(exercise);

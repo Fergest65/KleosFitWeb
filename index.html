@@ -5927,7 +5927,7 @@ views.exerciseLibraryAdmin=`
     <label>Distretto muscolare<select name="district"></select></label>
     <label>Attrezzatura<input name="equipment"></label>
    </div>
-   <div class="inputrow"><label>URL immagine<input name="image" type="url" placeholder="https://…"></label><button id="libraryAdminImagePath" class="btn secondary" type="button">Inserisci percorso immagine</button><img id="libraryAdminPhoto" width="72" height="72" style="object-fit:contain" alt="Anteprima immagine" hidden></div>
+   <div class="inputrow"><label>URL immagine<input name="image" type="url" placeholder="https://…"></label><button id="libraryAdminImagePath" class="btn secondary" type="button">Inserisci percorso immagine</button><button id="libraryAdminChoosePhoto" class="btn secondary" type="button">Scegli foto dal computer</button><input id="libraryAdminLocalPhoto" type="file" accept="image/png,image/jpeg,image/webp" hidden><img id="libraryAdminPhoto" width="72" height="72" style="object-fit:contain" alt="Anteprima immagine" hidden></div>
    <div class="inputrow"><button class="btn" type="submit">Salva esercizio</button><button id="libraryAdminCancel" class="btn secondary" type="button">Chiudi modifica</button></div>
   </fieldset>
  </form>
@@ -5940,7 +5940,29 @@ async function openExerciseLibraryAdmin(){
  const form=document.getElementById('libraryAdminForm'),status=document.getElementById('libraryAdminStatus');
  const add=document.getElementById('libraryAdminNew'),photo=document.getElementById('libraryAdminPhoto');
  const fields=form.elements;
- let rows=[],editing=null,busy=false,loaded=false;
+ const localPhoto=document.getElementById('libraryAdminLocalPhoto');
+ let rows=[],editing=null,busy=false,loaded=false,previewUrl='';
+ function clearLocalPhoto(){
+  localPhoto.value='';
+  if(previewUrl)URL.revokeObjectURL(previewUrl);
+  previewUrl='';
+ }
+ async function uploadLocalPhoto(file){
+  const extension={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[file.type];
+  if(!extension||!file.size||file.size>12*1024*1024)throw Error('Scegli una foto PNG, JPG o WebP fino a 12 MB.');
+  const digest=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());
+  const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+  const key='kleos-library/'+hash+'.'+extension;
+  const bucket=db.storage.from('exercise-images');
+  const {error}=await bucket.upload(key,file,{contentType:file.type,upsert:false});
+  if(error){
+   const code=error.code||error.error||error.name;
+   if(String(error.statusCode||error.status)!=='409'
+    &&!['Duplicate','ResourceAlreadyExists','KeyAlreadyExists','already_exists'].includes(code)
+    &&!/already exists|duplicate/i.test(error.message||''))throw error;
+  }
+  return bucket.getPublicUrl(key).data.publicUrl;
+ }
  function report(text,error=false){status.textContent=text;status.className=error?'danger':'';}
  function draw(){
   const query=normalizeExerciseKey(search.value);
@@ -5966,6 +5988,7 @@ async function openExerciseLibraryAdmin(){
  function openForm(row){
   if(busy)return;
   editing=row;
+  clearLocalPhoto();
   form.reset();
   document.getElementById('libraryAdminLegend').textContent=row?'Modifica esercizio':'Nuovo esercizio';
   const districts=[...new Set([...kleosMuscleDistricts,...(row?.muscle_group?[row.muscle_group]:[])])];
@@ -6016,6 +6039,7 @@ async function openExerciseLibraryAdmin(){
   }
   setBusy(true);
   try{
+   if(localPhoto.files[0])draft.image_url=await uploadLocalPhoto(localPhoto.files[0]);
    const table=db.from('exercise_library');
    const query=editing?table.update(draft).eq('id',editing.id):table.insert(draft);
    const {data,error}=await query.select('id,name,muscle_group,equipment,image_url').single();
@@ -6023,7 +6047,7 @@ async function openExerciseLibraryAdmin(){
    rows=rows.filter(row=>row.id!==data.id).concat(data).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
    const cached=exerciseLibraryData.find(row=>row.id===data.id);
    if(cached)Object.assign(cached,data);else exerciseLibraryData.push(data);
-   form.hidden=true;report('Esercizio salvato nella libreria.');
+   clearLocalPhoto();form.hidden=true;report('Esercizio salvato nella libreria.');
   }catch(error){report(error.message||String(error),true);}
   finally{setBusy(false);}
  };
@@ -6047,14 +6071,29 @@ async function openExerciseLibraryAdmin(){
     }
     url=db.storage.from('exercise-images').getPublicUrl(path).data.publicUrl;
    }
+   clearLocalPhoto();
    fields.image.value=url;
    updatePreview();
    report('Percorso inserito. Premi Salva esercizio per confermare.');
   }catch(error){report(error.message||String(error),true);}
  };
- fields.image.oninput=updatePreview;
+ document.getElementById('libraryAdminChoosePhoto').onclick=()=>localPhoto.click();
+ localPhoto.onchange=()=>{
+  if(previewUrl)URL.revokeObjectURL(previewUrl);
+  previewUrl='';
+  const file=localPhoto.files[0];
+  if(!file){updatePreview();return;}
+  if(!['image/png','image/jpeg','image/webp'].includes(file.type)||!file.size||file.size>12*1024*1024){
+   clearLocalPhoto();updatePreview();report('Scegli una foto PNG, JPG o WebP fino a 12 MB.',true);return;
+  }
+  fields.image.value='';
+  previewUrl=URL.createObjectURL(file);
+  photo.hidden=false;photo.src=previewUrl;
+  report('Foto selezionata: '+file.name+'. Premi Salva esercizio per caricarla.');
+ };
+ fields.image.oninput=()=>{clearLocalPhoto();updatePreview();};
  add.onclick=()=>openForm(null);
- document.getElementById('libraryAdminCancel').onclick=()=>{form.hidden=true;};
+ document.getElementById('libraryAdminCancel').onclick=()=>{clearLocalPhoto();form.hidden=true;};
  search.oninput=draw;
  setBusy(true);report('Caricamento libreria…');
  try{await load();report('');}catch(error){report(error.message||String(error),true);}

@@ -650,6 +650,7 @@ async function loadProfile(){
 }
 function show(v,el){
  if((v==='superuser'||v==='anagrafica'||v==='activeSubscriptions'||v==='inactiveSubscriptions'||v==='slotAdmin'||v==='notifications'||v==='subscriptionPrices'||v==='courseCatalog'||v==='accounting')&&!isSuperuserRole()) return;
+ if(v==='exerciseLibraryAdmin'&&!isSuperuserRole())return;
  if(v==='myNotifications'&&!isClientRole()) return;
  if(v==='anagraficaClient'&&!isClientRole()) return;
  if(v==='qrcodes'&&!isClientRole()) return;
@@ -675,7 +676,7 @@ function show(v,el){
  if(v==='notifications'){loadNotifications();notifRecipientUsers=[];notifSelectedRecipientIds.clear();}
  if(v==='myNotifications') loadMyNotifications();
  if(v==='qrcodes') loadQrCodes();
- if(v==='workout') loadWorkouts();
+ if(v==='workout'){if(isSuperuserRole()){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Gestione esercizi';button.onclick=openExerciseLibraryAdmin;content.querySelector('#workoutSearch').parentElement.append(button);}loadWorkouts();}
  if(v==='nutrition'){loadNutrition();if(isClientRole())loadMyNutritionRequests();if(isSuperuserRole())loadNutritionRequests();}
  if(v==='booking') loadBookings();
  if(v==='priceList') loadClientPriceList();
@@ -5912,3 +5913,127 @@ function kleosAccountingPeriodSummary(groups,from,to){
 
 </script>
 
+
+<script>
+views.exerciseLibraryAdmin=`
+<div class="top"><div class="title">Gestione esercizi</div><button type="button" class="btn secondary" onclick="show('workout')">Torna a Workout</button></div>
+<div class="card">
+ <div class="inputrow"><label for="libraryAdminSearch">Cerca esercizio</label><input id="libraryAdminSearch" type="search" placeholder="Nome, distretto o attrezzatura"><button id="libraryAdminNew" class="btn" type="button">+ Nuovo esercizio</button></div>
+ <p id="libraryAdminStatus" role="status" aria-live="polite"></p>
+ <form id="libraryAdminForm" hidden>
+  <fieldset><legend id="libraryAdminLegend">Nuovo esercizio</legend>
+   <div class="inputrow">
+    <label>Nome<input name="name" required maxlength="200"></label>
+    <label>Distretto muscolare<select name="district"></select></label>
+    <label>Attrezzatura<input name="equipment"></label>
+   </div>
+   <div class="inputrow"><label>URL immagine<input name="image" type="url" placeholder="https://…"></label><img id="libraryAdminPhoto" width="72" height="72" style="object-fit:contain" alt="Anteprima immagine" hidden></div>
+   <div class="inputrow"><button class="btn" type="submit">Salva esercizio</button><button id="libraryAdminCancel" class="btn secondary" type="button">Chiudi modifica</button></div>
+  </fieldset>
+ </form>
+ <div id="libraryAdminList" class="archiveList"></div>
+</div>`;
+async function openExerciseLibraryAdmin(){
+ if(!isSuperuserRole())return;
+ show('exerciseLibraryAdmin');
+ const search=document.getElementById('libraryAdminSearch'),list=document.getElementById('libraryAdminList');
+ const form=document.getElementById('libraryAdminForm'),status=document.getElementById('libraryAdminStatus');
+ const add=document.getElementById('libraryAdminNew'),photo=document.getElementById('libraryAdminPhoto');
+ const fields=form.elements;
+ let rows=[],editing=null,busy=false,loaded=false;
+ function report(text,error=false){status.textContent=text;status.className=error?'danger':'';}
+ function draw(){
+  const query=normalizeExerciseKey(search.value);
+  const visible=rows.filter(row=>normalizeExerciseKey([row.name,row.muscle_group,row.equipment].join(' ')).includes(query));
+  list.innerHTML='<p class="muted">'+visible.length+' esercizi</p>';
+  for(const row of visible){
+   const line=document.createElement('div');line.className='inputrow';
+   const label=document.createElement('span');label.textContent=[row.name,row.muscle_group,row.equipment].filter(Boolean).join(' · ');
+   const edit=document.createElement('button');edit.type='button';edit.className='btn secondary';edit.textContent='Modifica';edit.disabled=busy;
+   edit.onclick=()=>openForm(row);
+   const remove=document.createElement('button');remove.type='button';remove.className='btn secondary';remove.textContent='Elimina';remove.disabled=busy;
+   remove.onclick=()=>removeRow(row);
+   line.append(label,edit,remove);list.append(line);
+  }
+ }
+ function setBusy(value){busy=value;form.querySelector('fieldset').disabled=value;add.disabled=value||!loaded;draw();}
+ function updatePreview(){
+  const url=fields.image.value.trim();
+  photo.hidden=!/^https?:\/\//i.test(url);
+  if(!photo.hidden)photo.src=url;
+  else photo.removeAttribute('src');
+ }
+ function openForm(row){
+  if(busy)return;
+  editing=row;
+  form.reset();
+  document.getElementById('libraryAdminLegend').textContent=row?'Modifica esercizio':'Nuovo esercizio';
+  const districts=[...new Set([...kleosMuscleDistricts,...(row?.muscle_group?[row.muscle_group]:[])])];
+  fields.district.replaceChildren(new Option('Nessun distretto',''),...districts.map(name=>new Option(name,name)));
+  fields.namedItem('name').value=row?.name||'';
+  fields.district.value=row?.muscle_group||'';
+  fields.equipment.value=row?.equipment||'';
+  const url=row?resolveExerciseImageUrl(row.image_url):'';
+  fields.image.value=/^https?:\/\//i.test(url)?url:'';
+  updatePreview();form.hidden=false;fields.namedItem('name').focus();
+ }
+ async function load(){
+  const next=[];
+  for(let offset=0;;){
+   const {data,error}=await db.from('exercise_library').select('id,name,muscle_group,equipment,image_url').order('id').range(offset,offset+99);
+   if(error)throw error;
+   if(!data.length)break;
+   next.push(...data);offset+=data.length;
+  }
+  rows=next.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  loaded=true;
+ }
+ async function removeRow(row){
+  if(busy||!isSuperuserRole()||!confirm('Eliminare «'+row.name+'» dalla libreria esercizi?'))return;
+  setBusy(true);
+  try{
+   const {data,error}=await db.from('exercise_library').delete().eq('id',row.id).select('id');
+   if(error)throw error;
+   if(!data?.length)throw Error('Eliminazione non confermata. Verifica i permessi.');
+   rows=rows.filter(item=>item.id!==row.id);
+   exerciseLibraryData=exerciseLibraryData.filter(item=>item.id!==row.id);
+   if(editing?.id===row.id)form.hidden=true;
+   report('Esercizio eliminato dalla libreria.');
+  }catch(error){report(error.message||String(error),true);}
+  finally{setBusy(false);}
+ }
+ form.onsubmit=async event=>{
+  event.preventDefault();
+  if(busy||!isSuperuserRole())return;
+  const name=fields.namedItem('name').value.trim();
+  if(!name){report('Inserisci il nome dell’esercizio.',true);return;}
+  const draft={name,muscle_group:fields.district.value||null,equipment:fields.equipment.value.trim()||null};
+  const image=fields.image.value.trim();
+  if(image&&!/^https?:\/\//i.test(image)){report('Inserisci un URL HTTPS o HTTP per l’immagine.',true);return;}
+  if(!editing||image||/^https?:\/\//i.test(resolveExerciseImageUrl(editing.image_url)))draft.image_url=image||null;
+  if(normalizeExerciseKey(editing?.name)!==normalizeExerciseKey(name)&&rows.some(row=>row.id!==editing?.id&&normalizeExerciseKey(row.name)===normalizeExerciseKey(name))){
+   report('In libreria esiste già un esercizio con questo nome.',true);return;
+  }
+  setBusy(true);
+  try{
+   const table=db.from('exercise_library');
+   const query=editing?table.update(draft).eq('id',editing.id):table.insert(draft);
+   const {data,error}=await query.select('id,name,muscle_group,equipment,image_url').single();
+   if(error)throw error;
+   rows=rows.filter(row=>row.id!==data.id).concat(data).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+   const cached=exerciseLibraryData.find(row=>row.id===data.id);
+   if(cached)Object.assign(cached,data);else exerciseLibraryData.push(data);
+   form.hidden=true;report('Esercizio salvato nella libreria.');
+  }catch(error){report(error.message||String(error),true);}
+  finally{setBusy(false);}
+ };
+ photo.onerror=()=>{photo.hidden=true;};
+ fields.image.oninput=updatePreview;
+ add.onclick=()=>openForm(null);
+ document.getElementById('libraryAdminCancel').onclick=()=>{form.hidden=true;};
+ search.oninput=draw;
+ setBusy(true);report('Caricamento libreria…');
+ try{await load();report('');}catch(error){report(error.message||String(error),true);}
+ finally{setBusy(false);}
+}
+</script>

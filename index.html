@@ -5599,10 +5599,82 @@ function selectKleosMediaExercise(id){const state=kleosMediaState;if(!state||sta
 function renderKleosMediaSelection(){const state=kleosMediaState,box=document.getElementById('kmSelection');if(!state||!box)return;const e=state.exercises.find(e=>String(e.id)===state.selectedId);if(!e)return;box.innerHTML=`<div class="kmPreviewRow">${state.candidate?`<img src="${esc(state.candidate)}" alt="${esc(e.name)}" onerror="this.hidden=true">`:'<div class="kmNoImage">Nessuna foto</div>'}<div><strong>${esc(e.name)}</strong><p class="muted">${esc([e.muscle_group,e.equipment].filter(Boolean).join(' · '))}</p><span class="pill">${state.candidate===kleosMediaUrl(e.image_url||'')?'Abbinamento attuale':'Modifica da salvare'}</span></div></div>`;document.getElementById('kmSave').disabled=state.busy;document.getElementById('kmClear').disabled=state.busy||!state.candidate;}
 function clearKleosMediaCandidate(){const state=kleosMediaState;if(!state||state.busy||!state.selectedId)return;state.candidate='';renderKleosMediaSelection();renderKleosMediaImages();kleosMediaMessage(state,'Premi “Salva abbinamento” per rimuovere la foto dall’esercizio. Il file rimarrà nella libreria.',true);}
 function renderKleosMediaImages(){const state=kleosMediaState,box=document.getElementById('kmImages');if(!state||!box)return;const q=normalizeExerciseKey(document.getElementById('kmImageSearch').value);const rows=state.images.filter(e=>normalizeExerciseKey([...e.labels,e.path].join(' ')).includes(q)).sort((a,b)=>a.labels[0].localeCompare(b.labels[0],'it',{sensitivity:'base'}));document.getElementById('kmImageCount').textContent=rows.length+' immagini'+(state.loading?' · Lettura cartelle in corso…':'');box.innerHTML=rows.slice(0,state.limit).map(e=>`<button type="button" class="kmImageCard ${state.candidate===e.url?'kmSelected':''}" data-km-image="${esc(e.url)}" ${!state.selectedId||state.busy?'disabled':''} aria-label="Scegli immagine ${esc(e.labels[0])}"><div class="kmThumb"><img src="${esc(e.url)}" alt="${esc(e.labels[0])}" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden>Anteprima non disponibile</span></div><b>${esc(e.labels[0])}</b><span>${esc(e.path||'Foto dell’archivio')}</span></button>`).join('')||'<p class="muted">Nessuna immagine leggibile. Puoi caricare nuove foto o aggiornare l’elenco.</p>';document.getElementById('kmMore').style.display=rows.length>state.limit?'inline-block':'none';box.querySelectorAll('[data-km-image]').forEach(button=>button.onclick=()=>{if(state.busy)return;state.candidate=button.dataset.kmImage;renderKleosMediaSelection();renderKleosMediaImages();kleosMediaMessage(state,'Foto selezionata. Premi “Salva abbinamento” per riutilizzarla nelle nuove schede.',true);});}
-async function collectKleosStorageImages(bucket,state){const queue=[''];let directories=0,files=0;while(queue.length){const prefix=queue.shift();if(++directories>250)throw Error('Molte cartelle presenti: elenco parziale. Le foto già lette restano disponibili.');let offset=0;while(true){if(kleosMediaState!==state||!document.getElementById('kmImages'))return;const result=await bucket.list(prefix,{limit:100,offset,sortBy:{column:'name',order:'asc'}});if(result.error)throw result.error;const rows=result.data||[];for(const item of rows){if(!item.name||item.name==='.'||item.name==='..')continue;const key=prefix?prefix+'/'+item.name:item.name;if(key==='muscle-districts'||key.startsWith('muscle-districts/'))continue;if(!item.id&&!item.metadata){queue.push(key);continue;}if(!/\.(png|jpe?g|webp|gif|avif)$/i.test(item.name))continue;const publicUrl=bucket.getPublicUrl(key).data?.publicUrl;const linked=state.exercises.find(e=>kleosMediaUrl(e.image_url||'')===kleosMediaUrl(publicUrl));kleosMediaAddImage(state,{url:publicUrl,label:linked?.name||item.name,path:key});files++;}renderKleosMediaImages();if(rows.length<100)break;offset+=rows.length;if(offset>10000)throw Error('Elenco parziale: oltre 10000 elementi nella stessa cartella.');}}return files;}
+async function collectKleosStorageImages(bucket,state,onImage){const queue=[''];let directories=0,files=0;while(queue.length){const prefix=queue.shift();if(++directories>250)throw Error('Molte cartelle presenti: elenco parziale. Le foto già lette restano disponibili.');let offset=0;while(true){if(kleosMediaState!==state||!document.getElementById('kmImages'))return;const result=await bucket.list(prefix,{limit:100,offset,sortBy:{column:'name',order:'asc'}});if(result.error)throw result.error;const rows=result.data||[];for(const item of rows){if(!item.name||item.name==='.'||item.name==='..')continue;const key=prefix?prefix+'/'+item.name:item.name;if(key==='muscle-districts'||key.startsWith('muscle-districts/'))continue;if(!item.id&&!item.metadata){queue.push(key);continue;}if(!/\.(png|jpe?g|webp|gif|avif)$/i.test(item.name))continue;const publicUrl=bucket.getPublicUrl(key).data?.publicUrl;const linked=state.exercises.find(e=>kleosMediaUrl(e.image_url||'')===kleosMediaUrl(publicUrl));kleosMediaAddImage(state,{url:publicUrl,label:linked?.name||item.name,path:key});onImage?.(key);files++;}renderKleosMediaImages();if(rows.length<100)break;offset+=rows.length;if(offset>10000)throw Error('Elenco parziale: oltre 10000 elementi nella stessa cartella.');}}return files;}
 async function refreshKleosMediaImages(){const state=kleosMediaState;if(!state||state.refreshing||state.busy)return;state.refreshing=true;state.loading=true;state.images=[];state.limit=60;renderKleosMediaImages();const button=document.getElementById('kmRefresh');if(button)button.disabled=true;try{const count=await collectKleosStorageImages(db.storage.from('exercise-images'),state);if(count!==undefined)kleosMediaMessage(state,count?count+' foto lette dal bucket exercise-images, comprese le sottocartelle. Seleziona una foto per abbinarla.':'Supabase restituisce un elenco vuoto. Se hai già caricato le foto, verifica il progetto, il bucket exercise-images e la policy SELECT di storage.objects per gli utenti autenticati.',count>0);}catch(e){kleosMediaMessage(state,'Lettura libreria: '+(e.message||e)+'. Sono visibili solo i file letti da Storage. Verifica il permesso di lettura del bucket exercise-images e premi Aggiorna elenco.');}finally{state.refreshing=false;state.loading=false;if(kleosMediaState===state&&document.getElementById('kmImages')){if(button)button.disabled=false;renderKleosMediaImages();}}}
 async function saveKleosMediaAssociation(){const state=kleosMediaState;if(!state||state.busy||!canEditWorkout()||!state.selectedId)return;const exercise=state.exercises.find(e=>String(e.id)===state.selectedId);if(!exercise)return;const candidate=state.candidate||null;state.busy=true;renderKleosMediaSelection();renderKleosMediaImages();try{const result=await db.from('exercise_library').update({image_url:candidate}).eq('id',exercise.id).select('id,image_url');if(result.error)throw result.error;const saved=(result.data||[]).find(row=>String(row.id)===String(exercise.id));if(!saved)throw Error('Nessun abbinamento salvato. Il tuo account non ha i permessi per aggiornare l’archivio esercizi.');if((saved.image_url||null)!==candidate)throw Error('La foto restituita dal server non coincide con quella scelta.');exercise.image_url=candidate;const cached=exerciseLibraryData.find(e=>String(e.id)===String(exercise.id));if(cached)cached.image_url=candidate;kleosMediaMessage(state,'Abbinamento salvato per “'+exercise.name+'”. Verrà utilizzato nelle nuove schede.',true);}catch(e){kleosMediaMessage(state,'Abbinamento non salvato: '+(e.message||e));}finally{state.busy=false;if(kleosMediaState===state&&document.getElementById('kmSelection')){renderKleosMediaSelection();renderKleosMediaExercises();renderKleosMediaImages();}}}
-async function uploadKleosMediaImages(input){const state=kleosMediaState;if(!state||state.busy||!canEditWorkout())return;const files=Array.from(input.files||[]);if(!files.length)return;state.busy=true;input.disabled=true;let count=0;try{for(const file of files){if(!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Formato non supportato: '+file.name+'. Usa PNG, JPG o WebP.');if(file.size>12*1024*1024)throw Error('File troppo grande: '+file.name+' (massimo 12 MB).');const ext=({'image/png':'png','image/jpeg':'jpg','image/webp':'webp'})[file.type];const stem=normalizeExerciseKey(file.name.replace(/\.[^.]+$/,'')).replace(/ /g,'-').slice(0,70)||'foto';const unique=crypto.randomUUID();const key='kleos-library/'+stem+'-'+unique+'.'+ext;const bucket=db.storage.from('exercise-images');const result=await bucket.upload(key,file,{contentType:file.type,upsert:false});if(result.error)throw result.error;kleosMediaAddImage(state,{url:bucket.getPublicUrl(key).data?.publicUrl,label:file.name,path:key});count++;}kleosMediaMessage(state,count+' immagini caricate nella libreria. Seleziona un esercizio per abbinarle.',true);}catch(e){kleosMediaMessage(state,count+' immagini caricate. '+(e.message||e));}finally{state.busy=false;input.disabled=false;input.value='';if(kleosMediaState===state&&document.getElementById('kmImages')){renderKleosMediaSelection();renderKleosMediaImages();}}}
+async function uploadKleosMediaImages(input){
+ const state=kleosMediaState;
+ if(!state||state.busy||!canEditWorkout())return;
+ if(state.refreshing||state.loading){
+  input.value='';
+  kleosMediaMessage(state,'Attendi il caricamento della libreria, poi seleziona di nuovo i file.');
+  return;
+ }
+ const files=Array.from(input.files||[]);
+ if(!files.length)return;
+ const bucket=db.storage.from('exercise-images');
+ const acceptedTypes={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'};
+ const targetFolder='kleos-library';
+ const uploaded=[],duplicates=[],failures=[];
+ state.busy=true;
+ input.disabled=true;
+ kleosMediaMessage(state,'Controllo dei nomi già presenti nella libreria…',true);
+ try{
+  const paths=[];
+  const count=await collectKleosStorageImages(bucket,state,key=>paths.push(key));
+  if(count===undefined)return;
+  const existingNames=new Set(paths.map(path=>path.split('/').pop()));
+  const legacyNames=new Set(paths.filter(path=>path.startsWith(targetFolder+'/'))
+   .map(path=>path.match(/\/([^/]+)-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}(\.[^.]+)$/i))
+   .filter(Boolean).map(match=>match[1]+match[2]));
+  for(const file of files){
+   if(kleosMediaState!==state)break;
+   const name=file.name;
+   try{
+    const ext=acceptedTypes[file.type];
+    if(!ext)throw Error('Usa PNG, JPG o WebP.');
+    if(file.size>12*1024*1024)throw Error('Supera 12 MB.');
+    const legacyStem=normalizeExerciseKey(name.replace(/\.[^.]+$/,'')).replace(/ /g,'-').slice(0,70)||'foto';
+    if(existingNames.has(name)||legacyNames.has(legacyStem+'.'+ext)){
+     duplicates.push(name);
+     continue;
+    }
+    const key=targetFolder+'/'+name;
+    const {error}=await bucket.upload(key,file,{contentType:file.type,upsert:false});
+    if(error){
+     const code=error.code||error.error||error.name;
+     if(String(error.statusCode||error.status)==='409'
+      ||['Duplicate','ResourceAlreadyExists','KeyAlreadyExists','already_exists'].includes(code)
+      ||/already exists|duplicate/i.test(error.message||'')){
+      existingNames.add(name);
+      duplicates.push(name);
+      continue;
+     }
+     throw error;
+    }
+    existingNames.add(name);
+    uploaded.push(name);
+    kleosMediaAddImage(state,{url:bucket.getPublicUrl(key).data?.publicUrl,label:name,path:key});
+   }catch(error){
+    failures.push(name+' ('+(error.message||error)+')');
+   }
+  }
+  const parts=[uploaded.length+' immagini caricate'];
+  if(duplicates.length)parts.push(duplicates.length+' già presenti, saltate: '+duplicates.join(', '));
+  if(failures.length)parts.push(failures.length+' non caricate: '+failures.join(', '));
+  kleosMediaMessage(state,parts.join('. ')+'.',!failures.length);
+ }catch(error){
+  kleosMediaMessage(state,'Controllo duplicati non riuscito: '+(error.message||error)+'. Riprova dopo aver verificato l’accesso alla libreria.');
+ }finally{
+  state.busy=false;
+  input.disabled=false;
+  input.value='';
+  if(kleosMediaState===state&&document.getElementById('kmImages')){
+   renderKleosMediaSelection();
+   renderKleosMediaImages();
+  }
+ }
+}
 
 </script>
 <style>.modalbox:has(.kleosMediaManager){width:min(1180px,96vw)}.kleosMediaColumns{display:grid;grid-template-columns:minmax(230px,.8fr) minmax(0,2fr);gap:16px}.kleosMediaExerciseList{max-height:62vh;overflow:auto;display:grid;gap:7px;margin-top:10px}.kleosMediaImageGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:48vh;overflow:auto;margin-top:12px}.kmImageCard{border:1px solid var(--line);background:var(--panel2);color:white;border-radius:10px;padding:7px;text-align:left;cursor:pointer;min-width:0}.kmImageCard:disabled{opacity:.65;cursor:default}.kmImageCard b,.kmImageCard>span{display:block;font-size:11px;overflow-wrap:anywhere;margin-top:6px}.kmImageCard>span{color:var(--muted);font-size:10px}.kmThumb{height:112px;display:grid;place-items:center;background:#0b1216;border-radius:7px;overflow:hidden}.kmThumb img{width:100%;height:100%;object-fit:contain}.kmThumb [hidden]{display:none!important}.kmThumb>span{font-size:11px;padding:8px;color:var(--muted)}.kmSelected{border-color:var(--accent)!important;box-shadow:0 0 0 1px var(--accent)}.kmPreviewRow{display:flex;align-items:center;gap:14px;margin-top:10px}.kmPreviewRow>img,.kmNoImage{width:100px;height:100px;object-fit:contain;background:#0b1216;border:1px solid var(--line);border-radius:9px}.kmNoImage{display:grid;place-items:center;font-size:12px}.kmUploadLabel{margin:0;display:inline-block;color:white!important;cursor:pointer}.kleosMediaManager h3{margin:0 0 10px}.kleosMediaManager input[type=search]{margin-bottom:8px}@media(max-width:740px){.kleosMediaColumns{grid-template-columns:1fr}.kleosMediaExerciseList{max-height:200px}.kleosMediaImageGrid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:44vh}.kmPreviewRow>img,.kmNoImage{width:75px;height:75px}.kleosMediaManager .modalhead{align-items:flex-start}}</style>

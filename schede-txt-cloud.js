@@ -161,5 +161,44 @@
  window.addEventListener('offline',()=>{if(save)save.disabled=true;report('Offline · '+offline.size+' schede disponibili.');});
  if(save)save.disabled=!navigator.onLine;
  if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ if(save){
+  const deleteButton=document.createElement('button');
+  deleteButton.type='button';
+  deleteButton.textContent='Elimina scheda';
+  save.after(deleteButton);
+  deleteButton.onclick=()=>action(async()=>{
+   const name=select.value;
+   if(!name){report('Seleziona una scheda da eliminare.');return;}
+   if(!navigator.onLine){report('Connettiti a Internet per eliminare la scheda.');return;}
+   if(!confirm('Eliminare definitivamente la scheda «'+name+'»?'))return;
+   const {bucket,owner}=await storage();
+   const {data,error}=await bucket.remove([name]);
+   if(error)throw error;
+   if(!data?.some(file=>file.name===name)){
+    report('Scheda non eliminata. Aggiorna l’elenco e verifica i permessi.');
+    return;
+   }
+   if(select.value===name)++openRequest;
+   if(selected===name)selected='';
+   available.delete(name);
+   offline.delete(name);
+   draw();
+   try{
+    await cache('readwrite',store=>{
+     const editorCopy=store.get(owner),monitorCopy=store.get(publicCache);
+     for(const [key,request] of [[owner,editorCopy],[publicCache,monitorCopy]]){
+      request.onsuccess=()=>{
+       const entries=new Map(request.result||[]);
+       if(entries.delete(name))store.put([...entries],key);
+      };
+     }
+     return editorCopy;
+    });
+    report('Eliminata da Supabase: '+name+'.');
+   }catch{
+    report('Eliminata da Supabase: '+name+'. Premi Aggiorna per sincronizzare la copia offline.');
+   }
+  });
+ }
  refresh.click();
 })();
